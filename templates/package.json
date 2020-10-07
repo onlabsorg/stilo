@@ -1,0 +1,21 @@
+{
+    "main": "index",
+    "dependencies": {
+        "@onlabsorg/olojs": "file:/home/marcello/shortcuts/olojs"
+    },
+    "olonv": {
+        "protocols": {
+            "file" : "@onlabsorg/olojs/lib/protocols/file",
+            "http" : "@onlabsorg/olojs/lib/protocols/http",
+            "https": "@onlabsorg/olojs/lib/protocols/https",
+            "null" : "@onlabsorg/olojs/lib/protocols/null"
+        },
+        "routes": {
+            "/": "home:/"
+        },
+        "servers": {
+            "http": "@onlabsorg/olojs/lib/servers/http"
+        },
+        "globals": "./globals"
+    }
+}

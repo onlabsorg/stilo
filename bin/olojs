@@ -1,0 +1,43 @@
+#!/usr/bin/env node
+
+const logger = require("js-logger");
+logger.useDefaults();
+
+const Repository = require("../lib/repository");
+const repo = new Repository( process.cwd() );
+
+
+const cmd = require("commander");
+
+cmd.version(`v${require("../package.json").version}`, "-v --version");
+
+cmd.command("init")
+    .description("Initializes the current directory as olo-docs repository")
+    .action(async () => {
+        logger.info(`Initializing olo-documents repository ...`);
+        try {
+            await repo.init();
+            logger.info("Repository successfully initialized.");
+        } catch (error) {
+            logger.error(error.message);
+        }
+    });
+
+cmd.command("render <path> [args...]")
+    .description("Render a document from the current repository")
+    .action(async (path, args) => {     
+        const argns = repo.environment.parseParameters(...args);
+        const renderedDoc = await repo.render(path, {argns});
+        console.log(renderedDoc);
+    });
+
+cmd.command("serve [port]")
+    .description("Serve the current repository over HTTP")
+    .option('-t, --type <type>', "Define the type of server to be used")
+    .action(async (port=8010, flags) => {
+        const serverType = flags.type || "http";
+        await repo.serve(port, flags.type);
+        logger.info(`${serverType} server listening on port ${port}`);
+    });
+
+cmd.parse( process.argv );

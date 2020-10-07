@@ -1,0 +1,27 @@
+{
+  "name": "@onlabsorg/olojs-cli",
+  "version": "0.1.0",
+  "description": "Command line interface for managing olojs repositories",
+  "main": "index.js",
+  "bin": {
+    "olojs": "./bin/olojs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/onlabsorg/olojs-cli.git"
+  },
+  "author": "Marcello Del Buono (m.delbuono@gmail.com)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/onlabsorg/olojs-cli/issues"
+  },
+  "homepage": "https://github.com/onlabsorg/olojs-cli#readme",
+  "dependencies": {
+    "commander": "^6.1.0",
+    "js-logger": "^1.6.0",
+    "ncp": "^2.0.0"
+  }
+}
