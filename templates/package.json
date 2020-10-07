@@ -1,7 +1,7 @@
 {
     "main": "index",
     "dependencies": {
-        "@onlabsorg/olojs": "file:/home/marcello/shortcuts/olojs"
+        "@onlabsorg/olojs": "0.10.x"
     },
     "olonv": {
         "protocols": {
