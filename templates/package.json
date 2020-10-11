@@ -1,7 +1,7 @@
 {
     "main": "index",
     "dependencies": {
-        "@onlabsorg/olojs": "0.10.x"
+        "@onlabsorg/olojs": "0.11.x"
     },
     "olonv": {
         "protocols": {

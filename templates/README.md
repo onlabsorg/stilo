@@ -8,9 +8,9 @@ to perform the following operations:
 If you want to customize the repo behaviour, you can alter the environment
 exported by `index.js` at will, as long as the followin API is preserved:
 
-* environment.loadDocument
-* environment.render
-* environment.createServer
+* `environment.loadDocument(path_o_-uri)`
+* `environment.render(<swan-object>)`
+* `environment.createServer(type="http")`
 
 A big deal of customization can be done just by installing new packages and/or
 modifying the `olonv` item of the `package.json` file.

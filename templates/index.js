@@ -6,7 +6,11 @@ const config = require("./package.json").olonv;
 const protocols = {};
 for (let [scheme, package_name] of Object.entries(config.protocols)) {
     protocols[scheme] = require(package_name);
-    protocols.home = (...paths) => olojs.protocols.file(__dirname, "..", ...paths);
+    protocols.home = {
+        get: path => olojs.protocols.file.get(`${__dirname}/../${path}`),
+        set: (path, source) => olojs.protocols.file.set(`${__dirname}/../${path}`, source),
+        delete: path => olojs.protocols.file.delete(`${__dirname}/../${path}`),
+    }
 }
 
 
