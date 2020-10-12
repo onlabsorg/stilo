@@ -26,8 +26,8 @@ cmd.command("init")
 cmd.command("render <path> [args...]")
     .description("Render a document from the current repository")
     .action(async (path, args) => {     
-        const argns = repo.environment.parseParameters(...args);
-        const renderedDoc = await repo.render(path, {argns});
+        const uri = path + '?' + args.join('&');
+        const renderedDoc = await repo.render(path);
         console.log(renderedDoc);
     });
 
