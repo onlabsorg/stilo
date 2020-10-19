@@ -1,34 +1,51 @@
 const olojs = require('./olojs');
-const config = require("./package.json").olonv;
+const config = require("./package.json").olojs || {};
 
 
-// Load the protocol handlers from the npm packages defined in config.json
-const protocols = {};
-for (let [scheme, package_name] of Object.entries(config.protocols)) {
-    protocols[scheme] = require(package_name);
-    protocols.home = {
-        get: path => olojs.protocols.file.get(`${__dirname}/../${path}`),
-        set: (path, source) => olojs.protocols.file.set(`${__dirname}/../${path}`, source),
-        delete: path => olojs.protocols.file.delete(`${__dirname}/../${path}`),
+
+// SUPPORT FUNCTIONS
+const isObject = obj => obj && typeof obj === 'object' && !Array.isArray(obj);
+const extend = (parent, child) => Object.assign(Object.create(parent), child);
+
+
+
+// CREATE THE ENVIRONMENT EXPORT
+const stores = {};
+
+// Load the custom stores from the package.json configuration
+if (isObject(config.stores)) {
+    for (let [store_name, package_name] of Object.entries(config.stores)) {
+        customStore[store_name] = require(package_name);
     }
 }
 
+// Add the default stores
+Object.assign(stores, {
+    home: new olojs.stores.FS(`${__dirname}/..`),
+    temp: new olojs.stores.Memory(),
+    http: new olojs.stores.HTTP('http://'),
+    https: new olojs.stores.HTTP('https://')
+});
 
-// Create the repository environmet, defined by the options in config.json
-const environment = olojs.Environment({
-    protocols: protocols,
-    routes: config.routes,
-    globals: config.globals ? require(config.globals) : {}
-});              
-
-
-// Extend the environment with the ability to load one of the servers
-// defined in config.json
-environment.createServer = function (type="http") {
-    const Server = require(config.servers[type]);
-    return Server(this);
-}      
+// Construct the environment and export it
+exports.environment = new olojs.Environment({
+    globals: isObject(config.globals) ? require(config.globals) : {},
+    store: new olojs.stores.Router(stores)
+});   
 
 
-// Export the repository environment
-module.exports = environment;
+
+// ENVIRONMENT SERVERS
+const servers = {};
+
+// Load the custom servers defined in package.json
+if (isObject(config.servers)) {
+    for (let [server_name, package_name] of Object.entries(config.servers)) {
+        servers[server_name] = require(package_name);
+    }
+}
+
+// Add the default server and export
+exports.servers = Object.assign(servers, {
+    http: olojs.servers.http
+});

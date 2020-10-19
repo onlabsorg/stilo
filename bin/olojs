@@ -31,12 +31,14 @@ cmd.command("render <path> [args...]")
         console.log(renderedDoc);
     });
 
-cmd.command("serve [port]")
+cmd.command("serve")
     .description("Serve the current repository over HTTP")
     .option('-t, --type <type>', "Define the type of server to be used")
-    .action(async (port=8010, flags) => {
+    .option('-p, --port <port>', "Define the port to listen to")
+    .action(async (flags) => {
         const serverType = flags.type || "http";
-        await repo.serve(port, flags.type);
+        const port = flags.port || 8010;
+        await repo.serve(serverType, port);
         logger.info(`${serverType} server listening on port ${port}`);
     });
 

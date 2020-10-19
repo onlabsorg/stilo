@@ -1,21 +1,11 @@
 {
     "main": "index",
     "dependencies": {
-        "@onlabsorg/olojs": "0.12.x"
+        "@onlabsorg/olojs": "0.13.x"
     },
-    "olonv": {
-        "protocols": {
-            "file" : "@onlabsorg/olojs/lib/protocols/file",
-            "http" : "@onlabsorg/olojs/lib/protocols/http",
-            "https": "@onlabsorg/olojs/lib/protocols/https",
-            "null" : "@onlabsorg/olojs/lib/protocols/null"
-        },
-        "routes": {
-            "/": "home:/"
-        },
-        "servers": {
-            "http": "@onlabsorg/olojs/lib/servers/http"
-        },
-        "globals": "./globals"
+    "olojs": {
+        "globals": "./globals",
+        "stores": {},
+        "servers": {}
     }
 }
