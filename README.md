@@ -1,5 +1,5 @@
 # olojs-cli
-This is a command line interface for managing olojs repositories. It allows
+This is a command line interface for managing [olojs] repositories. It allows
 creating a new repo, mounting external (local or remote) repos and serving
 the repo via internet.
 
@@ -45,7 +45,7 @@ via a hash query string (e.g. `localhost:8010/#/home/path/to/doc?p1=val1&p2=val2
 
 
 ### Customization
-Each repository is highly customizable, indeed the repository [environment](env) 
+Each repository is highly customizable, indeed the repository [environment][env]
 is the main export of the `.olonv` npm package created upon initialization. 
 If you speak javascript, you can modify the repo environment at will.
 
@@ -58,4 +58,5 @@ If you speak javascript, you can modify the repo environment at will.
 [MIT](https://opensource.org/licenses/MIT)
 
 
-[env]: https://github.com/onlabsorg/olojs/blob/master/docs/api/environment.md
+[olojs]: https://github.com/onlabsorg/olojs
+[env]: https://github.com/onlabsorg/olojs/blob/master/docs/environment.md
