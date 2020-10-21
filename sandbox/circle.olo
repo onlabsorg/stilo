@@ -1,4 +1,0 @@
-<% math = require 'math', pi = math.PI %>
-- Diameter: <% D: argns.D ; 100 %> mm
-- Perimeter: <% P: math.round(pi * D) %> mm
-- Area: <% A: math.round(pi * D^2 / 4) %> mm^2

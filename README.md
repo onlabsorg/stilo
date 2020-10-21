@@ -10,17 +10,16 @@ Install `olojs-cli` globally.
 npm install @onlabsorg/olojs-cli -g
 ```
 
-Initialize a new repo:
+Initialize a new library:
 
 ```
-cd /path/to/my-repo
+cd /path/to/my-library
 olojs init
 ```
 
-Render a document contained in my-repo:
+Render a document contained in my-library:
 
 ```
-cd /path/to/my-repo
 olojs render /home/path/to/doc
 ```
 
@@ -32,26 +31,69 @@ olojs render /home/path/to/doc
 >   The passed parameters will added to the document context under the `argns`
 >   namespace (argns={p1:val1, p2:val2, p3:val3, ...}).
 
-Serve the repo over http:
+Serve the library over http:
 
 ```
-cd /path/to/my-repo
 olojs serve
 ```
 
-Once the HTTP server is running, you can render the repo document in the browser
-by entering the URL `localhost:8010/#/home/path/to/doc` and optionally pass parameters
+Once the HTTP server is running, you can render the library documents in the browser
+by visiting the URL `localhost:8010/#/home/path/to/doc` and optionally pass parameters
 via a hash query string (e.g. `localhost:8010/#/home/path/to/doc?p1=val1&p2=val2`).
 
 
 ### Customization
-Each repository is highly customizable, indeed the repository [environment][env]
-is the main export of the `.olonv` npm package created upon initialization. 
-If you speak javascript, you can modify the repo environment at will.
+You have two types of customization in olojs:
 
->   cli commands for simple customization (e.g. olojs mount <target> <path>)
->   will be added soon to olojs-cli. Meanwhile please refer to the documentation
->   inside the `.olonv` package to learn how to customize the repo environment.
+* Mounting external stores to your library tree
+* Serving your library via custom servers
+
+In order to mount a new store or use a custom server, you first need to install
+a plugin that makes those functionalities available:
+
+```
+olojs install a-plugin
+```
+
+##### Mounting external stores
+
+Now that you have the `a-plugin` installed, you can mount one of the custom 
+stores it contains:
+
+```
+olojs mount github a-plugin/stores/github-store
+```
+
+After doing that, you can render the documents contained in the new store as
+follows:
+
+```
+olojs render /github/path/to/doc
+```
+
+or in your browser by visiting the url `localhost:8010#/github/path/to/doc`.
+
+##### Serving your library via custom servers
+
+You can use the servers contained in your plugins by adding a `-t` flag to the
+`serve` command:
+
+```
+olojs serve -t a-plugin/servers/http
+```
+
+For example, the `@onlabsorg/olowiki` plugin comes with a server that allows 
+you to view and edit your library documents in the browser. In order to have
+an olowiki up and running, all you have to do is:
+
+```
+olojs install @onlabsorg/olowiki
+olojs serve -t @onlabsorg/olowiki/server
+```
+
+### Learn more
+If you are a developer and you want to create your own plugin, check the
+[plugins](./docs/plugins.md) documentation.
 
 
 ### License
