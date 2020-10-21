@@ -23,7 +23,7 @@ export of a module:
 * A store object, inheriting from `olojs.stores.Empty` or any other of the 
   `olojs.stores`.
 * A Server, which is a function that takes an `olojs.Environment` object and
-  returns an server object with a `server.listen(port, callback)` method and a
+  returns a server object with a `server.listen(port, callback)` method and a
   `server.close()` mehtod.
     
 To get started with olojs programming, see [the olojs project on github](https://github.com/onlabsorg/olojs/blob/master/README.md).

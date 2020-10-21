@@ -1,7 +1,7 @@
 # olojs-cli
-This is a command line interface for managing [olojs] repositories. It allows
-creating a new repo, mounting external (local or remote) repos and serving
-the repo via internet.
+This is a command line interface for managing [olojs] documents libraries. 
+It allows creating a new library, mounting external (local or remote) stores 
+and serving the library via internet.
 
 ### Getting started
 Install `olojs-cli` globally.
@@ -28,7 +28,7 @@ olojs render /home/path/to/doc
 >
 >   `olojs render /path/to/doc p1=val1 p2=val2 p3=val3 ...`
 >
->   The passed parameters will added to the document context under the `argns`
+>   The passed parameters will be added to the document context under the `argns`
 >   namespace (argns={p1:val1, p2:val2, p3:val3, ...}).
 
 Serve the library over http:
@@ -52,26 +52,26 @@ In order to mount a new store or use a custom server, you first need to install
 a plugin that makes those functionalities available:
 
 ```
-olojs install a-plugin
+olojs install plugin-name
 ```
 
 ##### Mounting external stores
 
-Now that you have the `a-plugin` installed, you can mount one of the custom 
+Now that you have a plugin installed, you can mount one of the custom 
 stores it contains:
 
 ```
-olojs mount github a-plugin/stores/github-store
+olojs mount cstore plugin-name/path/to/custom/store
 ```
 
 After doing that, you can render the documents contained in the new store as
 follows:
 
 ```
-olojs render /github/path/to/doc
+olojs render /cstore/path/to/doc
 ```
 
-or in your browser by visiting the url `localhost:8010#/github/path/to/doc`.
+or in your browser by visiting the url `localhost:8010#/cstore/path/to/doc`.
 
 ##### Serving your library via custom servers
 
@@ -79,16 +79,7 @@ You can use the servers contained in your plugins by adding a `-t` flag to the
 `serve` command:
 
 ```
-olojs serve -t a-plugin/servers/http
-```
-
-For example, the `@onlabsorg/olowiki` plugin comes with a server that allows 
-you to view and edit your library documents in the browser. In order to have
-an olowiki up and running, all you have to do is:
-
-```
-olojs install @onlabsorg/olowiki
-olojs serve -t @onlabsorg/olowiki/server
+olojs serve -t plugin-name/path/to/custom/server
 ```
 
 ### Learn more
