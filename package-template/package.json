@@ -1,7 +1,7 @@
 {
     "main": "index",
     "dependencies": {
-        "@onlabsorg/olojs": "0.13.x"
+        "@onlabsorg/olojs": "0.14.x"
     },
     "olojs": {
         "globals": "./globals",
