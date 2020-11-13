@@ -3,8 +3,11 @@
 const logger = require("js-logger");
 logger.useDefaults();
 
-const Library = require("../lib/library");
-const library = new Library( process.cwd() );
+const pathlib = require('path');
+const fs = require('fs');
+const Package = require("../lib/package");
+const package = Package(process.cwd());
+
 
 
 const cmd = require("commander");
@@ -14,10 +17,20 @@ cmd.version(`v${require("../package.json").version}`, "-v --version");
 cmd.command("init")
     .description("Initializes the current directory as olo-docs repository")
     .action(async () => {
-        logger.info(`Initializing olo-documents repository ...`);
+        const cloneDirectory = require("../lib/clone-directory");
         try {
-            await library.init();
-            logger.info("Library successfully initialized.");
+            const packagePath = package.resolvePath('./');             
+            if (fs.existsSync(packagePath)) {
+                throw new Error("@olojs: Package already initialized");
+            }
+            
+            logger.info(`@olojs: Creating .olojs directory ...`);
+            await cloneDirectory(`${__dirname}/../package-template`, packagePath);
+            
+            logger.info(`@olojs: Installing dependencies ...\n`);
+            await package.spawn('npm', 'install');
+            
+            logger.info("@olojs: Package successfully initialized.");
         } catch (error) {
             logger.error(error.message);
         }
@@ -25,34 +38,37 @@ cmd.command("init")
     
 cmd.command("install <package>")
     .description("Installs an olojs plugin")
-    .action(async (package) => {
-        logger.info("Installing plugin ...");
+    .action(async (packageId) => {
+        logger.info(`@olojs: installing ${packageId}`);
         try {
-            await library.install(package);
-            let packageName = library.package.getPackageJson(package).name;
-            logger.info(`${packageName} successfully installed.`);
+            await package.spawn('npm', 'install', packageId, '--save');
+            logger.info(`@olojs: Installation terminated.`);
         } catch (error) {
             logger.error(error.message);
         }
     });
 
-cmd.command("mount <name> <path> [args...]")
+cmd.command("mount <route> <id> [args...]")
     .description("Creates a mount point for a store")
-    .action(async (name, path, ...args) => {
+    .action(async (route, id, args) => {
+        const normRoute = pathlib.normalize(`/${route}/`);
         try {
-            await library.mount(name, path);
-            logger.info(`${path} store mounted on /${name}`);
+            logger.info(`@olojs: Mounting ${id} store at ${normRoute}`);
+            package.mountStore(normRoute, id, ...args);
+            logger.info(`@olojs: Done.`);
         } catch (error) {
             logger.error(error.message);
         }
     });
 
-cmd.command("unmount <name>")
+cmd.command("unmount <route>")
     .description("Removes a store mount point")
-    .action(async (name) => {
+    .action(async (route) => {
+        const normRoute = pathlib.normalize(`/${route}/`);
         try {
-            await library.unmount(name);
-            logger.info(`Mount point /${name} removed`);
+            logger.info(`@olojs: Removing mount point ${normRoute} ...`);
+            await package.unmountStore(normRoute);
+            logger.info(`@olojs: Done.`);
         } catch (error) {
             logger.error(error.message);
         }
@@ -62,19 +78,27 @@ cmd.command("render <path> [args...]")
     .description("Render a document from the current repository")
     .action(async (path, args) => {     
         const id = path + '?' + args.join('&');
-        const renderedDoc = await library.render(id);
+        const environment = package.environment;
+        const doc = await environment.readDocument(id);
+        const context = doc.createContext();
+        const docNS = await doc.evaluate(context);
+        const renderedDoc = await environment.render(docNS);
         console.log(renderedDoc);
     });
 
 cmd.command("serve")
     .description("Serve the current repository over HTTP")
-    .option('-t, --type <type>', "Define the type of server to be used")
+    .option('-s, --server <type>', "Define the type of server to be used")
     .option('-p, --port <port>', "Define the port to listen to")
     .action(async (flags) => {
-        const serverType = flags.type || "@onlabsorg/olojs/lib/servers/http";
-        const port = flags.port || 8010;
-        await library.serve(serverType, port);
-        logger.info(`${serverType} server listening on port ${port}`);
+        const serverType = flags.server || "@onlabsorg/olojs/lib/servers/http";
+        const portNumber = flags.port || 8010;
+        const Server = package.require(serverType)
+        const server = Server(package.environment);
+        server.listen(portNumber, err => {
+            if (err) logger.error(err.message); 
+            else logger.info(`${serverType} server listening on port ${portNumber}`);
+        });
     });
 
 cmd.parse( process.argv );

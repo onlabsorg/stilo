@@ -1,15 +1,10 @@
 {
     "main": "index",
     "dependencies": {
-        "@onlabsorg/olojs": "0.14.x"
+        "@onlabsorg/olojs": "0.15.x"
     },
     "olojs": {
         "globals": "./globals",
-        "store": {
-            "http": ["@onlabsorg/olojs/lib/stores/http", "http:/"],
-            "https": ["@onlabsorg/olojs/lib/stores/http", "https:/"],
-            "temp": ["@onlabsorg/olojs/lib/stores/memory"]
-        },
-        "server": "@onlabsorg/olojs/lib/servers/http"
+        "routes": {}
     }
 }

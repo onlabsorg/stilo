@@ -61,25 +61,25 @@ Now that you have a plugin installed, you can mount one of the custom
 stores it contains:
 
 ```
-olojs mount cstore plugin-name/path/to/custom/store
+olojs mount /cstore/mount/point plugin-name/path/to/custom/store
 ```
 
 After doing that, you can render the documents contained in the new store as
 follows:
 
 ```
-olojs render /cstore/path/to/doc
+olojs render /cstore/mount/point/path/to/doc
 ```
 
-or in your browser by visiting the url `localhost:8010#/cstore/path/to/doc`.
+or in your browser by visiting the url `localhost:8010#/cstore/mount/point/path/to/doc`.
 
 ##### Serving your library via custom servers
 
-You can use the servers contained in your plugins by adding a `-t` flag to the
+You can use the servers contained in your plugins by adding a `-s` flag to the
 `serve` command:
 
 ```
-olojs serve -t plugin-name/path/to/custom/server
+olojs serve -s plugin-name/path/to/custom/server
 ```
 
 ### Learn more
