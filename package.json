@@ -7,7 +7,7 @@
     "olojs": "./bin/olojs"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha test/index.js"
   },
   "repository": {
     "type": "git",
@@ -21,7 +21,11 @@
   "homepage": "https://github.com/onlabsorg/olojs-cli#readme",
   "dependencies": {
     "commander": "^6.1.0",
-    "js-logger": "^1.6.0",
+    "js-logger": "^1.6.1",
     "ncp": "^2.0.0"
+  },
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "rimraf": "^3.0.2"
   }
 }

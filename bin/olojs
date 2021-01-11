@@ -5,100 +5,120 @@ logger.useDefaults();
 
 const pathlib = require('path');
 const fs = require('fs');
+
 const Package = require("../lib/package");
-const package = Package(process.cwd());
-
-
 
 const cmd = require("commander");
 
 cmd.version(`v${require("../package.json").version}`, "-v --version");
 
 cmd.command("init")
-    .description("Initializes the current directory as olo-docs repository")
+    .description("Initializes the current directory as the root of an olojs document package")
     .action(async () => {
-        const cloneDirectory = require("../lib/clone-directory");
         try {
-            const packagePath = package.resolvePath('./');             
-            if (fs.existsSync(packagePath)) {
-                throw new Error("@olojs: Package already initialized");
-            }
-            
-            logger.info(`@olojs: Creating .olojs directory ...`);
-            await cloneDirectory(`${__dirname}/../package-template`, packagePath);
-            
-            logger.info(`@olojs: Installing dependencies ...\n`);
-            await package.spawn('npm', 'install');
-            
+            logger.info(`@olojs: Initializing olojs package ...`);            
+            const package = await Package.create(process.cwd());
             logger.info("@olojs: Package successfully initialized.");
+            
         } catch (error) {
             logger.error(error.message);
         }
     });
     
-cmd.command("install <package>")
-    .description("Installs an olojs plugin")
+cmd.command("install <plugin>")
+    .description("Installs a plugin")
     .action(async (packageId) => {
         logger.info(`@olojs: installing ${packageId}`);
         try {
-            await package.spawn('npm', 'install', packageId, '--save');
-            logger.info(`@olojs: Installation terminated.`);
+            const package = Package.find(process.cwd());
+            await package.install(packageId);
+            logger.info(`@olojs: ${packageId} plugin installed`);
+            
         } catch (error) {
             logger.error(error.message);
         }
     });
 
-cmd.command("mount <route> <id> [args...]")
-    .description("Creates a mount point for a store")
-    .action(async (route, id, args) => {
-        const normRoute = pathlib.normalize(`/${route}/`);
+cmd.command("uninstall <plugin>")
+    .description("Uninstalls a plugin")
+    .action(async (packageId) => {
+        logger.info(`@olojs: uninstalling ${packageId}`);
         try {
-            logger.info(`@olojs: Mounting ${id} store at ${normRoute}`);
-            package.mountStore(normRoute, id, ...args);
-            logger.info(`@olojs: Done.`);
-        } catch (error) {
-            logger.error(error.message);
-        }
-    });
-
-cmd.command("unmount <route>")
-    .description("Removes a store mount point")
-    .action(async (route) => {
-        const normRoute = pathlib.normalize(`/${route}/`);
-        try {
-            logger.info(`@olojs: Removing mount point ${normRoute} ...`);
-            await package.unmountStore(normRoute);
-            logger.info(`@olojs: Done.`);
+            const package = Package.find(process.cwd());
+            await package.uninstall(packageId);
+            logger.info(`@olojs: ${packageId} plugin uninstalled`);
+            
         } catch (error) {
             logger.error(error.message);
         }
     });
 
 cmd.command("render <path> [args...]")
-    .description("Render a document from the current repository")
-    .action(async (path, args) => {     
-        const id = path + '?' + args.join('&');
-        const environment = package.environment;
-        const doc = await environment.readDocument(id);
-        const context = doc.createContext();
-        const docNS = await doc.evaluate(context);
-        const renderedDoc = await environment.render(docNS);
-        console.log(renderedDoc);
+    .description("Render a document and prints it to the stdout")
+    .action(async (path, args) => {
+        try {
+            const package = Package.find(process.cwd());
+            const store = new package.olojs.Router(package.config.routes);
+
+            const id = resolveDocumentPath(package, path) + '?' + args.join('&');
+            const doc = await store.load(id);
+            const context = doc.createContext();
+            const docNS = await doc.evaluate(context);
+            const renderedDoc = await context.str(docNS);
+            console.log(renderedDoc);
+            
+        } catch (error) {
+            logger.error(error.message);
+        }
     });
 
-cmd.command("serve")
-    .description("Serve the current repository over HTTP")
-    .option('-s, --server <type>', "Define the type of server to be used")
+cmd.command("list [path]")
+    .description("Lists the content of a directory")
+    .action(async (path=".") => {
+        try {
+            const package = Package.find(process.cwd());   
+            const store = new package.olojs.Router(package.config.routes);
+            const dirPath = resolveDocumentPath(package, path);
+            const items = (await store.list(dirPath)).filter(name => name[0] !== '.');
+            console.log(`${items.length} items found in ${dirPath}:`);
+            for (let item of items) console.log(`- ${item}`);
+            
+        } catch (error) {
+            logger.error(error.message);
+        }
+    });
+
+cmd.command("start [server-name]")
+    .description("Serve the current package over HTTP")
     .option('-p, --port <port>', "Define the port to listen to")
-    .action(async (flags) => {
-        const serverType = flags.server || "@onlabsorg/olojs/lib/servers/http";
-        const portNumber = flags.port || 8010;
-        const Server = package.require(serverType)
-        const server = Server(package.environment);
-        server.listen(portNumber, err => {
-            if (err) logger.error(err.message); 
-            else logger.info(`${serverType} server listening on port ${portNumber}`);
-        });
+    .action((serverName, flags) => {
+        try {
+            if (!serverName) serverName = "default";
+            const portNumber = flags.port || 8010;
+
+            const package = Package.find(process.cwd());                
+            const {routes, servers} = package.config;
+            const store = new package.olojs.Router(package.config.routes);
+            
+            const Server = servers[serverName];
+            if (!Server) throw new Error(`Unknown serve: ${serverName}`);
+            
+            Server(store).listen(portNumber, err => {
+                if (err) logger.error(err.message); 
+                else logger.info(`${serverName} server listening on port ${portNumber}`);
+            });    
+            
+        } catch (error) {
+            logger.error(error.message);
+        }
     });
 
 cmd.parse( process.argv );
+
+
+
+function resolveDocumentPath (package, path) {
+    const rootPath = package.resolvePath('..');
+    const relativeCWD = pathlib.join('/', process.cwd().slice(rootPath.length));
+    return pathlib.join(relativeCWD, path);
+}

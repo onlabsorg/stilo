@@ -1,33 +1,47 @@
-This npm package is used by the `olojs` command-line interface to
+# .olojs package
 
-* Generate the olojs environment
-* Serve the olojs environment
+This is a npm package containing the configuration of the olojs document
+package rooted in its parent directory.
 
-The `package.json` file contains an `"olojs"` object:
+The main export of the package consists of two objects:
+
+* `routes` contains the routes that will be passed to `olojs.Router`
+  to create the document package store. The root path `/` maps to a file-store
+  rooted in the directory that contains `.olojs`.
+* `servers` is an object containing a set of store servers. Each server
+  is a function that takes an olojs store as parameter and returns an NodeJS
+  `http.Server` object. The default server constructor is 
+  `olojs.HTTPServer.createServer`.
+  
+  
+The `/config/` folder contains further configuration data:
+ 
+* `/config/plugins.json` is a json file that contains the array of all the
+  installed plugins.
+  
+> A plugin is just another npm package installed as dependency of .olojs
+   
+The `olojs` cli, once executed, searches fro the first occurrence of the
+`.olojs` package in the current working directory and its parent directories.
+Once the `.olojs` package is found, loads it an builds a `config` object
+as follows:
+ 
+* `config.routes` contains the `routes` object exported by the `.olojs`
+  package, mixed-in with the `routes` objects exported by all the installed
+  plugins. 
+* `config.servers` contains the `servers` object exported by the `.olojs`
+  package, mixed-in with the `server` objects exported by all the installed
+  plugins.
+
+The config object is used by the `render` and `list` commands to build the
+document package store as follows:
 
 ```js
-"olojs": {
-    
-    // document global variables to be added to the environment upon creation
-    // the globals are loaded via npm require    
-    "globals": "./globals",
-    
-    // custom stores to be added to the environment router upon creation.
-    // Each store is defined by an array [path, ...args], where path is the
-    // module path of the store class, while ...args are passed to the
-    // store constructor.
-    "store": {
-        "http": ["@onlabsorg/olojs/lib/stores/http", "http:/"],
-        "https": ["@onlabsorg/olojs/lib/stores/http", "https:/"],
-        "temp": ["@onlabsorg/olojs/lib/stores/memory"]
-    },
-
-    // When olojs initi doesn't specify a --type parameter, the following
-    // server will be used as defualt.
-    "server": "@onlabsorg/olojs/lib/servers/http"    
-}
+store = olojs.Router(config.routes);
 ```
 
-Stores can be added and removed with the `olojs mount` and `olojs unmount`
-commands, while the other properties can be modified by edition the
-`package.json` file.
+The config object is used by the `start` command to retrieve the server to be
+started. If no server name is passed to the command line, then the `default`
+server is used.
+
+   

@@ -2,6 +2,6 @@
     "main": "config",
     "version": "0.1.0",
     "dependencies": {
-        "@onlabsorg/olojs": "0.16.x"
+        "@onlabsorg/olojs": "/home/marcello/shortcuts/olojs"
     }
 }
