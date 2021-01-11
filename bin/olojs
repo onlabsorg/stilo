@@ -120,5 +120,5 @@ cmd.parse( process.argv );
 function resolveDocumentPath (package, path) {
     const rootPath = package.resolvePath('..');
     const relativeCWD = pathlib.join('/', process.cwd().slice(rootPath.length));
-    return pathlib.join(relativeCWD, path);
+    return pathlib.resolve(relativeCWD, path);
 }

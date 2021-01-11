@@ -1,7 +1,0 @@
-{
-    "main": "config",
-    "version": "0.1.0",
-    "dependencies": {
-        "@onlabsorg/olojs": "/home/marcello/shortcuts/olojs"
-    }
-}
