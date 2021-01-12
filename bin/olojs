@@ -58,14 +58,9 @@ cmd.command("render <path> [args...]")
     .action(async (path, args) => {
         try {
             const package = Package.find(process.cwd());
-            const store = new package.olojs.Router(package.config.routes);
-
             const id = resolveDocumentPath(package, path) + '?' + args.join('&');
-            const doc = await store.load(id);
-            const context = doc.createContext();
-            const docNS = await doc.evaluate(context);
-            const renderedDoc = await context.str(docNS);
-            console.log(renderedDoc);
+            const {text} = await package.store.load(id);
+            console.log(text);
             
         } catch (error) {
             logger.error(error.message);
@@ -77,9 +72,8 @@ cmd.command("list [path]")
     .action(async (path=".") => {
         try {
             const package = Package.find(process.cwd());   
-            const store = new package.olojs.Router(package.config.routes);
             const dirPath = resolveDocumentPath(package, path);
-            const items = (await store.list(dirPath)).filter(name => name[0] !== '.');
+            const items = (await package.store.list(dirPath)).filter(name => name[0] !== '.');
             console.log(`${items.length} items found in ${dirPath}:`);
             for (let item of items) console.log(`- ${item}`);
             

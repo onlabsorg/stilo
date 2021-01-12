@@ -17,7 +17,7 @@ describe("Package", () => {
     describe("Package.create", () => {
         
         it("should clone and install the package-template", async function () {
-            this.timeout(5000);
+            this.timeout(10000);
             var dirPath = pathlib.join(__dirname, 'package');
             expect(fs.existsSync(pathlib.join(dirPath, Package.DIR_NAME))).to.be.false;
             var pkg = await Package.create(dirPath);
