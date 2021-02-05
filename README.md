@@ -1,6 +1,6 @@
 # olojs-cli
-This is a command line interface for managing [olojs] document packages. 
-It allows creating a new package, mounting external (local or remote) stores 
+This is a command line interface for managing [olojs] document packages.
+It allows creating a new package, mounting external (local or remote) stores
 and serving the documents over the internet.
 
 ### Getting started
@@ -41,12 +41,12 @@ Once the HTTP server is running, you can render the library documents in the bro
 by visiting the URL `localhost:8010/#/path/to/doc` and optionally pass parameters
 via a hash query string (e.g. `localhost:8010/#/path/to/doc?p1=val1;p2=val2`).
 
-For a full description of the commands available, read the 
+For a full description of the commands available, read the
 [cli documentation](./docs/cli.md).
 
 
 ### Plugins
-Plugins are npm packages that can mount one or more custom stores to the main 
+Plugins are npm packages that can mount one or more custom stores to the main
 store tree and/or make one or more custom servers available.
 
 In order to install a plugin, you use the `install` olojs command, followed
