@@ -5,17 +5,17 @@ var rimraf = require('rimraf');
 var Package = require('../lib/package');
 
 describe("Package", () => {
-    
+
     before(function () {
         this.timeout(5000);
         var dirPath = pathlib.join(__dirname, 'package');
         if (fs.existsSync(dirPath)) rimraf.sync(dirPath);
-        fs.mkdirSync(dirPath);    
+        fs.mkdirSync(dirPath);
         fs.mkdirSync(pathlib.join(dirPath, 'dir'));
     });
-    
+
     describe("Package.create", () => {
-        
+
         it("should clone and install the package-template", async function () {
             this.timeout(10000);
             var dirPath = pathlib.join(__dirname, 'package');
@@ -26,9 +26,9 @@ describe("Package", () => {
             expect(fs.existsSync(pathlib.join(dirPath, Package.DIR_NAME, 'node_modules'))).to.be.true;
         });
     });
-    
+
     describe("Package.find", () => {
-        
+
         it("should return a Package instance pointing to the first occurence of the `.olojs` folder", () => {
             var pkg = Package.find(pathlib.join(__dirname, 'package'));
             expect(pkg).to.be.instanceof(Package);
@@ -38,7 +38,7 @@ describe("Package", () => {
             expect(pkg).to.be.instanceof(Package);
             expect(pkg.path).to.equal(pathlib.join(__dirname, 'package', Package.DIR_NAME));
         });
-        
+
         it("should throw an error if no `.olojs` folder is found", () => {
             try {
                 var pkg = Package.find(pathlib.join('/usr/etc'));
@@ -48,9 +48,9 @@ describe("Package", () => {
             }
         });
     });
-    
+
     describe("Package.prototype.olojs", () => {
-        
+
         it("should return the installed olojs package", () => {
             var pkg = new Package(pathlib.join(__dirname, 'package', Package.DIR_NAME));
             var olojs = require(pathlib.join(__dirname, 'package', Package.DIR_NAME, 'node_modules/@onlabsorg/olojs'));
@@ -59,7 +59,7 @@ describe("Package", () => {
     });
 
     describe("Package.prototype.config", () => {
-        
+
         it("should return the installed olojs package", () => {
             var pkg = new Package(pathlib.join(__dirname, 'package', Package.DIR_NAME));
             var config = require(pathlib.join(__dirname, 'package', Package.DIR_NAME, 'config.js'));
@@ -68,7 +68,7 @@ describe("Package", () => {
     });
 
     describe("Package.prototype.install", () => {
-        
+
         it("should install the given package", async function () {
             this.timeout(5000);
             var pkg = new Package(pathlib.join(__dirname, 'package', Package.DIR_NAME));
@@ -85,14 +85,14 @@ describe("Package", () => {
             for (let route in testPlugin.routes) {
                 expect(config.routes[route]).to.equal(testPlugin.routes[route]);
             }
-            for (let server in testPlugin.servers) {
-                expect(config.servers[server]).to.equal(testPlugin.servers[server]);
+            for (let commandName in testPlugin.commands) {
+                expect(config.commands[commandName]).to.equal(testPlugin.commands[commandName]);
             }
         });
     });
 
     describe("Package.prototype.uninstall", () => {
-        
+
         it("should install the given package", async function () {
             this.timeout(5000);
             var pkg = new Package(pathlib.join(__dirname, 'package', Package.DIR_NAME));
@@ -110,8 +110,8 @@ describe("Package", () => {
             var config = pkg.config;
             expect(config.routes['/test/route1']).to.be.undefined;
             expect(config.routes['/test/route2']).to.be.undefined;
-            expect(config.servers['test-srv1']).to.be.undefined;
-            expect(config.servers['test-srv2']).to.be.undefined;
+            expect(config.commands['test-srv1']).to.be.undefined;
+            expect(config.commands['test-srv2']).to.be.undefined;
         });
     });
 });

@@ -34,7 +34,7 @@ olojs render /path/to/doc
 Serve the library over http:
 
 ```
-olojs start
+olojs run http-static-server
 ```
 
 Once the HTTP server is running, you can render the library documents in the browser
@@ -47,7 +47,7 @@ For a full description of the commands available, read the
 
 ### Plugins
 Plugins are npm packages that can mount one or more custom stores to the main
-store tree and/or make one or more custom servers available.
+store tree and/or make one or more custom commands available.
 
 In order to install a plugin, you use the `install` olojs command, followed
 by the name of the npm package that contains the plugin.

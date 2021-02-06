@@ -4,6 +4,6 @@ exports.routes = {
     '/': new olojs.FileStore(`${__dirname}/..`),
 };
 
-exports.servers = {
-    default: store => olojs.HTTPServer.createServer(store)
+exports.commands = {
+    "http-static-server": require('./lib/http-static-server')
 }

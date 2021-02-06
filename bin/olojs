@@ -10,7 +10,9 @@ const Package = require("../lib/package");
 
 const cmd = require("commander");
 
+
 cmd.version(`v${require("../package.json").version}`, "-v --version");
+
 
 cmd.command("init")
     .description("Initializes the current directory as the root of an olojs document package")
@@ -24,6 +26,7 @@ cmd.command("init")
             logger.error(error.message);
         }
     });
+
 
 cmd.command("install <plugin>")
     .description("Installs a plugin")
@@ -39,6 +42,7 @@ cmd.command("install <plugin>")
         }
     });
 
+
 cmd.command("uninstall <plugin>")
     .description("Uninstalls a plugin")
     .action(async (packageId) => {
@@ -52,6 +56,7 @@ cmd.command("uninstall <plugin>")
             logger.error(error.message);
         }
     });
+
 
 cmd.command("read <path>")
     .description("Fetches a document source and prints it to the stdout")
@@ -67,6 +72,7 @@ cmd.command("read <path>")
         }
     });
 
+
 cmd.command("render <path> [args...]")
     .description("Render a document and prints it to the stdout")
     .action(async (path, args) => {
@@ -80,6 +86,7 @@ cmd.command("render <path> [args...]")
             logger.error(error.message);
         }
     });
+
 
 cmd.command("list [path]")
     .description("Lists the content of a directory")
@@ -96,32 +103,26 @@ cmd.command("list [path]")
         }
     });
 
-cmd.command("start [server-name]")
-    .description("Serve the current package over HTTP")
-    .option('-p, --port <port>', "Define the port to listen to")
-    .action((serverName, flags) => {
+
+cmd.command("run <command-name> [args...]")
+    .description("Runs one of the plugged-in commands")
+    .action(async (commandName, args) => {
         try {
-            if (!serverName) serverName = "default";
-            const portNumber = flags.port || 8010;
-
             const package = Package.find(process.cwd());
-            const {routes, servers} = package.config;
-            const store = new package.olojs.Router(package.config.routes);
+            const {routes, commands} = package.config;
 
-            const Server = servers[serverName];
-            if (!Server) throw new Error(`Unknown server: ${serverName}`);
+            const command = commands[commandName];
+            if (!command) throw new Error(`Unknown command: ${commandName}`);
 
-            Server(store).listen(portNumber, err => {
-                if (err) logger.error(err.message);
-                else logger.info(`${serverName} server listening on port ${portNumber}`);
-            });
+            const store = new package.olojs.Router(routes);
+            const options = parseParameters(...args);
+
+            await command(store, options);
 
         } catch (error) {
-            logger.error(error.message);
+             logger.error(error.message);
         }
     });
-
-cmd.parse( process.argv );
 
 
 
@@ -130,3 +131,29 @@ function resolveDocumentPath (package, path) {
     const relativeCWD = pathlib.join('/', process.cwd().slice(rootPath.length));
     return pathlib.resolve(relativeCWD, path);
 }
+
+// Given a list of argument ['par1=val1', 'par2=val2', 'par3=val3', ...],
+// converts it to an object ontaining the ke-value pair contained in the list
+function parseParameters (...keyValuePairs) {
+    const argns = {};
+    for (let keyValuePair of keyValuePairs) {
+        const separatorIndex = keyValuePair.indexOf("=");
+        if (separatorIndex === -1) {
+            let name = keyValuePair.trim();
+            if (isValidName(name)) argns[name] = true;
+        } else {
+            let name = keyValuePair.slice(0, separatorIndex).trim();
+            if (isValidName(name)) {
+                let string = keyValuePair.slice(separatorIndex+1).trim();
+                let number = Number(string);
+                argns[name] = isNaN(number) ? string : number;
+            }
+        }
+    }
+    return argns;
+}
+
+const isValidName = val => /^[a-z_A-Z]+[a-z_A-Z0-9]*$/.test(val);
+
+
+cmd.parse( process.argv );

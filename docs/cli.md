@@ -4,19 +4,20 @@
 Usage: olojs [options] [command]
 
 Options:
-  -v --version                   output the version number
-  -h, --help                     display help for command
+  -v --version                  output the version number
+  -h, --help                    display help for command
 
 Commands:
-  init                           Initializes the current directory as the
-                                 root of an olojs document package
-  install <plugin>               Installs a plugin
-  uninstall <plugin>             Uninstalls a plugin
-  render <path> [args...]        Render a document and prints it to the
-                                 stdout
-  list [path]                    Lists the content of a directory
-  start [options] [server-name]  Serve the current package over HTTP
-  help [command]                 display help for command
+  init                          Initializes the current directory as the root
+                                of an olojs document package
+  install <plugin>              Installs a plugin
+  uninstall <plugin>            Uninstalls a plugin
+  read <path>                   Fetches a document source and prints it to
+                                the stdout
+  render <path> [args...]       Render a document and prints it to the stdout
+  list [path]                   Lists the content of a directory
+  run <command-name> [args...]  Runs one of the plugged-in commands
+  help [command]                display help for command
 ```
 
 ## olojs init
@@ -64,13 +65,11 @@ The path can be relative to the current working directory (see render command)
 and, if omitted, it defaults to `.`.
 
 
-## olojs start [server-name] [options]
-Starts an HTTP server which serves the document package store over HTTP. The
-`server-name` parameter is the name of one of the installed servers. If omitted
-it will default to the `olojs` built-in server.
+## olojs run <command-name> [options]
+Runs a plugged-in command with the give options (see [plugins](./plugins.md)).
 
-The serve will listen by default to port `8010`, but that can be changed with
-the option `-p <port-number>` or `--port <port-number>`.
+The only default command is `http-static-server` that takes an optional
+`port=XXXX` parameters and starts the olojs HTTPServer.
 
 
 ## olojs install <plugin-name>

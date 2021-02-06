@@ -7,9 +7,9 @@ An olojs plugin is a NodeJS package installable via npm. The main export of the
 plugin package may contain the followin objects:
 
 * `routes`: an object defining new store mounting points
-* `servers`: an object defining new store servers
+* `commands`: an object defining new commands executable via `olojs run cmd`.
 
-In an existing olojs document package, a plugin can be installed via the 
+In an existing olojs document package, a plugin can be installed via the
 command `olojs install <package-name>` and uninstalled via the command
 `olojs uninstall <package-name>`.
 
@@ -29,23 +29,19 @@ Each store will be mounted to the olojs document package store at the given
 path.
 
 
-### Adding custom servers
-If present, the `servers` main export should be an object containing one or
-more NodeJS http.Server constructors:
+### Adding custom commands
+If present, the `commands` main export should be an object containing one or
+more NodeJS functions that take an olojs Store as first parameters and an
+options object as second parameter:
 
 ```js
-exports.servers = {
-    "my-custom-server": store => MyCustomServer(store),
-    ...
+exports.commands = {
+    "my-custom-command": async (store, options) => { /*...*/ },
+    /* ... */
 }
 ```
 
-Each server constructor is a function that takes the olojs document package
-store as parameter and returns a NodeJS `http.Server` object which is
-supposed to serve the store over HTTP.
-
-Each custom server can be started from the command line as follows:
-
-```
-olojs start my-custom-server
-```
+When the command `olojs run my-custom-command key1=val1 key2=val2 ...` is executed,
+the function `commands["my-custom-command"]` will be called with the document
+package store as first argument and the object `{key1:val1, key2:val2, ...}` as
+second argument.
