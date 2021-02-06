@@ -36,7 +36,7 @@ The `config` object can be manually modified by editing `.olojs/config.js`, but
 the master way to customize the document package is via [plugins](./plugins.md).
 
 
-## olojs render <path> [args]
+## olojs render &lt;path&gt; [args]
 Renders the document mapped to the passed path and prints the rendered content
 to screen.
 
@@ -50,7 +50,7 @@ parameters will be parsed into a javascript object that will be added to the
 document namespace as `argns` before rendering it.
 
 
-## olojs read <path>
+## olojs read &lt;path&gt;
 Fetches the document mapped to the passed path and prints its raw content
 to screen.
 
@@ -65,14 +65,14 @@ The path can be relative to the current working directory (see render command)
 and, if omitted, it defaults to `.`.
 
 
-## olojs run <command-name> [options]
+## olojs run &lt;command-name&gt; [options]
 Runs a plugged-in command with the give options (see [plugins](./plugins.md)).
 
 The only default command is `http-static-server` that takes an optional
 `port=XXXX` parameters and starts the olojs HTTPServer.
 
 
-## olojs install <plugin-name>
+## olojs install &lt;plugin-name&gt;
 Installs a plugin as a dependency of the `.olojs` npm package.
 
 A plugin is any npm package that exports a `plugin` object containing a custom
@@ -87,5 +87,5 @@ In other words:
   `olojs start my-server`.
 
 
-## olojs uninstall <plugin-name>
+## olojs uninstall &lt;plugin-name&gt;
 Removes a previously installed plugin.
