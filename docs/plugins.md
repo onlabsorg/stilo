@@ -7,6 +7,7 @@ An olojs plugin is a NodeJS package installable via npm. The main export of the
 plugin package may contain the followin objects:
 
 * `routes`: an object defining new store mounting points
+* `protocols`: an object defining new protocol stores
 * `commands`: an object defining new commands executable via `olojs run cmd`.
 
 In an existing olojs document package, a plugin can be installed via the
@@ -14,7 +15,7 @@ command `olojs install <package-name>` and uninstalled via the command
 `olojs uninstall <package-name>`.
 
 
-### Adding custom stores
+### Adding custom routes
 If present, the `routes` main export should be an object containing path-store
 pairs, where `store` should be a `olojs.Store` instance:
 
@@ -27,6 +28,21 @@ exports.routes = {
 
 Each store will be mounted to the olojs document package store at the given
 path.
+
+
+### Adding custom protocols
+If present, the `protocols` main export should be an object containing scheme-store
+pairs, where `store` should be a `olojs.Store` instance:
+
+```js
+exports.protocols = {
+    "ppp": store,
+    ...
+}
+```
+
+Each store will be mapped to the key scheme and used each time a matching
+URI is used as path argument of the router methods.
 
 
 ### Adding custom commands
