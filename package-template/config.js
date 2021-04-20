@@ -1,8 +1,7 @@
 const olojs = require('@onlabsorg/olojs');
-const Router = require('./lib/router');
 
 exports.routes = {
-    '/'         : new olojs.FileStore(`${__dirname}/..`),
+    '/': new olojs.FileStore(`${__dirname}/..`),
 };
 
 exports.protocols = {
@@ -10,6 +9,6 @@ exports.protocols = {
     'https':    new olojs.HTTPStore('https:/'),
 };
 
-exports.commands = {
-    "http-static-server": require('./lib/http-static-server')
+exports.middlewares = {
+    "/": olojs.HTTPServer.ViewerMiddleware.bind(olojs.HTTPServer)
 };

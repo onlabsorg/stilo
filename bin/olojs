@@ -104,20 +104,16 @@ cmd.command("list [path]")
     });
 
 
-cmd.command("run <command-name> [args...]")
-    .description("Runs one of the plugged-in commands")
-    .action(async (commandName, args) => {
+cmd.command("start [port]")
+    .description("Serves the current package over HTTP")
+    .action(async (port=8010) => {
         try {
+            const Server = require('../lib/http-server');
             const package = Package.find(process.cwd());
-            const {routes, commands} = package.config;
-
-            const command = commands[commandName];
-            if (!command) throw new Error(`Unknown command: ${commandName}`);
-
-            const store = new package.olojs.Router(routes);
-            const options = parseParameters(...args);
-
-            await command(store, options);
+            const server = Server(package);
+            await new Promise((resolve, reject) => server.listen(port, 
+                        err => err ? reject(err) : resolve() ));
+            console.log(`olojs server listening on port ${port}`);
 
         } catch (error) {
              logger.error(error.message);

@@ -17,7 +17,7 @@ describe("Package", () => {
     describe("Package.create", () => {
 
         it("should clone and install the package-template", async function () {
-            this.timeout(10000);
+            this.timeout(60000);
             var dirPath = pathlib.join(__dirname, 'package');
             expect(fs.existsSync(pathlib.join(dirPath, Package.DIR_NAME))).to.be.false;
             var pkg = await Package.create(dirPath);
@@ -82,12 +82,24 @@ describe("Package", () => {
             var pkg = new Package(pathlib.join(__dirname, 'package', Package.DIR_NAME));
             var testPlugin = pkg.require('test-plugin')
             var config = pkg.config;
-            for (let route in testPlugin.routes) {
-                expect(config.routes[route]).to.equal(testPlugin.routes[route]);
-            }
-            for (let commandName in testPlugin.commands) {
-                expect(config.commands[commandName]).to.equal(testPlugin.commands[commandName]);
-            }
+
+            expect(config.routes['/test/route1']).to.be.an('object');
+            expect(config.routes['/test/route1']).to.equal(testPlugin.routes['/test/route1']);
+
+            expect(config.routes['/test/route2']).to.be.an('object');
+            expect(config.routes['/test/route2']).to.equal(testPlugin.routes['/test/route2']);
+
+            expect(config.protocols['ppp1']).to.be.an('object');
+            expect(config.protocols['ppp1']).to.equal(testPlugin.protocols['ppp1']);
+            
+            expect(config.protocols['ppp2']).to.be.an('object');
+            expect(config.protocols['ppp2']).to.equal(testPlugin.protocols['ppp2']);
+            
+            expect(config.middlewares['/mw1']).to.be.a('function')
+            expect(config.middlewares['/mw1']).to.equal(testPlugin.middlewares['/mw1']);
+
+            expect(config.middlewares['/mw2']).to.be.a('function')
+            expect(config.middlewares['/mw2']).to.equal(testPlugin.middlewares['/mw2']);
         });
     });
 
@@ -110,8 +122,10 @@ describe("Package", () => {
             var config = pkg.config;
             expect(config.routes['/test/route1']).to.be.undefined;
             expect(config.routes['/test/route2']).to.be.undefined;
-            expect(config.commands['test-srv1']).to.be.undefined;
-            expect(config.commands['test-srv2']).to.be.undefined;
+            expect(config.protocols['ppp1']).to.be.undefined;
+            expect(config.protocols['ppp2']).to.be.undefined;
+            expect(config.middlewares['/mw1']).to.be.undefined;
+            expect(config.middlewares['/mw2']).to.be.undefined;
         });
     });
 });
