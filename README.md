@@ -1,7 +1,7 @@
 # olojs-cli
 This is a command line interface for managing [olojs] document packages.
 It allows creating a new package, mounting external (local or remote) stores
-and serving the documents over the internet.
+and serving the documents over HTTP.
 
 ### Getting started
 Install `olojs-cli` globally.
@@ -59,12 +59,21 @@ olojs install plugin-name
 In order to uninstall a plugin, you use the `uninstall` olojs command, followed
 by the name of the npm package that contains the plugin.
 
-If you are a developer and you want to create your own plugin, check the
-[plugins](./docs/plugins.md) documentation.
+> If you are a developer and you want to create your own plugin or customize the
+> way a package behaves, check the [package documentation](./package-template/README.md).
 
 
 ### License
 [MIT](https://opensource.org/licenses/MIT)
 
 
+### Related projects
+
+* [olojs] is a content management system based on a distributed network of 
+  documents having the following properties.
+* [olowiki] is a plugin that allows to render and edit an olojs document package
+  in the browser.
+
+
 [olojs]: https://github.com/onlabsorg/olojs
+[olowiki]: https://github.com/onlabsorg/olowiki

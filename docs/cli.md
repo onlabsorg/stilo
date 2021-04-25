@@ -22,20 +22,12 @@ Commands:
 
 ## olojs init
 This command creates a `.olojs` sub-directory inside the current directory.
-The `.olojs` directory is a npm package that exports a `config` object:
+The `.olojs` directory is a npm package that exposes the following scripts:
 
-* `config.routes` contains the routes that will be passed to `olojs.Router`
-  to create the document package store. The root path `/` maps to a file-store
-  rooted in the directory that contains `.olojs`.
-* `config.protocols` contains the protocol schemes that will be passed to `olojs.Router`
-  to create the document package store. The protocols `http` and `https` are
-  defined by default.
-* `config.middlewares` is an object mapping paths to express middleware constructors. 
-  The `olojs start` create a HTTP serve and mount all the middleware to their
-  paths. Each middleware will be created by passign the package store as argument.  
-
-The `config` object can be manually modified by editing `.olojs/config.js`, but
-the master way to customize the document package is via [plugins](./plugins.md).
+* `store.js` exports the olojs Store that will be used by the `read`, `render`
+  and `list` commands. 
+* `server.js` exports the HTTP server that will be started via the `start`
+  command.
 
 
 ## olojs render &lt;path&gt; [args]
@@ -68,29 +60,22 @@ and, if omitted, it defaults to `.`.
 
 
 ## olojs start [port]
-Starts serving the current package over HTTP. The server is made of a collection
-of middlewares, defined in `config.middleware`.
+Starts serving the current package over HTTP. The server is the export of
+`.olojs/server.js`.
 
-By default, the row document are served at `/docs/path/to/doc` and rendered
+By default, the raw document are served at `/docs/path/to/doc` and rendered
 documents are served at `/#/path/to/doc`.
 
 
 ## olojs install &lt;plugin-name&gt;
-Installs a plugin as a dependency of the `.olojs` npm package.
+Installs a new npm package as dependency of the `.olojs` package and registers 
+it as a plugin. 
 
-A plugin is any npm package that exports a `plugin` object containing custom
-`plugin.routes`, `plugin.protocols` and `plugin.middlewares` objects. Those 
-objects will be mixed-in with the main `config.routes`, `config.protocols` and
-`config.middlewares` objects respectively.
+The `.olojs/store.js` script uses the installed plugins to augment the package 
+store. 
 
-In other words:
-* if the plugin exports a `plugin.routes['/path/to/store']` store, that store
-  will be mounted to the main store under the path `/path/to/store`.
-* if the plugin exports a `plugin.protocols['ipfs']` store, the `ipfs:` protocol
-  will be added to the main store.
-* if the plugin exports a `plugin.middleware['/my-server']` function, that 
-  middleware `plugin.middleware['/my-server'](store)` will be served over
-  HTTP under the `/my-server` path.
+The `.olojs/server.js` script uses the installed plugins to augment the package 
+HTTP server. 
 
 
 ## olojs uninstall &lt;plugin-name&gt;

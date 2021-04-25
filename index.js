@@ -31,33 +31,6 @@ class Package {
         return require( this.resolveModulePath(modulePath) );
     }
 
-    // Returns the package main module
-    get config () {
-        const config = this.require('./config');
-        const routes = Object.assign({}, config.routes);
-        const protocols = Object.assign({}, config.protocols);
-        const middlewares = Object.assign({}, config.middlewares);
-        const plugins = this._getPluginNames()
-                .map(pluginName => this.require(pluginName));
-        for (let plugin of plugins) {
-            if (isObject(plugin.routes)) Object.assign(routes, plugin.routes);
-            if (isObject(plugin.protocols)) Object.assign(protocols, plugin.protocols);
-            if (isObject(plugin.middlewares)) Object.assign(middlewares, plugin.middlewares);
-        }
-        return {routes, protocols, middlewares};
-    }
-
-    // Returns the olojs library module
-    get olojs () {
-        return this.require('@onlabsorg/olojs');
-    }
-
-    // Returns the package store
-    get store () {
-        const {routes, protocols} = this.config;
-        return new this.olojs.Router(routes, protocols);
-    }
-
     // Executes a command in the package working directory
     spawn (command, ...args) {
         return new Promise((resolve, reject) => {
@@ -73,37 +46,29 @@ class Package {
 
     // Install a new npm package as dependecy of the .olojs package
     async install (packageId) {
+        
+        // run npm install
         await this.spawn('npm', 'install', packageId, '--save');
+        
+        // add the plugin name to the list of the installed plugins
+        const packageJson = this.require('./package.json');
         const pluginName = this.require(`${packageId}/package.json`).name;
-        const pluginNames = this._getPluginNames();
-        if (pluginNames.indexOf(pluginName) === -1) {
-            pluginNames.push(pluginName);
-            this._setPluginNames(pluginNames);
+        if (packageJson.olojs.plugins.indexOf(pluginName) === -1) {
+            packageJson.olojs.plugins.push(pluginName);
+            writeJsonFile(this.resolveModulePath('./package.json'), packageJson);
         }
     }
 
     // Uninstall a new npm package as dependecy of the .olojs package
     async uninstall (pluginName) {
-        const pluginNames = this._getPluginNames();
-        const pluginIndex = pluginNames.indexOf(pluginName);
+        const packageJson = this.require('./package.json');        
+        const pluginIndex = packageJson.olojs.plugins.indexOf(pluginName);
         if (pluginIndex === -1) {
             throw new Error(`Plugin not found: ${pluginName}`);
         }
         await this.spawn('npm', 'uninstall', pluginName);
-        pluginNames.splice(pluginIndex, 1);
-        this._setPluginNames(pluginNames);
-    }
-
-
-    // This internal function returns the list of the installed plugins
-    _getPluginNames () {
-        return this.require('./config/plugins.json');
-    }
-
-    // This internal function modifies the list of the installed plugins
-    _setPluginNames (pluginNames) {
-        const pluginNamesPath = this.resolveModulePath('./config/plugins.json');
-        writeJsonFile(pluginNamesPath, pluginNames);
+        packageJson.olojs.plugins.splice(pluginIndex, 1);
+        writeJsonFile(this.resolveModulePath('./package.json'), packageJson);
     }
 
 
@@ -118,7 +83,7 @@ class Package {
         if (fs.existsSync(packagePath)) {
             throw new Error("@olojs: Package already initialized");
         }
-        await cloneDirectory(`${__dirname}/../package-template`, packagePath);
+        await cloneDirectory(`${__dirname}/package-template`, packagePath);
         const pkg = new this(packagePath);
         await pkg.spawn('npm', 'install');
         return pkg;
@@ -137,7 +102,7 @@ class Package {
     }
 }
 
-module.exports = Package;
+exports.Package = Package;
 
 
 // -----------------------------------------------------------------------------

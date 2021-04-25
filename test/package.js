@@ -2,7 +2,7 @@ var expect = require("chai").expect;
 var pathlib = require('path');
 var fs = require('fs');
 var rimraf = require('rimraf');
-var Package = require('../lib/package');
+var {Package} = require('..');
 
 describe("Package", () => {
 
@@ -14,7 +14,7 @@ describe("Package", () => {
         fs.mkdirSync(pathlib.join(dirPath, 'dir'));
     });
 
-    describe("Package.create", () => {
+    describe("***** Package.create", () => {
 
         it("should clone and install the package-template", async function () {
             this.timeout(60000);
@@ -27,7 +27,7 @@ describe("Package", () => {
         });
     });
 
-    describe("Package.find", () => {
+    describe("***** Package.find", () => {
 
         it("should return a Package instance pointing to the first occurence of the `.olojs` folder", () => {
             var pkg = Package.find(pathlib.join(__dirname, 'package'));
@@ -49,63 +49,22 @@ describe("Package", () => {
         });
     });
 
-    describe("Package.prototype.olojs", () => {
+    describe("***** Package.prototype.install", () => {
 
-        it("should return the installed olojs package", () => {
-            var pkg = new Package(pathlib.join(__dirname, 'package', Package.DIR_NAME));
-            var olojs = require(pathlib.join(__dirname, 'package', Package.DIR_NAME, 'node_modules/@onlabsorg/olojs'));
-            expect(pkg.olojs).to.equal(olojs);
-        });
-    });
-
-    describe("Package.prototype.config", () => {
-
-        it("should return the installed olojs package", () => {
-            var pkg = new Package(pathlib.join(__dirname, 'package', Package.DIR_NAME));
-            var config = require(pathlib.join(__dirname, 'package', Package.DIR_NAME, 'config.js'));
-            expect(pkg.config).to.deep.equal(config);
-        });
-    });
-
-    describe("Package.prototype.install", () => {
-
-        it("should install the given package", async function () {
+        it("should install the given package and record it in the plugins list", async function () {
             this.timeout(5000);
             var pkg = new Package(pathlib.join(__dirname, 'package', Package.DIR_NAME));
             var testPluginPath = pathlib.join(__dirname, 'test-plugin');
             await pkg.install(testPluginPath);
             var testPlugin = require(testPluginPath);
             expect(pkg.require('test-plugin')).to.equal(testPlugin);
-        });
-
-        it("should mixin the package config with the plugin main exports", async function () {
-            var pkg = new Package(pathlib.join(__dirname, 'package', Package.DIR_NAME));
-            var testPlugin = pkg.require('test-plugin')
-            var config = pkg.config;
-
-            expect(config.routes['/test/route1']).to.be.an('object');
-            expect(config.routes['/test/route1']).to.equal(testPlugin.routes['/test/route1']);
-
-            expect(config.routes['/test/route2']).to.be.an('object');
-            expect(config.routes['/test/route2']).to.equal(testPlugin.routes['/test/route2']);
-
-            expect(config.protocols['ppp1']).to.be.an('object');
-            expect(config.protocols['ppp1']).to.equal(testPlugin.protocols['ppp1']);
-            
-            expect(config.protocols['ppp2']).to.be.an('object');
-            expect(config.protocols['ppp2']).to.equal(testPlugin.protocols['ppp2']);
-            
-            expect(config.middlewares['/mw1']).to.be.a('function')
-            expect(config.middlewares['/mw1']).to.equal(testPlugin.middlewares['/mw1']);
-
-            expect(config.middlewares['/mw2']).to.be.a('function')
-            expect(config.middlewares['/mw2']).to.equal(testPlugin.middlewares['/mw2']);
+            expect(pkg.require('./package.json').olojs.plugins).to.deep.equal(['test-plugin']);
         });
     });
 
-    describe("Package.prototype.uninstall", () => {
+    describe("***** Package.prototype.uninstall", () => {
 
-        it("should install the given package", async function () {
+        it("should uninstall the given package and remove it from the plugins list", async function () {
             this.timeout(5000);
             var pkg = new Package(pathlib.join(__dirname, 'package', Package.DIR_NAME));
             await pkg.uninstall('test-plugin');
@@ -115,17 +74,7 @@ describe("Package", () => {
             } catch (error) {
                 expect(error.message.indexOf("Cannot find module 'test-plugin'")).to.equal(0);
             }
-        });
-
-        it("should not mixin the package config with the plugin main exports", async function () {
-            var pkg = new Package(pathlib.join(__dirname, 'package', Package.DIR_NAME));
-            var config = pkg.config;
-            expect(config.routes['/test/route1']).to.be.undefined;
-            expect(config.routes['/test/route2']).to.be.undefined;
-            expect(config.protocols['ppp1']).to.be.undefined;
-            expect(config.protocols['ppp2']).to.be.undefined;
-            expect(config.middlewares['/mw1']).to.be.undefined;
-            expect(config.middlewares['/mw2']).to.be.undefined;
+            expect(pkg.require('./package.json').olojs.plugins).to.deep.equal([]);
         });
     });
 });

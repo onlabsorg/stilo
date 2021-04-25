@@ -2,6 +2,22 @@
   "name": "@onlabsorg/olojs-cli",
   "version": "0.10.0",
   "description": "Command line interface for managing olojs libraries",
+  "keywords": [
+    "cli",
+    "store",
+    "document",
+    "template",
+    "sandboxed",
+    "swan",
+    "expression",
+    "functional",
+    "CMS",
+    "import",
+    "distributed",
+    "modular",
+    "async",
+    "promise"
+  ],  
   "main": "index.js",
   "bin": {
     "olojs": "./bin/olojs"

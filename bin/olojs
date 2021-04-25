@@ -6,7 +6,7 @@ logger.useDefaults();
 const pathlib = require('path');
 const fs = require('fs');
 
-const Package = require("../lib/package");
+const {Package} = require("..");
 
 const cmd = require("commander");
 
@@ -63,8 +63,9 @@ cmd.command("read <path>")
     .action(async path => {
         try {
             const package = Package.find(process.cwd());
+            const store = package.require('./store');
             const fullPath = resolveDocumentPath(package, path);
-            const source = await package.store.read(fullPath);
+            const source = await store.read(fullPath);
             console.log(source);
 
         } catch (error) {
@@ -78,8 +79,9 @@ cmd.command("render <path> [args...]")
     .action(async (path, args) => {
         try {
             const package = Package.find(process.cwd());
+            const store = package.require('./store');
             const id = resolveDocumentPath(package, path) + '?' + args.join('&');
-            const {text} = await package.store.load(id);
+            const {text} = await store.load(id);
             console.log(text);
 
         } catch (error) {
@@ -93,8 +95,9 @@ cmd.command("list [path]")
     .action(async (path=".") => {
         try {
             const package = Package.find(process.cwd());
+            const store = package.require('./store');
             const dirPath = resolveDocumentPath(package, path);
-            const items = (await package.store.list(dirPath)).filter(name => name[0] !== '.');
+            const items = (await store.list(dirPath)).filter(name => name[0] !== '.');
             console.log(`${items.length} items found in ${dirPath}:`);
             for (let item of items) console.log(`- ${item}`);
 
@@ -108,9 +111,8 @@ cmd.command("start [port]")
     .description("Serves the current package over HTTP")
     .action(async (port=8010) => {
         try {
-            const Server = require('../lib/http-server');
             const package = Package.find(process.cwd());
-            const server = Server(package);
+            const server = package.require('./server');
             await new Promise((resolve, reject) => server.listen(port, 
                         err => err ? reject(err) : resolve() ));
             console.log(`olojs server listening on port ${port}`);
