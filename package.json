@@ -1,6 +1,6 @@
 {
   "name": "@onlabsorg/olojs-cli",
-  "version": "0.10.1",
+  "version": "0.10.2",
   "description": "Command line interface for managing olojs libraries",
   "keywords": [
     "cli",
