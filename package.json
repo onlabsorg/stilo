@@ -17,7 +17,7 @@
     "modular",
     "async",
     "promise"
-  ],  
+  ],
   "main": "index.js",
   "bin": {
     "olojs": "./bin/olojs"

@@ -2,7 +2,7 @@
     "main": "config",
     "version": "0.1.0",
     "dependencies": {
-        "@onlabsorg/olojs": "0.19.x",
+        "@onlabsorg/olojs": "0.20.x",
         "express": "^4.17.1"
     },
     "olojs": {

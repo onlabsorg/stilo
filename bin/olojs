@@ -107,18 +107,21 @@ cmd.command("list [path]")
     });
 
 
-cmd.command("start [port]")
-    .description("Serves the current package over HTTP")
-    .action(async (port=8010) => {
-        try {
-            const package = Package.find(process.cwd());
-            const server = package.require('./server');
-            await new Promise((resolve, reject) => server.listen(port, 
-                        err => err ? reject(err) : resolve() ));
-            console.log(`olojs server listening on port ${port}`);
-
-        } catch (error) {
-             logger.error(error.message);
+cmd.command("run <command> [args...]")
+    .description("Runs a custom command")
+    .action(async (command, args) => {
+        const package = Package.find(process.cwd());
+        const store = package.require('./store');
+        const commands = package.require('./commands');
+        if (typeof commands[command] !== "function") {
+            logger.error(`Unknown command: ${command}`);
+        } else {
+            try {
+                const options = parseParameters(args);
+                commands[command](store, options);
+            } catch (error) {
+                logger.error(error.message);
+            }
         }
     });
 
@@ -132,7 +135,7 @@ function resolveDocumentPath (package, path) {
 
 // Given a list of argument ['par1=val1', 'par2=val2', 'par3=val3', ...],
 // converts it to an object ontaining the ke-value pair contained in the list
-function parseParameters (...keyValuePairs) {
+function parseParameters (keyValuePairs) {
     const argns = {};
     for (let keyValuePair of keyValuePairs) {
         const separatorIndex = keyValuePair.indexOf("=");
