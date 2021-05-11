@@ -17,6 +17,7 @@ Commands:
   render <path> [args...]  Render a document and prints it to the stdout
   list [path]              Lists the content of a directory
   run <command> [args...]  Runs a custom command
+  commands                 Lists all the available commands
   help [command]           display help for command
 ```
 
@@ -88,6 +89,11 @@ default in `.olojs/server.js`.
 
 By default, the raw documents are served at `/docs/path/to/doc` and rendered
 documents are served at `/#/path/to/doc`.
+
+
+## olojs commands
+Prints the list of the available custom commands, i.e. the commands you can 
+execute via `olojs run <command>`.
 
 
 ## olojs install &lt;plugin-name&gt;

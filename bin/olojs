@@ -34,6 +34,9 @@ cmd.command("install <plugin>")
         logger.info(`@olojs: installing ${packageId}`);
         try {
             const package = Package.find(process.cwd());
+            if (packageId[0] === '.') {
+                packageId = pathlib.join(process.cwd(), packageId);
+            }
             await package.install(packageId);
             logger.info(`@olojs: ${packageId} plugin installed`);
 
@@ -122,6 +125,17 @@ cmd.command("run <command> [args...]")
             } catch (error) {
                 logger.error(error.message);
             }
+        }
+    });
+
+
+cmd.command("commands")
+    .description("Lists all the available commands")
+    .action(async (command, args) => {
+        const package = Package.find(process.cwd());
+        const commands = package.require('./commands');
+        for (let commandName of Object.keys(commands).sort()) {
+            console.log(commandName);
         }
     });
 

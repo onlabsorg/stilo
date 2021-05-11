@@ -61,12 +61,14 @@ class Package {
 
     // Uninstall a new npm package as dependecy of the .olojs package
     async uninstall (pluginName) {
-        const packageJson = this.require('./package.json');        
+        var packageJson = JSON.parse(fs.readFileSync(this.resolvePath('./package.json'), 'utf8'));
         const pluginIndex = packageJson.olojs.plugins.indexOf(pluginName);
         if (pluginIndex === -1) {
             throw new Error(`Plugin not found: ${pluginName}`);
         }
+        
         await this.spawn('npm', 'uninstall', pluginName);
+        packageJson = this.require('./package.json');
         packageJson.olojs.plugins.splice(pluginIndex, 1);
         writeJsonFile(this.resolveModulePath('./package.json'), packageJson);
     }
