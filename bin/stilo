@@ -15,12 +15,12 @@ cmd.version(`v${require("../package.json").version}`, "-v --version");
 
 
 cmd.command("init")
-    .description("Initializes the current directory as the root of an olojs document package")
+    .description("initialize the current directory as the root of an olojs document package")
     .action(async () => {
         try {
-            logger.info(`@olojs: Initializing olojs package ...`);
+            logger.info(`@stilo: Initializing stilo package ...`);
             const package = await Package.create(process.cwd());
-            logger.info("@olojs: Package successfully initialized.");
+            logger.info("@stilo: Package successfully initialized.");
 
         } catch (error) {
             logger.error(error.message);
@@ -29,16 +29,16 @@ cmd.command("init")
 
 
 cmd.command("install <plugin>")
-    .description("Installs a plugin")
+    .description("install a plugin")
     .action(async (packageId) => {
-        logger.info(`@olojs: installing ${packageId}`);
+        logger.info(`@stilo: installing ${packageId}`);
         try {
             const package = Package.find(process.cwd());
             if (packageId[0] === '.') {
                 packageId = pathlib.join(process.cwd(), packageId);
             }
             await package.install(packageId);
-            logger.info(`@olojs: ${packageId} plugin installed`);
+            logger.info(`@stilo: ${packageId} plugin installed`);
 
         } catch (error) {
             logger.error(error.message);
@@ -47,13 +47,13 @@ cmd.command("install <plugin>")
 
 
 cmd.command("uninstall <plugin>")
-    .description("Uninstalls a plugin")
+    .description("uninstall a plugin")
     .action(async (packageId) => {
-        logger.info(`@olojs: uninstalling ${packageId}`);
+        logger.info(`@stilo: uninstalling ${packageId}`);
         try {
             const package = Package.find(process.cwd());
             await package.uninstall(packageId);
-            logger.info(`@olojs: ${packageId} plugin uninstalled`);
+            logger.info(`@stilo: ${packageId} plugin uninstalled`);
 
         } catch (error) {
             logger.error(error.message);
@@ -62,7 +62,7 @@ cmd.command("uninstall <plugin>")
 
 
 cmd.command("read <path>")
-    .description("Fetches a document source and prints it to the stdout")
+    .description("fetche a document source and print it to the stdout")
     .action(async path => {
         try {
             const package = Package.find(process.cwd());
@@ -78,7 +78,7 @@ cmd.command("read <path>")
 
 
 cmd.command("render <path> [args...]")
-    .description("Render a document and prints it to the stdout")
+    .description("render a document and print it to the stdout")
     .action(async (path, args) => {
         try {
             const package = Package.find(process.cwd());
@@ -94,7 +94,7 @@ cmd.command("render <path> [args...]")
 
 
 cmd.command("list [path]")
-    .description("Lists the content of a directory")
+    .description("list the content of a directory")
     .action(async (path=".") => {
         try {
             const package = Package.find(process.cwd());
@@ -111,7 +111,7 @@ cmd.command("list [path]")
 
 
 cmd.command("run <command> [args...]")
-    .description("Runs a custom command")
+    .description("run a custom command")
     .action(async (command, args) => {
         const package = Package.find(process.cwd());
         const store = package.require('./store');
@@ -130,7 +130,7 @@ cmd.command("run <command> [args...]")
 
 
 cmd.command("commands")
-    .description("Lists all the available commands")
+    .description("list all the available run sub-commands")
     .action(async (command, args) => {
         const package = Package.find(process.cwd());
         const commands = package.require('./commands');

@@ -5,7 +5,7 @@ const child_process = require('child_process');
 
 
 // A Package object is a javascrisp interface to a npm package contained
-// in a `.olojs` folder. The Package object has no knowledge of the type
+// in a `.stilo` folder. The Package object has no knowledge of the type
 // of content of the package: it exposes only general handlers valid for
 // any npm package.
 class Package {
@@ -44,7 +44,7 @@ class Package {
         });
     }
 
-    // Install a new npm package as dependecy of the .olojs package
+    // Install a new npm package as dependecy of the .stilo package
     async install (packageId) {
         
         // run npm install
@@ -53,37 +53,37 @@ class Package {
         // add the plugin name to the list of the installed plugins
         const packageJson = this.require('./package.json');
         const pluginName = this.require(`${packageId}/package.json`).name;
-        if (packageJson.olojs.plugins.indexOf(pluginName) === -1) {
-            packageJson.olojs.plugins.push(pluginName);
+        if (packageJson.stilo.plugins.indexOf(pluginName) === -1) {
+            packageJson.stilo.plugins.push(pluginName);
             writeJsonFile(this.resolveModulePath('./package.json'), packageJson);
         }
     }
 
-    // Uninstall a new npm package as dependecy of the .olojs package
+    // Uninstall a new npm package as dependecy of the .stilo package
     async uninstall (pluginName) {
         var packageJson = JSON.parse(fs.readFileSync(this.resolvePath('./package.json'), 'utf8'));
-        const pluginIndex = packageJson.olojs.plugins.indexOf(pluginName);
+        const pluginIndex = packageJson.stilo.plugins.indexOf(pluginName);
         if (pluginIndex === -1) {
             throw new Error(`Plugin not found: ${pluginName}`);
         }
         
         await this.spawn('npm', 'uninstall', pluginName);
         packageJson = this.require('./package.json');
-        packageJson.olojs.plugins.splice(pluginIndex, 1);
+        packageJson.stilo.plugins.splice(pluginIndex, 1);
         writeJsonFile(this.resolveModulePath('./package.json'), packageJson);
     }
 
 
-    // The name of the directory that contain the olojs configuration npm-package
+    // The name of the directory that contain the stilo configuration npm-package
     static get DIR_NAME () {
-        return ".olojs";
+        return ".stilo";
     }
 
-    // Turns the directory at the given path in a olojs package
+    // Turns the directory at the given path in a stilo package
     static async create (path) {
         const packagePath = pathlib.resolve(path, this.DIR_NAME);
         if (fs.existsSync(packagePath)) {
-            throw new Error("@olojs: Package already initialized");
+            throw new Error("@stilo: Package already initialized");
         }
         await cloneDirectory(`${__dirname}/package-template`, packagePath);
         const pkg = new this(packagePath);
@@ -91,8 +91,8 @@ class Package {
         return pkg;
     }
 
-    // Given a directory path, finds the closest olojs package root (i.e. the folder
-    // containg the .olojs package), in the parent directory chain.
+    // Given a directory path, finds the closest stilo package root (i.e. the folder
+    // containg the .stilo package), in the parent directory chain.
     static find (path) {
         path = pathlib.resolve(path);
         while (true) {

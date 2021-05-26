@@ -1,32 +1,33 @@
-# olojs-cli
-This is a command line interface for managing [olojs] document packages.
-It allows creating a new package, mounting external (local or remote) stores
-and serving the documents over HTTP.
+# stilo
+This is a command line tool for managing [olojs] documents; out of the box it 
+allows creating new document packages, rendering documents (to file or in 
+the browser), mounting external (local or remote) document stores and installing
+new sub-commands via plugins.
 
 ### Getting started
-Install `olojs-cli` globally.
+Install `stilo` globally.
 
 ```
-npm install @onlabsorg/olojs-cli -g
+npm install @onlabsorg/stilo -g
 ```
 
 Initialize a new library:
 
 ```
 cd /path/to/my-library
-olojs init
+stilo init
 ```
 
 Render a document contained in my-library:
 
 ```
-olojs render /path/to/doc
+stilo render /path/to/doc
 ```
 
 >   You can optionally inject parameters in the document context by adding them
 >   to the command-line
 >
->   `olojs render /path/to/doc p1=val1 p2=val2 p3=val3 ...`
+>   `stilo render /path/to/doc p1=val1 p2=val2 p3=val3 ...`
 >
 >   The passed parameters will be added to the document context under the `argns`
 >   namespace (argns={p1:val1, p2:val2, p3:val3, ...}).
@@ -34,7 +35,7 @@ olojs render /path/to/doc
 Serve the library over http:
 
 ```
-olojs run server
+stilo run server
 ```
 
 Once the HTTP server is running, you can render the library documents in the browser
@@ -47,16 +48,16 @@ For a full description of the commands available, read the
 
 ### Plugins
 Plugins are npm packages that can mount one or more custom stores and/or make
-custom commands available to the `olojs run <command>` command.
+custom sub-commands available to the `stilo run <sub-command>` command.
 
-In order to install a plugin, you use the `install` olojs command, followed
+In order to install a plugin, you use the `stilo install` command, followed
 by the name of the npm package that contains the plugin.
 
 ```
-olojs install plugin-name
+stilo install <plugin-name>
 ```
 
-In order to uninstall a plugin, you use the `uninstall` olojs command, followed
+In order to uninstall a plugin, you use the `stilo uninstall` command, followed
 by the name of the npm package that contains the plugin.
 
 > If you are a developer and you want to create your own plugin or customize the
@@ -71,8 +72,8 @@ by the name of the npm package that contains the plugin.
 
 * [olojs] is a content management system based on a distributed network of 
   documents having the following properties.
-* [olowiki] is a plugin that allows to render and edit an olojs document package
-  in the browser.
+* [olowiki] is a plugin that allows to render and edit stilo documents in the
+  browser.
 
 
 [olojs]: https://github.com/onlabsorg/olojs

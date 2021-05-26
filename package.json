@@ -1,7 +1,7 @@
 {
-  "name": "@onlabsorg/olojs-cli",
-  "version": "0.11.0",
-  "description": "Command line interface for managing olojs libraries",
+  "name": "@onlabsorg/stilo",
+  "version": "0.12.0",
+  "description": "Command line interface for managing olojs document packages",
   "keywords": [
     "cli",
     "store",
@@ -20,21 +20,21 @@
   ],
   "main": "index.js",
   "bin": {
-    "olojs": "./bin/olojs"
+    "stilo": "./bin/stilo"
   },
   "scripts": {
     "test": "mocha test/index.js"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/onlabsorg/olojs-cli.git"
+    "url": "git+https://github.com/onlabsorg/stilo.git"
   },
   "author": "Marcello Del Buono (m.delbuono@gmail.com)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/onlabsorg/olojs-cli/issues"
+    "url": "https://github.com/onlabsorg/stilo/issues"
   },
-  "homepage": "https://github.com/onlabsorg/olojs-cli#readme",
+  "homepage": "https://github.com/onlabsorg/stilo#readme",
   "dependencies": {
     "commander": "^6.1.0",
     "js-logger": "^1.6.1",

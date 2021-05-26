@@ -29,7 +29,7 @@ describe("Package", () => {
 
     describe("***** Package.find", () => {
 
-        it("should return a Package instance pointing to the first occurence of the `.olojs` folder", () => {
+        it("should return a Package instance pointing to the first occurence of the `.stilo` folder", () => {
             var pkg = Package.find(pathlib.join(__dirname, 'package'));
             expect(pkg).to.be.instanceof(Package);
             expect(pkg.path).to.equal(pathlib.join(__dirname, 'package', Package.DIR_NAME));
@@ -39,7 +39,7 @@ describe("Package", () => {
             expect(pkg.path).to.equal(pathlib.join(__dirname, 'package', Package.DIR_NAME));
         });
 
-        it("should throw an error if no `.olojs` folder is found", () => {
+        it("should throw an error if no `.stilo` folder is found", () => {
             try {
                 var pkg = Package.find(pathlib.join('/usr/etc'));
                 throw new Error("It did not throw");
@@ -58,7 +58,7 @@ describe("Package", () => {
             await pkg.install(testPluginPath);
             var testPlugin = require(testPluginPath);
             expect(pkg.require('test-plugin')).to.equal(testPlugin);
-            expect(pkg.require('./package.json').olojs.plugins).to.deep.equal(['test-plugin']);
+            expect(pkg.require('./package.json').stilo.plugins).to.deep.equal(['test-plugin']);
         });
     });
 
@@ -74,7 +74,7 @@ describe("Package", () => {
             } catch (error) {
                 expect(error.message.indexOf("Cannot find module 'test-plugin'")).to.equal(0);
             }
-            expect(pkg.require('./package.json').olojs.plugins).to.deep.equal([]);
+            expect(pkg.require('./package.json').stilo.plugins).to.deep.equal([]);
         });
     });
 });

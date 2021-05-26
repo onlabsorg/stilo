@@ -4,7 +4,7 @@ const plugins = require('./plugins');
 
 
 // The following function are custom commands that can be executed with the
-// olojs command `olojs run <command-name> [options]`
+// stilo command `stilo run <command-name> [options]`
 const commands = module.exports = {
     
     "server": async (store, options={}) => {
@@ -12,11 +12,11 @@ const commands = module.exports = {
         const port = options.port || 8010;
         await new Promise((resolve, reject) => server.listen(port, 
                     err => err ? reject(err) : resolve() ));
-        console.log(`olojs HTTP viewer server listening on port ${port}`);
+        console.log(`stilo HTTP viewer server listening on port ${port}`);
     },
     
     // "test": async (store, options={}) => {
-    //     console.log("olojs test command:")
+    //     console.log("stilo test command:")
     //     console.log("- options:", options);
     // }    
 };
