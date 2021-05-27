@@ -7,6 +7,8 @@ const plugins = require('./plugins');
 // availbale is '/' that mounts a file store rooted in the parent folder.
 const routes = {
     '/': new olojs.FileStore(`${__dirname}/..`),
+    '/.protocols/http/': new olojs.HTTPStore('http:/'),
+    '/.protocols/https/': new olojs.HTTPStore('https:/')
 };
 
 
