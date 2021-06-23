@@ -77,14 +77,13 @@ cmd.command("read <path>")
     });
 
 
-cmd.command("render <path> [args...]")
+cmd.command("render <doc_id>")
     .description("render a document and print it to the stdout")
-    .action(async (path, args) => {
+    .action(async (doc_id) => {
         try {
             const package = Package.find(process.cwd());
             const store = package.require('./store');
-            const id = resolveDocumentPath(package, path) + '?' + args.join('&');
-            const {text} = await store.load(id);
+            const {text} = await store.load(doc_id);
             console.log(text);
 
         } catch (error) {
@@ -142,6 +141,10 @@ cmd.command("commands")
 
 
 function resolveDocumentPath (package, path) {
+    // if path is a URI, return it
+    if (/^([a-zA-Z][a-zA-Z0-9+.-]*):\/(.*)$/.test(path)) return path;
+    
+    // if path is a normal path, resolve it as relative to the CWD
     const rootPath = package.resolvePath('..');
     const relativeCWD = pathlib.join('/', process.cwd().slice(rootPath.length));
     return pathlib.resolve(relativeCWD, path);

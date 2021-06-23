@@ -1,6 +1,6 @@
 {
   "name": "@onlabsorg/stilo",
-  "version": "0.12.1",
+  "version": "0.13.0",
   "description": "Command line tool for managing olojs document packages",
   "keywords": [
     "cli",
@@ -30,7 +30,7 @@
     "url": "git+https://github.com/onlabsorg/stilo.git"
   },
   "author": "Marcello Del Buono (m.delbuono@gmail.com)",
-  "license": "MIT",
+  "license": "ISC",
   "bugs": {
     "url": "https://github.com/onlabsorg/stilo/issues"
   },

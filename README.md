@@ -27,10 +27,10 @@ Render a document contained in my-library:
 stilo render /path/to/doc
 ```
 
->   You can optionally inject parameters in the document context by adding them
->   to the command-line
+>   You can optionally inject parameters in the document context by appending
+>   them to the path
 >
->   `stilo render /path/to/doc p1=val1 p2=val2 p3=val3 ...`
+>   `stilo render /path/to/doc?p1=val1;p2=val2;p3=val3;...`
 >
 >   The passed parameters will be added to the document context under the `argns`
 >   namespace (argns={p1:val1, p2:val2, p3:val3, ...}).
@@ -89,9 +89,9 @@ several ways to do that:
 * **Git it!** Being your package just a bunch of text files, you can use
   [Git](https://git-scm.com/) to version-control them and cooperate on them.
 * **Access remote documents via HTTP/HTTPS!** Each of your packages mounts by
-  default two virtual stores: `/.protocols/http/` and `/.protocols/https/`. You 
-  can use those stores to fetch/load/import documents from anywhere on the web.
-  For example, try `stilo render /.protocols/http/raw.githubusercontent.com/onlabsorg/olojs/master/test/public/greet.olo?name=You`.
+  default two protocols: `http:/` and `https:/`. You can use those protocols to 
+  fetch/load/import documents from anywhere on the web.
+  For example, try `stilo render https://raw.githubusercontent.com/onlabsorg/olojs/master/test/public/greet.olo`.
 * **Install a third party stilo library!** It is possible for people to publish
   olojs document libraries on `npm` and for you to install them and mount them 
   to a path of your local package via `stilo install <library-npm-package>`. To
@@ -106,14 +106,15 @@ several ways to do that:
 
 
 ### License
-[MIT](https://opensource.org/licenses/MIT)
+This software is released under the [ISC](https://opensource.org/licenses/ISC) 
+license.
 
 
 ### Related projects
 
 * [olojs] is a content management system based on a distributed network of 
   documents having the following properties.
-* [olowiki] is a plugin that allows to render and edit stilo documents in the
+* [olowiki] is a plugin that allows rendering and editing stilo documents in the
   browser.
 
 

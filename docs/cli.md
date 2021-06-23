@@ -31,18 +31,20 @@ The `.stilo` directory is a npm package that exposes the following scripts:
   with the `run` command.
 
 
-## stilo render &lt;path&gt; [args]
+## stilo render &lt;docId&gt;
 Renders the document mapped to the passed path and prints the rendered content
 to screen.
+
+The docId parameter is a string composed by a document path, optionally followed
+by `?` and query string.
 
 The path can be also relative to the current working directory. For example,
 let's assume that the package root is `/path/to/my-package` and that you
 run `stilo render ./doc` from `/path/to/my-package/dir/`; in this case the
 document mapped to `/dir/doc` will be rendered.
 
-The `args` parameter is a space-separated list of `key=value` pairs. The
-parameters will be parsed into a javascript object that will be added to the
-document namespace as `argns` before rendering it.
+The query string, interpreted of a `&`-separated sequence `key=value` pairs,
+will be passed to the document context as a namespace named `argns`.
 
 
 ## stilo read &lt;path&gt;

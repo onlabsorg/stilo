@@ -10,7 +10,7 @@ This is a npm package containing
 
 The `stilo` cli, once executed, searches fro the first occurrence of the
 `.stilo` package in the current working directory and its parent directories.
-Then it uses the `.stilo` storeas follows:
+Then it uses the `.stilo` store as follows:
 
 - `stilo read <path>` calls `store.read(path)`
 - `stilo list <path>` calls `store.list(path)`
