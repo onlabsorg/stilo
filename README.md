@@ -92,6 +92,7 @@ several ways to do that:
   default two protocols: `http:/` and `https:/`. You can use those protocols to 
   fetch/load/import documents from anywhere on the web.
   For example, try `stilo render https://raw.githubusercontent.com/onlabsorg/olojs/master/test/public/greet.olo`.
+* **Access remote documents via IPFS!** (Requires the [ipfs-store] plugin)
 * **Install a third party stilo library!** It is possible for people to publish
   olojs document libraries on `npm` and for you to install them and mount them 
   to a path of your local package via `stilo install <library-npm-package>`. To
@@ -111,12 +112,12 @@ license.
 
 
 ### Related projects
-
-* [olojs] is a content management system based on a distributed network of 
-  documents having the following properties.
-* [olowiki] is a plugin that allows rendering and editing stilo documents in the
-  browser.
+* [olojs] is a distributed content management system
+* [ipfs-store] is an olojs store based on IPFS (it includes also a stilo plugin)
+* [olowiki] is a web interface that allows creating and modifying youd olojs 
+  documents (it includes also a stilo plugin)
 
 
 [olojs]: https://github.com/onlabsorg/olojs
+[ipfs-store]: https://github.com/onlabsorg/ipfs-store
 [olowiki]: https://github.com/onlabsorg/olowiki
