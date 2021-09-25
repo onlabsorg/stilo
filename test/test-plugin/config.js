@@ -8,13 +8,8 @@ exports.stilo = {
         '/test/route2': {}
     },
     
-    protocols: {
-        'test-protocol1': {},
-        'test-protocol2': {}
-    },
-    
-    commands: {
-        'cmd1': store => {console.log('cmd1:', store)},
-        'cmd2': store => {console.log('cmd2:', store)},
+    middlewares: {
+        '/app1': store => (req, res, next) => {console.log("@app1:", req.method, req.path)},
+        '/app2': store => (req, res, next) => {console.log("@app2:", req.method, req.path)},
     }
 }

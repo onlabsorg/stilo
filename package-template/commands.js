@@ -1,28 +1,28 @@
-const olojs = require('@onlabsorg/olojs');
+const olo = require('@onlabsorg/olojs');
 const plugins = require('./plugins');
 
 
-
-// The following function are custom commands that can be executed with the
-// stilo command `stilo run <command-name> [options]`
-const commands = module.exports = {
-    
-    "server": async (store, options={}) => {
-        const server = olojs.HTTPServer.ViewerServer(store);
-        const port = options.port || 8010;
-        await new Promise((resolve, reject) => server.listen(port, 
-                    err => err ? reject(err) : resolve() ));
-        console.log(`stilo HTTP viewer server listening on port ${port}`);
-    },
-    
-    // "test": async (store, options={}) => {
-    //     console.log("stilo test command:")
-    //     console.log("- options:", options);
-    // }    
-};
+// Create the list of available commands
+// these commands can be executed with `stilo run <command-name>`
+const commands = module.exports = {};
 
 
 
-// All the commands exported by the installed plugins are merged to the
-// commands object
-for (let plugin of plugins) Object.assign(commands, plugin.commands);
+// `stilo run server [port=<port-number>]`
+//  serves the home store over HTTP
+commands.server = (store, options={}) => {
+    const server = olo.HTTPServer.create(store.homeStore);
+    const port = options.port || 8010;
+    server.listen(port, err => {
+        if (err) throw (err);
+        console.log(`Stilo HTTP server listening on port ${port}`);
+    });
+}    
+
+
+
+// Add the custom commands eventually defined by the installed plugins
+for (let plugin of plugins) {
+    Object.assign(commands, plugin.commands);
+}
+

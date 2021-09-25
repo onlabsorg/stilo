@@ -41,7 +41,7 @@ cmd.command("install <plugin>")
             logger.info(`@stilo: ${packageId} plugin installed`);
 
         } catch (error) {
-            logger.error(error.message);
+            logger.error(error);
         }
     });
 
@@ -56,13 +56,13 @@ cmd.command("uninstall <plugin>")
             logger.info(`@stilo: ${packageId} plugin uninstalled`);
 
         } catch (error) {
-            logger.error(error.message);
+            logger.error(error);
         }
     });
 
 
 cmd.command("read <path>")
-    .description("fetche a document source and print it to the stdout")
+    .description("fetch a document source and print it to the stdout")
     .action(async path => {
         try {
             const package = Package.find(process.cwd());
@@ -77,13 +77,17 @@ cmd.command("read <path>")
     });
 
 
-cmd.command("render <doc_id>")
+cmd.command("render <path> [params...]")
     .description("render a document and print it to the stdout")
-    .action(async (doc_id) => {
+    .action(async (path, params) => {
         try {
             const package = Package.find(process.cwd());
             const store = package.require('./store');
-            const {text} = await store.load(doc_id);
+            const fullPath = resolveDocumentPath(package, path);
+            const source = await store.read(fullPath);
+            const evaluate = store.parseDocument(source);
+            const context = store.createContextFromId(`${fullPath}?${params.join('&')}`);
+            const {text} = await evaluate(context);
             console.log(text);
 
         } catch (error) {
@@ -100,78 +104,48 @@ cmd.command("list [path]")
             const store = package.require('./store');
             const dirPath = resolveDocumentPath(package, path);
             const items = (await store.list(dirPath)).filter(name => name[0] !== '.');
-            console.log(`${items.length} items found in ${dirPath}:`);
-            for (let item of items) console.log(`- ${item}`);
-
+            console.log(`${items.length} items found in ${dirPath}:\n`);
+            for (let item of items) console.log(`  ${item}`);
+            console.log();
+            
         } catch (error) {
             logger.error(error.message);
         }
     });
 
 
-cmd.command("run <command> [args...]")
-    .description("run a custom command")
-    .action(async (command, args) => {
+cmd.command("run <command-name> [params...]")
+    .description("executes a sub-command")
+    .action(async (commandName, params) => {
         const package = Package.find(process.cwd());
-        const store = package.require('./store');
         const commands = package.require('./commands');
-        if (typeof commands[command] !== "function") {
-            logger.error(`Unknown command: ${command}`);
+        const command = commands[commandName];
+        if (command) {
+            const store = package.require(`./store`);
+            const options = store.createContextFromId(`/?${params.join('&')}`).__query__;
+            await command(store, options);
         } else {
-            try {
-                const options = parseParameters(args);
-                commands[command](store, options);
-            } catch (error) {
-                logger.error(error.message);
-            }
+            logger.error(`Unknown command: ${commandName}`);
         }
     });
 
 
 cmd.command("commands")
-    .description("list all the available run sub-commands")
-    .action(async (command, args) => {
+    .description("list the available sub-commands")
+    .action(async (commandName, params) => {
         const package = Package.find(process.cwd());
         const commands = package.require('./commands');
-        for (let commandName of Object.keys(commands).sort()) {
+        for (let commandName in commands) {
             console.log(commandName);
         }
     });
 
 
-
 function resolveDocumentPath (package, path) {
-    // if path is a URI, return it
-    if (/^([a-zA-Z][a-zA-Z0-9+.-]*):\/(.*)$/.test(path)) return path;
-    
-    // if path is a normal path, resolve it as relative to the CWD
     const rootPath = package.resolvePath('..');
     const relativeCWD = pathlib.join('/', process.cwd().slice(rootPath.length));
-    return pathlib.resolve(relativeCWD, path);
+    return pathlib.resolve(`/home${relativeCWD}`, path);
 }
-
-// Given a list of argument ['par1=val1', 'par2=val2', 'par3=val3', ...],
-// converts it to an object ontaining the ke-value pair contained in the list
-function parseParameters (keyValuePairs) {
-    const argns = {};
-    for (let keyValuePair of keyValuePairs) {
-        const separatorIndex = keyValuePair.indexOf("=");
-        if (separatorIndex === -1) {
-            let name = keyValuePair.trim();
-            if (isValidName(name)) argns[name] = true;
-        } else {
-            let name = keyValuePair.slice(0, separatorIndex).trim();
-            if (isValidName(name)) {
-                let string = keyValuePair.slice(separatorIndex+1).trim();
-                let number = Number(string);
-                argns[name] = isNaN(number) ? string : number;
-            }
-        }
-    }
-    return argns;
-}
-
-const isValidName = val => /^[a-z_A-Z]+[a-z_A-Z0-9]*$/.test(val);
 
 
 cmd.parse( process.argv );

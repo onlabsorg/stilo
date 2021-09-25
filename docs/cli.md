@@ -4,21 +4,22 @@
 Usage: stilo [options] [command]
 
 Options:
-  -v --version             output the version number
-  -h, --help               display help for command
+  -v --version                    output the version number
+  -h, --help                      display help for command
 
 Commands:
-  init                     initialize the current directory as the root of an
-                           olojs document package
-  install <plugin>         install a plugin
-  uninstall <plugin>       uninstall a plugin
-  read <path>              fetche a document source and print it to the
-                           stdout
-  render <path> [args...]  render a document and print it to the stdout
-  list [path]              list the content of a directory
-  run <command> [args...]  run a custom command
-  commands                 list all the available run sub-commands
-  help [command]           display help for command
+  init                            initialize the current directory as the
+                                  root of an olojs document package
+  install <plugin>                install a plugin
+  uninstall <plugin>              uninstall a plugin
+  read <path>                     fetch a document source and print it to the
+                                  stdout
+  render <path> [params...]       render a document and print it to the
+                                  stdout
+  list [path]                     list the content of a directory
+  run <command-name> [params...]  executes a sub-command
+  commands                        list the available sub-commands
+  help [command]                  display help for command
 ```
 
 ## stilo init
@@ -62,40 +63,16 @@ The path can be relative to the current working directory (see render command)
 and, if omitted, it defaults to `.`.
 
 
-## stilo run &lt;command-name&gt; [args]
-Runs a custom command. Custom commands are function exported by the script 
-`.stilo/commands.js`. The signature of those functions is:
+## stilo run <command-name> [opt1=val1 opt2=val2 ...]
+Runs a subcommand and passes to it the current olojs store and the trailing
+options.
 
-```
-exports["command-name"] = (store, options) => ...
-```
-
-Upon running the `run <command-name>` command, the `command-name` function will
-be executed with the current package store as first parameter and the command
-line arguments as options. For example, the following command:
-
-```
-stilo run doSomething x=10 s=abc
-```
-
-Will result in calling `commands.doSomething(store, {x:10, s:"abc"})`, where
-`commands` is the export of `.stilo/commands.js`.
-
-You can add custom commands by manually adding a function to the `.stilo/commands.js`
-exports, or by installing plugins that export custom commands.
-
-
-## stilo run server [port=8101]
-Starts serving the current package over HTTP. The server command is defined by
-default in `.stilo/server.js`.
-
-By default, the raw documents are served at `/docs/path/to/doc` and rendered
-documents are served at `/#/path/to/doc`.
+You can add custom sub-commands to stilo manually modifying the `.stilo/commands.js` 
+module, or by installing plugins that export custom commands.
 
 
 ## stilo commands
-Prints the list of the available custom commands, i.e. the commands you can 
-execute via `stilo run <command>`.
+Lists all the available sub-commands.
 
 
 ## stilo install &lt;plugin-name&gt;
@@ -105,8 +82,8 @@ it as a plugin.
 The `.stilo/store.js` script uses the installed plugins to augment the package 
 store. 
 
-The `.stilo/commands.js` script uses the installed plugins to augment the package 
-commands. 
+The `.stilo/commands.js` script uses the installed plugins to add new 
+sub-commands to the stilo CLI. 
 
 
 ## stilo uninstall &lt;plugin-name&gt;
