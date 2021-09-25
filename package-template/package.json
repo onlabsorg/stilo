@@ -2,15 +2,12 @@
     "main": "store",
     "version": "0.1.0",
     "dependencies": {
-        "@onlabsorg/olojs": "file:../../../olojs",
-        "@onlabsorg/oloviewer": "file:../../../oloviewer",
-        "@onlabsorg/olowiki": "file:../../../olowiki",
-        "express": "^4.17.1"
+        "@onlabsorg/olojs": "0.21.x",
+        "@onlabsorg/oloviewer": "0.1.x"
     },
     "stilo": {
         "plugins": [
-            "@onlabsorg/oloviewer",
-            "@onlabsorg/olowiki"
+            "@onlabsorg/oloviewer"
         ]
     }
 }

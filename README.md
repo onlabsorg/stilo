@@ -70,6 +70,8 @@ by the name of the npm package that contains the plugin.
 > If you are a developer and you want to create your own plugin or customize the
 > way a package behaves, check the [package documentation](./package-template/README.md).
 
+The [oloviewer] plugin is installed by default.
+
 
 ### Cooperation
 Any stilo package you create is a folder containing olojs documents, which are
