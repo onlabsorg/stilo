@@ -54,7 +54,7 @@ For a full description of the commands available, read the
 
 
 ### Plugins
-Plugins are npm packages that can mount one or more custom stores and/or add 
+Plugins are npm packages that can decorate the stilo store and/or add 
 custom sub-commands to the stilo CLI.
 
 In order to install a plugin, you use the `stilo install` command, followed

@@ -19,8 +19,8 @@ Then it uses the `.stilo` store as follows:
 
 The `stilo install` command installs a npm package as dependency of `.stilo` and
 adds its name to the `stilo.plugins` array contained in `.stilo/package.json`.
-The list of installed plugins will be used by `.stilo/store.js` to augment the 
-package store and by `.stilo/commands.js` to add new sub-commands.
+The list of installed plugins will be used by `.stilo/store.js` to decorate the 
+store and by `.stilo/commands.js` to add new sub-commands.
 
 
    

@@ -66,7 +66,7 @@ cmd.command("read <path>")
     .action(async path => {
         try {
             const package = Package.find(process.cwd());
-            const store = package.require('./store');
+            const store = await loadStore(package);
             const fullPath = resolveDocumentPath(package, path);
             const source = await store.read(fullPath);
             console.log(source);
@@ -82,7 +82,7 @@ cmd.command("render <path> [params...]")
     .action(async (path, params) => {
         try {
             const package = Package.find(process.cwd());
-            const store = package.require('./store');
+            const store = await loadStore(package);
             const fullPath = resolveDocumentPath(package, path);
             const source = await store.read(fullPath);
             const evaluate = store.parseDocument(source);
@@ -101,7 +101,7 @@ cmd.command("list [path]")
     .action(async (path=".") => {
         try {
             const package = Package.find(process.cwd());
-            const store = package.require('./store');
+            const store = await loadStore(package);
             const dirPath = resolveDocumentPath(package, path);
             const items = (await store.list(dirPath)).filter(name => name[0] !== '.');
             console.log(`${items.length} items found in ${dirPath}:\n`);
@@ -121,7 +121,7 @@ cmd.command("run <command-name> [params...]")
         const commands = package.require('./commands');
         const command = commands[commandName];
         if (command) {
-            const store = package.require(`./store`);
+            const store = await loadStore(package);
             const options = store.createContextFromId(`/?${params.join('&')}`).__query__;
             await command(store, options);
         } else {
@@ -145,6 +145,12 @@ function resolveDocumentPath (package, path) {
     const rootPath = package.resolvePath('..');
     const relativeCWD = pathlib.join('/', process.cwd().slice(rootPath.length));
     return pathlib.resolve(`/home${relativeCWD}`, path);
+}
+
+async function loadStore (package) {
+    const Store = package.require('./store');
+    const homePath = package.resolvePath('..');
+    return await Store(homePath);
 }
 
 

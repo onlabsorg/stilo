@@ -2,12 +2,17 @@
     "main": "store",
     "version": "0.1.0",
     "dependencies": {
-        "@onlabsorg/olojs": "0.21.x",
-        "@onlabsorg/oloviewer": "0.1.x"
+        "@onlabsorg/ipfs-store": "file:../../../ipfs-store",
+        "@onlabsorg/olojs": "file:../../../olojs",
+        "@onlabsorg/oloviewer": "file:../../../oloviewer",
+        "@onlabsorg/olowiki": "file:../../../olowiki",
+        "express": "^4.17.1"
     },
     "stilo": {
         "plugins": [
-            "@onlabsorg/oloviewer"
+            "@onlabsorg/oloviewer",
+            "@onlabsorg/olowiki",
+            "@onlabsorg/ipfs-store"
         ]
     }
 }

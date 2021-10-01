@@ -23,6 +23,10 @@ commands.server = (store, options={}) => {
 
 // Add the custom commands eventually defined by the installed plugins
 for (let plugin of plugins) {
-    Object.assign(commands, plugin.commands);
+    for (let commandName in plugin) {
+        if (commandName[0] !== "_" && typeof plugin[commandName] == "function") {
+            commands[commandName] = plugin[commandName].bind(plugin);
+        }
+    }
 }
 
