@@ -7,8 +7,6 @@
         "express": "^4.17.1"
     },
     "stilo": {
-        "plugins": [
-            "@onlabsorg/oloviewer"
-        ]
+        "plugins": []
     }
 }

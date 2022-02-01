@@ -11,12 +11,13 @@ const commands = module.exports = {};
 // `stilo run server [port=<port-number>]`
 //  serves the home store over HTTP
 commands.server = (store, options={}) => {
-    const server = olo.HTTPServer.create(store.homeStore);
+    const server = olo.HTTPServer.create(store);
     const port = options.port || 8010;
     server.listen(port, err => {
         if (err) throw (err);
         console.log(`Stilo HTTP server listening on port ${port}`);
     });
+    return server;
 }    
 
 

@@ -1,27 +1,31 @@
 const olo = require('@onlabsorg/olojs');
-const plugins = require('./plugins');
-
 const pathlib = require('path');
 
 
-module.exports = async (homePath) => {
+module.exports = async (rootPath) => {
     
     // Create a Hub with home store pointing to the passed directory path
-    const homeStore = new olo.FileStore(homePath);
-    const hub = new olo.Hub(homeStore);
+    const store = new olo.Router({
+        '/': new olo.FileStore(rootPath),
+        'http:/': new olo.HTTPStore('http:/'),
+        'https:/': new olo.HTTPStore('https:/'),
+        'file:/': new olo.FileStore('/'),
+        'temp:/': new olo.MemoryStore(),
+    });
     
-    // Decorates the hub with all the __init__ functions installed as plugin
+    // Decorates the store with all the __init__ functions installed as plugin
+    const plugins = require('./plugins');
     for (let plugin of plugins) {
         if (typeof plugin.__init__ === "function") {
             
             try {
-                await plugin.__init__(hub);                
+                await plugin.__init__(store);                
             } catch (err) {
                 console.error(err);
             }
         }
     }
     
-    return hub;
+    return store;
 }
 

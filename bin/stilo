@@ -144,7 +144,7 @@ cmd.command("commands")
 function resolveDocumentPath (package, path) {
     const rootPath = package.resolvePath('..');
     const relativeCWD = pathlib.join('/', process.cwd().slice(rootPath.length));
-    return pathlib.resolve(`/home${relativeCWD}`, path);
+    return pathlib.resolve(`/${relativeCWD}`, path);
 }
 
 async function loadStore (package) {

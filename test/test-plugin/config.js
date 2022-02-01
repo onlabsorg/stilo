@@ -3,13 +3,11 @@
 
 exports.stilo = {
     
-    routes: {
-        '/test/route1': {},
-        '/test/route2': {}
+    __init__ (store) {
+        store.test_plugin_installed = true;
     },
     
-    middlewares: {
-        '/app1': store => (req, res, next) => {console.log("@app1:", req.method, req.path)},
-        '/app2': store => (req, res, next) => {console.log("@app2:", req.method, req.path)},
+    testcommand (store) {
+        return [store];
     }
 }
