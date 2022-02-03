@@ -43,7 +43,7 @@ Serve the library over http:
 stilo run server
 ```
 
-Once the HTTP server is running, your document source will be accessible an the 
+Once the HTTP server is running, your document source will be accessible at the 
 URL `http:/loclahost:8010/home/path/to/doc`.
 
 >   Of course, with the same command, you can even serve your documents over
@@ -70,8 +70,6 @@ by the name of the npm package that contains the plugin.
 > If you are a developer and you want to create your own plugin or customize the
 > way a package behaves, check the [package documentation](./package-template/README.md).
 
-The [oloviewer] plugin is installed by default.
-
 
 ### Cooperation
 Any stilo package you create is a folder containing olojs documents, which are
@@ -89,9 +87,9 @@ several ways to do that:
 * **Git it!** Being your package just a bunch of text files, you can use
   [Git](https://git-scm.com/) to version-control them and cooperate on them.
 * **Access remote documents via HTTP/HTTPS!** Each of your packages mounts by
-  default two paths `/http` and `/https`. You can use those paths to 
+  default two schemes `http:/` and `https:/`. You can use those paths to 
   fetch/load/import documents from anywhere on the web.
-  For example, try `stilo render /https/raw.githubusercontent.com/onlabsorg/olojs/master/test/public/greet.olo`.
+  For example, try `stilo render https://raw.githubusercontent.com/onlabsorg/olojs/master/test/public/greet.olo`.
 * **Access remote documents via IPFS!** (Requires the [ipfs-store] plugin)
 * **Install a third party stilo library!** It is possible for people to publish
   olojs document libraries on `npm` and for you to install them and mount them 

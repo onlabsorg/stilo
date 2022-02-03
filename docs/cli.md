@@ -8,14 +8,13 @@ Options:
   -h, --help                      display help for command
 
 Commands:
-  init                            initialize the current directory as the
-                                  root of an olojs document package
+  init                            initialize the current directory as the root 
+                                  of an olojs document package
   install <plugin>                install a plugin
   uninstall <plugin>              uninstall a plugin
-  read <path>                     fetch a document source and print it to the
+  read <path>                     fetch a document source and print it to the 
                                   stdout
-  render <path> [params...]       render a document and print it to the
-                                  stdout
+  render <path> [params...]       render a document and print it to the stdout
   list [path]                     list the content of a directory
   run <command-name> [params...]  executes a sub-command
   commands                        list the available sub-commands
