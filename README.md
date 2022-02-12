@@ -110,14 +110,9 @@ license.
 
 ### Related projects
 * [olojs] is a distributed content management system
-* [ipfs-store] is an olojs store based on IPFS (it includes also a stilo plugin)
-* [oloviewer] is a web interface to render your documents in the browser (it
-  includes also a stilo plugin)
 * [olowiki] is a web interface that allows creating and modifying youd olojs 
   documents (it includes also a stilo plugin)
 
 
 [olojs]: https://github.com/onlabsorg/olojs
-[ipfs-store]: https://github.com/onlabsorg/ipfs-store
-[oloviewer]: https://github.com/onlabsorg/oloviewer
 [olowiki]: https://github.com/onlabsorg/olowiki
