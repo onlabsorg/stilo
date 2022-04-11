@@ -104,7 +104,7 @@ cmd.command("list [path]")
             const package = Package.find(process.cwd());
             const store = await loadStore(package);
             const dirPath = resolveDocumentPath(package, path);
-            const items = (await store.list(dirPath)).filter(name => name[0] !== '.');
+            const items = (await store.list(dirPath)).filter(name => name && name[0] !== '.');
             console.log(`${items.length} items found in ${dirPath}:\n`);
             for (let item of items) console.log(`  ${item}`);
             console.log();
