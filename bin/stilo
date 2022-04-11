@@ -84,9 +84,10 @@ cmd.command("render <path> [params...]")
             const package = Package.find(process.cwd());
             const store = await loadStore(package);
             const fullPath = resolveDocumentPath(package, path);
-            const source = await store.read(fullPath);
-            const evaluate = store.parseDocument(source);
-            const context = store.createContextFromId(`${fullPath}?${params.join('&')}`);
+            const docId = `${fullPath}?${params.join('&')}`;
+            const doc = await store.load(docId);
+            const evaluate = doc.parse();
+            const context = doc.createContext();
             const {text} = await evaluate(context);
             console.log(text);
 
@@ -122,7 +123,7 @@ cmd.command("run <command-name> [params...]")
         const command = commands[commandName];
         if (command) {
             const store = await loadStore(package);
-            const options = store.createContextFromId(`/?${params.join('&')}`).__query__;
+            const options = new store.constructor.Document(store, `/?${params.join('&')}`).query;
             await command(store, options);
         } else {
             logger.error(`Unknown command: ${commandName}`);
