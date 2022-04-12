@@ -123,7 +123,7 @@ cmd.command("run <command-name> [params...]")
         const command = commands[commandName];
         if (command) {
             const store = await loadStore(package);
-            const options = new store.constructor.Document(store, `/?${params.join('&')}`).query;
+            const options = store.create(`/?${params.join('&')}`).query;
             await command(store, options);
         } else {
             logger.error(`Unknown command: ${commandName}`);
