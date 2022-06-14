@@ -104,7 +104,26 @@ class Package {
     }
 }
 
-exports.Package = Package;
+function resolveDocumentPath (package, path) {
+    if (path[0] === '/' || path.match(/^([a-zA-Z][a-zA-Z0-9+.-]*):\/(.*)$/)) {
+        return path;
+    } else {
+        const rootPath = package.resolvePath('..');
+        const relativeCWD = pathlib.join('/', process.cwd().slice(rootPath.length));
+        return pathlib.resolve(`/${relativeCWD}`, path);
+    }
+}
+
+async function loadStore (package) {
+    const Store = package.require('./store');
+    const homePath = package.resolvePath('..');
+    const store = await Store(homePath);
+    store.cwd = resolveDocumentPath(package, ".");
+    return store;
+}
+
+
+module.exports = {Package, resolveDocumentPath, loadStore};
 
 
 // -----------------------------------------------------------------------------

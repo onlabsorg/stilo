@@ -1,0 +1,53 @@
+#!/usr/bin/env node
+
+const logger = require("js-logger");
+logger.useDefaults();
+
+const pathlib = require('path');
+
+const {Package, loadStore} = require("..");
+const package = Package.find(process.cwd());
+
+const commander = require('commander');
+const run = commander.createCommand();
+
+async function loadPluginCommands () {
+    const store = await loadStore(package);
+    
+    const commands = package.require('./commands');
+    
+    for (let commandName in commands) {
+        const cmd = run.command(commandName);
+
+        const cmdOptions = commands[commandName];
+                
+        cmd.description(cmdOptions.description || `${commandName} plugin`);
+        
+        if (cmdOptions.arguments) for (let argument of cmdOptions.arguments) {
+            const [syntax, description] = parseParameter(argument);
+            cmd.argument(syntax, description);
+        }
+        
+        if (cmdOptions.options) for (let option of cmdOptions.options) {
+            const [syntax, description] = parseParameter(option);
+            cmd.option(syntax, description);
+        }
+
+        cmd.action(cmdOptions.action.bind(store));
+    }    
+}
+
+
+function parseParameter (param) {
+    const qmPos = param.indexOf('?');
+    if (qmPos !== -1) {
+        const syntax = param.slice(0, qmPos).trim();
+        const description = param.slice(qmPos+1).trim();
+        return [syntax, description];
+    } else {
+        return [param, undefined];
+    }
+}
+
+
+loadPluginCommands().then(() => run.parse( process.argv ));

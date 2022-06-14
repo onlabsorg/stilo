@@ -6,15 +6,16 @@ logger.useDefaults();
 const pathlib = require('path');
 const fs = require('fs');
 
-const {Package} = require("..");
+const {Package, resolveDocumentPath, loadStore} = require("..");
 
-const cmd = require("commander");
-
-
-cmd.version(`v${require("../package.json").version}`, "-v --version");
+const commander = require('commander');
+const stilo = commander.createCommand();
 
 
-cmd.command("init")
+stilo.version(`v${require("../package.json").version}`, "-v --version");
+
+
+stilo.command("init")
     .description("initialize the current directory as the root of an olojs document package")
     .action(async () => {
         try {
@@ -28,7 +29,7 @@ cmd.command("init")
     });
 
 
-cmd.command("install <plugin>")
+stilo.command("install <plugin>")
     .description("install a plugin")
     .action(async (packageId) => {
         logger.info(`@stilo: installing ${packageId}`);
@@ -46,7 +47,7 @@ cmd.command("install <plugin>")
     });
 
 
-cmd.command("uninstall <plugin>")
+stilo.command("uninstall <plugin>")
     .description("uninstall a plugin")
     .action(async (packageId) => {
         logger.info(`@stilo: uninstalling ${packageId}`);
@@ -61,7 +62,7 @@ cmd.command("uninstall <plugin>")
     });
 
 
-cmd.command("read <path>")
+stilo.command("read <path>")
     .description("fetch a document source and print it to the stdout")
     .action(async path => {
         try {
@@ -77,17 +78,16 @@ cmd.command("read <path>")
     });
 
 
-cmd.command("render <path> [params...]")
+stilo.command("render <path>")
     .description("render a document and print it to the stdout")
-    .action(async (path, params) => {
+    .action(async (path) => {
         try {
             const package = Package.find(process.cwd());
             const store = await loadStore(package);
             const fullPath = resolveDocumentPath(package, path);
-            const docId = `${fullPath}?${params.join('&')}`;
-            const doc = await store.load(docId);
-            const evaluate = doc.parse();
-            const context = doc.createContext();
+            const source = await store.read(fullPath);
+            const evaluate = store.parse(source);
+            const context = store.createContext(fullPath);
             const {text} = await evaluate(context);
             console.log(text);
 
@@ -97,66 +97,7 @@ cmd.command("render <path> [params...]")
     });
 
 
-cmd.command("list [path]")
-    .description("list the content of a directory")
-    .action(async (path=".") => {
-        try {
-            const package = Package.find(process.cwd());
-            const store = await loadStore(package);
-            const dirPath = resolveDocumentPath(package, path);
-            const items = (await store.list(dirPath)).filter(name => name && name[0] !== '.');
-            console.log(`${items.length} items found in ${dirPath}:\n`);
-            for (let item of items) console.log(`  ${item}`);
-            console.log();
-            
-        } catch (error) {
-            logger.error(error.message);
-        }
-    });
+stilo.command("run", "executes a plugin command");
 
 
-cmd.command("run <command-name> [params...]")
-    .description("executes a sub-command")
-    .action(async (commandName, params) => {
-        const package = Package.find(process.cwd());
-        const commands = package.require('./commands');
-        const command = commands[commandName];
-        if (command) {
-            const store = await loadStore(package);
-            const options = store.create(`/?${params.join('&')}`).query;
-            await command(store, options);
-        } else {
-            logger.error(`Unknown command: ${commandName}`);
-        }
-    });
-
-
-cmd.command("commands")
-    .description("list the available sub-commands")
-    .action(async (commandName, params) => {
-        const package = Package.find(process.cwd());
-        const commands = package.require('./commands');
-        for (let commandName in commands) {
-            console.log(commandName);
-        }
-    });
-
-
-function resolveDocumentPath (package, path) {
-    if (path[0] === '/' || path.match(/^([a-zA-Z][a-zA-Z0-9+.-]*):\/(.*)$/)) {
-        return path;
-    } else {
-        const rootPath = package.resolvePath('..');
-        const relativeCWD = pathlib.join('/', process.cwd().slice(rootPath.length));
-        return pathlib.resolve(`/${relativeCWD}`, path);
-    }
-}
-
-async function loadStore (package) {
-    const Store = package.require('./store');
-    const homePath = package.resolvePath('..');
-    return await Store(homePath);
-}
-
-
-cmd.parse( process.argv );
+stilo.parse( process.argv );

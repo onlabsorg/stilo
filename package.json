@@ -36,7 +36,7 @@
   },
   "homepage": "https://github.com/onlabsorg/stilo#readme",
   "dependencies": {
-    "commander": "^6.1.0",
+    "commander": "^9.3.0",
     "js-logger": "^1.6.1",
     "ncp": "^2.0.0"
   },
