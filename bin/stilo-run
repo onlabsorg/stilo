@@ -5,14 +5,14 @@ logger.useDefaults();
 
 const pathlib = require('path');
 
-const {Package, loadStore} = require("..");
+const {Package} = require("..");
 const package = Package.find(process.cwd());
 
 const commander = require('commander');
 const run = commander.createCommand();
 
 async function loadPluginCommands () {
-    const store = await loadStore(package);
+    const store = await package.getStore('/');
     
     const commands = package.require('./commands');
     

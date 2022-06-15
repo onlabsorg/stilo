@@ -6,7 +6,7 @@ logger.useDefaults();
 const pathlib = require('path');
 const fs = require('fs');
 
-const {Package, resolveDocumentPath, loadStore} = require("..");
+const {Package} = require("..");
 
 const commander = require('commander');
 const stilo = commander.createCommand();
@@ -67,8 +67,8 @@ stilo.command("read <path>")
     .action(async path => {
         try {
             const package = Package.find(process.cwd());
-            const store = await loadStore(package);
-            const fullPath = resolveDocumentPath(package, path);
+            const store = await package.getStore('/');
+            const fullPath = store.resolveRelativePath(path);
             const source = await store.read(fullPath);
             console.log(source);
 
@@ -83,8 +83,8 @@ stilo.command("render <path>")
     .action(async (path) => {
         try {
             const package = Package.find(process.cwd());
-            const store = await loadStore(package);
-            const fullPath = resolveDocumentPath(package, path);
+            const store = await package.getStore('/');
+            const fullPath = store.resolveRelativePath(path);
             const source = await store.read(fullPath);
             const evaluate = store.parse(source);
             const context = store.createContext(fullPath);

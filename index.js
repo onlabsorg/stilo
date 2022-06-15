@@ -72,6 +72,14 @@ class Package {
         packageJson.stilo.plugins.splice(pluginIndex, 1);
         writeJsonFile(this.resolveModulePath('./package.json'), packageJson);
     }
+    
+    
+    async getStore (rootPath='/') {
+        const Store = this.require('./store');
+        const homePath = this.resolvePath('..');
+        const homeStore = await Store(homePath);
+        return SubStore(homeStore, homePath, rootPath);        
+    }
 
 
     // The name of the directory that contain the stilo configuration npm-package
@@ -101,34 +109,45 @@ class Package {
             if (isRootPath(path)) throw new Error(`'${this.DIR_NAME}' npm package not found`);
             path = pathlib.join(path, "..");
         }
-    }
-}
-
-function resolveDocumentPath (package, path) {
-    if (path[0] === '/' || path.match(/^([a-zA-Z][a-zA-Z0-9+.-]*):\/(.*)$/)) {
-        return path;
-    } else {
-        const rootPath = package.resolvePath('..');
-        const relativeCWD = pathlib.join('/', process.cwd().slice(rootPath.length));
-        return pathlib.resolve(`/${relativeCWD}`, path);
-    }
-}
-
-async function loadStore (package) {
-    const Store = package.require('./store');
-    const homePath = package.resolvePath('..');
-    const store = await Store(homePath);
-    store.cwd = resolveDocumentPath(package, ".");
-    return store;
+    }    
 }
 
 
-module.exports = {Package, resolveDocumentPath, loadStore};
+module.exports = {Package};
 
 
 // -----------------------------------------------------------------------------
 //  SERVICE FUNCTIONS
 // -----------------------------------------------------------------------------
+
+function SubStore (homeStore, homePath, rootPath) {
+    const store = Object.create(homeStore);
+    
+    const cwd = pathlib.join('/', process.cwd().slice(homePath.length));
+
+    const fullPath = path => pathlib.join(`/${rootPath}`, path);    
+    
+    store.resolveRelativePath = path => {
+        if (path[0] === '/' || path.match(/^([a-zA-Z][a-zA-Z0-9+.-]*):\/(.*)$/)) {
+            return path;
+        } else {
+            return pathlib.join(cwd, path);
+        }
+    }
+    
+    store.read = path => homeStore.read(fullPath(path));
+    
+    store.write = (path, source) => homeStore.write(fullPath(path), source);
+    
+    store.delete = path => homeStore.delete(fullPath(path), path);
+            
+    store.subStore = path => {
+        const rootPath = fullPath(store.resolveRelativePath(path));
+        return SubStore(homeStore, homePath, rootPath);
+    }
+    
+    return store;
+}
 
 function isRootPath (path) {
     const {root, dir} = pathlib.parse(path);
