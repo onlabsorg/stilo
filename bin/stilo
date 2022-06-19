@@ -1,103 +1,39 @@
 #!/usr/bin/env node
 
-const logger = require("js-logger");
-logger.useDefaults();
-
-const pathlib = require('path');
-const fs = require('fs');
-
-const {Package} = require("..");
-
-const commander = require('commander');
-const stilo = commander.createCommand();
-
+const stilo = require('commander').createCommand();
 
 stilo.version(`v${require("../package.json").version}`, "-v --version");
 
-
 stilo.command("init")
     .description("initialize the current directory as the root of an olojs document package")
-    .action(async () => {
-        try {
-            logger.info(`@stilo: Initializing stilo package ...`);
-            const package = await Package.create(process.cwd());
-            logger.info("@stilo: Package successfully initialized.");
+    .action(require('../lib/stilo-init'));
 
-        } catch (error) {
-            logger.error(error.message);
-        }
-    });
-
-
-stilo.command("install <plugin>")
+stilo.command("install")
     .description("install a plugin")
-    .action(async (packageId) => {
-        logger.info(`@stilo: installing ${packageId}`);
-        try {
-            const package = Package.find(process.cwd());
-            if (packageId[0] === '.') {
-                packageId = pathlib.join(process.cwd(), packageId);
-            }
-            await package.install(packageId);
-            logger.info(`@stilo: ${packageId} plugin installed`);
+    .argument('<plugin>', "npm package-id of the plugin to be installed")
+    .action(require('../lib/stilo-install'));
 
-        } catch (error) {
-            logger.error(error);
-        }
-    });
+stilo.command("uninstall")
+    .description("uninstall a plugin from npm")
+    .argument('<plugin>', "npm package-id of the plugin to be uninstalled")
+    .action(require('../lib/stilo-uninstall'));
 
-
-stilo.command("uninstall <plugin>")
-    .description("uninstall a plugin")
-    .action(async (packageId) => {
-        logger.info(`@stilo: uninstalling ${packageId}`);
-        try {
-            const package = Package.find(process.cwd());
-            await package.uninstall(packageId);
-            logger.info(`@stilo: ${packageId} plugin uninstalled`);
-
-        } catch (error) {
-            logger.error(error);
-        }
-    });
-
-
-stilo.command("read <path>")
+stilo.command("read")
     .description("fetch a document source and print it to the stdout")
-    .action(async path => {
-        try {
-            const package = Package.find(process.cwd());
-            const store = await package.getStore('/');
-            const fullPath = store.resolveRelativePath(path);
-            const source = await store.read(fullPath);
-            console.log(source);
+    .argument('<path>', "path of the document to be fetched")
+    .action(require('../lib/stilo-read'));
 
-        } catch (error) {
-            logger.error(error.message);
-        }
-    });
-
-
-stilo.command("render <path>")
+stilo.command("render")
     .description("render a document and print it to the stdout")
-    .action(async (path) => {
-        try {
-            const package = Package.find(process.cwd());
-            const store = await package.getStore('/');
-            const fullPath = store.resolveRelativePath(path);
-            const source = await store.read(fullPath);
-            const evaluate = store.parse(source);
-            const context = store.createContext(fullPath);
-            const {text} = await evaluate(context);
-            console.log(text);
+    .argument('<path>', "path of the document to be rendered")
+    .action(require('../lib/stilo-render'));
 
-        } catch (error) {
-            logger.error(error.message);
-        }
-    });
-
+stilo.command("serve")
+    .description("serve the stilo repository documents over HTTP")
+    .argument('[path]', "root path to be served [defaults to '/']")
+    .option('-p, --port <port>', "server port [defaults to 8010]")
+    .action(require('../lib/stilo-serve'));
 
 stilo.command("run", "executes a plugin command");
-
 
 stilo.parse( process.argv );

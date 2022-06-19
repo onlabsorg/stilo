@@ -1,41 +1,8 @@
 #!/usr/bin/env node
 
-const logger = require("js-logger");
-logger.useDefaults();
-
-const pathlib = require('path');
-
-const {Package} = require("..");
-const package = Package.find(process.cwd());
-
-const commander = require('commander');
-const run = commander.createCommand();
-
-async function loadPluginCommands () {
-    const store = await package.getStore('/');
-    
-    const commands = package.require('./commands');
-    
-    for (let commandName in commands) {
-        const cmd = run.command(commandName);
-
-        const cmdOptions = commands[commandName];
-                
-        cmd.description(cmdOptions.description || `${commandName} plugin`);
-        
-        if (cmdOptions.arguments) for (let argument of cmdOptions.arguments) {
-            const [syntax, description] = parseParameter(argument);
-            cmd.argument(syntax, description);
-        }
-        
-        if (cmdOptions.options) for (let option of cmdOptions.options) {
-            const [syntax, description] = parseParameter(option);
-            cmd.option(syntax, description);
-        }
-
-        cmd.action(cmdOptions.action.bind(store));
-    }    
-}
+const Package = require("../lib/package");
+const package = Package.find( process.cwd() );
+const packageAPI = package.require('./');
 
 
 function parseParameter (param) {
@@ -50,4 +17,30 @@ function parseParameter (param) {
 }
 
 
-loadPluginCommands().then(() => run.parse( process.argv ));
+
+const commander = require('commander');
+const run = commander.createCommand();
+
+for (let [commandName, commandSpecs] of Object.entries(packageAPI.commands)) {
+    const cmd = run.command(commandName);
+
+    cmd.description(commandSpecs.description || `${commandName} plugin`);
+    
+    if (commandSpecs.arguments) {
+        for (let argument of commandSpecs.arguments) {
+            const [syntax, description] = parseParameter(argument);
+            cmd.argument(syntax, description);
+        }
+    }
+    
+    if (commandSpecs.options) {
+        for (let option of commandSpecs.options) {
+            const [syntax, description] = parseParameter(option);
+            cmd.option(syntax, description);
+        }
+    }
+
+    cmd.action((...args) => packageAPI.run(commandName, ...args));
+}
+
+run.parse( process.argv )
