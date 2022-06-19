@@ -25,6 +25,8 @@ stilo.command("uninstall")
 stilo.command("read")
     .description("fetch a document source and print it to the stdout")
     .argument('<path>', "path of the document to be fetched")
+    .option('-o, --output <file-path>', "write the fetched source to a file")
+    .option('--verbose', "logs detailed information")
     .action(require('../lib/stilo-read'));
 
 stilo.command("render")
