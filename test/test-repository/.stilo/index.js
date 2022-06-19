@@ -54,6 +54,8 @@ module.exports = {
             throw new Error(`Unknown command: '${commandName}'`);
         }
     },
+
+    async beforeInit () {},
     
     async afterInit () {},
     

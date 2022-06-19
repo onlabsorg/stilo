@@ -1,5 +1,5 @@
 {
-    "name": "stilo-package",
+    "name": "stilo-default-package",
     "main": "index.js",
     "version": "0.18.0",
     "dependencies": {

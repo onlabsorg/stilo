@@ -6,16 +6,20 @@ stilo.version(`v${require("../package.json").version}`, "-v --version");
 
 stilo.command("init")
     .description("initialize the current directory as the root of an olojs document package")
+    .option('--force', "eventually overwrites an existing instance")
+    .option('--verbose', "logs detailed information")
     .action(require('../lib/stilo-init'));
 
 stilo.command("install")
     .description("install a plugin")
     .argument('<plugin>', "npm package-id of the plugin to be installed")
+    .option('--verbose', "logs detailed information")
     .action(require('../lib/stilo-install'));
 
 stilo.command("uninstall")
     .description("uninstall a plugin from npm")
     .argument('<plugin>', "npm package-id of the plugin to be uninstalled")
+    .option('--verbose', "logs detailed information")
     .action(require('../lib/stilo-uninstall'));
 
 stilo.command("read")
@@ -32,6 +36,7 @@ stilo.command("serve")
     .description("serve the stilo repository documents over HTTP")
     .argument('[path]', "root path to be served [defaults to '/']")
     .option('-p, --port <port>', "server port [defaults to 8010]")
+    .option('--verbose', "logs detailed information")
     .action(require('../lib/stilo-serve'));
 
 stilo.command("run", "executes a plugin command");

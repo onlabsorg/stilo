@@ -8,12 +8,6 @@ require('isomorphic-fetch');
 
 describe("stilo CLI", () => {
 
-    before(function () {
-        this.timeout(5000);
-        var packagePath = pathlib.join(__dirname, 'test-repository/.stilo');
-        if (fs.existsSync(packagePath)) rimraf.sync(packagePath);
-    });
-    
     describe("THe stilo package manager", () => {
         
         describe('package.path', () => {
@@ -68,8 +62,7 @@ describe("stilo CLI", () => {
             // Run the command
             process.chdir( pathlib.join(__dirname, 'test-repository') );
             var packagePath = pathlib.join(__dirname, 'test-repository', Package.DIR_NAME);
-            expect(fs.existsSync(packagePath)).to.be.false;
-            await stilo.init();
+            await stilo.init({force: true});
             const package = new Package(packagePath);       
             
             // Ensure cloned     
@@ -252,7 +245,6 @@ describe("stilo CLI", () => {
 
             // Ensure command ran
             expect(args).to.deep.equal([10,20,30]);
-            console.log(store);
             expect(await store.read('/dir/doc1')).to.equal(fs.readFileSync(pathlib.join(__dirname, 'test-repository/dir/doc1.olo'), 'utf8'))
 
             // Restore original status
