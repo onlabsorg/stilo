@@ -1,0 +1,4 @@
+Usage: stilo-run [options]
+
+Options:
+  -h, --help  display help for command
