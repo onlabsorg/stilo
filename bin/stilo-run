@@ -1,46 +1,11 @@
 #!/usr/bin/env node
 
-const Package = require("../lib/package");
-const package = Package.find( process.cwd() );
-const packageAPI = package.require('./');
+const commandName = process.argv[2];
 
+const parse = require('yargs-parser');
+const options = parse(process.argv.slice(3));
+const args = options._;
+delete options._;
 
-function parseParameter (param) {
-    const qmPos = param.indexOf('?');
-    if (qmPos !== -1) {
-        const syntax = param.slice(0, qmPos).trim();
-        const description = param.slice(qmPos+1).trim();
-        return [syntax, description];
-    } else {
-        return [param, undefined];
-    }
-}
-
-
-
-const commander = require('commander');
-const run = commander.createCommand();
-
-for (let [commandName, commandSpecs] of Object.entries(packageAPI.commands)) {
-    const cmd = run.command(commandName);
-
-    cmd.description(commandSpecs.description || `${commandName} plugin`);
-    
-    if (commandSpecs.arguments) {
-        for (let argument of commandSpecs.arguments) {
-            const [syntax, description] = parseParameter(argument);
-            cmd.argument(syntax, description);
-        }
-    }
-    
-    if (commandSpecs.options) {
-        for (let option of commandSpecs.options) {
-            const [syntax, description] = parseParameter(option);
-            cmd.option(syntax, description);
-        }
-    }
-
-    cmd.action((...args) => packageAPI.run(commandName, ...args));
-}
-
-run.parse( process.argv )
+const run = require('../lib/stilo-run');
+run(commandName, options, ...args);

@@ -7,10 +7,7 @@ exports.stilo = {
         store.test_plugin_installed = true;
     },
     
-    testcommand: {
-        description: "Test sub-command used for testing the stilo-run command",
-        action (store, ...args) {
-            return [store, args];
-        }        
+    testcommand (store, options, ...args) {
+        return [store, options, args];
     }
 }

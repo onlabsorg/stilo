@@ -123,10 +123,13 @@ new commands can be the run via `stilo run`.
 Runs a plugin command.
 
 ```
-Usage: stilo-run [options]
+Usage: stilo run <command-name> [options] [args...]
+
+Arguments:
+  Command dependent.
 
 Options:
-  -h, --help  display help for command
+  Command dependent.
 ```
 
 

@@ -35,7 +35,7 @@ module.exports = {
         
         for (let plugin of plugins) {
             for (let commandName in plugin) {
-                if (commandName[0] !== "_" && plugin[commandName] && typeof plugin[commandName].action == "function") {
+                if (commandName[0] !== "_" && typeof plugin[commandName] == "function") {
                     commands[commandName] = plugin[commandName];
                 }
             }
@@ -44,13 +44,13 @@ module.exports = {
         return commands;
     },
     
-    async run (commandName, ...args) {
+    async run (commandName, options, ...args) {
         const command = this.commands[commandName];
         if (command) {
             const rootPath = pathlib.join(__dirname, '..');
             const store = await this.getStore(rootPath);
             store.stiloRootPath = rootPath;
-            return await command.action(store, ...args);
+            return await command(store, options, ...args);
         } else {
             throw new Error(`Unknown command: '${commandName}'`);
         }

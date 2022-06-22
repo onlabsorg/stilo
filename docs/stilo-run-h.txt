@@ -1,4 +1,8 @@
-Usage: stilo-run [options]
+Usage: stilo run <command-name> [options] [args...]
+
+Arguments:
+  Command dependent.
 
 Options:
-  -h, --help  display help for command
+  Command dependent.
+

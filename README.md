@@ -32,7 +32,7 @@ stilo render /path/to/doc
 Serve the library over http:
 
 ```
-stilo run server
+stilo serve
 ```
 
 Once the HTTP server is running, your document source will be accessible at the 

@@ -270,10 +270,11 @@ describe("stilo CLI", () => {
 
             // Run the command
             process.chdir( pathlib.join(__dirname, 'test-repository') );
-            let [store, args] = await stilo.run('testcommand', 10, 20, 30);
+            let [store, options, args] = await stilo.run('testcommand', {x:1, y:2}, 10, 20, 30);
 
             // Ensure command ran
             expect(args).to.deep.equal([10,20,30]);
+            expect(options).to.deep.equal({x:1, y:2});
             expect(await store.read('/dir/doc1')).to.equal(fs.readFileSync(pathlib.join(__dirname, 'test-repository/dir/doc1.olo'), 'utf8'));
             expect(store.stiloRootPath).to.equal(pathlib.join(__dirname, 'test-repository'));
 

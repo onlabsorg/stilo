@@ -84,30 +84,16 @@ exports.stilo = {
         // be called by `api.getStore` after building the default store.
     },
     
-    command1: {
-        description: "description of command 1 shown on `stilo run -h`",
-        arguments: [
-            // arguments definitions, following the commanderjs syntax
-            "<arg1> ? description of arg1",
-            "<arg2> ? description of arg2"
-        ],
-        options: [
-            // options definitions, following the commanderjs syntax
-            "-o1, --option1 <value> ? description of option1",
-            "-o2, --option2 <value> ? description of option2"
-        ],
-        
-        action (store, arg1, arg2, options) {
-            // this function will be called on `stilo run command1 arg1 arg2 -o1 val1 -o2 val2`
-            // or via `api.run('command1', arg1, arg2, {option1:val1, option2:val2})`
-        }
+    command1 (store, options, arg1, arg2) {
+        // this function will be called on `stilo run command1 arg1 arg2 -o1 val1 -o2 val2`
+        // or via `api.run('command1', {option1:val1, option2:val2}, arg1, arg2)`
     },
 
-    command2 {
+    command2 (store, options, arg1, arg2, arg3) {
         // ...
     },
 
-    command3 {
+    command3 (store, options, arg1) {
         // ...
     }
 }
