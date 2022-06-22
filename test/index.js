@@ -275,12 +275,7 @@ describe("stilo CLI", () => {
             // Ensure command ran
             expect(args).to.deep.equal([10,20,30]);
             expect(await store.read('/dir/doc1')).to.equal(fs.readFileSync(pathlib.join(__dirname, 'test-repository/dir/doc1.olo'), 'utf8'));
-            expect(store.cwp).to.equal('/');
-
-            // run command from a sub cwd
-            process.chdir( pathlib.join(__dirname, 'test-repository/dir') );
-            [store, args] = await stilo.run('testcommand', 10, 20, 30);
-            expect(store.cwp).to.equal('/dir');
+            expect(store.stiloRootPath).to.equal(pathlib.join(__dirname, 'test-repository'));
 
             // Restore original status
             process.chdir(cwd);

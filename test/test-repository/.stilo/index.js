@@ -49,7 +49,7 @@ module.exports = {
         if (command) {
             const rootPath = pathlib.join(__dirname, '..');
             const store = await this.getStore(rootPath);
-            store.cwp = relativePath(rootPath, process.cwd());
+            store.stiloRootPath = rootPath;
             return await command.action(store, ...args);
         } else {
             throw new Error(`Unknown command: '${commandName}'`);
@@ -74,14 +74,3 @@ module.exports = {
         plugins.remove(pluginName);
     }
 };
-
-
-function relativePath (rootPath, fullPath) {
-    rootPath = pathlib.normalize(`/${rootPath}/`);
-    fullPath = pathlib.normalize(`/${fullPath}`);
-    if (fullPath.indexOf(rootPath) === 0) {
-        return '/' + pathlib.relative(rootPath, fullPath);
-    } else {
-        return '/';
-    }
-}
