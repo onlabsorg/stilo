@@ -49,6 +49,16 @@ module.exports = {
         if (command) {
             const rootPath = pathlib.join(__dirname, '..');
             const store = await this.getStore(rootPath);
+            
+            // determine the current working path relative to the root path
+            // and attach it to the store
+            const cwd = process.cwd();
+            if (cwd.indexOf(rootPath+'/') === 0) {
+                store.cwp = cwd.slice(rootPath.length);
+            } else {
+                store.cwp = '/';
+            }
+            
             return await command.action(store, ...args);
         } else {
             throw new Error(`Unknown command: '${commandName}'`);
