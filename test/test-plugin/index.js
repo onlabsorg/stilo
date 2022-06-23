@@ -15,6 +15,7 @@ exports.stilo = {
     commands: {
         
         testcommand (store, options, ...args) {
+            /// stilo command used only for testing purposes
             return [store, options, args];
         }
     }

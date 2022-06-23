@@ -89,16 +89,20 @@ exports.stilo = {
 
     commands: {
         
-        command1 (store, options, arg1, arg2) {
+        command1 (store, options, arg1, arg2) {            
             // this function will be called on `stilo run command1 arg1 arg2 -o1 val1 -o2 val2`
             // or via `api.run('command1', {option1:val1, option2:val2}, arg1, arg2)`
+            
+            /// the first comment starting with triple slash is used as command description
         },
 
         command2 (store, options, arg1, arg2, arg3) {
+            /// another custom command
             // ...
         },
 
         command3 (store, options, arg1) {
+            /// yet another custom command
             // ...
         }
     }

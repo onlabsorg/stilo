@@ -12,6 +12,7 @@ the installed plugins. In particular, the API contains the following functions:
 * `api.getStore` returns the [olo.Store] interface to the repository documents
 * `api.createServer` returns a NodeJS [http.Server] object that serves the store 
   over HTTP
+* `api.commands` return an object containing all the plugin commands
 * `api.run` executes a plugin command
 * `api.beforeInit` called before the `stilo-init` command 
 * `api.afterInit` called after the `stilo-init` command 
@@ -79,22 +80,31 @@ object are of two types:
 // stilo plugin export
 exports.stilo = {
     
-    __init__ (store) {
-        // This function is supposed to decorate the passed store and it will 
-        // be called by `api.getStore` after building the default store.
-    },
-    
-    command1 (store, options, arg1, arg2) {
-        // this function will be called on `stilo run command1 arg1 arg2 -o1 val1 -o2 val2`
-        // or via `api.run('command1', {option1:val1, option2:val2}, arg1, arg2)`
+    routes: {
+        // These stores will be mounted to the repository root store
+        '/path/to/store1': store1,
+        '/path/to/store2': store2,
+        '/path/to/store3': store3        
     },
 
-    command2 (store, options, arg1, arg2, arg3) {
-        // ...
-    },
+    commands: {
+        
+        command1 (store, options, arg1, arg2) {            
+            // this function will be called on `stilo run command1 arg1 arg2 -o1 val1 -o2 val2`
+            // or via `api.run('command1', {option1:val1, option2:val2}, arg1, arg2)`
+            
+            /// the first comment starting with triple slash is used as command description
+        },
 
-    command3 (store, options, arg1) {
-        // ...
+        command2 (store, options, arg1, arg2, arg3) {
+            /// another custom command
+            // ...
+        },
+
+        command3 (store, options, arg1) {
+            /// yet another custom command
+            // ...
+        }
     }
 }
 ```
