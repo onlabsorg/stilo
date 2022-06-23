@@ -125,13 +125,11 @@ Runs a plugin command.
 ```
 Usage: stilo run <command-name> [options] [args...]
 
-Arguments:
-  Command dependent.
+Commands:
+  No commands installed.
 
 Options:
-  Command dependent.
-
-Enter `stilo run help` for detailed help.
+  -h, --help     print this help message
 ```
 
 
