@@ -5,22 +5,22 @@ module.exports = {
     async getStore ( rootPath=pathlib.join(__dirname, '..') ) {
         const olo = require('@onlabsorg/olojs');
         const plugins = require('./lib/plugins');
-
-        const store = new olo.Router({
+        
+        const routes = {
             '/'      : new olo.FileStore(rootPath),
             'http:/' : new olo.HTTPStore('http:/'),
             'https:/': new olo.HTTPStore('https:/'),
             'file:/' : new olo.FileStore('/'),
-            'temp:/' : new olo.MemoryStore(),
-        });
-        
-        for (let plugin of plugins) {
-            if (typeof plugin.__init__ === 'function') {
-                await plugin.__init__(store);
-            }
+            'temp:/' : new olo.MemoryStore(),            
         }
         
-        return store;
+        for (let plugin of plugins) {
+            for (let [path, store] of Object.entries(plugin.routes)) {
+                routes[path] = store;
+            }
+        }
+
+        return new olo.Router(routes);
     },
     
     async createServer (store) {
@@ -34,11 +34,11 @@ module.exports = {
         const commands = {};
         
         for (let plugin of plugins) {
-            for (let commandName in plugin) {
-                if (commandName[0] !== "_" && typeof plugin[commandName] == "function") {
-                    commands[commandName] = plugin[commandName];
+            for (let [commandName, command] of Object.entries(plugin.commands)) {
+                if (typeof command == "function") {
+                    commands[commandName] = command;
                 }
-            }
+            }                
         }
         
         return commands;

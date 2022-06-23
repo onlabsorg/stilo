@@ -3,11 +3,19 @@
 
 exports.stilo = {
     
-    __init__ (store) {
-        store.test_plugin_installed = true;
+    routes: {
+        
+        '/test/route': {
+            read: path => `test plugin: read ${path}`,
+            write: (path, source) => `test plugin: write ${path}`,
+            delete: path => `test plugin: delete ${path}`,
+        }
     },
     
-    testcommand (store, options, ...args) {
-        return [store, options, args];
+    commands: {
+        
+        testcommand (store, options, ...args) {
+            return [store, options, args];
+        }
     }
 }

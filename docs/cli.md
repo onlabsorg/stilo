@@ -130,6 +130,8 @@ Arguments:
 
 Options:
   Command dependent.
+
+Enter `stilo run help` for detailed help.
 ```
 
 

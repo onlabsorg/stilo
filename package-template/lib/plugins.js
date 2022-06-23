@@ -25,7 +25,10 @@ module.exports = {
     },
     
     get (pluginName) {
-        return require(pluginName).stilo || {};
+        const plugin = require(pluginName).stilo || {};
+        if (!plugin.routes) plugin.routes = {};
+        if (!plugin.commands) plugin.commands = {};
+        return plugin;
     },
     
     add (pluginName) {

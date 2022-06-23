@@ -257,9 +257,12 @@ describe("stilo CLI", () => {
             const packageJson = JSON.parse(packageJsonText)
             expect(packageJson.stilo.plugins).to.deep.equal(['test-plugin']);
 
+            // Ensure plugin routes added to the store
+            expect(await stilo.read('/test/route/path/to/doc')).to.equal("test plugin: read /path/to/doc");
+
             // Restore original status
             process.chdir(cwd);
-        });
+        });        
     });
 
     describe("stilo.run(commandName, ...args)", () => {
