@@ -1,0 +1,5 @@
+x+1 = <% __query__.x + 1 %>
+b is <% __query__.b == TRUE ? "true" ; "false" %>
+My name is <% __query__.name + "!" %>
+2*a(1) = <% __query__.a(1) * 2 %>
+a(2) = <% __query__.a(2) %>

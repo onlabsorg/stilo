@@ -3,9 +3,11 @@ Usage: stilo render [options] <path>
 render a document and print it to the stdout
 
 Arguments:
-  path                      path of the document to be rendered
+  path                        path of the document to be rendered
 
 Options:
-  -o, --output <file-path>  write the rendered document to a file
-  --verbose                 logs detailed information
-  -h, --help                display help for command
+  -o, --output <file-path>    write the rendered document to a file
+  -q, --query <query-string>  adds the query parameter to the document context
+                              before rendering
+  --verbose                   logs detailed information
+  -h, --help                  display help for command

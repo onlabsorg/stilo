@@ -61,18 +61,31 @@ Usage: stilo render [options] <path>
 render a document and print it to the stdout
 
 Arguments:
-  path                      path of the document to be rendered
+  path                        path of the document to be rendered
 
 Options:
-  -o, --output <file-path>  write the rendered document to a file
-  --verbose                 logs detailed information
-  -h, --help                display help for command
+  -o, --output <file-path>    write the rendered document to a file
+  -q, --query <query-string>  adds the query parameter to the document context
+                              before rendering
+  --verbose                   logs detailed information
+  -h, --help                  display help for command
 ```
 
 The path can be also relative to the current working directory. For example,
 let's assume that the package root is `/path/to/my-package` and that you
 run `stilo render ./doc` from `/path/to/my-package/dir/`; in this case the
 document mapped to `/dir/doc` will be rendered.
+
+The query is a series of `name=value` separated either by `&` or `;`items that 
+will be parsed into a `__query__` namespace and added to the document context 
+before rendering it. The values can be strings, numbers, true, false or a 
+`,`-separated array of values. For example, the query string 
+`x=10&s=abc&b=true&a=1,2,def` will be converted to the following namespace:
+
+```js
+__query__ = { x: 10, s: "abc", b: true, a: [1, 2, "def"] }
+```
+
 
 
 ## stilo read &lt;doc-path&gt;

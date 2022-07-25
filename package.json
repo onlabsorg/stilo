@@ -39,6 +39,7 @@
     "chalk": "^4.1.2",
     "commander": "^9.3.0",
     "ncp": "^2.0.0",
+    "query-string": "^7.1.1",
     "rimraf": "^3.0.2",
     "yargs-parser": "^21.0.1"
   },
