@@ -193,34 +193,6 @@ describe("stilo CLI", () => {
             // Restore original status
             process.chdir(cwd);            
         });
-
-        it("should parse the query string passed with the --query options and add it to the context", async () => {
-            let stdout = "";
-
-            // Status snapshot
-            const cwd = process.cwd();
-            const stdout_write = process.stdout.write;
-            
-            // Run the commands
-            process.chdir( pathlib.join(__dirname, 'test-repository') );
-            process.stdout.write = text => {
-                stdout += text;
-                stdout_write.call(process.stdout, text);
-            }
-            await stilo.render('/dir/query_test', {query: "x=10;b=true;name=Marcello;a=1,2,abc"});
-            expect(stdout).to.equal(
-                "x+1 = 11\n" +
-                "b is true\n" +
-                "My name is Marcello!\n" +
-                "2*a(1) = 4\n" +
-                "a(2) = abc\n" +
-                "\n"
-            );
-
-            // Restore original status
-            process.chdir(cwd);            
-            process.stdout.write = stdout_write;            
-        });
     });
 
     describe("stilo.serve(path, {port})", () => {

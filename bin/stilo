@@ -33,7 +33,6 @@ stilo.command("render")
     .description("render a document and print it to the stdout")
     .argument('<path>', "path of the document to be rendered")
     .option('-o, --output <file-path>', "write the rendered document to a file")
-    .option('-q, --query <query-string>', "adds the query parameter to the document context before rendering")
     .option('--verbose', "logs detailed information")
     .action(require('../lib/stilo-render'));
 
