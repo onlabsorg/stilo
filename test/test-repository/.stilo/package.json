@@ -3,7 +3,7 @@
     "main": "index.js",
     "version": "0.18.0",
     "dependencies": {
-        "@onlabsorg/olojs": "0.24.x"
+        "@onlabsorg/olojs": "0.25.x"
     },
     "stilo": {
         "plugins": []
