@@ -1,0 +1,43 @@
+#+title: Stilo
+
+< [[../../../../mdb.org][Home]] < [[../../../projects.org][Projects]]
+
+
+* v0.18.0
+** TODO olonet update
+A stilo package is a local directory mounted to the `/home` path of a
+olonet node. The directory contains a npm package `.stilo` can be
+initialized by the stilo cli:
+
+- [ ] Implement the `stilo init` command
+
+The `.stilo` npm package exports:
+
+- [ ] `stilo.init`: a function run by the `stilo init` CLI command after first initialization
+- [ ] `stilo.node`: a function that returns the olonet node having the stilo root as `/home`; this node will be used by the stilo CLI commands `read`, `render` and `serve`
+- [ ] `stilo.commands`: returns an object containing functions that are callable via the `stilo run` CLI command
+- [ ] `stilo.install`: a function called by stilo after installing a npm package via the `stilo install` command
+- [ ] `stilo.uninstall`: a function called by stilo before uninstalling a npm package via the `stilo uninstall` command
+
+The stilo package can be customized by modifying its code, but the default implementation allows customization via plugins:
+
+- [ ] `stilo.install` registers the package installed via `stilo install` as plugins and calls the `plugin.setup` API after installation
+- [ ] `stilo.uninstall` removes the plugin from the registry and calls `plugin.teardown` if present
+- [ ] `stilo.node` scans all the plugins and mounts all the stores contained in each `plugin.routes` object.
+- [ ] `stilo.commands` scans all the plugins and adds all the functions contained in each `plugins.commands` to the returned object
+
+Summarizing, each plugin can expose the following API:
+
+- plugin.setup
+- plugin.routes
+- plugin.commands
+- plugin.teardown
+
+
+* BACKLOG:
+** TODO CLI: add run-and-repl command
+Evaluate a document and start an interactive REPL in the resulting context
+** TODO CLI: implement autocompletion
+** TODO custom package templates
+A custom stilo package should be installable as `stilo init package-url`.
+Package specifications should be available to developers as mocha tests.

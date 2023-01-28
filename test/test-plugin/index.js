@@ -7,6 +7,7 @@ exports.stilo = {
         
         '/test/route': {
             read: path => `test plugin: read ${path}`,
+            list: path => `test plugin: list ${path}`,
             write: (path, source) => `test plugin: write ${path}`,
             delete: path => `test plugin: delete ${path}`,
         }
