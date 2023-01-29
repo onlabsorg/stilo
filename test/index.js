@@ -8,12 +8,192 @@ require('isomorphic-fetch');
 
 describe("stilo", () => {
 
-    require('./package');
+    describe("THe stilo package manager", () => {
 
-    require('./stilo-init');
-    require('./stilo-read');
-    require('./stilo-render');
+        describe('package.path', () => {
 
+            it("should contain the root path of the .stilo npm package", () => {
+                const packagePath = pathlib.join(__dirname, "../package-template");
+                const package = new Package(packagePath);
+                expect(package.path).to.equal(packagePath);
+            });
+        });
+
+        describe('package.resolvePath(subPath)', () => {
+
+            it("should return the absolute path of subPath, considering it relative to the package path", () => {
+                const packagePath = pathlib.join(__dirname, "../package-template");
+                const package = new Package(packagePath);
+                expect(package.resolvePath('/../test')).to.equal(__dirname);
+            });
+        });
+
+        describe('package.require(moduleId)', () => {
+
+            it("should import a return a module of the npm package", () => {
+                const packagePath = pathlib.join(__dirname, "../package-template");
+                const package = new Package(packagePath);
+                expect(package.require('./index')).to.equal(require('../package-template/index'));
+            });
+        });
+
+        describe('package.spawn(command, ...args)', () => {
+
+            it("should execute a shell command from the root directory of the npm package", async () => {
+                const packagePath = pathlib.join(__dirname, "../package-template");
+                const package = new Package(packagePath);
+                const fileContent = String(Math.random());
+                await package.spawn('cp', './package.json', '../test/package.json');
+                expect(require('./package.json')).to.deep.equal(require('../package-template/package.json'))
+                await package.spawn('rm', '../test/package.json');
+                expect(fs.existsSync(pathlib.join(__dirname, 'package.json'))).to.be.false;
+            });
+        });
+    });
+
+    describe("stilo.init()", () => {
+
+        it("should clone and install the package-template in the cwd", async function () {
+            this.timeout(60000);
+
+            // Status snapshot
+            const cwd = process.cwd();
+
+            // Run the command
+            process.chdir( pathlib.join(__dirname, 'test-repository') );
+            var packagePath = pathlib.join(__dirname, 'test-repository', Package.DIR_NAME);
+            await stilo.init({force: true});
+            const package = new Package(packagePath);
+
+            // Ensure cloned
+            expect(package.require('./package.json')).to.deep.equal(require('../package-template/package.json'))
+
+            // Ensure npm packages installed
+            expect(fs.existsSync(pathlib.join(packagePath, 'node_modules/@onlabsorg/olojs')));
+
+            // Restore original status
+            process.chdir(cwd);
+        });
+    });
+
+    describe("stilo.read(docPath)", () => {
+
+        it("should fetch the doc mapped to docPath and print it to stdout ", async () => {
+            let stdout = "";
+
+            // Status snapshot
+            const cwd = process.cwd();
+            const stdout_write = process.stdout.write;
+
+            // Run the commands
+            process.chdir( pathlib.join(__dirname, 'test-repository') );
+            process.stdout.write = text => {
+                stdout += text;
+                stdout_write.call(process.stdout, text);
+            }
+            await stilo.read('/dir/doc1');
+            expect(stdout).to.equal(fs.readFileSync(pathlib.join(__dirname, 'test-repository/dir/doc1.olo'), 'utf8') + '\n');
+
+            // Restore original status
+            process.chdir(cwd);
+            process.stdout.write = stdout_write;
+        });
+
+        it("should consider the path as relative to the cwd", async () => {
+            let stdout = "";
+
+            // Status snapshot
+            const cwd = process.cwd();
+            const stdout_write = process.stdout.write;
+
+            // Run the commands
+            process.chdir( pathlib.join(__dirname, 'test-repository/dir') );
+            process.stdout.write = text => {
+                stdout += text;
+                stdout_write.call(process.stdout, text);
+            }
+            await stilo.read('doc1');
+            expect(stdout).to.equal(fs.readFileSync(pathlib.join(__dirname, 'test-repository/dir/doc1.olo'), 'utf8') + '\n');
+
+            // Restore original status
+            process.chdir(cwd);
+            process.stdout.write = stdout_write;
+        });
+
+        it("should output the source to the file path eventually passed with the --output option", async () => {
+            // Status snapshot
+            const cwd = process.cwd();
+
+            // Run the commands
+            process.chdir( pathlib.join(__dirname, 'test-repository') );
+            await stilo.read('/dir/doc1', {output:"dir/doc1.txt"});
+            const outputFileContent = fs.readFileSync(pathlib.join(__dirname, 'test-repository/dir/doc1.txt'), 'utf8')
+            const sourceFileContent = fs.readFileSync(pathlib.join(__dirname, 'test-repository/dir/doc1.olo'), 'utf8')
+            expect(outputFileContent).to.equal(sourceFileContent);
+
+            // Restore original status
+            process.chdir(cwd);
+        });
+    });
+
+    describe("stilo.render(docPath)", () => {
+
+        it("should fetch the doc mapped to docPath and print its rendered text to stdout ", async () => {
+            let stdout = "";
+
+            // Status snapshot
+            const cwd = process.cwd();
+            const stdout_write = process.stdout.write;
+
+            // Run the commands
+            process.chdir( pathlib.join(__dirname, 'test-repository') );
+            process.stdout.write = text => {
+                stdout += text;
+                stdout_write.call(process.stdout, text);
+            }
+            await stilo.render('/dir/doc1');
+            expect(stdout).to.equal("document @ /dir/doc1\n\n");
+
+            // Restore original status
+            process.chdir(cwd);
+            process.stdout.write = stdout_write;
+        });
+
+        it("should consider the path as relative to the cwd", async () => {
+            let stdout = "";
+
+            // Status snapshot
+            const cwd = process.cwd();
+            const stdout_write = process.stdout.write;
+
+            // Run the commands
+            process.chdir( pathlib.join(__dirname, 'test-repository/dir') );
+            process.stdout.write = text => {
+                stdout += text;
+                stdout_write.call(process.stdout, text);
+            }
+            await stilo.render('doc1');
+            expect(stdout).to.equal("document @ /dir/doc1\n\n");
+
+            // Restore original status
+            process.chdir(cwd);
+            process.stdout.write = stdout_write;
+        });
+
+        it("should output the rendered document to the file path eventually passed with the --output option", async () => {
+            // Status snapshot
+            const cwd = process.cwd();
+
+            // Run the commands
+            process.chdir( pathlib.join(__dirname, 'test-repository') );
+            await stilo.render('/dir/doc1', {output:"dir/doc1.txt"});
+            const outputFileContent = fs.readFileSync(pathlib.join(__dirname, 'test-repository/dir/doc1.txt'), 'utf8')
+            expect(outputFileContent).to.equal("document @ /dir/doc1\n");
+
+            // Restore original status
+            process.chdir(cwd);
+        });
+    });
 
     describe.skip("stilo.serve(path, {port})", () => {
         
@@ -54,7 +234,7 @@ describe("stilo", () => {
         });
     });
 
-    describe.skip("stilo.install(packageId)", () => {
+    describe("stilo.install(packageId)", () => {
         
         it("should install the given package and record it in the plugins list", async function () {
             this.timeout(5000);
@@ -85,21 +265,21 @@ describe("stilo", () => {
         });        
     });
 
-    describe.skip("stilo.run(commandName, ...args)", () => {
+    describe("stilo.run(commandName, ...args)", () => {
         
         it("should execute the plugin command named 'commandName'", async () => {
             // Status snapshot
             const cwd = process.cwd();
 
             // Run the command
-            process.chdir( pathlib.join(__dirname, 'test-repository') );
-            let [store, options, args] = await stilo.run('testcommand', {x:1, y:2}, 10, 20, 30);
+            process.chdir( pathlib.join(__dirname, 'test-repository/dir') );
+            const retval = await stilo.run('testcommand', {x:1, y:2}, 10, 20, 30);
 
             // Ensure command ran
-            expect(args).to.deep.equal([10,20,30]);
-            expect(options).to.deep.equal({x:1, y:2});
-            expect(await store.read('/dir/doc1')).to.equal(fs.readFileSync(pathlib.join(__dirname, 'test-repository/dir/doc1.olo'), 'utf8'));
-            expect(store.stiloRootPath).to.equal(pathlib.join(__dirname, 'test-repository'));
+            expect(retval.args).to.deep.equal([10,20,30]);
+            expect(retval.options).to.deep.equal({x:1, y:2});
+            expect(await retval.store.read('/dir/doc1')).to.equal(fs.readFileSync(pathlib.join(__dirname, 'test-repository/dir/doc1.olo'), 'utf8'));
+            expect(retval.cwp).to.equal('/dir/');
 
             // Restore original status
             process.chdir(cwd);
@@ -107,7 +287,7 @@ describe("stilo", () => {
         });
     });
 
-    describe.skip("stilo.uninstall(packageId)", () => {
+    describe("stilo.uninstall(packageId)", () => {
         
         it("should uninstall the given package and remove it from the plugins list", async function () {
             this.timeout(5000);

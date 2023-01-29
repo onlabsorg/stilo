@@ -39,19 +39,19 @@ be modified to customize the package, but in general it works as folows:
 ** TODO Consolidate plugin installation
 Every plugin exports an object containing the `plugin.routes` and the `plugin.commands`
 objects.
-- [ ] Update and test the `stilo install` and `stilo.registerPlugin` hooks
-- [ ] Update and test the `stilo uninstall` and `stilo.unregisterPlugin` hooks
+- [X] Update and test the `stilo install` and `stilo.registerPlugin` hooks
+- [X] Update and test the `stilo uninstall` and `stilo.unregisterPlugin` hooks
 
 ** TODO Consolidate plugin's custom routes
 Any route is possible, but the plugin should be "polite" and namespace its
 mounting points. The `stilo mount` command (backlogged).
-- [ ] Update and test the `stilo.getStore` method
+- [X] Update and test the `stilo.getStore` method
 
 ** TODO Consolidate plugin's custom commands
 Plugins exports an object where every item is a function that executes a command.
 Comment lines starting with `///` are used as documentation by `stilo help`. Every
 command function rceives `(store, cwd, args)` as parameters.
-- [ ] Update and test `stilo.getCommands`, `stilo commands` and `stilo run`
+- [X] Update and test `stilo.getCommands`, `stilo commands` and `stilo run`
 
 ** TODO Update http server
 - [ ] The server should be implemented as a builtin command: `stilo run http-server`
