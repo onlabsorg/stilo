@@ -16,7 +16,7 @@ module.exports = {
         
         for (let plugin of plugins) {
             for (let [path, store] of Object.entries(plugin.routes)) {
-                routes[path] = store;
+                routes[path] = typeof store === "function" ? await store() : store;
             }
         }
 
@@ -56,18 +56,10 @@ module.exports = {
         }
     },
 
-    async beforeInit () {},
-    
-    async afterInit () {},
-    
-    async beforePluginInstall (npmPackageId) {},
-
     async afterPluginInstall (pluginName) {
         const plugins = require('./lib/plugins');
         plugins.add(pluginName);
     },
-
-    async beforePluginUninstall (pluginName) {},
 
     async afterPluginUninstall (pluginName) {
         const plugins = require('./lib/plugins');

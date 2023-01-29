@@ -1,0 +1,78 @@
+#+title: Stilo
+
+< [[../../../../mdb.org][Home]] < [[../../../projects.org][Projects]]
+
+
+* PROJ Version 0.18.0
+
+A stilo package is a local directory that contains a npm package under the
+folder `.stilo`. The package can be created with the `stilo init` command.
+
+Tthe available stilo commands are:
+
+- stilo init          initializes a stilo package
+- stilo read          reads and outpupts the content of a document of the package
+- stilo list          retrieves and outputs the list of the document under a give path
+- stilo render        evaluate a document of the package and outputs its rendered content
+- stilo install       installs a plugin
+- stilo uninstall     removes a plugin
+- stilo run           executes a custom command
+
+The `.stilo` npm package exports the following API, which in principle can
+be modified to customize the package, but in general it works as folows:
+
+- `stilo.getStore` returns the stilo olojs store rooted in the stilo package folder.
+  The returned store is used by the commands `stilo read` and `stilo render`.
+
+- `stilo.getCommands` returns all the custom commands (plugin extensions) available.
+  The returnsed commands are then used by `stilo commands` and `stilo run`.
+
+- `stilo.registerPlugin` gets executed by `stilo install` after installing a plugin
+
+- `stilo.unregisterPlugin` gets executed by `stilo uninstall` before removing a plugin
+
+** DONE Consolidate store commands
+- [X] Consolidate and test init
+- [X] Consolidate and test read
+- [X] Consolidate and test render
+
+** TODO Consolidate plugin installation
+Every plugin exports an object containing the `plugin.routes` and the `plugin.commands`
+objects.
+- [ ] Update and test the `stilo install` and `stilo.registerPlugin` hooks
+- [ ] Update and test the `stilo uninstall` and `stilo.unregisterPlugin` hooks
+
+** TODO Consolidate plugin's custom routes
+Any route is possible, but the plugin should be "polite" and namespace its
+mounting points. The `stilo mount` command (backlogged).
+- [ ] Update and test the `stilo.getStore` method
+
+** TODO Consolidate plugin's custom commands
+Plugins exports an object where every item is a function that executes a command.
+Comment lines starting with `///` are used as documentation by `stilo help`. Every
+command function rceives `(store, cwd, args)` as parameters.
+- [ ] Update and test `stilo.getCommands`, `stilo commands` and `stilo run`
+
+** TODO Update http server
+- [ ] The server should be implemented as a builtin command: `stilo run http-server`
+
+** TODO Update documentation
+- [ ] Update README.md
+- [ ] Update cli.md
+- [ ] Update README.md in template package
+
+
+
+
+* BACKLOG:
+** TODO CLI: add run-and-repl command
+Evaluate a document and start an interactive REPL in the resulting context
+** TODO CLI: implement autocompletion
+** TODO custom package templates
+A custom stilo package should be installable as `stilo init package-url`.
+Package specifications should be available to developers as mocha tests.
+** TODO Implement `stilo mount` and `stilo unmount` commands
+The command should use the .stilo/package.json's `stilo.mountpoints` object
+to add routes to the store upon store creation (i.e. in `stilo.getStore`).
+
+* ARCHIVE

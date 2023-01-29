@@ -38,14 +38,10 @@ The initialization consists in creating a `.stilo` directory which is a npm
 package that exposes the following items as main exports:
 
 * `.getStore()` returns an olojs.Store object that is used by the `stilo-read` 
-  and `stilo-render` command
-* `.createServer` returns the HTTP server launched by the `stilo-serve` command
-* `.run` executes a sub command. This method is used by the `stilo-run` command
-* `.beforeInit` and `.afterInit` called before and after the `stilo-init` command
-* `.bfeorePluginInstall` and `.afterPluginInstall`, called before and after
-  a plugin installation.
-* `.beforePluginUninstall` and `.afterPluginUninstall`, called before and
-  after a plugin removal.
+  and `stilo-render` commands
+* `.getCommands()` returns n object containing all the custom commands installed
+* `.registerPlugin(pluginName)` registers an installed npm package as plugin
+* `.unregisterPlugin(pluginName)` unregisters an installed npm package as plugin
   
 > The behaviour of a repository can be custimized by modifying these methods. More 
 > details can be found in the [package documentation](../package-template/README.md).
