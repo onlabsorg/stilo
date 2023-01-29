@@ -195,45 +195,6 @@ describe("stilo", () => {
         });
     });
 
-    describe.skip("stilo.serve(path, {port})", () => {
-        
-        it("should start serving the store over HTTP", async () => {
-            
-            // Status snapshot
-            const cwd = process.cwd();
-            
-            // Run the command
-            process.chdir( pathlib.join(__dirname, 'test-repository') );
-            const server = await stilo.serve('/', {port:8011});
-            
-            // Ensure the server is running
-            const req = await fetch('http://localhost:8011/dir/doc1');
-            expect(await req.text()).to.equal(fs.readFileSync(pathlib.join(__dirname, 'test-repository/dir/doc1.olo'), 'utf8')); 
-            
-            // Restore original status
-            process.chdir(cwd);
-            server.close();            
-        });
-
-        it("should serve a substore if a non-root path is passed", async () => {
-            
-            // Status snapshot
-            const cwd = process.cwd();
-            
-            // Run the command
-            process.chdir( pathlib.join(__dirname, 'test-repository') );
-            const server = await stilo.serve('/dir', {port:8011});
-            
-            // Ensure the server is running
-            const req = await fetch('http://localhost:8011/doc1');
-            expect(await req.text()).to.equal(fs.readFileSync(pathlib.join(__dirname, 'test-repository/dir/doc1.olo'), 'utf8')); 
-            
-            // Restore original status
-            process.chdir(cwd);
-            server.close();            
-        });
-    });
-
     describe("stilo.install(packageId)", () => {
         
         it("should install the given package and record it in the plugins list", async function () {
@@ -255,7 +216,7 @@ describe("stilo", () => {
             const packageJsonPath = pathlib.join(__dirname, 'test-repository/.stilo/package.json');
             const packageJsonText = fs.readFileSync(packageJsonPath, 'utf8');
             const packageJson = JSON.parse(packageJsonText)
-            expect(packageJson.stilo.plugins).to.deep.equal(['test-plugin']);
+            expect(packageJson.stilo.plugins).to.deep.equal(['stilo-http-server', 'test-plugin']);
 
             // Ensure plugin routes added to the store
             expect(await stilo.read('/test/route/path/to/doc')).to.equal("test plugin: read /path/to/doc");
@@ -312,10 +273,49 @@ describe("stilo", () => {
             const packageJsonPath = pathlib.join(__dirname, 'test-repository/.stilo/package.json');
             const packageJsonText = fs.readFileSync(packageJsonPath, 'utf8');
             const packageJson = JSON.parse(packageJsonText)
-            expect(packageJson.stilo.plugins).to.deep.equal([]);
+            expect(packageJson.stilo.plugins).to.deep.equal(['stilo-http-server']);
 
             // Restore original status
             process.chdir(cwd);
+        });
+    });
+
+    describe("stilo.run('http-server', path, {port})", () => {
+
+        it("should start serving the store over HTTP", async () => {
+
+            // Status snapshot
+            const cwd = process.cwd();
+
+            // Run the command
+            process.chdir( pathlib.join(__dirname, 'test-repository') );
+            const server = await stilo.run("http-server", {port:8011}, '/');
+
+            // Ensure the server is running
+            const req = await fetch('http://localhost:8011/dir/doc1');
+            expect(await req.text()).to.equal(fs.readFileSync(pathlib.join(__dirname, 'test-repository/dir/doc1.olo'), 'utf8'));
+
+            // Restore original status
+            process.chdir(cwd);
+            server.close();
+        });
+
+        it("should serve a substore if a non-root path is passed", async () => {
+
+            // Status snapshot
+            const cwd = process.cwd();
+
+            // Run the command
+            process.chdir( pathlib.join(__dirname, 'test-repository') );
+            const server = await stilo.run("http-server", {port:8011}, '/dir');
+
+            // Ensure the server is running
+            const req = await fetch('http://localhost:8011/doc1');
+            expect(await req.text()).to.equal(fs.readFileSync(pathlib.join(__dirname, 'test-repository/dir/doc1.olo'), 'utf8'));
+
+            // Restore original status
+            process.chdir(cwd);
+            server.close();
         });
     });
 });

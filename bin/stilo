@@ -36,13 +36,6 @@ stilo.command("render")
     .option('--verbose', "logs detailed information")
     .action(require('../lib/stilo-render'));
 
-stilo.command("serve")
-    .description("serve the stilo repository documents over HTTP")
-    .argument('[path]', "root path to be served [defaults to '/']")
-    .option('-p, --port <port>', "server port [defaults to 8010]")
-    .option('--verbose', "logs detailed information")
-    .action(require('../lib/stilo-serve'));
-
 stilo.command("run", "executes a plugin command");
 
 stilo.parse( process.argv );

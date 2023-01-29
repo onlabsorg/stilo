@@ -54,7 +54,7 @@ command function rceives `(store, cwd, args)` as parameters.
 - [X] Update and test `stilo.getCommands`, `stilo commands` and `stilo run`
 
 ** TODO Update http server
-- [ ] The server should be implemented as a builtin command: `stilo run http-server`
+- [X] The server should be implemented as a builtin command: `stilo run http-server`
 
 ** TODO Update documentation
 - [ ] Update README.md

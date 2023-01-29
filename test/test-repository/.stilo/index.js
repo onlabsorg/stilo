@@ -48,22 +48,4 @@ module.exports = {
         const plugins = require('./lib/plugins');
         plugins.remove(pluginName);
     },
-
-
-
-
-
-
-
-
-    
-    async createServer (store) {
-        const olo = require('@onlabsorg/olojs');
-        return olo.HTTPServer.create(store);
-    },
-    
-
-    async run (commandName, options, ...args) {
-    },
-
 };

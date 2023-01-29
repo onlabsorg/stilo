@@ -1,0 +1,8 @@
+{
+    "name": "stilo-http-server",
+    "version": "0.1.0",
+    "main": "index.js",
+    "dependencies": {
+        "@onlabsorg/olojs": "0.27.x"
+    }
+}
