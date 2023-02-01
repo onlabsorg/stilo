@@ -1,33 +1,84 @@
 # .stilo package
 
-This is the npm package that turns the folder containing it, into a stilo
-repository. Every stilo cli command looks up the directory tree to find a
-.stilo package and then imports it and uses its API to interface with the
-repository. 
+This is the dafault implementation of a .stilo package, a npm package used 
+by the stilo CLI and by the stilo NodeJS API as interface to a olo-documents 
+repository.
 
-The standard .stilo API maily does two things: a) it exposes an [olo.Store] 
-that works as interface to the repository documents and b) provides access to 
-the installed plugins. In particular, the API contains the following functions:
+The stilo CLI and the stilo NodeJS API only require the package to comply 
+with a minimal API, why the iternal implementation of that API can be 
+anything. In other words, the behavior of a .stilo package is highly 
+customizable. The required interface consists of:
 
-* `api.getStore` returns the [olo.Store] interface to the repository documents
-* `api.createServer` returns a NodeJS [http.Server] object that serves the store 
-  over HTTP
-* `api.commands` return an object containing all the plugin commands
-* `api.run` executes a plugin command
-* `api.beforeInit` called before the `stilo-init` command 
-* `api.afterInit` called after the `stilo-init` command 
-* `api.bfeorePluginInstall` called before the `stilo-install` command
-* `api.afterPluginInstall`, called after the `stilo-install` command
-* `api.beforePluginUninstall` called before the `stilo-uninstall` command
-* `api.afterPluginUninstall`, called after the `stilo-uninstall` command
+- .stilo.getStore
+- .stilo.getCommands
+- .stilo.registerPlugin
+- stilo.unregisterPlugin
 
-A .stilo package can be created using the `stilo init` command. This command 
-will creat the .stilo directory, the call the `api.beforeInit` hook, then 
-install all the dependencies and finally call the `api.afterInit` hook. 
+The following sections will describe both the minimum requirements that 
+these functions need to satisfy and this particular implementation of 
+them.
 
 
-## Store
+## .stilo.getStore
 
+##### Specification
+This function takes no parameters and 
+
+##### Implementation
+
+
+
+## .stilo.getCommands 
+
+##### Specification
+
+##### Implementation
+
+
+
+## .stilo.afterInstall
+
+##### Specification
+This function receive an installed npm package name as parameter and does 
+something with it. Anything at all.
+
+The *stilo install* CLI command and the *stilo.install* NodeJS API call 
+this function immediately after installing a new plugin.
+
+##### Implementation
+
+
+
+## .stilo.beforeUninstall
+
+##### Specification
+This function receive an installed npm package name as parameter and does 
+something with it. Anything at all.
+
+The *stilo uninstall* CLI command and the *stilo.uninstall* NodeJS API call 
+this function just before uninstalling a plugin.
+
+##### Implementation
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--------------------------------------------------------------
+
+
+
+## .stilo.getStore
 The store returned by the `api.getStore` function is an [olo.FileStore] rooted in 
 the .stilo parent directory. In addition to that, it can also access remote 
 document over HTTP and HTTPS (e.g. http://host-name/path/to/doc), global files 

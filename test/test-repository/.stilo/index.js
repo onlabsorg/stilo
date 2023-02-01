@@ -2,17 +2,16 @@ const pathlib = require('path');
 
 module.exports = {
     
-    async registerPlugin (pluginName) {
+    async afterInstall (pluginName) {
         const plugins = require('./lib/plugins');
         plugins.add(pluginName);
     },
 
-    async getStore ( rootPath=pathlib.join(__dirname, '..') ) {
+    get routes () {
         const olo = require('@onlabsorg/olojs');
         const plugins = require('./lib/plugins');
 
         const routes = {
-            '/'      : new olo.FileStore(rootPath),
             'http:/' : new olo.HTTPStore('http:/'),
             'https:/': new olo.HTTPStore('https:/'),
             'file:/' : new olo.FileStore('/'),
@@ -20,31 +19,25 @@ module.exports = {
         }
 
         for (let plugin of plugins) {
-            for (let [path, store] of Object.entries(plugin.routes)) {
-                routes[path] = typeof store === "function" ? await store() : store;
-            }
+            Object.assign(routes, plugin.routes);
         }
 
-        return new olo.Router(routes);
+        return routes;
     },
 
-    async getCommands () {
+    get commands () {
         const plugins = require('./lib/plugins');
 
         const commands = require('./bin/index.js');
 
         for (let plugin of plugins) {
-            for (let [commandName, command] of Object.entries(plugin.commands)) {
-                if (typeof command == "function") {
-                    commands[commandName] = command;
-                }
-            }
+            Object.assign(commands, plugin.commands);
         }
 
         return commands;
     },
 
-    async unregisterPlugin (pluginName) {
+    async beforeUninstall (pluginName) {
         const plugins = require('./lib/plugins');
         plugins.remove(pluginName);
     },
