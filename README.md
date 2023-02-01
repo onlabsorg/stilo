@@ -32,7 +32,7 @@ stilo render /path/to/doc
 Serve the library over http:
 
 ```
-stilo serve
+stilo run http-server
 ```
 
 Once the HTTP server is running, your document source will be accessible at the 
@@ -43,7 +43,7 @@ For a full description of the commands available, read the
 
 
 ### Plugins
-Plugins are npm packages that can decorate the stilo store and/or add 
+Plugins are npm packages that can expand the stilo store and/or add 
 custom sub-commands to the stilo CLI.
 
 In order to install a plugin, you use the `stilo install` command, followed
@@ -56,8 +56,22 @@ stilo install <plugin-name>
 In order to uninstall a plugin, you use the `stilo uninstall` command, followed
 by the name of the npm package that contains the plugin.
 
-> If you are a developer and you want to create your own plugin or customize the
-> way a package behaves, check the [package documentation](./package-template/README.md).
+> If you are a developer and you want to create your own plugins or modify you
+> `.stilo` package, read the [package documentation](./package_template/README.md).
+
+
+### NodeJS API 
+The cli commands are also accessible programmatically once you install stilo as a local 
+dependence. The available api is:
+
+- `stilo.init`: initializes a new stilo package
+- `stilo.read`: fetches a document from a stilo package
+- `stilo.rend`: renders a document of a stilo package
+- `stilo.install`: installs a new plugin in a stilo package 
+- `stilo.uninstall`: removes a plugin from a stilo package 
+- `stilo.run`: executes a stilo package command 
+
+For more information about the stilo NodeJS API, see the [API Documentation](./docs/api.md).
 
 
 ### License
