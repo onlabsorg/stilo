@@ -31,7 +31,7 @@ module.exports = {
     async getCommands () {
         const plugins = require('./lib/plugins');
 
-        const commands = {};
+        const commands = require('./bin/index.js');
 
         for (let plugin of plugins) {
             for (let [commandName, command] of Object.entries(plugin.commands)) {

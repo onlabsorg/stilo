@@ -7,8 +7,6 @@
         "stilo-http-server": "file:plugins/http-server"
     },
     "stilo": {
-        "plugins": [
-            "stilo-http-server"
-        ]
+        "plugins": []
     }
 }

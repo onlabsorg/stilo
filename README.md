@@ -57,7 +57,7 @@ In order to uninstall a plugin, you use the `stilo uninstall` command, followed
 by the name of the npm package that contains the plugin.
 
 > If you are a developer and you want to create your own plugins or modify you
-> `.stilo` package, read the [package documentation](./package_template/README.md).
+> `.stilo` package, read the [package documentation](./package-template/README.md).
 
 
 ### NodeJS API 

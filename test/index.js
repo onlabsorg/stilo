@@ -216,7 +216,7 @@ describe("stilo", () => {
             const packageJsonPath = pathlib.join(__dirname, 'test-repository/.stilo/package.json');
             const packageJsonText = fs.readFileSync(packageJsonPath, 'utf8');
             const packageJson = JSON.parse(packageJsonText)
-            expect(packageJson.stilo.plugins).to.deep.equal(['stilo-http-server', 'test-plugin']);
+            expect(packageJson.stilo.plugins).to.deep.equal(['test-plugin']);
 
             // Ensure plugin routes added to the store
             expect(await stilo.read('/test/route/path/to/doc')).to.equal("test plugin: read /path/to/doc");
@@ -273,7 +273,7 @@ describe("stilo", () => {
             const packageJsonPath = pathlib.join(__dirname, 'test-repository/.stilo/package.json');
             const packageJsonText = fs.readFileSync(packageJsonPath, 'utf8');
             const packageJson = JSON.parse(packageJsonText)
-            expect(packageJson.stilo.plugins).to.deep.equal(['stilo-http-server']);
+            expect(packageJson.stilo.plugins).to.deep.equal([]);
 
             // Restore original status
             process.chdir(cwd);
