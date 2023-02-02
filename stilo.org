@@ -57,9 +57,11 @@ command function rceives `(store, cwd, args)` as parameters.
 - [X] The server should be implemented as a builtin command: `stilo run http-server`
 
 ** TODO Update documentation
-- [ ] Update README.md
+- [X] Update README.md
 - [ ] Update cli.md
-- [ ] Update README.md in template package
+- [ ] Create api.md
+- [X] Update README.md in template package
+- [ ] Create docs/http-server.md in template package
 
 
 

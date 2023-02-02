@@ -63,7 +63,7 @@ of command-name:command-function pairs.
 
 Another way to add custom commands is adding extra functions to the 
 *.stilo/bin/index.js* exports. By default, this implementation exports only 
-the *http-server* function.
+the [http-server](./docs/http-server.md) function.
 
 
 

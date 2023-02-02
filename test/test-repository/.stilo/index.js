@@ -26,10 +26,9 @@ module.exports = {
     },
 
     get commands () {
-        const plugins = require('./lib/plugins');
-
         const commands = require('./bin/index.js');
 
+        const plugins = require('./lib/plugins');
         for (let plugin of plugins) {
             Object.assign(commands, plugin.commands);
         }
