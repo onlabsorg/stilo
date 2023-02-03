@@ -3,7 +3,14 @@ var pathlib = require('path');
 var fs = require('fs');
 var rimraf = require('rimraf');
 var Package = require('../lib/package');
-var stilo = require('..');
+var stilo = {
+    init:      require('../lib/stilo-init'),
+    install:   require('../lib/stilo-install'),
+    uninstall: require('../lib/stilo-uninstall'),
+    read:      require('../lib/stilo-read'),
+    render:    require('../lib/stilo-render'),
+    run:       require('../lib/stilo-run')
+}
 require('isomorphic-fetch');
 
 describe("stilo", () => {

@@ -18,7 +18,6 @@
     "async",
     "promise"
   ],
-  "main": "index.js",
   "bin": {
     "stilo": "./bin/stilo"
   },

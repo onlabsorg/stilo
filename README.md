@@ -60,20 +60,6 @@ by the name of the npm package that contains the plugin.
 > `.stilo` package, read the [package documentation](./package-template/README.md).
 
 
-### NodeJS API 
-The cli commands are also accessible programmatically once you install stilo as a local 
-dependence. The available api is:
-
-- `stilo.init`: initializes a new stilo package
-- `stilo.read`: fetches a document from a stilo package
-- `stilo.rend`: renders a document of a stilo package
-- `stilo.install`: installs a new plugin in a stilo package 
-- `stilo.uninstall`: removes a plugin from a stilo package 
-- `stilo.run`: executes a stilo package command 
-
-For more information about the stilo NodeJS API, see the [API Documentation](./docs/api.md).
-
-
 ### License
 This software is released under the [ISC](https://opensource.org/licenses/ISC) 
 license.

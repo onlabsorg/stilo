@@ -1,13 +1,13 @@
 # .stilo package
 
 This is the dafault implementation of a .stilo package, a npm package used 
-by the stilo CLI and by the stilo NodeJS API to configure the olo-documents 
+by the stilo CLI to configure the olo-documents 
 repository.
 
-The stilo CLI and the stilo NodeJS API only require the package to comply 
-with a minimal API, why the iternal implementation of that API can be 
-anything. In other words, the behavior of a .stilo package is highly 
-customizable. The required interface consists of:
+The stilo CLI only require the package to comply with a minimal API, wile 
+the iternal implementation of that API can be anything. In other words, 
+the behavior of a .stilo package is highly customizable. The required 
+interface consists of:
 
 - *.stilo.store* object
 - *.stilo.commands* object
@@ -26,8 +26,7 @@ them.
 This objects maps paths to [olojs.Store] instances or to parameter-less
 functions that return an [olojs.Store] instance.
 
-The *routes* will be mounted to the repository store by the stilo CLI 
-and by the stilo NodeJS API.
+The *routes* will be mounted to the repository store by the stilo CLI.
 
 ##### Implementation
 This implementation of the *routes* object contains some standard routes 
@@ -50,8 +49,7 @@ the following signature:
 - `options`: an object containing command options
 - `...args`: an array of command positional parameters
 
-The command functions will be called by the *stilo run* CLI command or by the 
-*stilo.run* NodeJS API method.
+The command functions will be called by the *stilo run* CLI command.
 
 ##### Implementation
 This implementation of the *commands* objectm, contains all the command 
@@ -63,7 +61,7 @@ of command-name:command-function pairs.
 
 Another way to add custom commands is adding extra functions to the 
 *.stilo/bin/index.js* exports. By default, this implementation exports only 
-the *http-server* function.
+the [http-server](./docs/http-server.md) function.
 
 
 
@@ -73,8 +71,8 @@ the *http-server* function.
 This function receive an installed npm package name as parameter and does 
 something with it. Anything at all.
 
-The *stilo install* CLI command and the *stilo.install* NodeJS API call 
-this function immediately after installing a new plugin.
+The *stilo install* CLI command calls this function immediately after 
+installing a new plugin.
 
 ##### Implementation
 This implementation of the *afterInstall* hook, just register the installed 
@@ -89,8 +87,8 @@ plugins.
 This function receive an installed npm package name as parameter and does 
 something with it. Anything at all.
 
-The *stilo uninstall* CLI command and the *stilo.uninstall* NodeJS API call 
-this function just before uninstalling a plugin.
+The *stilo uninstall* CLI command calls this function just before uninstalling 
+a plugin.
 
 ##### Implementation
 This implementation of the *beforeUninstall* hook, just removes the plugin 

@@ -61,7 +61,7 @@ command function rceives `(store, cwd, args)` as parameters.
 - [ ] Update cli.md
 - [ ] Create api.md
 - [X] Update README.md in template package
-- [ ] Create docs/http-server.md in template package
+- [X] Create docs/http-server.md in template package
 
 
 
