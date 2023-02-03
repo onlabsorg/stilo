@@ -1,3 +1,5 @@
+# stilo render
+```
 Usage: stilo render [options] <path>
 
 render a document and print it to the stdout
@@ -9,3 +11,4 @@ Options:
   -o, --output <file-path>  write the rendered document to a file
   --verbose                 logs detailed information
   -h, --help                display help for command
+```

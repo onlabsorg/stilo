@@ -38,9 +38,6 @@ stilo run http-server
 Once the HTTP server is running, your document source will be accessible at the 
 URL `http:/loclahost:8010/path/to/doc`.
 
-For a full description of the commands available, read the
-[cli documentation](./docs/cli.md).
-
 
 ### Plugins
 Plugins are npm packages that can expand the stilo store and/or add 
@@ -58,6 +55,18 @@ by the name of the npm package that contains the plugin.
 
 > If you are a developer and you want to create your own plugins or modify you
 > `.stilo` package, read the [package documentation](./package-template/README.md).
+
+
+### Documentation
+
+- [stilo init](docs/stilo-init.md) command
+- [stilo install](docs/stilo-install.md) command
+- [stilo read](docs/stilo-read.md) command 
+- [stilo render](docs/stilo-render.md) command 
+- [stilo uninstall](docs/stilo-uninstall.md) command
+- [stilo run](docs/stilo-run.md) command 
+- [stilo run http-server](package-template/docs/http-server.md)
+- [Default .stilo npm package](package-template/README.md)
 
 
 ### License

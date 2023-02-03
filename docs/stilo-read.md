@@ -1,3 +1,5 @@
+# stilo read
+```
 Usage: stilo read [options] <path>
 
 fetch a document source and print it to the stdout
@@ -9,3 +11,4 @@ Options:
   -o, --output <file-path>  write the fetched source to a file
   --verbose                 logs detailed information
   -h, --help                display help for command
+```

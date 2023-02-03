@@ -1,3 +1,5 @@
+# stilo uninstall
+```
 Usage: stilo uninstall [options] <plugin>
 
 uninstall a plugin from npm
@@ -8,3 +10,4 @@ Arguments:
 Options:
   --verbose   logs detailed information
   -h, --help  display help for command
+```

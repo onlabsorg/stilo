@@ -1,7 +1,0 @@
-Usage: stilo run <command-name> [options] [args...]
-
-Commands:
-  No commands installed.
-
-Options:
-  -h, --help     print this help message

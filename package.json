@@ -22,7 +22,8 @@
     "stilo": "./bin/stilo"
   },
   "scripts": {
-    "test": "mocha test/index.js"
+    "test": "mocha test/index.js",
+    "build": "bin/build"
   },
   "repository": {
     "type": "git",
