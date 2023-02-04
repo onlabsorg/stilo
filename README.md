@@ -1,7 +1,7 @@
 # stilo
-This is a command line tool for managing [olojs] documents; out of the box it 
-allows creating new document packages, rendering documents and serving documents
-over HTTP.
+This is a command line tool for managing [olojs] documents. Out of the box it 
+allows creating new document packages, rendering documents, serving documents
+over HTTP and it can be extended via plugins.
 
 > If you are not yet familiar with olojs documents, you can get started with 
 > [this introduction](https://github.com/onlabsorg/olojs/blob/master/docs/document.md).

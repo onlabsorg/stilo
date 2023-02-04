@@ -52,7 +52,7 @@ the following signature:
 The command functions will be called by the *stilo run* CLI command.
 
 ##### Implementation
-This implementation of the *commands* objectm, contains all the command 
+This implementation of the *commands* object, contains all the command 
 functions exported by *.stilo/bin/index.js* and all the the custom commands 
 defined by the plugins.
 
@@ -68,15 +68,15 @@ the [http-server](./docs/http-server.md) function.
 ## .stilo.afterInstall
 
 ##### Specification
-This function receive an installed npm package name as parameter and does 
+This function receives an installed npm package name as parameter and does 
 something with it. Anything at all.
 
 The *stilo install* CLI command calls this function immediately after 
 installing a new plugin.
 
 ##### Implementation
-This implementation of the *afterInstall* hook, just register the installed 
-package in *package.json* as an element of the *stilo.plugins* array. This 
+This implementation of the *afterInstall* hook, just registers the installed 
+package in *package.json* as an element of its *stilo.plugins* array. This 
 allowes the *routes* and *commands* objects to be aware of the installed 
 plugins.
 
@@ -98,5 +98,5 @@ from the *stilo.plugins* array of *package.json*.
 
 
 
-[olo.Store]: https://github.com/onlabsorg/olojs/blob/master/docs/store.md
+[olojs.Store]: https://github.com/onlabsorg/olojs/blob/master/docs/store.md
    

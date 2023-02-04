@@ -58,9 +58,10 @@ command function rceives `(store, cwd, args)` as parameters.
 
 ** TODO Update documentation
 - [X] Update README.md
-- [ ] Update cli.md
+- [X] Update cli.md
 - [X] Update README.md in template package
 - [X] Create docs/http-server.md in template package
+- [X] Review documentation and links
 
 
 
