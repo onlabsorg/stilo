@@ -36,34 +36,42 @@ be modified to customize the package, but in general it works as folows:
 - [X] Consolidate and test read
 - [X] Consolidate and test render
 
-** TODO Consolidate plugin installation
+** DONE Consolidate plugin installation
 Every plugin exports an object containing the `plugin.routes` and the `plugin.commands`
 objects.
 - [X] Update and test the `stilo install` and `stilo.registerPlugin` hooks
 - [X] Update and test the `stilo uninstall` and `stilo.unregisterPlugin` hooks
 
-** TODO Consolidate plugin's custom routes
+** DONE Consolidate plugin's custom routes
 Any route is possible, but the plugin should be "polite" and namespace its
 mounting points. The `stilo mount` command (backlogged).
 - [X] Update and test the `stilo.getStore` method
 
-** TODO Consolidate plugin's custom commands
+** DONE Consolidate plugin's custom commands
 Plugins exports an object where every item is a function that executes a command.
 Comment lines starting with `///` are used as documentation by `stilo help`. Every
 command function rceives `(store, cwd, args)` as parameters.
 - [X] Update and test `stilo.getCommands`, `stilo commands` and `stilo run`
 
-** TODO Update http server
+** DONE Update http server
 - [X] The server should be implemented as a builtin command: `stilo run http-server`
 
-** TODO Update documentation
+** DONE Update documentation
 - [X] Update README.md
 - [X] Update cli.md
 - [X] Update README.md in template package
 - [X] Create docs/http-server.md in template package
 - [X] Review documentation and links
 
-
+** DONE Consolidation
+- [X] consolidate test and documentation of command: init
+- [X] consolidate test and documentation of command: read
+- [X] consolidate test and documentation of command: render
+- [X] consolidate test and documentation of command: install
+- [X] consolidate test and documentation of command: run
+- [X] consolidate test and documentation of command: uninstall
+- [X] consolidate test and documentation of command: run http-server
+- [X] review entire documentation
 
 
 * BACKLOG:

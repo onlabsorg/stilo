@@ -3,25 +3,21 @@
 echo "@stilo/bin/build: BUILDING DOCUMENTATION"
 echo "------------------------------------------------------------------------------------"
 
-generate-command-documentation () {
-    echo "- generating documentation for command: stilo $1"
-    DEST="docs/stilo-$1.md"
-    echo "# stilo $1" > "$DEST"
-    echo "\`\`\`" >> "$DEST"
-    bin/stilo $1 --help >> "$DEST"
-    echo "\`\`\`" >> "$DEST"
+generate-docs-from-script () {
+    DEST="docst/stilo-$1.md"
+    echo "- generating documentation for command: stilo $1 ..."
+    bin/gen-doc lib/stilo-$1.js > docs/stilo-$1.md
 }
 
-generate-command-documentation init
-generate-command-documentation install
-generate-command-documentation read
-generate-command-documentation render
-generate-command-documentation uninstall
+generate-docs-from-script init
+generate-docs-from-script install
+generate-docs-from-script read
+generate-docs-from-script render
+generate-docs-from-script run
+generate-docs-from-script uninstall
 
-echo "- generating documentation for command: stilo run"
-bin/gen-doc lib/stilo-run.js > docs/stilo-run.md
 
-echo "- generating documentation for command: stilo run http-server"
+echo "- generating documentation for command: stilo run http-server ..."
 bin/gen-doc package-template/bin/http-server.js > package-template/docs/http-server.md
 
 echo

@@ -5,32 +5,32 @@ const stilo = require('commander').createCommand();
 stilo.version(`v${require("../package.json").version}`, "-v --version");
 
 stilo.command("init")
-    .description("initialize the current directory as the root of an olojs document package")
-    .option('--force', "eventually overwrites an existing instance")
-    .option('--verbose', "logs detailed information")
+    .description("Initialize the current directory as a repository.")
+    .option('--force', "eventually overwrite an existing instance")
+    .option('--verbose', "log detailed information")
     .action(require('../lib/stilo-init'));
 
 stilo.command("install")
-    .description("install a plugin")
+    .description("Install a plugin.")
     .argument('<plugin>', "npm package-id of the plugin to be installed")
     .option('--verbose', "logs detailed information")
     .action(require('../lib/stilo-install'));
 
 stilo.command("uninstall")
-    .description("uninstall a plugin from npm")
+    .description("Uninstall a plugin.")
     .argument('<plugin>', "npm package-id of the plugin to be uninstalled")
     .option('--verbose', "logs detailed information")
     .action(require('../lib/stilo-uninstall'));
 
 stilo.command("read")
-    .description("fetch a document source and print it to the stdout")
+    .description("Fetch a document source and print it to the stdout.")
     .argument('<path>', "path of the document to be fetched")
     .option('-o, --output <file-path>', "write the fetched source to a file")
     .option('--verbose', "logs detailed information")
     .action(require('../lib/stilo-read'));
 
 stilo.command("render")
-    .description("render a document and print it to the stdout")
+    .description("Render a document and print it to the stdout.")
     .argument('<path>', "path of the document to be rendered")
     .option('-o, --output <file-path>', "write the rendered document to a file")
     .option('--verbose', "logs detailed information")

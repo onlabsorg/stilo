@@ -19,7 +19,7 @@ const olojs = require('@onlabsorg/olojs');
  *      -h, --help    show this message
  *  ```
  *
- *  Once the document is started, a document under `<root-path>/path/to/doc` can be
+ *  Once the server started, a document under `<root-path>/path/to/doc` can be
  *  fetched via:
  *
  *  ```
@@ -29,9 +29,12 @@ const olojs = require('@onlabsorg/olojs');
  *  Where `<port>` is the port number passed via the `-p` or the `--port` option, or
  *  `8010` by default.
  *
+ *  If the *root-path* argument is a relative path, it will be resolved as relative
+ *  to the current working directory. If it is an assolute path, it will be
+ *  resolved as relative to the repository root path.
  */
 
-module.exports = async (store, cwp, options, path="/") => {
+module.exports = async (store, cwp, options, path="") => {
     /// Serve a stilo repository sub-folder over HTTP
 
     // Print the help message if -h or --help option is passed
@@ -51,7 +54,7 @@ module.exports = async (store, cwp, options, path="/") => {
     }
 
     // Define the store to be served
-    const rootPath = pathlib.join(cwp, pathlib.normalize(path || '/'));
+    const rootPath = pathlib.resolve(cwp, path);
     const rootStore = rootPath === '/' ? store : store.SubStore(rootPath);
 
     // Create and start the server

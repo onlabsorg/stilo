@@ -26,7 +26,8 @@ module.exports = {
     },
 
     get commands () {
-        const commands = require('./bin/index.js');
+        const requireDir = require('./lib/require-dir');
+        const commands = requireDir(`${__dirname}/bin`);
 
         const plugins = require('./lib/plugins');
         for (let plugin of plugins) {

@@ -81,6 +81,26 @@ describe("stilo", () => {
             // Restore original status
             process.chdir(cwd);
         });
+
+        it("should not overwrite an existing initialization", async function () {
+            this.timeout(60000);
+
+            // Status snapshot
+            const cwd = process.cwd();
+
+            // Run the command
+            process.chdir( pathlib.join(__dirname, 'test-repository') );
+            var packagePath = pathlib.join(__dirname, 'test-repository', Package.DIR_NAME);
+            var dummyFilePath = `${packagePath}/dummy-file.txt`;
+            fs.writeFileSync(dummyFilePath, "...", "utf8");
+            await stilo.init({force: false});
+
+            // Ensure that the existing package has not been replaced
+            expect(fs.existsSync(dummyFilePath)).to.be.true;
+
+            // Restore original status
+            process.chdir(cwd);
+        });
     });
 
     describe("stilo.read(docPath)", () => {
@@ -120,6 +140,69 @@ describe("stilo", () => {
                 stdout_write.call(process.stdout, text);
             }
             await stilo.read('doc1');
+            expect(stdout).to.equal(fs.readFileSync(pathlib.join(__dirname, 'test-repository/dir/doc1.olo'), 'utf8') + '\n');
+
+            // Restore original status
+            process.chdir(cwd);
+            process.stdout.write = stdout_write;
+        });
+
+        it("should not give access to the direcories above the repository root", async () => {
+            let stdout = "";
+
+            // Status snapshot
+            const cwd = process.cwd();
+            const stdout_write = process.stdout.write;
+
+            // Run the commands
+            process.chdir( pathlib.join(__dirname, 'test-repository/dir') );
+            process.stdout.write = text => {
+                stdout += text;
+                stdout_write.call(process.stdout, text);
+            }
+            await stilo.read('../../../dir/doc1');
+            expect(stdout).to.equal(fs.readFileSync(pathlib.join(__dirname, 'test-repository/dir/doc1.olo'), 'utf8') + '\n');
+
+            // Restore original status
+            process.chdir(cwd);
+            process.stdout.write = stdout_write;
+        });
+
+        it("should treat absolute paths as relative to the repository root", async () => {
+            let stdout = "";
+
+            // Status snapshot
+            const cwd = process.cwd();
+            const stdout_write = process.stdout.write;
+
+            // Run the commands
+            process.chdir( pathlib.join(__dirname, 'test-repository/dir') );
+            process.stdout.write = text => {
+                stdout += text;
+                stdout_write.call(process.stdout, text);
+            }
+            await stilo.read('/dir/doc1');
+            expect(stdout).to.equal(fs.readFileSync(pathlib.join(__dirname, 'test-repository/dir/doc1.olo'), 'utf8') + '\n');
+
+            // Restore original status
+            process.chdir(cwd);
+            process.stdout.write = stdout_write;
+        });
+
+        it("should treat URIs as absolute paths", async () => {
+            let stdout = "";
+
+            // Status snapshot
+            const cwd = process.cwd();
+            const stdout_write = process.stdout.write;
+
+            // Run the commands
+            process.chdir( pathlib.join(__dirname, 'test-repository/dir') );
+            process.stdout.write = text => {
+                stdout += text;
+                stdout_write.call(process.stdout, text);
+            }
+            await stilo.read(`file:/${__dirname}/test-repository/dir/doc1`);
             expect(stdout).to.equal(fs.readFileSync(pathlib.join(__dirname, 'test-repository/dir/doc1.olo'), 'utf8') + '\n');
 
             // Restore original status
@@ -187,6 +270,70 @@ describe("stilo", () => {
             process.stdout.write = stdout_write;
         });
 
+        it("should not give access to the direcories above the repository root", async () => {
+            let stdout = "";
+
+            // Status snapshot
+            const cwd = process.cwd();
+            const stdout_write = process.stdout.write;
+
+            // Run the commands
+            process.chdir( pathlib.join(__dirname, 'test-repository/dir') );
+            process.stdout.write = text => {
+                stdout += text;
+                stdout_write.call(process.stdout, text);
+            }
+            await stilo.render('../../../dir/doc1');
+            expect(stdout).to.equal("document @ /dir/doc1\n\n");
+
+            // Restore original status
+            process.chdir(cwd);
+            process.stdout.write = stdout_write;
+        });
+
+        it("should treat absolute paths as relative to the repository root", async () => {
+            let stdout = "";
+
+            // Status snapshot
+            const cwd = process.cwd();
+            const stdout_write = process.stdout.write;
+
+            // Run the commands
+            process.chdir( pathlib.join(__dirname, 'test-repository/dir') );
+            process.stdout.write = text => {
+                stdout += text;
+                stdout_write.call(process.stdout, text);
+            }
+            await stilo.render('/dir/doc1');
+            expect(stdout).to.equal("document @ /dir/doc1\n\n");
+
+            // Restore original status
+            process.chdir(cwd);
+            process.stdout.write = stdout_write;
+        });
+
+        it("should treat URIs as absolute paths", async () => {
+            let stdout = "";
+
+            // Status snapshot
+            const cwd = process.cwd();
+            const stdout_write = process.stdout.write;
+
+            // Run the commands
+            process.chdir( pathlib.join(__dirname, 'test-repository/dir') );
+            process.stdout.write = text => {
+                stdout += text;
+                stdout_write.call(process.stdout, text);
+            }
+            var docPath = `${__dirname}/test-repository/dir/doc1`;
+            await stilo.render(`file:${docPath}`);
+            expect(stdout).to.equal(`document @ /.uri/file${docPath}\n\n`);
+
+            // Restore original status
+            process.chdir(cwd);
+            process.stdout.write = stdout_write;
+        });
+
         it("should output the rendered document to the file path eventually passed with the --output option", async () => {
             // Status snapshot
             const cwd = process.cwd();
@@ -236,6 +383,7 @@ describe("stilo", () => {
     describe("stilo.run(commandName, ...args)", () => {
         
         it("should execute the plugin command named 'commandName'", async () => {
+
             // Status snapshot
             const cwd = process.cwd();
 
@@ -315,6 +463,24 @@ describe("stilo", () => {
             // Run the command
             process.chdir( pathlib.join(__dirname, 'test-repository') );
             const server = await stilo.run("http-server", {port:8011}, '/dir');
+
+            // Ensure the server is running
+            const req = await fetch('http://localhost:8011/doc1');
+            expect(await req.text()).to.equal(fs.readFileSync(pathlib.join(__dirname, 'test-repository/dir/doc1.olo'), 'utf8'));
+
+            // Restore original status
+            process.chdir(cwd);
+            server.close();
+        });
+
+        it("should resolve non-absolite path as relative to the cwd", async () => {
+
+            // Status snapshot
+            const cwd = process.cwd();
+
+            // Run the command
+            process.chdir( pathlib.join(__dirname, 'test-repository/dir') );
+            const server = await stilo.run("http-server", {port:8011}, './');
 
             // Ensure the server is running
             const req = await fetch('http://localhost:8011/doc1');

@@ -4,7 +4,7 @@ This is the dafault implementation of a .stilo package, a npm package used
 by the stilo CLI to configure the olo-documents 
 repository.
 
-The stilo CLI only require the package to comply with a minimal API, wile 
+The stilo CLI only requires the package to comply with a minimal API, wile 
 the iternal implementation of that API can be anything. In other words, 
 the behavior of a .stilo package is highly customizable. The required 
 interface consists of:
@@ -15,8 +15,7 @@ interface consists of:
 - *.stilo.beforeUninstall* function
 
 The following sections will describe both the minimum requirements that 
-these functions need to satisfy and this particular implementation of 
-them.
+the *.stilo* api need to satisfy and this particular implementation of it.
 
 
 
@@ -49,34 +48,35 @@ the following signature:
 - `options`: an object containing command options
 - `...args`: an array of command positional parameters
 
-The command functions will be called by the *stilo run* CLI command.
+The command functions will be called by the `stilo run <command-name> [options] [args]` 
+CLI command.
 
 ##### Implementation
-This implementation of the *commands* objectm, contains all the command 
-functions exported by *.stilo/bin/index.js* and all the the custom commands 
-defined by the plugins.
+This implementation of the *commands* object, contains:
 
-Each plugin can define custom commands by exporting a `stilo.commands` object 
-of command-name:command-function pairs.
+1. all the command functions exported by the scripts in *.stilo/bin/*; each script in 
+   the *bin* folder must export only a command function which will be mapped to a
+   command named after the script name
+2. all the the custom commands defined by the plugins; each plugin can define custom 
+   commands by exporting a `stilo.commands` object of command-name:command-function pairs.
 
-Another way to add custom commands is adding extra functions to the 
-*.stilo/bin/index.js* exports. By default, this implementation exports only 
-the [http-server](./docs/http-server.md) function.
+By default, this implementation exports only the [http-server](./docs/http-server.md) 
+command, defined in the `bin/http-server.js` script.
 
 
 
 ## .stilo.afterInstall
 
 ##### Specification
-This function receive an installed npm package name as parameter and does 
+This function receives an installed npm package name as parameter and does 
 something with it. Anything at all.
 
-The *stilo install* CLI command calls this function immediately after 
+The `stilo install <package-id>` CLI command calls this function immediately after 
 installing a new plugin.
 
 ##### Implementation
-This implementation of the *afterInstall* hook, just register the installed 
-package in *package.json* as an element of the *stilo.plugins* array. This 
+This implementation of the *afterInstall* hook, just registers the installed 
+package in *package.json* as an element of its *stilo.plugins* array. This 
 allowes the *routes* and *commands* objects to be aware of the installed 
 plugins.
 
@@ -87,8 +87,8 @@ plugins.
 This function receive an installed npm package name as parameter and does 
 something with it. Anything at all.
 
-The *stilo uninstall* CLI command calls this function just before uninstalling 
-a plugin.
+The `stilo uninstall <package-id>` CLI command calls this function just before 
+uninstalling a plugin.
 
 ##### Implementation
 This implementation of the *beforeUninstall* hook, just removes the plugin 
@@ -98,5 +98,5 @@ from the *stilo.plugins* array of *package.json*.
 
 
 
-[olo.Store]: https://github.com/onlabsorg/olojs/blob/master/docs/store.md
+[olojs.Store]: https://github.com/onlabsorg/olojs/blob/master/docs/store.md
    
