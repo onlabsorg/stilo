@@ -55,7 +55,7 @@ module.exports = async (store, cwp, options, path="") => {
 
     // Define the store to be served
     const rootPath = pathlib.resolve(cwp, path);
-    const rootStore = rootPath === '/' ? store : store.SubStore(rootPath);
+    const rootStore = store.createSubStore(rootPath);
 
     // Create and start the server
     const server = olojs.HTTPServer.create(rootStore);

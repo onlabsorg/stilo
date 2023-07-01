@@ -7,16 +7,29 @@ module.exports = {
         plugins.add(pluginName);
     },
 
+    get protocols () {
+        const olo = require('@onlabsorg/olojs');
+        const plugins = require('./lib/plugins');
+
+        const protocols = {
+            http:  new olo.HTTPStore('http:/'),
+            https: new olo.HTTPStore('https:/'),
+            file:  new olo.FileStore('/'),
+            temp:  new olo.MemoryStore(),
+        }
+
+        for (let plugin of plugins) {
+            Object.assign(protocols, plugin.protocols);
+        }
+
+        return protocols;
+    },
+
     get routes () {
         const olo = require('@onlabsorg/olojs');
         const plugins = require('./lib/plugins');
 
-        const routes = {
-            'http:/' : new olo.HTTPStore('http:/'),
-            'https:/': new olo.HTTPStore('https:/'),
-            'file:/' : new olo.FileStore('/'),
-            'temp:/' : new olo.MemoryStore(),
-        }
+        const routes = {}
 
         for (let plugin of plugins) {
             Object.assign(routes, plugin.routes);

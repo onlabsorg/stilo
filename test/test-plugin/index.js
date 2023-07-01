@@ -3,6 +3,8 @@
 
 exports.stilo = {
     
+    protocols: {},
+
     routes: {
         
         '/test/route': {
@@ -12,7 +14,7 @@ exports.stilo = {
             delete: path => `test plugin: delete ${path}`,
         }
     },
-    
+
     commands: {
         
         testcommand (store, cwp, options, ...args) {

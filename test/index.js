@@ -242,7 +242,7 @@ describe("stilo", () => {
                 stdout_write.call(process.stdout, text);
             }
             await stilo.render('/dir/doc1');
-            expect(stdout).to.equal("document @ /dir/doc1\n\n");
+            expect(stdout).to.equal("document @ home://dir/doc1\n\n");
 
             // Restore original status
             process.chdir(cwd);
@@ -263,7 +263,7 @@ describe("stilo", () => {
                 stdout_write.call(process.stdout, text);
             }
             await stilo.render('doc1');
-            expect(stdout).to.equal("document @ /dir/doc1\n\n");
+            expect(stdout).to.equal("document @ home://dir/doc1\n\n");
 
             // Restore original status
             process.chdir(cwd);
@@ -284,7 +284,7 @@ describe("stilo", () => {
                 stdout_write.call(process.stdout, text);
             }
             await stilo.render('../../../dir/doc1');
-            expect(stdout).to.equal("document @ /dir/doc1\n\n");
+            expect(stdout).to.equal("document @ home://dir/doc1\n\n");
 
             // Restore original status
             process.chdir(cwd);
@@ -305,7 +305,7 @@ describe("stilo", () => {
                 stdout_write.call(process.stdout, text);
             }
             await stilo.render('/dir/doc1');
-            expect(stdout).to.equal("document @ /dir/doc1\n\n");
+            expect(stdout).to.equal("document @ home://dir/doc1\n\n");
 
             // Restore original status
             process.chdir(cwd);
@@ -327,7 +327,7 @@ describe("stilo", () => {
             }
             var docPath = `${__dirname}/test-repository/dir/doc1`;
             await stilo.render(`file:${docPath}`);
-            expect(stdout).to.equal(`document @ /.uri/file${docPath}\n\n`);
+            expect(stdout).to.equal(`document @ file:/${docPath}\n\n`);
 
             // Restore original status
             process.chdir(cwd);
@@ -342,7 +342,7 @@ describe("stilo", () => {
             process.chdir( pathlib.join(__dirname, 'test-repository') );
             await stilo.render('/dir/doc1', {output:"dir/doc1.txt"});
             const outputFileContent = fs.readFileSync(pathlib.join(__dirname, 'test-repository/dir/doc1.txt'), 'utf8')
-            expect(outputFileContent).to.equal("document @ /dir/doc1\n");
+            expect(outputFileContent).to.equal("document @ home://dir/doc1\n");
 
             // Restore original status
             process.chdir(cwd);

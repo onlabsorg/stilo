@@ -1,1 +1,1 @@
-document @ /dir/doc1
+document @ home://dir/doc1

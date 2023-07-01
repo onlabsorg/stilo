@@ -1,0 +1,5 @@
+file: /dir1/subdir1/doc3.olo
+document @ <% __doc__.path %>
+
+Imported document: /doc1
+<% import "../../doc1" %>

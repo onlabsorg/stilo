@@ -1,1 +1,2 @@
+file: /dir1/doc2.olo
 document @ <% __doc__.path %>

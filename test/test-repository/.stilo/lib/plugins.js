@@ -27,6 +27,7 @@ module.exports = {
     get (pluginName) {
         const plugin = require(pluginName).stilo || {};
         if (!plugin.routes) plugin.routes = {};
+        if (!plugin.protocols) plugin.procols = {};
         if (!plugin.commands) plugin.commands = {};
         return plugin;
     },
