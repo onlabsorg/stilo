@@ -2,10 +2,10 @@
 
 * PROJ v0.19.0
 ** TODO Migrate to olojs v0.28.0 (brach olojs-v0.28)
-- [ ] Link to olojs folder
-- [ ] package.getStore: implement protocols
+- [X] Link to olojs folder
+- [X] package.getStore: implement protocols
 - [ ] update documentation
-- [ ] update olojs dependency in package.json
+- [X] update olojs dependency in package.json
 
 
 

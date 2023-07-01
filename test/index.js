@@ -374,6 +374,7 @@ describe("stilo", () => {
 
             // Ensure plugin routes added to the store
             expect(await stilo.read('/test/route/path/to/doc')).to.equal("test plugin: read /path/to/doc");
+            expect(await stilo.read('ppp://path/to/doc')).to.equal("test plugin: read ppp://path/to/doc");
 
             // Restore original status
             process.chdir(cwd);

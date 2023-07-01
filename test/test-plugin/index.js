@@ -3,15 +3,16 @@
 
 exports.stilo = {
     
-    protocols: {},
+    protocols: {
+        ppp: {
+            read: path => `test plugin: read ppp:/${path}`
+        }
+    },
 
     routes: {
         
         '/test/route': {
             read: path => `test plugin: read ${path}`,
-            list: path => `test plugin: list ${path}`,
-            write: (path, source) => `test plugin: write ${path}`,
-            delete: path => `test plugin: delete ${path}`,
         }
     },
 
