@@ -3,9 +3,12 @@
     "main": "index.js",
     "version": "0.19.0",
     "dependencies": {
-        "@onlabsorg/olojs": "0.28.x"
+        "@onlabsorg/olojs": "0.28.x",
+        "Brenda": "file:../../../../brenda"
     },
     "stilo": {
-        "plugins": []
+        "plugins": [
+            "Brenda"
+        ]
     }
 }

@@ -76,9 +76,9 @@ license.
 
 ### Related projects
 * [olojs] is a distributed content management system
-* [olowiki] is a web interface that allows creating and modifying youd olojs 
-  documents (it includes also a stilo plugin)
+* [brenda] is a web application that allows rendering your olojs documents 
+  in the browser (it includes also a stilo plugin)
 
 
 [olojs]: https://github.com/onlabsorg/olojs
-[olowiki]: https://github.com/onlabsorg/olowiki
+[brenda]: https://github.com/onlabsorg/brenda
