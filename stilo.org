@@ -1,14 +1,5 @@
 #+title: Stilo
 
-* PROJ v0.19.0
-** TODO Migrate to olojs v0.28.0 (brach olojs-v0.28)
-- [X] Link to olojs folder
-- [X] package.getStore: implement protocols
-- [ ] update documentation
-- [X] update olojs dependency in package.json
-
-
-
 * BACKLOG:
 ** TODO CLI: add run-and-repl command
 Evaluate a document and start an interactive REPL in the resulting context
@@ -21,7 +12,13 @@ The command should use the .stilo/package.json's `stilo.mountpoints` object
 to add routes to the store upon store creation (i.e. in `stilo.getStore`).
 
 * ARCHIVE
-** PROJ Version 0.18.0
+** SHUT v0.19.0
+*** DONE Migrate to olojs v0.28.0 (brach olojs-v0.28)
+- [X] Link to olojs folder
+- [X] package.getStore: implement protocols
+- [X] update documentation
+- [X] update olojs dependency in package.json
+** SHUT Version 0.18.0
 
 A stilo package is a local directory that contains a npm package under the
 folder `.stilo`. The package can be created with the `stilo init` command.
