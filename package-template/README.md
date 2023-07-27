@@ -66,8 +66,10 @@ of route-store pairs.
 This objects maps command names to command functions. Each function must have 
 the following signature:
 
-- `store`: the repository store 
-- `cwp`: a store sub-path
+- `stilo`: object representing the stilo environment
+  - `stilo.store`: the repository store 
+  - `stilo.cwp`: a store sub-path
+  - `stilo.logger`: the logger used by the stilo CLI
 - `options`: an object containing command options
 - `...args`: an array of command positional parameters
 

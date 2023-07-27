@@ -34,34 +34,34 @@ const olojs = require('@onlabsorg/olojs');
  *  resolved as relative to the repository root path.
  */
 
-module.exports = async (store, cwp, options, path="") => {
+module.exports = async (stilo, options, path="") => {
     /// Serve a stilo repository sub-folder over HTTP
 
     // Print the help message if -h or --help option is passed
     if (options.h || options.help) {
-        console.log('stilo-run http-server [options] [path]                                 ');
-        console.log('                                                                       ');
-        console.log('Serve olo-documents over HTTP.                                         ');
-        console.log('                                                                       ');
-        console.log('Arguments:                                                             ');
-        console.log('  path          path of the directory to be served as store root       ');
-        console.log('                                                                       ');
-        console.log('Options:                                                               ');
-        console.log('  -p, --port    port on which the server will listen (defaults to 8010)');
-        console.log('  -h, --help    show this message                                      ');
-        console.log('                                                                       ');
+        stilo.logger.log('stilo-run http-server [options] [path]                                 ');
+        stilo.logger.log('                                                                       ');
+        stilo.logger.log('Serve olo-documents over HTTP.                                         ');
+        stilo.logger.log('                                                                       ');
+        stilo.logger.log('Arguments:                                                             ');
+        stilo.logger.log('  path          path of the directory to be served as store root       ');
+        stilo.logger.log('                                                                       ');
+        stilo.logger.log('Options:                                                               ');
+        stilo.logger.log('  -p, --port    port on which the server will listen (defaults to 8010)');
+        stilo.logger.log('  -h, --help    show this message                                      ');
+        stilo.logger.log('                                                                       ');
         return;
     }
 
     // Define the store to be served
-    const rootPath = pathlib.resolve(cwp, path);
-    const rootStore = store.createSubStore(rootPath);
+    const rootPath = pathlib.resolve(stilo.cwp, path);
+    const rootStore = stilo.store.createSubStore(rootPath);
 
     // Create and start the server
     const server = olojs.HTTPServer.create(rootStore);
     const port = options.port || options.p || 8010;
     await startServer(server, port);
-    console.log(`stilo http-server: serving '${rootPath}' on port ${port}`);
+    stilo.logger.log(`stilo http-server: serving '${rootPath}' on port ${port}`);
 
     return server;
 }

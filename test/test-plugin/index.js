@@ -18,9 +18,9 @@ exports.stilo = {
 
     commands: {
         
-        testcommand (store, cwp, options, ...args) {
+        testcommand (stilo, options, ...args) {
             /// stilo command used only for testing purposes
-            return {store, cwp, options, args};
+            return {stilo, options, args};
         }
     }
 }
