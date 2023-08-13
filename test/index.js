@@ -396,6 +396,7 @@ describe("stilo", () => {
             expect(retval.args).to.deep.equal([10,20,30]);
             expect(retval.options).to.deep.equal({x:1, y:2});
             expect(await retval.stilo.store.read('/dir/doc1')).to.equal(fs.readFileSync(pathlib.join(__dirname, 'test-repository/dir/doc1.olo'), 'utf8'));
+            expect(retval.stilo.rootPath).to.equal(pathlib.join(__dirname, 'test-repository'));
             expect(retval.stilo.cwp).to.equal('/dir/');
 
             // Restore original status

@@ -10,6 +10,7 @@ Package specifications should be available to developers as mocha tests.
 ** TODO Implement `stilo mount` and `stilo unmount` commands
 The command should use the .stilo/package.json's `stilo.mountpoints` object
 to add routes to the store upon store creation (i.e. in `stilo.getStore`).
+** TODO Automatically replace '_' with '-' in plugin command nameModules
 
 * ARCHIVE
 ** SHUT v0.19.0

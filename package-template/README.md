@@ -68,6 +68,7 @@ the following signature:
 
 - `stilo`: object representing the stilo environment
   - `stilo.store`: the repository store 
+  - `stilo.rootPath`: the root path of the stilo repository
   - `stilo.cwp`: a store sub-path
   - `stilo.logger`: the logger used by the stilo CLI
 - `options`: an object containing command options
