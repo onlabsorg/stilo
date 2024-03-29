@@ -1,5 +1,9 @@
 #+title: Stilo
 
+* v0.19.4
+** TODO Automatically replace '_' with '-' in plugin command nameModules
+
+
 * BACKLOG:
 ** TODO CLI: add run-and-repl command
 Evaluate a document and start an interactive REPL in the resulting context
@@ -7,10 +11,7 @@ Evaluate a document and start an interactive REPL in the resulting context
 ** TODO custom package templates
 A custom stilo package should be installable as `stilo init package-url`.
 Package specifications should be available to developers as mocha tests.
-** TODO Implement `stilo mount` and `stilo unmount` commands
-The command should use the .stilo/package.json's `stilo.mountpoints` object
-to add routes to the store upon store creation (i.e. in `stilo.getStore`).
-** TODO Automatically replace '_' with '-' in plugin command nameModules
+
 
 * ARCHIVE
 ** SHUT v0.19.0
