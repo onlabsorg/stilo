@@ -390,7 +390,7 @@ describe("stilo", () => {
 
             // Run the command
             process.chdir( pathlib.join(__dirname, 'test-repository/dir') );
-            const retval = await stilo.run('testcommand', {x:1, y:2}, 10, 20, 30);
+            const retval = await stilo.run('test-command', {x:1, y:2}, 10, 20, 30);
 
             // Ensure command ran
             expect(retval.args).to.deep.equal([10,20,30]);

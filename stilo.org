@@ -1,8 +1,8 @@
 #+title: Stilo
 
 * v0.19.4
-** TODO Automatically replace '_' with '-' in plugin command nameModules
-
+** DONE Automatically replace '_' with '-' in plugin command nameModules
+** DONE Update to olojs v0.29.0
 
 * BACKLOG:
 ** TODO CLI: add run-and-repl command

@@ -1,9 +1,9 @@
 {
     "name": "stilo-default-package",
     "main": "index.js",
-    "version": "0.19.0",
+    "version": "0.19.1",
     "dependencies": {
-        "@onlabsorg/olojs": "0.28.x"
+        "@onlabsorg/olojs": "0.29.x"
     },
     "stilo": {
         "plugins": []

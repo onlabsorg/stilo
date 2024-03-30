@@ -55,10 +55,10 @@ module.exports = async (stilo, options, path="") => {
 
     // Define the store to be served
     const rootPath = pathlib.resolve(stilo.cwp, path);
-    const rootStore = stilo.store.createSubStore(rootPath);
+    const rootStore = new olojs.SubStore(stilo.store, rootPath);
 
     // Create and start the server
-    const server = olojs.HTTPServer.create(rootStore);
+    const server = olojs.HTTPServer.createServer(rootStore);
     const port = options.port || options.p || 8010;
     await startServer(server, port);
     stilo.logger.log(`stilo http-server: serving '${rootPath}' on port ${port}`);
