@@ -1,0 +1,18 @@
+# Python
+server/.venv/
+cli/.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Node
+web/node_modules/
+web/dist/
+
+# Editors and OS
+.DS_Store
+.vscode/
+.idea/
+
+# Locals
+local/

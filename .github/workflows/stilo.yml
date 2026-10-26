@@ -1,0 +1,43 @@
+# Tests Stilo: the web app and editor in headless Chrome, the server and the
+# CLI with pytest.
+
+name: stilo
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      # The runner image has Chrome, which @web/test-runner-chrome finds
+      - run: npm test
+      - run: npm run build
+
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v6
+      - name: Server tests
+        working-directory: server
+        run: uv run pytest
+      - name: CLI tests
+        working-directory: cli
+        run: uv run pytest

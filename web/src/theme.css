@@ -1,0 +1,75 @@
+/* Design tokens. Components read them through CSS custom properties, which
+   cross shadow DOM. The theme is the data-theme attribute of <html>
+   ("dark" by default, see theme.js). */
+
+:root {
+    --font: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --radius: 8px;
+    --bar-height: 3rem;
+    --nav-width: 16rem;
+    --pane-width: 20rem;
+    --transition: 160ms ease;
+}
+
+:root[data-theme="light"] {
+    color-scheme: light;
+    --bg: #f4f5f7;
+    --surface: #ffffff;
+    --surface-2: #f8f9fb;
+    --border: #e3e6eb;
+    --text: #1d2330;
+    --text-muted: #687085;
+    --hover: rgb(15 23 42 / 0.06);
+    --active: rgb(37 99 235 / 0.1);
+    --accent: #2563eb;
+    --danger: #c2410c;
+    --shadow: 0 1px 3px rgb(0 0 0 / 0.06), 0 6px 24px rgb(0 0 0 / 0.06);
+}
+
+:root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #14161b;
+    --surface: #1b1e24;
+    --surface-2: #22262e;
+    --border: #2d323c;
+    --text: #e4e7ec;
+    --text-muted: #8b93a3;
+    --hover: rgb(255 255 255 / 0.06);
+    --active: rgb(96 165 250 / 0.14);
+    --accent: #60a5fa;
+    --danger: #fb923c;
+    --shadow: 0 1px 3px rgb(0 0 0 / 0.3), 0 6px 24px rgb(0 0 0 / 0.25);
+
+    /* The editor's own properties (texl-editor docs/api.md, Styling). */
+    --texl-paper: #1b1e24;
+    --texl-line: #262a32;
+    --texl-margin-line: #34507f;
+    --texl-line-number: #4a5160;
+    --texl-line-number-active: #8b93a3;
+    --texl-accent: #60a5fa;
+    --texl-selected-bg: rgb(96 165 250 / 0.07);
+    --texl-selected-ring: rgb(96 165 250 / 0.4);
+    --texl-edit-bg: #22262e;
+    --texl-comment: #e0a64b;
+    --texl-hover-bg: rgb(255 255 255 / 0.07);
+    --texl-icon-active: #c4c9d4;
+    --texl-menu-bg: #22262e;
+    --texl-menu-border: #2d323c;
+    --texl-menu-text: #e4e7ec;
+    --texl-menu-icon: #8b93a3;
+    --texl-menu-active-bg: rgb(96 165 250 / 0.14);
+}
+
+html,
+body {
+    height: 100%;
+    margin: 0;
+}
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
+}

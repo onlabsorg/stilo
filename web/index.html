@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Stilo</title>
+        <script>
+            // Apply the saved theme before the first paint (default: dark).
+            try {
+                const theme = localStorage.getItem("stilo-theme");
+                if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
+            } catch {}
+        </script>
+        <script type="module" src="/src/main.js"></script>
+    </head>
+    <body>
+        <stilo-app></stilo-app>
+    </body>
+</html>
