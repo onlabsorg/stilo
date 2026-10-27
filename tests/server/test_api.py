@@ -1,8 +1,8 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from stilo_server import create_app
-from stilo_server.storage import etag
+from stilo.server import create_app
+from stilo.server.storage import etag
 
 DOC = "<!--{ bek4 : markdown }-->\n# Title\n"
 

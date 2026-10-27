@@ -25,23 +25,36 @@ A monorepo with three parts, kept strictly modular:
   tree), main area with the editor, right pane (commands, comments). The
   editor itself (`web/src/editor/`, the `<texl-editor>` component and its
   cells) was the `texl-editor` repository until 2026-10-26.
-- **Server** (`server/`, package `stilo-server`) — Python, serves the
-  documents of one folder over HTTP, and the built web app.
-- **CLI** (`cli/`, package `stilo`) — the `stilo` command: `render` a
-  document, `serve` a folder. It is the only Texl command line (D19).
+- **Server** (`src/stilo/server/`, module `stilo.server`) — Python, serves
+  the documents of one folder over HTTP, and the built web app.
+- **CLI** (`src/stilo/cli/`, module `stilo.cli`) — the `stilo` command:
+  `render` a document, `serve` a folder. It is the only Texl command line
+  (D19).
+
+**One package, one Python project.** `pyproject.toml` at the root is the
+only Python project and builds the only published package, `stilo`
+(sources in `src/stilo/`, tests in `tests/`, one `uv.lock`). The web app's
+source stays in `web/` (its own Node project); `npm run build` writes it
+into the package, `src/stilo/web/` (git-ignored), so a checkout and an
+install have the same layout. The server never locates the web app: the
+CLI passes it to `create_app()` (`WEB_DIST` = `stilo/web`). The server
+must not import the rest of the package (`tests/test_layout.py` checks
+it), and neither imports the web app's code. A future part (e.g. a
+desktop window around the web app) goes in as another subpackage of
+`stilo`, as a client of the server, with its dependencies as an extra.
 
 The **protocol** (`docs/src/protocol.md`, plain HTTP: GET, CREATE
-(POST), UPDATE (PUT with `If-Match`), QUERY tree) is the contract between web app and
-server. Change it there first, then in `server/` and `web/src/api.js`.
-Papiro is meant to speak the same protocol, so the web app must use only
-it, and a server in another language (e.g. Node.js) must be able to replace
-the Python one.
+(POST), UPDATE (PUT with `If-Match`), QUERY tree) is the contract between
+web app and server. Change it there first, then in `src/stilo/server/` and
+`web/src/api.js`. Papiro is meant to speak the same protocol, so the web
+app must use only it, and a server in another language (e.g. Node.js) must
+be able to replace the Python one.
 
 **Plugins later.** There is no plugin system yet, but there will be (custom
 cells, CLI commands, loaders). Keep the extension points in one place each,
 so a plugin system can be added without refactoring: cell types only through
 the registry (`web/src/editor/registry.js`), CLI commands only through
-`COMMANDS` (`cli/stilo/commands.py`), the server only through
+`COMMANDS` (`src/stilo/cli/commands.py`), the server only through
 `create_app()`.
 
 ## Summary for OnLabs.org (`stilo.summary.md`)
@@ -79,14 +92,13 @@ Rules:
 ## Stack and commands
 
 **Python** (server and CLI): Python ≥ 3.11, FastAPI + uvicorn, `pytexl`
-for rendering, managed with `uv`. The CLI depends on the server by path
-(`cli/pyproject.toml`).
+for rendering, managed with `uv`. All commands at the root.
 
 ```bash
-cd server && uv sync && uv run pytest     # server tests (tests/test_api.py)
-cd cli && uv sync && uv run pytest        # CLI tests
-cd cli && uv run stilo serve ../examples  # http://127.0.0.1:8000
-cd cli && uv run stilo render ../examples/projects/beam/beam-check.texl
+uv sync && uv run pytest              # tests/: server/, cli/, test_layout.py
+uv run stilo serve examples           # http://127.0.0.1:8000
+uv run stilo render examples/projects/beam/beam-check.texl
+uv build                              # after npm run build: dist/stilo-*.whl
 ```
 
 **Web** (app and editor): plain JavaScript (ES modules, JSDoc types, no
@@ -101,26 +113,30 @@ non-interactive shells must run `source ~/.nvm/nvm.sh` first.
 cd web
 npm install
 npm test             # @web/test-runner in headless local Chrome: test/**/*.test.js
-npm run build        # dist/, served by the Python server under /_app/
+npm run build        # src/stilo/web/, served by the Python server under /_app/
 npm run dev          # Vite on :5173 with hot reload; proxies to the server on :8000
                      # (STILO_SERVER=http://127.0.0.1:8765 npm run dev for another port)
 ```
 
 Two ways to run it:
 
-- **One process:** `npm run build`, then `uv run stilo serve ../examples`
-  in `cli/`; open <http://127.0.0.1:8000/projects/beam/beam-check.texl>.
-- **Development:** `uv run stilo serve ../examples` and `npm run dev` side
+- **One process:** `npm run build`, then `uv run stilo serve examples`
+  at the root; open <http://127.0.0.1:8000/projects/beam/beam-check.texl>.
+- **Development:** `uv run stilo serve examples` and `npm run dev` side
   by side; open <http://localhost:5173/projects/beam/beam-check.texl>.
   Vite serves the pages and forwards `/_api` and non-HTML `.texl` requests
   (imports).
 
 The app shell has no tests yet (the editor has). To check the UI, run the
 server and drive it with a headless browser (puppeteer-core with the local
-Chrome works). CI: `.github/workflows/stilo.yml`.
+Chrome works). CI: `.github/workflows/stilo.yml` (tests, web build, and
+the `package` job: builds the wheel, installs it, smoke-tests `render` and
+`serve`).
 
 ## Code layout
 
+- `pyproject.toml` — the Python project and published package `stilo` (see
+  above). `tests/` — its tests.
 - `docs/` — the documentation, as in Texl: `docs/build.sh` builds the
   site into `target/site` (git-ignored); the workflow
   `.github/workflows/docs.yml` builds and publishes it on GitHub Pages
@@ -136,16 +152,16 @@ Chrome works). CI: `.github/workflows/stilo.yml`.
   - `site/index.html` (landing), `assets/` (copies of the Texl site's
     CSS/JS, plus `stilo.css`, `book.js`).
 - `CONTRIBUTING.md`, `CHANGELOG.md` — included in the manual.
-- `server/stilo_server/storage.py` — `Storage`: path validation (no `..`,
+- `src/stilo/server/storage.py` — `Storage`: path validation (no `..`,
   no hidden segments, no `_` names at the root, no escape through symlinks),
   read / create / update / tree, ETags (sha256). Raises `StorageError`
   subclasses carrying the HTTP status.
-- `server/stilo_server/app.py` — `create_app(root, web_dist)`: the
+- `src/stilo/server/app.py` — `create_app(root, web_dist)`: the
   `/_api/` routes, `/_app/` static bundle, and `/<path>` (web app for
   browsers, the file for other clients).
-- `cli/stilo/commands.py` — the subcommands (`render`, `serve`) as
-  `Command` entries in `COMMANDS`; `cli/stilo/__main__.py` builds the
-  parser from them.
+- `src/stilo/cli/commands.py` — the subcommands (`render`, `serve`) as
+  `Command` entries in `COMMANDS`; `main()` in `src/stilo/cli/__init__.py`
+  builds the parser from them (the `stilo` script, `python -m stilo`).
 - `web/src/main.js` — entry: theme CSS, the editor, the app.
 - `web/src/components/stilo-app.js` — the shell: layout, state (navigation
   root and tree, open document, ETag, dirty flag, open pane), routing,
@@ -224,5 +240,6 @@ valid Texl document that renders without the editor (`stilo render`,
 - **No authentication:** `stilo serve` is meant for one user; bind it to
   localhost, or put it behind your own access control when serving
   remotely.
-- **Packaging:** the CLI finds the web app in `web/dist` of this checkout;
-  it is not yet installable on its own (`pipx install stilo`).
+- **Packaging:** `stilo` builds and installs from a checkout
+  (`uv tool install .`) but is not on PyPI yet; there is no release
+  workflow.

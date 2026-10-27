@@ -5,33 +5,29 @@ renders one from the command line.
 
 ## Install
 
-Stilo is not published as a package yet: you run it from a copy of its
-source code. You need:
+Stilo is not on PyPI yet: you build it from a copy of its source code. You
+need:
 
 - [git](https://git-scm.com/),
-- Python 3.11 or later, with [uv](https://docs.astral.sh/uv/),
+- [uv](https://docs.astral.sh/uv/), which also installs Python 3.11 or
+  later if you do not have it,
 - [Node.js](https://nodejs.org/) 22 or later, to build the web editor.
 
-Get the code and build the web editor once:
+Get the code, build the web editor and install the `stilo` command:
 
 ```sh
 git clone https://github.com/onlabsorg/stilo.git
-cd stilo/web
-npm install
-npm run build
+cd stilo
+cd web && npm install && npm run build && cd ..
+uv tool install --python ">=3.11" .
 ```
 
-Then install the `stilo` command:
+The last line builds the package `stilo`, with the web editor inside, and
+puts the `stilo` command on your path. If uv says that its folder is not on
+your path, run `uv tool update-shell` and open a new terminal. Check it:
 
 ```sh
-cd ../cli
-uv sync
-```
-
-From the `cli` folder, `uv run stilo` runs the command. Check it:
-
-```sh
-uv run stilo --help
+stilo --help
 ```
 
 ```text
@@ -40,14 +36,15 @@ usage: stilo [-h] {render,serve} ...
 Edit and render a folder of linked Texl documents.
 ```
 
-> An installer that sets up `stilo` with one command is coming soon.
+To update Stilo later, run `git pull`, build the web editor again and add
+`--reinstall` to the `uv tool install` line.
 
 ## Open the sample documents
 
 Stilo comes with a folder of sample documents, `examples`. Serve it:
 
 ```sh
-uv run stilo serve ../examples
+stilo serve examples
 ```
 
 ```text
@@ -74,7 +71,7 @@ Press Ctrl+C in the terminal to stop the server.
 `stilo render` prints a document with its formulas computed:
 
 ```sh
-uv run stilo render ../examples/projects/beam/beam-check.texl
+stilo render examples/projects/beam/beam-check.texl
 ```
 
 The output is the document's text, with every `<% %>` formula replaced by

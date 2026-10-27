@@ -1,9 +1,8 @@
-"""The `stilo` command (or `python -m stilo`)."""
+"""The `stilo` command line: one subcommand per entry in `COMMANDS`."""
 
 import argparse
-import sys
 
-from stilo.commands import COMMANDS
+from .commands import COMMANDS
 
 
 def main(argv=None) -> int:
@@ -17,6 +16,3 @@ def main(argv=None) -> int:
     args = parser.parse_args(argv)
     return args.run(args)
 
-
-if __name__ == "__main__":
-    sys.exit(main())

@@ -1,0 +1,58 @@
+# The Python project of Stilo and its only published package, `stilo`:
+#
+#   src/stilo/cli      the `stilo` command
+#   src/stilo/server   the server (never imports the CLI)
+#   src/stilo/web      the built web app, written by `npm run build` in web/
+#                      (git-ignored; the build fails if it is missing)
+#
+# Build:
+#
+#   cd web && npm ci && npm run build && cd ..
+#   uv build                  # dist/stilo-<version>.tar.gz and .whl
+
+[project]
+name = "stilo"
+version = "0.0.1"
+description = "Stilo: edit and render a folder of linked Texl documents"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115",
+    "pytexl>=0.4",
+    "uvicorn>=0.30",
+]
+
+[project.scripts]
+stilo = "stilo.cli:main"
+
+[project.urls]
+Homepage = "https://www.onlabs.org/stilo/"
+Source = "https://github.com/onlabsorg/stilo"
+
+[dependency-groups]
+dev = [
+    "httpx>=0.27",
+    "pytest>=8",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.sdist]
+only-include = ["src/stilo", "README.md", "LICENSE"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/stilo"]
+
+# src/stilo/web is git-ignored: include it anyway, and fail if it is missing
+[tool.hatch.build.targets.sdist.force-include]
+"src/stilo/web" = "src/stilo/web"
+
+[tool.hatch.build.targets.wheel.force-include]
+"src/stilo/web" = "stilo/web"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -21,8 +21,8 @@ reason.
    [Development setup](https://www.onlabs.org/stilo/book/dev/setup.html)
    (`docs/src/dev/setup.md`).
 3. Make the change, with tests:
-   - the server: `server/tests/`, run with `uv run pytest` in `server/`;
-   - the CLI: `cli/tests/`, run with `uv run pytest` in `cli/`;
+   - the server and the CLI: `tests/server/`, `tests/cli/`, run with
+     `uv run pytest` at the root;
    - the editor: `web/test/`, run with `npm test` in `web/`.
 4. Update the documentation that the change affects (see below).
 5. Add a line to the *Unreleased* section of `CHANGELOG.md` if users will
@@ -37,10 +37,10 @@ to discuss it.
 
 - **Three parts, one contract.** The web app talks to the server only
   through the protocol (`web/src/api.js`). A protocol change goes into
-  `docs/src/protocol.md` first, then into `server/` and the web app.
+  `docs/src/protocol.md` first, then into `src/stilo/server/` and the web app.
 - **One place per extension point**: cell types only through the registry
   (`web/src/editor/registry.js`), CLI commands only through `COMMANDS`
-  (`cli/stilo/commands.py`), the server only through `create_app()`.
+  (`src/stilo/cli/commands.py`), the server only through `create_app()`.
 - **The editor owns the document.** Cells are views of their Texl source
   and report changes by events.
 - **Documents are untrusted.** Sanitize rendered HTML; the server never

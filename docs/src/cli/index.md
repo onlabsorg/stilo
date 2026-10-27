@@ -18,11 +18,8 @@ Every command takes `-h` (or `--help`) and prints its options:
 stilo serve --help
 ```
 
-Until Stilo has an installer, run the command from the `cli` folder of your
-copy of the source code, as `uv run stilo` (see
-[Getting started](../getting-started.md)). The examples in this manual
-write `stilo` for short. `python -m stilo` works too, in an environment
-where Stilo is installed.
+[Getting started](../getting-started.md) installs the command.
+`python -m stilo` works too, in an environment where Stilo is installed.
 
 ## Exit status
 

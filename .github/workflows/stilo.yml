@@ -1,5 +1,5 @@
-# Tests Stilo: the web app and editor in headless Chrome, the server and the
-# CLI with pytest.
+# Tests Stilo: the web app and editor in headless Chrome, the Python package
+# (server and CLI) with pytest, and the package `stilo` built and installed.
 
 name: stilo
 
@@ -35,9 +35,36 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: astral-sh/setup-uv@v6
-      - name: Server tests
-        working-directory: server
-        run: uv run pytest
-      - name: CLI tests
-        working-directory: cli
-        run: uv run pytest
+      - run: uv run pytest
+
+  # Builds the package `stilo` (CLI, server and web app in one wheel) and
+  # tries it outside the checkout
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - uses: astral-sh/setup-uv@v6
+      - name: Build the web app
+        working-directory: web
+        run: npm ci && npm run build
+      - name: Build the package
+        run: uv build
+      - name: Try the installed command
+        run: |
+          uv venv "$RUNNER_TEMP/venv"
+          uv pip install --python "$RUNNER_TEMP/venv/bin/python" dist/*.whl
+          cp -r examples "$RUNNER_TEMP/examples"
+          cd "$RUNNER_TEMP"
+          venv/bin/stilo render examples/projects/beam/beam-check.texl > /dev/null
+          venv/bin/stilo serve examples --port 8765 &
+          for i in $(seq 50); do curl -sf -o /dev/null localhost:8765/_api/tree/ && break; sleep 0.2; done
+          curl -sf -H 'Accept: text/html' localhost:8765/sample.texl | grep -q '<title>Stilo</title>'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stilo-package
+          path: dist/

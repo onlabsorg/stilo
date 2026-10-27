@@ -1,13 +1,13 @@
 # Python
-server/.venv/
-cli/.venv/
+.venv/
+/dist/
 __pycache__/
 *.pyc
 .pytest_cache/
 
 # Node
 web/node_modules/
-web/dist/
+src/stilo/web/
 
 # Editors and OS
 .DS_Store

@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from stilo.__main__ import main
+from stilo.cli import main
 
 EXAMPLES = Path(__file__).resolve().parents[2] / "examples"
 

@@ -1,15 +1,17 @@
 # The server
 
-*`server/`, the Python package `stilo-server`: serves one folder of
+*`src/stilo/server/`, the module `stilo.server`: serves one folder of
 documents over HTTP, as the [protocol](../protocol.md) describes, and the
 built web app. FastAPI and uvicorn.*
 
 | Module                          | Role                                           |
 |---------------------------------|------------------------------------------------|
-| `stilo_server/storage.py`       | `Storage`: the folder on disk. Path validation, read, create, update, tree, ETags. No HTTP. |
-| `stilo_server/app.py`           | `create_app()`: the HTTP routes, mapped onto `Storage` |
-| `stilo_server/__init__.py`      | Exports `create_app` |
-| `stilo_server/__main__.py`      | A development entry point, `python -m stilo_server --root <folder>`. Users run `stilo serve` instead. |
+| `stilo/server/storage.py`       | `Storage`: the folder on disk. Path validation, read, create, update, tree, ETags. No HTTP. |
+| `stilo/server/app.py`           | `create_app()`: the HTTP routes, mapped onto `Storage` |
+| `stilo/server/__init__.py`      | Exports `create_app` |
+
+The server imports nothing from the rest of the package (the CLI starts it
+with `stilo serve`); `tests/test_layout.py` checks it.
 
 The two layers are separate on purpose: `Storage` knows nothing about HTTP,
 and `app.py` contains no file-system logic. A server in another language
@@ -119,14 +121,14 @@ def create_app(root: Path | str, web_dist: Path | str | None = None) -> FastAPI
 ```
 
 Creates the server app for the documents under `root`. `web_dist` is the
-built web app (`web/dist`); without it, or if it is not built, pages show a
+built web app (`src/stilo/web` in a checkout); without it, or if it is not built, pages show a
 notice that says how to build it.
 
 ```python
 import uvicorn
-from stilo_server import create_app
+from stilo.server import create_app
 
-uvicorn.run(create_app("examples", "web/dist"), port=8000)
+uvicorn.run(create_app("examples", "src/stilo/web"), port=8000)
 ```
 
 The routes, in the order they match:
@@ -146,11 +148,11 @@ The routes, in the order they match:
 
 ## Tests
 
-`server/tests/test_api.py` tests the app through FastAPI's `TestClient`,
+`tests/server/test_api.py` tests the app through FastAPI's `TestClient`,
 on a temporary folder: every interaction of the protocol, the errors, path
 validation, and content negotiation on public addresses. A change to the
 protocol starts with a test there.
 
 ```sh
-cd server && uv run pytest
+uv run pytest tests/server
 ```

@@ -25,6 +25,10 @@ to Word and Excel users, and renders them from the command line.
 | Protocol | Plain HTTP between web app and server: GET a file, CREATE (POST), UPDATE (PUT, with an ETag so concurrent saves don't overwrite each other), QUERY a folder's tree. |
 | Documentation | A static site, in the same style as the Texl and OnLabs.org sites: landing page and a manual (getting started, the `stilo` command, the web editor, the document format, the protocol, the editor component, a developer guide, contributing, changelog). Built and published on GitHub Pages by GitHub Actions. |
 
+Web app, server and CLI ship as **one Python package**, `stilo`, with the
+built web app inside it. The server stays independent of the CLI (a test
+checks it), so it can be reused or replaced on its own.
+
 Each document has one URL, `/path/to/doc.texl`: a browser gets the web app,
 `texl.import` gets the file. A link in a document to another document opens
 it in the app. Imports with relative paths resolve from the document's own
@@ -47,13 +51,19 @@ accept are not part of Stilo.
   Actions workflow on every push to `main`), with `CONTRIBUTING.md` and
   `CHANGELOG.md`; the former `texl-editor` documents were updated and moved
   into it. Not live until GitHub Pages is set to deploy from GitHub Actions.
+- 2026-10-27: **one package**, `stilo`: the code was reorganised into a
+  single Python project (server and CLI as parts of one package, the web
+  app built into it). From a checkout, one command builds and installs
+  `stilo` with the web app included; the continuous integration builds the
+  package, installs it and tries `render` and `serve`. Version 0.0.1, not
+  published.
 - Next: the table cell; a small editor API for the app (`runCommand`,
-  `select(line)`); packaging so that Stilo installs with one command.
+  `select(line)`); publishing the package on PyPI.
 
 ## Known limitations
 
-- Not installable on its own yet: run from a checkout (the CLI finds the
-  built web app there).
+- Not on PyPI yet: install from a checkout (`uv tool install .` after
+  building the web app); no release workflow.
 - No authentication: serve to localhost, or behind your own access control.
 - The app drives editor commands with synthetic key presses and cannot
   select a line from the comments pane.

@@ -20,10 +20,13 @@ Requires Python 3.11+ with [uv](https://docs.astral.sh/uv/), and Node.js 22+.
 
 ```bash
 cd web && npm install && npm run build && cd ..
-cd cli && uv sync
-uv run stilo serve ../examples          # http://127.0.0.1:8000
-uv run stilo render ../examples/projects/beam/beam-check.texl
+uv tool install --python ">=3.11" .     # the `stilo` command, web app included
+stilo serve examples                     # http://127.0.0.1:8000
+stilo render examples/projects/beam/beam-check.texl
 ```
+
+For development, use `uv run stilo` at the root instead; see the developer
+guide.
 
 Open <http://127.0.0.1:8000/projects/beam/beam-check.texl>.
 
@@ -31,9 +34,10 @@ Open <http://127.0.0.1:8000/projects/beam/beam-check.texl>.
 
 | Folder    | What                                                          |
 |-----------|---------------------------------------------------------------|
-| `web/`    | The web app (Lit, Vite): navigation, side panes and the editor (`web/src/editor/`, the `<texl-editor>` component) |
-| `server/` | `stilo-server`: Python (FastAPI) server for one folder of documents |
-| `cli/`    | `stilo`: the command line, `render` and `serve`               |
+| `web/`    | The web app's source (Lit, Vite): navigation, side panes and the editor (`web/src/editor/`, the `<texl-editor>` component) |
+| `src/stilo/` | The Python package `stilo`: `server/` (FastAPI, one folder of documents), `cli/` (the `stilo` command, `render` and `serve`), `web/` (the built web app) |
+| `tests/`  | The Python tests                                              |
+| `pyproject.toml` | The package `stilo`, the only one published          |
 | `docs/`   | The documentation (manual, editor manual, landing page), published on <https://www.onlabs.org/stilo/>; `docs/build.sh` builds it into `target/site` |
 | `examples/` | Sample documents                                            |
 

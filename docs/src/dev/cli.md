@@ -1,12 +1,12 @@
 # The CLI
 
-*`cli/`, the Python package `stilo`: the `stilo` command. Its user manual is
-[The stilo command](../cli/index.md).*
+*`src/stilo/cli/`, the module `stilo.cli`: the `stilo` command. Its user
+manual is [The stilo command](../cli/index.md).*
 
-| Module               | Role                                                 |
-|----------------------|------------------------------------------------------|
-| `stilo/__main__.py`  | `main()`: builds the argument parser from `COMMANDS` and runs the chosen command. The `stilo` script and `python -m stilo` both call it. |
-| `stilo/commands.py`  | The subcommands, as `Command` entries in `COMMANDS` |
+| Module                  | Role                                              |
+|-------------------------|---------------------------------------------------|
+| `stilo/cli/__init__.py` | `main()`: builds the argument parser from `COMMANDS` and runs the chosen command. The `stilo` script and `python -m stilo` (`stilo/__main__.py`) both call it. |
+| `stilo/cli/commands.py` | The subcommands, as `Command` entries in `COMMANDS` |
 
 ## `Command`
 
@@ -58,7 +58,7 @@ COMMANDS = [
 ```
 
 Print errors to standard error, prefixed with `stilo:`, and return 1. Add a
-test in `cli/tests/` that calls `main([...])`, and document the command in
+test in `tests/cli/` that calls `main([...])`, and document the command in
 `docs/src/cli/`.
 
 ## `render`
@@ -81,15 +81,16 @@ def serve(args) -> int
 Runs `create_app(args.folder, args.web)` from the server with uvicorn on
 `args.host` and `args.port`. Returns 1 if `args.folder` is not a folder.
 
-The default for `--web` is `WEB_DIST`, the folder `web/dist` of the source
-checkout, found relative to `commands.py`. That is why the CLI must run from
-a checkout for now: packaging the web app with the CLI is still to do.
+The default for `--web` is `WEB_DIST`, the folder `stilo/web` of the
+package: the build of the web app, in a checkout as in an installed package
+(see [Development setup](setup.md#the-package-stilo)). The server never
+looks for the web app itself: the CLI hands it over to `create_app()`.
 
 ## Tests
 
-`cli/tests/test_render.py` runs `main()` on the sample documents in
+`tests/cli/test_render.py` runs `main()` on the sample documents in
 `examples/`: rendering with imports, writing to a file, and a missing file.
 
 ```sh
-cd cli && uv run pytest
+uv run pytest tests/cli
 ```

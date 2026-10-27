@@ -17,13 +17,13 @@ TEXT = "text/plain; charset=utf-8"
 NO_CACHE = {"Cache-Control": "no-cache"}
 
 NO_BUILD = """<!doctype html><meta charset="utf-8"><title>Stilo</title>
-<p>The web app is not built. Run <code>npm run build</code> in
-<code>stilo/web</code>, or use the Vite dev server (<code>npm run dev</code>).</p>"""
+<p>The web app is not built. Run <code>npm run build</code> in <code>web/</code>
+of the Stilo checkout, or use the Vite dev server (<code>npm run dev</code>).</p>"""
 
 
 def create_app(root: Path | str, web_dist: Path | str | None = None) -> FastAPI:
     """The server app for the documents under `root`. `web_dist` is the built
-    web app (`web/dist`); without it, app pages show a notice."""
+    web app (`stilo/web` in the CLI); without it, app pages show a notice."""
     storage = Storage(root)
     app = FastAPI(title="Stilo server", version="0.0.1")
 

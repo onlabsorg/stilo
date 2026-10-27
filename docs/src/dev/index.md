@@ -9,22 +9,27 @@ setup](setup.md).*
 
 Stilo is one repository with three parts, kept strictly apart:
 
-| Folder    | Part     | Language                  | Package        |
-|-----------|----------|---------------------------|----------------|
-| `web/`    | Web app, with the editor in `web/src/editor/` | JavaScript (Lit web components, Vite) | `@onlabsorg/stilo-web` (private) |
-| `server/` | Server   | Python (FastAPI)          | `stilo-server` |
-| `cli/`    | Command line | Python               | `stilo`        |
+| Folder             | Part     | Language                  |
+|--------------------|----------|---------------------------|
+| `web/`             | Web app, with the editor in `web/src/editor/` | JavaScript (Lit web components, Vite), Node project `@onlabsorg/stilo-web` (private) |
+| `src/stilo/server/`| Server   | Python (FastAPI), module `stilo.server` |
+| `src/stilo/cli/`   | Command line | Python, module `stilo.cli` |
+
+The server and the CLI are one Python package, `stilo`, and the only
+published one; the web app is built into it, as `src/stilo/web/` (see
+[Development setup](setup.md#the-package-stilo)). The server never imports
+the CLI.
 
 ```text
         browser                                  your computer or server
 ┌──────────────────────────┐   protocol v0   ┌──────────────────────────────┐
-│ web app (web/)           │   plain HTTP    │ server (server/)             │
+│ web app (web/)           │   plain HTTP    │ server (stilo.server)        │
 │  ├ app shell: navigation,│ ──────────────▶ │  create_app(): HTTP routes   │
 │  │ panes, commands, save │  GET / POST /   │  Storage: one folder on disk │
 │  └ <texl-editor>: cells, │  PUT / tree     │                              │
 │    Texl as WebAssembly   │ ◀────────────── │  started by `stilo serve`    │
 └──────────────────────────┘                 └──────────────────────────────┘
-                                               cli/ (`stilo`): serve, render
+                                          stilo.cli (`stilo`): serve, render
 ```
 
 The [protocol](../protocol.md) is the contract between the web app and the
@@ -35,7 +40,7 @@ tree). The rules that follow from it:
   `web/src/api.js`. So another server that speaks the protocol, in another
   language or with accounts and permissions, can replace the Python one.
 - A change to the protocol is made in `docs/src/protocol.md` first,
-  then in `server/` and `web/src/api.js`.
+  then in `src/stilo/server/` and `web/src/api.js`.
 - Documents stay plain Texl files, and the protocol stays plain HTTP: a
   document's address is all that `texl.import` needs to read it.
 
@@ -75,8 +80,8 @@ system can be added without restructuring:
 | Extension       | The one place                              |
 |-----------------|--------------------------------------------|
 | Cell types      | The registry, `registerCell()` in `web/src/editor/registry.js` |
-| CLI commands    | The `COMMANDS` list in `cli/stilo/commands.py` |
-| Server          | `create_app()` in `server/stilo_server/app.py` |
+| CLI commands    | The `COMMANDS` list in `src/stilo/cli/commands.py` |
+| Server          | `create_app()` in `src/stilo/server/app.py` |
 
 ## Conventions that apply everywhere
 

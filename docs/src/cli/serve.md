@@ -25,7 +25,7 @@ Ctrl+C in the terminal to stop the server.
 | `folder`      | the current folder | The folder of the documents. It is the root of the server: everything under it can be read, and its `.texl` files can be written. |
 | `--host HOST` | `127.0.0.1`      | The address to listen on. The default accepts connections from your own computer only. |
 | `--port PORT` | `8000`           | The port to listen on.                          |
-| `--web WEB`   | `web/dist` in the source code | The built web editor. Change it only to serve another build of it. |
+| `--web WEB`   | the one installed with Stilo | The built web editor. Change it only to serve another build of it. |
 
 ## Addresses
 

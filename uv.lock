@@ -335,6 +335,22 @@ wheels = [
 ]
 
 [[package]]
+name = "pytexl"
+version = "0.4.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/18/7b/857097f3ee55f8a662ae61324b544dbf0c52978d6499ac9756fff550e332/pytexl-0.4.0.tar.gz", hash = "sha256:b26e0214c6ed21697561c2df1af2718d004f69dd9fd26f7912bd10fcac816549", size = 140876 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a0/f9/1988a78c0ef7ca9a21c53737121d3cf4b2203c5639ea8a396fd538a8a07d/pytexl-0.4.0-cp310-abi3-macosx_10_12_x86_64.whl", hash = "sha256:f8387ef9460080b5daf789033bf009112695cd026082fc94c405871403aaba05", size = 655620 },
+    { url = "https://files.pythonhosted.org/packages/f5/15/aa09c37970c144419bb0947b1c6259a9c2b0bb70d4e5ec3bdf7575b5b6fa/pytexl-0.4.0-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:d9bf0d132b21780557c58c285ee8067b4031f927e05d38cf60b64f65a7103812", size = 650485 },
+    { url = "https://files.pythonhosted.org/packages/a0/50/570846a8533d0bab2a06985db38e6ef7a2315b8e4d8afd21388788afd506/pytexl-0.4.0-cp310-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:64d106d245455fedfe460b28b7136113a037b11e3bb52df4292f9e39c3f78c8a", size = 703368 },
+    { url = "https://files.pythonhosted.org/packages/df/dc/85fc303286822527e567ee463e2f73b47f5fc370cabcb1f40e8b967a9e4f/pytexl-0.4.0-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:32e61f881396f62598acdc6c682fd1ab062781c09924f115f76d82837d9cef55", size = 716204 },
+    { url = "https://files.pythonhosted.org/packages/5d/68/f1199d47114012a731021305e1300a82a9db342da284c6afe139892df318/pytexl-0.4.0-cp310-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:0d795e46b86e7105dcb4cc9159d698a140aa0c93dc914eeadd852869d56cbd0e", size = 881092 },
+    { url = "https://files.pythonhosted.org/packages/ec/84/eba5dec1cde8d6bfe5579df637cec98b6ab656c27b3df3bdce571c533662/pytexl-0.4.0-cp310-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:8b0e49b201e0d2bc7dd65824da2bc3226292df10f9ef89f735745c0dac48fc34", size = 925226 },
+    { url = "https://files.pythonhosted.org/packages/10/83/e58cc1e61b490c7798208fe4c900ac372f2deb20bdd1fa57f76b7b6e91d8/pytexl-0.4.0-cp310-abi3-win_amd64.whl", hash = "sha256:e01f82b1dbda52a8247a57f99d06a2e65927bdbf77f3debd6426fea0c18a79a7", size = 577572 },
+    { url = "https://files.pythonhosted.org/packages/e3/e4/1a88fdbe492a3a1c2da9be5a36e86a12e76359db752be95785627d7b2d27/pytexl-0.4.0-cp310-abi3-win_arm64.whl", hash = "sha256:1344d513eb6f65f2d422416253341aa9b5bf19b88a9f84adb5f06b6f5a3d9974", size = 545650 },
+]
+
+[[package]]
 name = "starlette"
 version = "1.10.0"
 source = { registry = "https://pypi.org/simple" }
@@ -348,11 +364,12 @@ wheels = [
 ]
 
 [[package]]
-name = "stilo-server"
+name = "stilo"
 version = "0.0.1"
 source = { editable = "." }
 dependencies = [
     { name = "fastapi" },
+    { name = "pytexl" },
     { name = "uvicorn" },
 ]
 
@@ -365,6 +382,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "fastapi", specifier = ">=0.115" },
+    { name = "pytexl", specifier = ">=0.4" },
     { name = "uvicorn", specifier = ">=0.30" },
 ]
 

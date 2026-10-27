@@ -13,9 +13,12 @@ from typing import Callable
 
 import pytexl
 import uvicorn
-from stilo_server import create_app
 
-WEB_DIST = Path(__file__).resolve().parents[2] / "web" / "dist"
+from stilo.server import create_app
+
+# The built web app, `stilo/web`: written there by `npm run build` in a
+# checkout, shipped there in the package
+WEB_DIST = Path(__file__).resolve().parents[1] / "web"
 
 
 @dataclass
@@ -58,7 +61,7 @@ def serve_arguments(parser):
                         help="address to listen on (default: 127.0.0.1)")
     parser.add_argument("--port", type=int, default=8000)
     parser.add_argument("--web", type=Path, default=WEB_DIST,
-                        help="built web app (default: stilo/web/dist)")
+                        help="built web app (default: the one installed with stilo)")
 
 
 def serve(args) -> int:
