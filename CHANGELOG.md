@@ -6,22 +6,9 @@ change the interfaces.
 
 ## Unreleased
 
-- One package, `stilo`, with the command line (`stilo.cli`), the server
-  (`stilo.server`, formerly `stilo_server`) and the web app (`stilo/web`):
-  one Python project at the root of the repository, sources in
-  `src/stilo/`, tests in `tests/`; the web app builds into the package.
-  Built with `uv build` after the web build, installed from a checkout
-  with `uv tool install .`. `python -m stilo_server` is gone: use
-  `stilo serve`.
-- Documentation site, built and published by GitHub Actions on
-  <https://www.onlabs.org/stilo/>: getting started, the `stilo` command,
-  the web editor, the document format, the protocol, the editor component
-  and a developer guide.
-- Web app: links to other documents open in the app, resolved from the open
-  document.
-- Commands pane: the command groups fold.
+## 0.1.0 — 2026-10-27
 
-## 0.0.1 — 2026-10-26 (not published)
+First release on PyPI (`pip install stilo`).
 
 Stilo restarted as the editor for Texl documents
 (<https://github.com/onlabsorg/stilo>), bringing together:
@@ -36,3 +23,22 @@ Stilo restarted as the editor for Texl documents
 - the command line, `stilo`, with `render` and `serve`.
 
 The earlier, olojs-based Stilo is kept under the tag `olojs-v0.19.4`.
+
+Since the restart:
+
+- One package, `stilo`, with the command line (`stilo.cli`), the server
+  (`stilo.server`, formerly `stilo_server`) and the web app (`stilo/web`):
+  one Python project at the root of the repository, sources in
+  `src/stilo/`, tests in `tests/`; the web app builds into the package.
+  Built with `uv build` after the web build, installed from a checkout
+  with `uv tool install .`. `python -m stilo_server` is gone: use
+  `stilo serve`.
+- Documentation site, built and published by GitHub Actions on
+  <https://www.onlabs.org/stilo/>: getting started, the `stilo` command,
+  the web editor, the document format, the protocol, the editor component
+  and a developer guide.
+- Web app: links to other documents open in the app, resolved from the open
+  document.
+- Commands pane: the command groups fold.
+- Releases: a pushed tag `vX.Y.Z` publishes the package on PyPI and
+  creates the GitHub release (`.github/workflows/release.yml`).

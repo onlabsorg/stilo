@@ -104,3 +104,21 @@ page with a headless browser (puppeteer-core with the local Chrome works).
 
 The continuous integration, `.github/workflows/stilo.yml`, runs all the
 tests, the web build and the package build on every push and pull request.
+
+## Releasing
+
+A release is a tag. `.github/workflows/release.yml` runs at every pushed
+tag `vX.Y.Z`: it checks that the tag matches the version in
+`pyproject.toml` and that `CHANGELOG.md` has an entry `## X.Y.Z`, runs the
+tests, builds the package, publishes it on
+[PyPI](https://pypi.org/project/stilo/) and creates the GitHub release with
+the changelog entry and the built files. PyPI trusts the workflow by
+Trusted Publishing, in the GitHub environment `pypi`: there is no token.
+
+To release:
+
+1. Set the version in `pyproject.toml`, `web/package.json` and
+   `src/stilo/server/app.py`; run `uv lock` and `npm install` in `web/`.
+2. Rename the changelog's *Unreleased* section to `## X.Y.Z — <date>` and
+   start a new, empty *Unreleased*.
+3. Commit on `main`, then `git tag vX.Y.Z && git push origin main vX.Y.Z`.

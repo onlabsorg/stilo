@@ -57,13 +57,19 @@ accept are not part of Stilo.
   `stilo` with the web app included; the continuous integration builds the
   package, installs it and tries `render` and `serve`. Version 0.0.1, not
   published.
+- 2026-10-27: **release 0.1.0 prepared**, not yet published: version set to
+  0.1.0, changelog entry written, install instructions (README, getting
+  started) changed to install from PyPI. A release workflow publishes the
+  package on PyPI and creates the GitHub release whenever a version tag is
+  pushed; it needs a one-time setup on PyPI and GitHub, then the tag
+  `v0.1.0`.
 - Next: the table cell; a small editor API for the app (`runCommand`,
-  `select(line)`); publishing the package on PyPI.
+  `select(line)`); publishing 0.1.0 on PyPI.
 
 ## Known limitations
 
-- Not on PyPI yet: install from a checkout (`uv tool install .` after
-  building the web app); no release workflow.
+- Not on PyPI until 0.1.0 is tagged and published: until then, install
+  from a checkout (`uv tool install .` after building the web app).
 - No authentication: serve to localhost, or behind your own access control.
 - The app drives editor commands with synthetic key presses and cannot
   select a line from the comments pane.

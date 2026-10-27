@@ -1,0 +1,86 @@
+# Releases Stilo: at a pushed tag vX.Y.Z, tests and builds the package
+# `stilo` (web app included), publishes it on PyPI by Trusted Publishing (no
+# token: PyPI trusts this workflow in the environment `pypi`), and creates
+# the GitHub release with the changelog entry and the built files.
+
+name: release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - uses: astral-sh/setup-uv@v6
+      - name: Check that the tag matches the package version
+        run: |
+          version=$(grep -m1 '^version = ' pyproject.toml | cut -d'"' -f2)
+          test "v$version" = "$GITHUB_REF_NAME" || {
+            echo "tag $GITHUB_REF_NAME, but pyproject.toml has version $version"; exit 1; }
+          grep -q "^## $version " CHANGELOG.md || {
+            echo "CHANGELOG.md has no entry for $version"; exit 1; }
+      - name: Test and build the web app
+        working-directory: web
+        run: npm ci && npm test && npm run build
+      - name: Test the Python package
+        run: uv run pytest
+      - name: Build the package
+        run: uv build
+      - name: Try the installed command
+        run: |
+          uv venv "$RUNNER_TEMP/venv"
+          uv pip install --python "$RUNNER_TEMP/venv/bin/python" dist/*.whl
+          cp -r examples "$RUNNER_TEMP/examples"
+          cd "$RUNNER_TEMP"
+          venv/bin/stilo render examples/projects/beam/beam-check.texl > /dev/null
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  pypi:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/stilo/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
+
+  github-release:
+    needs: pypi
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=${GITHUB_REF_NAME#v}
+          awk -v h="## $version " 'index($0, h) == 1 {on=1; next} /^## / {on=0} on' \
+            CHANGELOG.md > notes.md
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --title "Stilo $version" --notes-file notes.md

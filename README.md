@@ -16,19 +16,27 @@ platform built on top of it.
 
 ## Getting started
 
-Requires Python 3.11+ with [uv](https://docs.astral.sh/uv/), and Node.js 22+.
+Requires Python 3.11 or later. Install the `stilo` command from PyPI, with
+[uv](https://docs.astral.sh/uv/) or pip:
 
 ```bash
-cd web && npm install && npm run build && cd ..
-uv tool install --python ">=3.11" .     # the `stilo` command, web app included
-stilo serve examples                     # http://127.0.0.1:8000
-stilo render examples/projects/beam/beam-check.texl
+uv tool install stilo        # or: pip install stilo
+stilo serve my-folder        # http://127.0.0.1:8000
+stilo render my-folder/report.texl
 ```
 
-For development, use `uv run stilo` at the root instead; see the developer
-guide.
+To try the sample documents, or to work on Stilo itself, use a checkout
+(Node.js 22+ builds the web app):
 
-Open <http://127.0.0.1:8000/projects/beam/beam-check.texl>.
+```bash
+git clone https://github.com/onlabsorg/stilo.git && cd stilo
+cd web && npm install && npm run build && cd ..
+uv run stilo serve examples
+```
+
+Open <http://127.0.0.1:8000/projects/beam/beam-check.texl>. See the
+[getting started guide](https://www.onlabs.org/stilo/book/getting-started.html)
+and the developer guide.
 
 ## Parts
 
@@ -45,9 +53,9 @@ Open <http://127.0.0.1:8000/projects/beam/beam-check.texl>.
 
 <https://www.onlabs.org/stilo/>: getting started, the `stilo` command, the
 web editor (with an interactive editor manual), the protocol, the editor
-component and a developer guide. See also [CONTRIBUTING.md](CONTRIBUTING.md)
-and [CHANGELOG.md](CHANGELOG.md).
+component and a developer guide. See also [CONTRIBUTING.md](https://github.com/onlabsorg/stilo/blob/main/CONTRIBUTING.md)
+and [CHANGELOG.md](https://github.com/onlabsorg/stilo/blob/main/CHANGELOG.md).
 
 ## License
 
-[MIT](LICENSE)
+[MIT](https://github.com/onlabsorg/stilo/blob/main/LICENSE)

@@ -1,6 +1,6 @@
 {
   "name": "@onlabsorg/stilo-web",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": true,
   "description": "Stilo web app: navigation, the Texl editor (src/editor), side panes",
   "license": "MIT",

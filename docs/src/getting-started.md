@@ -5,26 +5,16 @@ renders one from the command line.
 
 ## Install
 
-Stilo is not on PyPI yet: you build it from a copy of its source code. You
-need:
-
-- [git](https://git-scm.com/),
-- [uv](https://docs.astral.sh/uv/), which also installs Python 3.11 or
-  later if you do not have it,
-- [Node.js](https://nodejs.org/) 22 or later, to build the web editor.
-
-Get the code, build the web editor and install the `stilo` command:
+You need [uv](https://docs.astral.sh/uv/), which also installs Python 3.11
+or later if you do not have it. Install the `stilo` command from PyPI:
 
 ```sh
-git clone https://github.com/onlabsorg/stilo.git
-cd stilo
-cd web && npm install && npm run build && cd ..
-uv tool install --python ">=3.11" .
+uv tool install stilo
 ```
 
-The last line builds the package `stilo`, with the web editor inside, and
-puts the `stilo` command on your path. If uv says that its folder is not on
-your path, run `uv tool update-shell` and open a new terminal. Check it:
+If uv says that its folder is not on your path, run `uv tool update-shell`
+and open a new terminal. With Python 3.11 or later already installed,
+`pip install stilo` works too. Check it:
 
 ```sh
 stilo --help
@@ -36,14 +26,17 @@ usage: stilo [-h] {render,serve} ...
 Edit and render a folder of linked Texl documents.
 ```
 
-To update Stilo later, run `git pull`, build the web editor again and add
-`--reinstall` to the `uv tool install` line.
+To update Stilo later, run `uv tool upgrade stilo`.
 
 ## Open the sample documents
 
-Stilo comes with a folder of sample documents, `examples`. Serve it:
+Stilo's source code comes with a folder of sample documents, `examples`.
+Get it with [git](https://git-scm.com/) (or download the code as a ZIP file
+from <https://github.com/onlabsorg/stilo>) and serve it:
 
 ```sh
+git clone https://github.com/onlabsorg/stilo.git
+cd stilo
 stilo serve examples
 ```
 

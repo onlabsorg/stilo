@@ -131,7 +131,11 @@ The app shell has no tests yet (the editor has). To check the UI, run the
 server and drive it with a headless browser (puppeteer-core with the local
 Chrome works). CI: `.github/workflows/stilo.yml` (tests, web build, and
 the `package` job: builds the wheel, installs it, smoke-tests `render` and
-`serve`).
+`serve`). Release: `.github/workflows/release.yml`, at a pushed tag
+`vX.Y.Z` matching `pyproject.toml` and a `CHANGELOG.md` entry: tests,
+builds, publishes on PyPI (Trusted Publishing, environment `pypi`) and
+creates the GitHub release. Bump the version in `pyproject.toml`,
+`web/package.json` and `src/stilo/server/app.py`.
 
 ## Code layout
 
@@ -240,6 +244,3 @@ valid Texl document that renders without the editor (`stilo render`,
 - **No authentication:** `stilo serve` is meant for one user; bind it to
   localhost, or put it behind your own access control when serving
   remotely.
-- **Packaging:** `stilo` builds and installs from a checkout
-  (`uv tool install .`) but is not on PyPI yet; there is no release
-  workflow.
