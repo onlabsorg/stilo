@@ -72,8 +72,9 @@ it:
 The web app's source stays in `web/`, a Node project of its own; only its
 build goes into the package. A checkout and an installed package thus have
 the same layout, and the CLI finds the web app in the same place in both.
-Build the web app first: the package build fails if `src/stilo/web` is
-missing.
+Build the web app first: the package includes `src/stilo/web` when it is
+there, and leaves it out silently when it is not (so that `uv run` works
+without a web build). The release workflow checks that the wheel has it.
 
 ```sh
 cd web && npm ci && npm run build && cd ..

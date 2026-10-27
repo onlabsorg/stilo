@@ -54,6 +54,8 @@ jobs:
         run: npm ci && npm run build
       - name: Build the package
         run: uv build
+      - name: Check that the package has the web app
+        run: unzip -l dist/*.whl | grep -q 'stilo/web/index.html'
       - name: Try the installed command
         run: |
           uv venv "$RUNNER_TEMP/venv"

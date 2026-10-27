@@ -3,7 +3,8 @@
 #   src/stilo/cli      the `stilo` command
 #   src/stilo/server   the server (never imports the CLI)
 #   src/stilo/web      the built web app, written by `npm run build` in web/
-#                      (git-ignored; the build fails if it is missing)
+#                      (git-ignored; built into the package when present —
+#                      the release workflow checks that the wheel has it)
 #
 # Build:
 #
@@ -47,12 +48,10 @@ only-include = ["src/stilo", "README.md", "LICENSE"]
 [tool.hatch.build.targets.wheel]
 packages = ["src/stilo"]
 
-# src/stilo/web is git-ignored: include it anyway, and fail if it is missing
-[tool.hatch.build.targets.sdist.force-include]
-"src/stilo/web" = "src/stilo/web"
-
-[tool.hatch.build.targets.wheel.force-include]
-"src/stilo/web" = "stilo/web"
+# src/stilo/web is git-ignored: include it anyway when it is there. Not a
+# forced include, so that editable installs (`uv run`) work without it.
+[tool.hatch.build]
+artifacts = ["src/stilo/web/"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

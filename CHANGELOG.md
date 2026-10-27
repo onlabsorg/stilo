@@ -40,5 +40,7 @@ Since the restart:
 - Web app: links to other documents open in the app, resolved from the open
   document.
 - Commands pane: the command groups fold.
+- The package builds without the web app (it is then left out), so that
+  `uv run` works in a fresh checkout; the release checks that it is in.
 - Releases: a pushed tag `vX.Y.Z` publishes the package on PyPI and
   creates the GitHub release (`.github/workflows/release.yml`).
