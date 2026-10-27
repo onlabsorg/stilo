@@ -1,14 +1,20 @@
 import { LitElement, html, css } from "lit";
 import { base } from "./shared.js";
-import { closeIcon } from "../icons.js";
+import { closeIcon, chevronIcon } from "../icons.js";
 import { commands, formatKeys } from "../commands.js";
 
 /**
  * Right pane: every user command, grouped, with its shortcut.
  *
+ * Groups fold and unfold on a click on their heading.
+ *
  * Fires `run-command` ({id}) when a command is clicked, `close-pane`.
  */
 export class CommandsPane extends LitElement {
+    static properties = {
+        _collapsed: { state: true },
+    };
+
     static styles = [
         base,
         css`
@@ -23,10 +29,36 @@ export class CommandsPane extends LitElement {
                 padding-bottom: 1rem;
             }
             h3 {
-                margin: 0.75rem 1rem 0.25rem;
+                margin: 0.5rem 0 0;
                 font-size: 12px;
                 font-weight: 500;
+            }
+            button.group {
+                display: flex;
+                align-items: center;
+                gap: 0.25rem;
+                width: 100%;
+                padding: 0.25rem 1rem 0.25rem 0.5rem;
+                border: 0;
+                background: none;
                 color: var(--text-muted);
+                font: inherit;
+                text-align: left;
+                cursor: pointer;
+            }
+            button.group:hover {
+                color: var(--text);
+            }
+            .chevron {
+                display: flex;
+                transition: transform var(--transition);
+            }
+            .chevron .icon {
+                width: 14px;
+                height: 14px;
+            }
+            .chevron.open {
+                transform: rotate(90deg);
             }
             button.command,
             div.command {
@@ -66,8 +98,29 @@ export class CommandsPane extends LitElement {
         `,
     ];
 
+    constructor() {
+        super();
+        this._collapsed = new Set();
+    }
+
     _fire(name, detail) {
         this.dispatchEvent(new CustomEvent(name, { detail, bubbles: true, composed: true }));
+    }
+
+    _toggle(group) {
+        const collapsed = new Set(this._collapsed);
+        collapsed.has(group) ? collapsed.delete(group) : collapsed.add(group);
+        this._collapsed = collapsed;
+    }
+
+    _renderGroup(group, list) {
+        const open = !this._collapsed.has(group);
+        return html`<h3>
+                <button class="group" aria-expanded=${open} @click=${() => this._toggle(group)}>
+                    <span class="chevron ${open ? "open" : ""}">${chevronIcon}</span>${group}
+                </button>
+            </h3>
+            ${open ? list.map((c) => this._renderCommand(c)) : ""}`;
     }
 
     _renderCommand(command) {
@@ -89,9 +142,7 @@ export class CommandsPane extends LitElement {
                 </button>
             </div>
             <div class="list">
-                ${[...groups].map(
-                    ([group, list]) => html`<h3>${group}</h3>${list.map((c) => this._renderCommand(c))}`,
-                )}
+                ${[...groups].map(([group, list]) => this._renderGroup(group, list))}
             </div>
         `;
     }
