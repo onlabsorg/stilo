@@ -33,6 +33,8 @@ A monorepo with three parts, kept strictly modular:
 
 **One package, one Python project.** `pyproject.toml` at the root is the
 only Python project and builds the only published package, `stilo`
+(distribution name `stilo-cli` on PyPI, which refuses `stilo` as too close
+to `stl10`; the command and the import name stay `stilo`)
 (sources in `src/stilo/`, tests in `tests/`, one `uv.lock`). The web app's
 source stays in `web/` (its own Node project); `npm run build` writes it
 into the package, `src/stilo/web/` (git-ignored), so a checkout and an
@@ -98,7 +100,7 @@ for rendering, managed with `uv`. All commands at the root.
 uv sync && uv run pytest              # tests/: server/, cli/, test_layout.py
 uv run stilo serve examples           # http://127.0.0.1:8000
 uv run stilo render examples/projects/beam/beam-check.texl
-uv build                              # after npm run build: dist/stilo-*.whl
+uv build                              # after npm run build: dist/stilo_cli-*.whl
 ```
 
 **Web** (app and editor): plain JavaScript (ES modules, JSDoc types, no

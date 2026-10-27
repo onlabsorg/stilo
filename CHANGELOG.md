@@ -8,7 +8,8 @@ change the interfaces.
 
 ## 0.1.0 — 2026-10-27
 
-First release on PyPI (`pip install stilo`).
+First release on PyPI, as `stilo-cli` (`pip install stilo-cli`; the
+command and the Python package are still `stilo`).
 
 Stilo restarted as the editor for Texl documents
 (<https://github.com/onlabsorg/stilo>), bringing together:

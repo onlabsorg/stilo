@@ -26,7 +26,9 @@ to Word and Excel users, and renders them from the command line.
 | Documentation | A static site, in the same style as the Texl and OnLabs.org sites: landing page and a manual (getting started, the `stilo` command, the web editor, the document format, the protocol, the editor component, a developer guide, contributing, changelog). Built and published on GitHub Pages by GitHub Actions. |
 
 Web app, server and CLI ship as **one Python package**, `stilo`, with the
-built web app inside it. The server stays independent of the CLI (a test
+built web app inside it. On PyPI it is named `stilo-cli` (`pip install
+stilo-cli`), because PyPI refuses `stilo` as too similar to an existing
+project; the command is still `stilo`. The server stays independent of the CLI (a test
 checks it), so it can be reused or replaced on its own.
 
 Each document has one URL, `/path/to/doc.texl`: a browser gets the web app,
@@ -59,12 +61,15 @@ accept are not part of Stilo.
   published.
 - 2026-10-27: **release 0.1.0 prepared**, not yet published: version set to
   0.1.0, changelog entry written, install instructions (README, getting
-  started) changed to install from PyPI. A release workflow publishes the
+  started) changed to install from PyPI, under the name `stilo-cli`. The
+  package can also be built without the web app, so the tests run in a
+  fresh checkout; the release checks that the web app is in. A release
+  workflow publishes the
   package on PyPI and creates the GitHub release whenever a version tag is
   pushed; it needs a one-time setup on PyPI and GitHub, then the tag
   `v0.1.0`.
 - Next: the table cell; a small editor API for the app (`runCommand`,
-  `select(line)`); publishing 0.1.0 on PyPI.
+  `select(line)`); publishing 0.1.0 on PyPI as `stilo-cli`.
 
 ## Known limitations
 

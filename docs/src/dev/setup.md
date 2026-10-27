@@ -60,8 +60,9 @@ Two ways:
 
 ## The package `stilo`
 
-Stilo is published as one Python package, `stilo`, with the three parts in
-it:
+Stilo is published as one Python package, `stilo` (on PyPI `stilo-cli`,
+since PyPI refuses `stilo` as too close to an existing name), with the
+three parts in it:
 
 | In `src/stilo/` | Part                                              |
 |-----------------|---------------------------------------------------|
@@ -78,12 +79,12 @@ without a web build). The release workflow checks that the wheel has it.
 
 ```sh
 cd web && npm ci && npm run build && cd ..
-uv build              # dist/stilo-<version>.tar.gz and dist/stilo-<version>-py3-none-any.whl
+uv build              # dist/stilo_cli-<version>.tar.gz and dist/stilo_cli-<version>-py3-none-any.whl
 ```
 
 To try the wheel as a user would, install it outside the checkout:
 `uv tool install --python ">=3.11" .` from the root, or
-`uv pip install dist/stilo-*.whl` in a fresh environment. The `package` job
+`uv pip install dist/stilo_cli-*.whl` in a fresh environment. The `package` job
 of the continuous integration builds it, installs it, renders a sample
 document and serves the samples.
 
@@ -112,7 +113,7 @@ A release is a tag. `.github/workflows/release.yml` runs at every pushed
 tag `vX.Y.Z`: it checks that the tag matches the version in
 `pyproject.toml` and that `CHANGELOG.md` has an entry `## X.Y.Z`, runs the
 tests, builds the package, publishes it on
-[PyPI](https://pypi.org/project/stilo/) and creates the GitHub release with
+[PyPI](https://pypi.org/project/stilo-cli/) and creates the GitHub release with
 the changelog entry and the built files. PyPI trusts the workflow by
 Trusted Publishing, in the GitHub environment `pypi`: there is no token.
 

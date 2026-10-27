@@ -1,4 +1,5 @@
-# The Python project of Stilo and its only published package, `stilo`:
+# The Python project of Stilo and its only published package, `stilo` (on
+# PyPI `stilo-cli`: `stilo` is refused as too close to an existing name):
 #
 #   src/stilo/cli      the `stilo` command
 #   src/stilo/server   the server (never imports the CLI)
@@ -9,10 +10,10 @@
 # Build:
 #
 #   cd web && npm ci && npm run build && cd ..
-#   uv build                  # dist/stilo-<version>.tar.gz and .whl
+#   uv build                  # dist/stilo_cli-<version>.tar.gz and .whl
 
 [project]
-name = "stilo"
+name = "stilo-cli"
 version = "0.1.0"
 description = "Stilo: edit and render a folder of linked Texl documents"
 readme = "README.md"

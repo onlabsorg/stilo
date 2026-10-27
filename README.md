@@ -20,7 +20,7 @@ Requires Python 3.11 or later. Install the `stilo` command from PyPI, with
 [uv](https://docs.astral.sh/uv/) or pip:
 
 ```bash
-uv tool install stilo        # or: pip install stilo
+uv tool install stilo-cli    # or: pip install stilo-cli
 stilo serve my-folder        # http://127.0.0.1:8000
 stilo render my-folder/report.texl
 ```
@@ -45,7 +45,7 @@ and the developer guide.
 | `web/`    | The web app's source (Lit, Vite): navigation, side panes and the editor (`web/src/editor/`, the `<texl-editor>` component) |
 | `src/stilo/` | The Python package `stilo`: `server/` (FastAPI, one folder of documents), `cli/` (the `stilo` command, `render` and `serve`), `web/` (the built web app) |
 | `tests/`  | The Python tests                                              |
-| `pyproject.toml` | The package `stilo`, the only one published          |
+| `pyproject.toml` | The package `stilo`, the only one published (on PyPI: `stilo-cli`) |
 | `docs/`   | The documentation (manual, editor manual, landing page), published on <https://www.onlabs.org/stilo/>; `docs/build.sh` builds it into `target/site` |
 | `examples/` | Sample documents                                            |
 

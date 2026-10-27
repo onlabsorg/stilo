@@ -9,12 +9,12 @@ You need [uv](https://docs.astral.sh/uv/), which also installs Python 3.11
 or later if you do not have it. Install the `stilo` command from PyPI:
 
 ```sh
-uv tool install stilo
+uv tool install stilo-cli
 ```
 
 If uv says that its folder is not on your path, run `uv tool update-shell`
 and open a new terminal. With Python 3.11 or later already installed,
-`pip install stilo` works too. Check it:
+`pip install stilo-cli` works too. Check it:
 
 ```sh
 stilo --help
@@ -26,7 +26,7 @@ usage: stilo [-h] {render,serve} ...
 Edit and render a folder of linked Texl documents.
 ```
 
-To update Stilo later, run `uv tool upgrade stilo`.
+To update Stilo later, run `uv tool upgrade stilo-cli`.
 
 ## Open the sample documents
 
