@@ -30,8 +30,8 @@ A monorepo with three parts, kept strictly modular:
 - **CLI** (`cli/`, package `stilo`) — the `stilo` command: `render` a
   document, `serve` a folder. It is the only Texl command line (D19).
 
-The **protocol** (`docs/protocol.md`, plain HTTP: GET, CREATE (POST), UPDATE
-(PUT with `If-Match`), QUERY tree) is the contract between web app and
+The **protocol** (`docs/src/protocol.md`, plain HTTP: GET, CREATE
+(POST), UPDATE (PUT with `If-Match`), QUERY tree) is the contract between web app and
 server. Change it there first, then in `server/` and `web/src/api.js`.
 Papiro is meant to speak the same protocol, so the web app must use only
 it, and a server in another language (e.g. Node.js) must be able to replace
@@ -121,12 +121,21 @@ Chrome works). CI: `.github/workflows/stilo.yml`.
 
 ## Code layout
 
-- `docs/protocol.md` — protocol v0: URL space, the four interactions,
-  errors, public document URLs (content negotiation), why plain HTTP.
-- `docs/editor/` — the editor's design (`design.md`: editing model, file
-  format, open points), `texl-primer.md`, and its user documentation:
-  `guide.md`, `api.md`, `architecture.md` (written for `texl-editor`; see
-  the note at their top).
+- `docs/` — the documentation, as in Texl: `docs/build.sh` builds the
+  site into `target/site` (git-ignored); the workflow
+  `.github/workflows/docs.yml` builds and publishes it on GitHub Pages
+  (<https://www.onlabs.org/stilo/>) at every push to `main`. Style guide:
+  `docs/STYLE.md`.
+  - `src/` (mdBook, `book.toml`): user chapters (`getting-started.md`,
+    `cli/`, `editor/`, `file-format.md`), `protocol.md` (protocol v0: URL
+    space, the four interactions, errors, public document URLs, why plain
+    HTTP — also the contract), `component/` (embedding guide and editor
+    API reference), `dev/` (developer guide: architecture, setup, server,
+    CLI, web app, editor, editor design with open points, Texl primer,
+    docs).
+  - `site/index.html` (landing), `assets/` (copies of the Texl site's
+    CSS/JS, plus `stilo.css`, `book.js`).
+- `CONTRIBUTING.md`, `CHANGELOG.md` — included in the manual.
 - `server/stilo_server/storage.py` — `Storage`: path validation (no `..`,
   no hidden segments, no `_` names at the root, no escape through symlinks),
   read / create / update / tree, ETags (sha256). Raises `StorageError`
@@ -148,8 +157,8 @@ Chrome works). CI: `.github/workflows/stilo.yml`.
   shortcuts. Editor commands send the editor's own key as a synthetic
   `keydown` (a stopgap until the editor has a command API).
 - `web/src/route.js` — browser URL ↔ `{root, doc}`. `web/src/api.js` —
-  protocol client. `web/src/theme.js`, `theme.css` — light/dark theme
-  (default dark), design tokens as CSS custom properties, also mapped onto
+  protocol client. `web/src/theme.js`,
+  `theme.css` — light/dark theme (default dark), design tokens as CSS custom properties, also mapped onto
   the editor's `--texl-*` properties.
 - `web/src/editor/` — the editor:
   - `index.js` — registers the built-in cells and `<texl-editor>`,
@@ -199,9 +208,9 @@ valid Texl document that renders without the editor (`stilo render`,
   file is loaded relative to `texl_wasm.js`.
 - Keep the protocol plain HTTP and the stored documents plain Texl files.
 - When the protocol, a command, the layout, the editing model or the
-  editor API changes, update `docs/protocol.md`, `docs/editor/*` and this
-  file. Status changes go into `stilo.summary.md` (see above); decisions are
-  recorded in the coordination folder (`../DECISIONS.md`), not here.
+  editor API changes, update the matching chapters in `docs/`, rebuild the site with `docs/build.sh`, update this
+  file, and add a line to `CHANGELOG.md`. Status changes go into
+  `stilo.summary.md` (see above); decisions are recorded in the coordination folder (`../DECISIONS.md`), not here.
 - `local/` is git-ignored, for local notes.
 - English; Markdown wrapped at about 80 characters.
 

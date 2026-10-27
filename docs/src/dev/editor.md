@@ -1,15 +1,8 @@
-# Architecture
+# The editor
 
-> **Moved into Stilo (2026-10-26).** These documents come from the
-> `texl-editor` repository (0.2.0), now retired. The editor's code is in
-> `web/src/editor/` (`src/` below means that folder) and its tests in
-> `web/test/`. The editor is no longer published as a separate package:
-> examples that import `@onlabsorg/texl-editor` now import
-> `web/src/editor/index.js`. Older version numbers refer to `texl-editor`.
-
-*How texl-editor is built: its modules, its classes and how they interact.
-Each section links to the [API reference](api.md) for the details. For the
-editing model and the decisions behind it, see [design.md](design.md).*
+*How the editor (`web/src/editor/`) is built: its modules, its classes and how they interact.
+Each section links to the [API reference](../component/api.md) for the details. For the
+editing model and the decisions behind it, see [design.md](editor-design.md).*
 
 ## Overview
 
@@ -42,15 +35,15 @@ exactly the text that is saved.
 
 | Module                        | Role | Depends on | API |
 |-------------------------------|------|------------|-----|
-| `src/index.js`                | Entry point: registers the built-in cells, defines `<texl-editor>`, re-exports the public API | all | [Importing](api.md#importing) |
-| `src/texl-editor.js`          | `TexlEditor`: holds the cells, selection, undo history, keyboard, clipboard, type menu, rendering | document, registry, engine, texl-cell | [`<texl-editor>`](api.md#texl-editor) |
-| `src/texl-cell.js`            | `TexlCell`: base class of the cells; modes, layout, commit protocol | Lit, DOMPurify | [`TexlCell`](api.md#texlcell) |
-| `src/cells/text-cell.js`      | `TextCell`: Texl template edited in CodeMirror 6; fallback type | texl-cell, swan, CodeMirror | [`TextCell`](api.md#textcell) |
-| `src/cells/markdown-cell.js`  | `MarkdownCell`: `TextCell` with Markdown highlighting and Markdown output | text-cell, swan, marked, DOMPurify | [`MarkdownCell`](api.md#markdowncell) |
-| `src/registry.js`             | Maps cell types to custom element tags | — | [Cell registry](api.md#cell-registry) |
-| `src/document.js`             | The file format: parse, serialise, names, comments, split a rendering. Pure functions, no DOM | — | [Document functions](api.md#document-functions) |
-| `src/engine.js`               | Loads the Texl WebAssembly module once, creates engines | `@onlabsorg/texl` | [Engine](api.md#engine) |
-| `src/swan.js`                 | Swan highlighting and the tag/comment commands for CodeMirror | CodeMirror | [Swan helpers](api.md#swan-helpers) |
+| `web/src/editor/index.js`                | Entry point: registers the built-in cells, defines `<texl-editor>`, re-exports the public API | all | [Importing](../component/api.md#importing) |
+| `web/src/editor/texl-editor.js`          | `TexlEditor`: holds the cells, selection, undo history, keyboard, clipboard, type menu, rendering | document, registry, engine, texl-cell | [`<texl-editor>`](../component/api.md#texl-editor) |
+| `web/src/editor/texl-cell.js`            | `TexlCell`: base class of the cells; modes, layout, commit protocol | Lit, DOMPurify | [`TexlCell`](../component/api.md#texlcell) |
+| `web/src/editor/cells/text-cell.js`      | `TextCell`: Texl template edited in CodeMirror 6; fallback type | texl-cell, swan, CodeMirror | [`TextCell`](../component/api.md#textcell) |
+| `web/src/editor/cells/markdown-cell.js`  | `MarkdownCell`: `TextCell` with Markdown highlighting and Markdown output | text-cell, swan, marked, DOMPurify | [`MarkdownCell`](../component/api.md#markdowncell) |
+| `web/src/editor/registry.js`             | Maps cell types to custom element tags | — | [Cell registry](../component/api.md#cell-registry) |
+| `web/src/editor/document.js`             | The file format: parse, serialise, names, comments, split a rendering. Pure functions, no DOM | — | [Document functions](../component/api.md#document-functions) |
+| `web/src/editor/engine.js`               | Loads the Texl WebAssembly module once, creates engines | `@onlabsorg/texl` | [Engine](../component/api.md#engine) |
+| `web/src/editor/swan.js`                 | Swan highlighting and the tag/comment commands for CodeMirror | CodeMirror | [Swan helpers](../component/api.md#swan-helpers) |
 
 The dependency graph has no cycles. The bottom layer (`document.js`,
 `registry.js`, `engine.js`, `swan.js`) knows nothing about the editor; the
@@ -83,7 +76,7 @@ them back. The round trip is exact, so opening and saving a file without
 edits leaves it byte for byte the same.
 
 ```js
-import { parseDocument, serializeDocument } from "@onlabsorg/texl-editor";
+import { parseDocument, serializeDocument } from "stilo-editor/index.js";
 
 const cells = parseDocument(`Notes
 <!--{ bek4 : markdown }-->
@@ -104,11 +97,11 @@ serializeDocument(cells);   // the same text
   of its cells, at the cells' marker lines.
 
 The module is pure: no DOM, no Texl. It can run anywhere, e.g. on a server.
-→ [Document functions](api.md#document-functions)
+→ [Document functions](../component/api.md#document-functions)
 
 ## The editor: `TexlEditor`
 
-`TexlEditor` (`src/texl-editor.js`) is the application. Its state is a few
+`TexlEditor` (`web/src/editor/texl-editor.js`) is the application. Its state is a few
 private reactive properties:
 
 | State        | Meaning |
@@ -192,13 +185,13 @@ if (generation === this._generation) this._outputs = outputs;
   seeing the names bound above it. `splitRendering` (`document.js`) cuts it
   into the cells' outputs at their own marker lines, in order; the rules
   (foreign markers, missing markers, line breaks) are in
-  [design.md](design.md#rendering).
+  [design.md](editor-design.md#rendering).
 - Passes are asynchronous (imports are promises). A generation counter
   discards a pass that a newer change overtook.
 - The whole document renders on every change. Incremental rendering is an
-  open point in [design.md](design.md).
+  open point in [design.md](editor-design.md).
 
-→ [`<texl-editor>`](api.md#texl-editor)
+→ [`<texl-editor>`](../component/api.md#texl-editor)
 
 ### Keyboard, clipboard and menu
 
@@ -211,7 +204,7 @@ rules:
 - in edit mode, only Mod+Enter (commit) and Escape (discard) are handled:
   the editor calls `exitEdit(commit)` on the editing cell;
 - otherwise the navigation and cell keys apply (see
-  [Keyboard](api.md#keyboard)).
+  [Keyboard](../component/api.md#keyboard)).
 
 Copy, cut and paste use the browser's clipboard events rather than keys, so
 every platform shortcut works. The clipboard holds the selected cells as
@@ -269,8 +262,8 @@ class MyCell extends TexlCell {
 ```
 
 The guide builds a complete example:
-[Write your own cell type](guide.md#7-write-your-own-cell-type).
-→ [`TexlCell`](api.md#texlcell)
+[Write your own cell type](../component/guide.md#7-write-your-own-cell-type).
+→ [`TexlCell`](../component/api.md#texlcell)
 
 ### `TextCell` and `MarkdownCell`
 
@@ -301,7 +294,7 @@ class LatexCell extends TextCell {
 }
 ```
 
-→ [`TextCell`](api.md#textcell), [`MarkdownCell`](api.md#markdowncell)
+→ [`TextCell`](../component/api.md#textcell), [`MarkdownCell`](../component/api.md#markdowncell)
 
 ## The registry: `registry.js`
 
@@ -313,7 +306,7 @@ does not know still opens, shows its source and keeps its type on save.
 `cellTypes()` and `cellClass(type)` feed the type menu (labels and icons).
 
 ```js
-import { registerCell, cellTagName, cellTypes } from "@onlabsorg/texl-editor";
+import { registerCell, cellTagName, cellTypes } from "stilo-editor/index.js";
 
 registerCell(QuantityCell);
 cellTagName("quantity");   // "texl-cell-quantity"
@@ -321,7 +314,7 @@ cellTagName("chart");      // "texl-cell-text" (not registered)
 cellTypes();               // ["text", "markdown", "quantity"]
 ```
 
-→ [Cell registry](api.md#cell-registry)
+→ [Cell registry](../component/api.md#cell-registry)
 
 ## The engine: `engine.js`
 
@@ -331,7 +324,7 @@ call returns a new `TexlEngine`. An engine holds configuration only
 (globals, base URL); each `engine.render(url, source)` evaluates a whole
 document in a new scope and resolves its `texl.import`s against `url`.
 
-→ [Engine](api.md#engine), [Texl primer](texl-primer.md)
+→ [Engine](../component/api.md#engine), [Texl primer](texl-primer.md)
 
 ## Swan highlighting: `swan.js`
 
@@ -344,7 +337,7 @@ strings, numbers, names and operators, which get `cm-swan-*` classes.
 `insertTag` and `insertComment` are CodeMirror commands that wrap the
 selection.
 
-→ [Swan helpers](api.md#swan-helpers)
+→ [Swan helpers](../component/api.md#swan-helpers)
 
 ## Security
 

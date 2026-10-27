@@ -1,0 +1,72 @@
+/*
+ * Additions for the Stilo documentation.
+ *
+ * texl.css, landing.css, book.css and texl-highlight.js are verbatim copies
+ * from the Texl documentation (https://www.onlabs.org/texl/assets/), so the
+ * OnLabs.org sites share one look. Refresh them from there when the Texl
+ * style changes; put anything specific to Stilo here, with the tokens of
+ * texl.css only.
+ */
+
+/* A lined sheet with cells, as the editor shows a document (landing page). */
+
+.st-sheet {
+    margin: 0;
+    border: 1px solid var(--tx-border);
+    border-radius: var(--tx-radius);
+    background: var(--tx-bg-raised);
+    overflow: hidden;
+    font-size: 15px;
+}
+
+.st-sheet figcaption {
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--tx-border);
+    color: var(--tx-muted);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.st-line {
+    display: grid;
+    grid-template-columns: 3rem 1fr;
+    border-bottom: 1px solid var(--tx-border);
+}
+
+.st-line:last-child {
+    border-bottom: none;
+}
+
+.st-line > span:first-child {
+    padding: 8px 10px 0 0;
+    border-right: 1px solid var(--tx-accent-soft);
+    color: var(--tx-muted);
+    font-family: var(--tx-font-mono);
+    font-size: 12px;
+    text-align: right;
+}
+
+.st-line > div {
+    padding: 6px 14px;
+    line-height: 1.5;
+}
+
+.st-line h4 {
+    margin: 0;
+    font-size: 17px;
+}
+
+.st-line.st-selected > div {
+    box-shadow: inset 0 0 0 2px var(--tx-accent-soft);
+    background: color-mix(in srgb, var(--tx-accent-soft) 40%, transparent);
+}
+
+.st-value {
+    padding: 0 4px;
+    border-radius: 4px;
+    background: var(--tx-accent-soft);
+    color: var(--tx-accent);
+    font-weight: 600;
+}

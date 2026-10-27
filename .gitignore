@@ -16,3 +16,4 @@ web/dist/
 
 # Locals
 local/
+target/

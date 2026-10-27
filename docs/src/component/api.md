@@ -1,16 +1,11 @@
 # API reference
 
-> **Moved into Stilo (2026-10-26).** These documents come from the
-> `texl-editor` repository (0.2.0), now retired. The editor's code is in
-> `web/src/editor/` (`src/` below means that folder) and its tests in
-> `web/test/`. The editor is no longer published as a separate package:
-> examples that import `@onlabsorg/texl-editor` now import
-> `web/src/editor/index.js`. Older version numbers refer to `texl-editor`.
-
-*The public API of `@onlabsorg/texl-editor` 0.0.x, for developers who embed
+*The public API of the editor (`web/src/editor/`), for developers who embed
 the editor in a page or app, or write their own cell types. Everything below
-is exported by the package entry point (`src/index.js`) unless noted. The
-API is young and will change before 1.0.*
+is exported by the entry point (`web/src/editor/index.js`) unless noted. The
+API is young and will change before 1.0. The examples import the editor as
+`stilo-editor`, an alias for that folder (see
+[the guide](guide.md#2-configure-vite)).*
 
 - [Importing](#importing)
 - [`<texl-editor>`](#texl-editor) — the editor element
@@ -26,13 +21,13 @@ API is young and will change before 1.0.*
 - [Keyboard](#keyboard)
 
 See also: [the guide](guide.md) for a step-by-step introduction and
-[the architecture](architecture.md) for how the parts fit together.
+[the architecture](../dev/editor.md) for how the parts fit together.
 
 ## Importing
 
 ```js
-import "@onlabsorg/texl-editor";            // defines <texl-editor> and the built-in cells
-import { TexlCell, registerCell } from "@onlabsorg/texl-editor";
+import "stilo-editor/index.js";            // defines <texl-editor> and the built-in cells
+import { TexlCell, registerCell } from "stilo-editor/index.js";
 ```
 
 Importing the entry point has side effects: it registers `TextCell` and
@@ -41,8 +36,8 @@ defined). The cell modules are also exported on their own, without side
 effects:
 
 ```js
-import { TextCell } from "@onlabsorg/texl-editor/cells/text-cell.js";
-import { MarkdownCell } from "@onlabsorg/texl-editor/cells/markdown-cell.js";
+import { TextCell } from "stilo-editor/cells/text-cell.js";
+import { MarkdownCell } from "stilo-editor/cells/markdown-cell.js";
 ```
 
 The package is plain ES modules. Use it with a bundler or dev server that
@@ -200,7 +195,7 @@ is kept on save.
 | `editorExtensions()`   | All CodeMirror extensions of the view: history, selection drawing, line wrapping, `languageExtensions()`, the default keymap (without Mod+Enter and Escape) and the listener that updates `input`. Override rarely. |
 
 ```js
-import { TextCell, registerCell } from "@onlabsorg/texl-editor";
+import { TextCell, registerCell } from "stilo-editor/index.js";
 import { html as htmlLanguage } from "@codemirror/lang-html";  // npm install @codemirror/lang-html
 
 class HtmlCell extends TextCell {
@@ -222,7 +217,7 @@ and sanitised with DOMPurify. New cells and empty lines are `markdown`.
 
 ## Cell registry
 
-From `src/registry.js`.
+From `web/src/editor/registry.js`.
 
 ### `registerCell(cellClass, tagName?)`
 
@@ -254,7 +249,7 @@ the type menu.
 
 ## Document functions
 
-From `src/document.js`. Pure functions on the file format; the editor uses
+From `web/src/editor/document.js`. Pure functions on the file format; the editor uses
 them, and hosts can use them to work on documents without an editor (e.g.
 on a server, in a preview, or to list comments).
 
@@ -345,7 +340,7 @@ const outputs = splitRendering(doc.rendering, cells);
 
 ### `createEngine(globals?, baseUrl?) → Promise<TexlEngine>`
 
-From `src/engine.js`. Loads the Texl WebAssembly module on first use and
+From `web/src/editor/engine.js`. Loads the Texl WebAssembly module on first use and
 returns a new `TexlEngine` from `@onlabsorg/texl`. `globals` is an object of
 names visible to every template; `baseUrl` is the absolute URL that
 relative document URLs resolve against (default: the page URL). The engine
@@ -354,19 +349,19 @@ its imports again. Use it to render documents outside the editor with the
 same module the editor loaded:
 
 ```js
-import { createEngine, parseDocument, splitRendering } from "@onlabsorg/texl-editor";
+import { createEngine, parseDocument, splitRendering } from "stilo-editor/index.js";
 
 const engine = await createEngine();
 const doc = await engine.render("docs/report.texl", source);   // imports resolve in docs/
 const outputs = splitRendering(doc.rendering, parseDocument(source));
 ```
 
-See the [Texl primer](texl-primer.md#the-javascript-api-onlabsorgtexl) for
+See the [Texl primer](../dev/texl-primer.md#the-javascript-api-onlabsorgtexl) for
 the engine API.
 
 ## Swan helpers
 
-From `src/swan.js`, for cells that use CodeMirror.
+From `web/src/editor/swan.js`, for cells that use CodeMirror.
 
 | Export            | Description |
 |-------------------|-------------|
@@ -375,7 +370,7 @@ From `src/swan.js`, for cells that use CodeMirror.
 | `insertComment(view)` | CodeMirror command: wraps each selection (or the cursor) in `<!--[  ]-->`. |
 
 `swanTokens`, `findTags`, `TAG_OPEN` and `TAG_CLOSE` are exported by
-`src/swan.js` but not by the package entry point.
+`web/src/editor/swan.js` but not by the package entry point.
 
 ## Styling
 

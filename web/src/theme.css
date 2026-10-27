@@ -40,7 +40,7 @@
     --danger: #fb923c;
     --shadow: 0 1px 3px rgb(0 0 0 / 0.3), 0 6px 24px rgb(0 0 0 / 0.25);
 
-    /* The editor's own properties (texl-editor docs/api.md, Styling). */
+    /* The editor's own properties (docs/src/component/api.md, Styling). */
     --texl-paper: #1b1e24;
     --texl-line: #262a32;
     --texl-margin-line: #34507f;

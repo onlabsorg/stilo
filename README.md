@@ -34,8 +34,15 @@ Open <http://127.0.0.1:8000/projects/beam/beam-check.texl>.
 | `web/`    | The web app (Lit, Vite): navigation, side panes and the editor (`web/src/editor/`, the `<texl-editor>` component) |
 | `server/` | `stilo-server`: Python (FastAPI) server for one folder of documents |
 | `cli/`    | `stilo`: the command line, `render` and `serve`               |
-| `docs/`   | `protocol.md` (the HTTP protocol), `editor/` (editor design, guide, API) |
+| `docs/`   | The documentation (manual, editor manual, landing page), published on <https://www.onlabs.org/stilo/>; `docs/build.sh` builds it into `target/site` |
 | `examples/` | Sample documents                                            |
+
+## Documentation
+
+<https://www.onlabs.org/stilo/>: getting started, the `stilo` command, the
+web editor (with an interactive editor manual), the protocol, the editor
+component and a developer guide. See also [CONTRIBUTING.md](CONTRIBUTING.md)
+and [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 

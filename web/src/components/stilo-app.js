@@ -2,7 +2,7 @@ import { LitElement, html, css } from "lit";
 import { keyed } from "lit/directives/keyed.js";
 import { parseDocument, cellComments } from "../editor/index.js";
 import { base } from "./shared.js";
-import { readFile, createFile, updateFile, readTree, documentUrl, ApiError } from "../api.js";
+import { readFile, createFile, updateFile, readTree, documentUrl, documentPath, ApiError } from "../api.js";
 import { readRoute, routeUrl } from "../route.js";
 import { commands, matchCommand, isMac } from "../commands.js";
 import { toggleTheme } from "../theme.js";
@@ -293,6 +293,18 @@ export class StiloApp extends LitElement {
         this._updateComments();
     }
 
+    /** A click on a link to a document under the root opens it in the app.
+     * The link resolves from the open document, as its imports do. */
+    _onLinkClick(e) {
+        if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        const link = e.composedPath().find((node) => node instanceof HTMLAnchorElement && node.hasAttribute("href"));
+        if (!link || link.target || !this._doc) return;
+        const path = documentPath(new URL(link.getAttribute("href"), documentUrl(this._doc)));
+        if (!path) return;
+        e.preventDefault();
+        this._go({ root: this._root, doc: path });
+    }
+
     _onCommentsClick(e) {
         this._commentLine = e.detail.line;
         this._pane = "comments";
@@ -351,7 +363,7 @@ export class StiloApp extends LitElement {
                 @open-document=${(e) => this._go({ root: this._root, doc: e.detail.path })}
                 @navigate=${(e) => this._go({ root: e.detail.root, doc: this._doc })}
             ></nav-pane>
-            <main>${this._renderMain()}</main>
+            <main @click=${this._onLinkClick}>${this._renderMain()}</main>
             <aside ?hidden=${!this._pane} @close-pane=${() => (this._pane = null)} @run-command=${(e) => this.runCommand(e.detail.id)}>
                 ${this._pane === "commands" ? html`<commands-pane></commands-pane>` : ""}
                 ${this._pane === "comments"

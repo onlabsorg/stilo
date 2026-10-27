@@ -2,7 +2,7 @@
 
 *What you need to know about Texl to work on the editor, as of Texl 0.4
 (`@onlabsorg/texl` on npm), 2026-10-25. The full manual is at
-<https://onlabsorg.github.io/texl/>; the source is
+<https://www.onlabs.org/texl/>; the source is
 <https://github.com/onlabsorg/texl>. The results shown below were checked
 against the real engine.*
 

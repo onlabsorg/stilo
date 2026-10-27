@@ -1,5 +1,5 @@
-// Client of protocol v0 (docs/protocol.md). Paths are relative to the server
-// root, without leading "/".
+// Client of protocol v0 (docs/src/protocol.md). Paths are relative to the
+// server root, without leading "/".
 
 const API = "/_api";
 
@@ -27,6 +27,14 @@ const encode = (path) => path.split("/").map(encodeURIComponent).join("/");
  */
 export function documentUrl(path) {
     return new URL("/" + encode(path), location.origin).href;
+}
+
+/** The path of the document at a public URL, or `null` if the URL is not a
+ * `.texl` file on this server. The inverse of `documentUrl`. */
+export function documentPath(url) {
+    if (url.origin !== location.origin) return null;
+    const path = decodeURIComponent(url.pathname.slice(1));
+    return path.endsWith(".texl") ? path : null;
 }
 
 /** The URL of a file in the protocol's API. */

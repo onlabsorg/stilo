@@ -1,11 +1,4 @@
-# texl-editor design
-
-> **Moved into Stilo (2026-10-26).** These documents come from the
-> `texl-editor` repository (0.2.0), now retired. The editor's code is in
-> `web/src/editor/` (`src/` below means that folder) and its tests in
-> `web/test/`. The editor is no longer published as a separate package:
-> examples that import `@onlabsorg/texl-editor` now import
-> `web/src/editor/index.js`. Older version numbers refer to `texl-editor`.
+# Editor design
 
 *The editing model and architecture of the editor. Status: draft,
 2026-10-18. Items marked **(open)** are still to be decided here.*
@@ -186,7 +179,7 @@ lines, which render to themselves (HTML comments without tags):
 
 Plain JavaScript (ES modules, JSDoc types) and [Lit](https://lit.dev) web
 components.
-The [architecture](architecture.md) page describes the modules in detail;
+The [architecture](editor.md) page describes the modules in detail;
 this section keeps the outline.
 
 ```
@@ -197,7 +190,7 @@ this section keeps the outline.
         all extend TexlCell       base: modes, layout, commit protocol
 ```
 
-- `TexlCell` (`src/texl-cell.js`): base class. Switches between edit and
+- `TexlCell` (`web/src/editor/texl-cell.js`): base class. Switches between edit and
   render mode, provides the common layout, and reports a committed edit with
   a `cell-change` event carrying the new Texl source. Subclasses implement
   `fromTexl()`, `toTexl()` and `renderEditor()` (the base only shows a
@@ -208,17 +201,17 @@ this section keeps the outline.
   ends the cell body, which belongs to the file format and is added back).
   Its `languageExtensions()` give the editor its language: Swan
   highlighting inside `<% %>` tags, Ctrl+Space to insert a tag and
-  Shift+F2 to insert a comment (`src/swan.js`). `MarkdownCell` extends it with Markdown highlighting
+  Shift+F2 to insert a comment (`web/src/editor/swan.js`). `MarkdownCell` extends it with Markdown highlighting
   (tags stay Swan, Markdown does not look inside them) and renders its
   output as Markdown.
 - Swan highlighting is a layer of decorations over the editor's language,
   as Texl finds its tags before Markdown is read: a tag is highlighted
   wherever it is, also in a code block.
-- Registry (`src/registry.js`): `registerCell(CellClass)` maps the type in the
+- Registry (`web/src/editor/registry.js`): `registerCell(CellClass)` maps the type in the
   marker to a custom element (`texl-cell-<type>`). This is the extension
   point for developers' own cells.
-- `<texl-editor>` (`src/texl-editor.js`): parses the file into cells
-  (`src/document.js`), renders the document and splits the
+- `<texl-editor>` (`web/src/editor/texl-editor.js`): parses the file into cells
+  (`web/src/editor/document.js`), renders the document and splits the
   rendering into cell outputs, handles navigation and
   edit mode, and serialises the cells back. It is a web component itself, so
   it can be embedded in other apps and later in the OnLabs platform.

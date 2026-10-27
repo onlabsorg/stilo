@@ -1,16 +1,9 @@
-# Guide: embedding texl-editor in a web app
-
-> **Moved into Stilo (2026-10-26).** These documents come from the
-> `texl-editor` repository (0.2.0), now retired. The editor's code is in
-> `web/src/editor/` (`src/` below means that folder) and its tests in
-> `web/test/`. The editor is no longer published as a separate package:
-> examples that import `@onlabsorg/texl-editor` now import
-> `web/src/editor/index.js`. Older version numbers refer to `texl-editor`.
+# Embedding the editor
 
 *A step-by-step tutorial, from an empty folder to an app that loads, edits
 and saves Texl documents, shows comments, and has a cell type of its own.
 For every detail, see the [API reference](api.md); for how the parts work
-inside, see the [architecture](architecture.md).*
+inside, see the [architecture](../dev/editor.md).*
 
 1. [Install](#1-install)
 2. [Configure Vite](#2-configure-vite)
@@ -43,35 +36,55 @@ Midspan moment: <% q * L ^ 2 / 8 %> kNm
 
 `<% ... %>` tags are formulas, written in the Swan language; a name bound in
 one cell (`L`, `q`) is visible in every cell below it. `<!--[ ... ]-->` is a
-comment on the cell. The [Texl primer](texl-primer.md) explains the
+comment on the cell. The [Texl primer](../dev/texl-primer.md) explains the
 language.
 
 ## 1. Install
 
-The package is not on npm yet. Install it from GitHub, together with Vite as
-dev server and bundler:
+The editor is part of Stilo's web app, in `web/src/editor/`, and is not
+published as a package of its own. Use it from a checkout of Stilo, next to
+your app, and install the libraries it imports, together with Vite as dev
+server and bundler:
 
 ```sh
+git clone https://github.com/onlabsorg/stilo.git
 mkdir my-app && cd my-app
 npm init -y
 npm pkg set type=module
-npm install github:onlabsorg/texl-editor
+npm install lit dompurify marked @onlabsorg/texl \
+    @codemirror/state @codemirror/view @codemirror/commands \
+    @codemirror/language @codemirror/lang-markdown
 npm install --save-dev vite
 ```
 
 You need Node.js 22 or later. Any bundler that resolves bare module imports
-and serves `.wasm` files works; this guide uses Vite.
+and serves `.wasm` files works; this guide uses Vite. Take the versions from
+`web/package.json` in the checkout if a newer one does not work.
 
 ## 2. Configure Vite
 
-Texl runs as WebAssembly: its JavaScript glue loads the `.wasm` file by a
-URL relative to itself. Vite's dependency pre-bundling would move the glue
-away from the file, so exclude Texl from it. Create `vite.config.js`:
+Two settings. The alias `stilo-editor` points to the editor's folder in the
+checkout, so the examples below can import it by name; `dedupe` makes the
+editor's imports resolve to your app's copy of the libraries. And Texl runs as WebAssembly:
+its JavaScript glue loads the `.wasm` file by a URL relative to itself.
+Vite's dependency pre-bundling would move the glue away from the file, so
+exclude Texl from it. Create `vite.config.js`:
 
 ```js
 import { defineConfig } from "vite";
+import { fileURLToPath } from "node:url";
 
 export default defineConfig({
+    resolve: {
+        alias: {
+            "stilo-editor": fileURLToPath(new URL("../stilo/web/src/editor", import.meta.url)),
+        },
+        // Resolve the editor's imports from this app's node_modules
+        dedupe: [
+            "lit", "dompurify", "marked", "@onlabsorg/texl", "@codemirror/state", "@codemirror/view",
+            "@codemirror/commands", "@codemirror/language", "@codemirror/lang-markdown",
+        ],
+    },
     optimizeDeps: {
         exclude: ["@onlabsorg/texl"],
     },
@@ -116,7 +129,7 @@ Create `index.html`:
 and `main.js`:
 
 ```js
-import "@onlabsorg/texl-editor";
+import "stilo-editor/index.js";
 
 const editor = document.getElementById("editor");
 
@@ -160,7 +173,7 @@ loads a document from a URL and saves it back with a delay, so that a burst
 of changes makes one request:
 
 ```js
-import "@onlabsorg/texl-editor";
+import "stilo-editor/index.js";
 
 const editor = document.getElementById("editor");
 const url = "/api/documents/beam.texl";
@@ -306,7 +319,7 @@ Create `quantity-cell.js`:
 
 ```js
 import { html, css } from "lit";
-import { TexlCell } from "@onlabsorg/texl-editor";
+import { TexlCell } from "stilo-editor/index.js";
 
 // `<% L = 6 %>L = <% L %> m`: the name, the value and the unit
 const QUANTITY = /^<% (\w+) = (.*?) %>\1 = <% \1 %> ?(.*?)\r?\n?$/;
@@ -364,7 +377,7 @@ export class QuantityCell extends TexlCell {
 Register it in `main.js`, before setting `value`:
 
 ```js
-import { registerCell } from "@onlabsorg/texl-editor";
+import { registerCell } from "stilo-editor/index.js";
 import { QuantityCell } from "./quantity-cell.js";
 
 registerCell(QuantityCell);         // defines <texl-cell-quantity>
@@ -412,7 +425,7 @@ More rules for cells:
 - For a text-based cell (a template in another language, e.g. LaTeX or
   HTML), extend `TextCell` and override `languageExtensions()` instead: you
   get the CodeMirror editor, Swan highlighting and the tag key for free. See
-  `src/cells/markdown-cell.js` for an example.
+  `web/src/editor/cells/markdown-cell.js` for an example.
 
 ## 8. Style the editor
 
@@ -444,7 +457,7 @@ to list comments, render a read-only preview or check a document, without
 showing an editor:
 
 ```js
-import { parseDocument, cellComments, splitRendering, createEngine } from "@onlabsorg/texl-editor";
+import { parseDocument, cellComments, splitRendering, createEngine } from "stilo-editor/index.js";
 
 const cells = parseDocument(text);
 
@@ -463,7 +476,7 @@ const outputs = splitRendering(doc.rendering, cells);
 change a document programmatically, e.g. append a cell:
 
 ```js
-import { parseDocument, serializeDocument, nameCells } from "@onlabsorg/texl-editor";
+import { parseDocument, serializeDocument, nameCells } from "stilo-editor/index.js";
 
 const cells = parseDocument(text);
 cells.push({ type: "markdown", texl: "Checked by Anna.\n" });
@@ -481,7 +494,7 @@ React 19:
 
 ```jsx
 import { useEffect, useRef } from "react";
-import "@onlabsorg/texl-editor";
+import "stilo-editor/index.js";
 
 export function TexlEditor({ documentText, onChange }) {
     const ref = useRef(null);
@@ -519,7 +532,7 @@ the bound value changes.
 ## Next steps
 
 - [API reference](api.md): every property, event, class and function.
-- [Architecture](architecture.md): the modules and how they interact.
-- [Design](design.md): the editing model and the open points.
-- [Texl primer](texl-primer.md) and the
-  [Texl manual](https://onlabsorg.github.io/texl/): the language.
+- [Architecture](../dev/editor.md): the modules and how they interact.
+- [Design](../dev/editor-design.md): the editing model and the open points.
+- [Texl primer](../dev/texl-primer.md) and the
+  [Texl manual](https://www.onlabs.org/texl/): the language.

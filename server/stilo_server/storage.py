@@ -1,4 +1,4 @@
-"""File-system storage of Texl documents (protocol v0, see docs/protocol.md).
+"""File-system storage of Texl documents (protocol v0, see docs/src/protocol.md).
 
 Paths are relative to the storage root, with "/" separators. Every public
 method validates its path and raises a StorageError subclass that the HTTP
