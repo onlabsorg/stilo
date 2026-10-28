@@ -30,7 +30,7 @@ dependencies = [
 stilo = "stilo.cli:main"
 
 [project.urls]
-Homepage = "https://www.onlabs.org/stilo/"
+Documentation = "https://www.onlabs.org/manual/"
 Source = "https://github.com/onlabsorg/stilo"
 
 [dependency-groups]

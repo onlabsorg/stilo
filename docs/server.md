@@ -1,7 +1,7 @@
 # The server
 
 *`src/stilo/server/`, the module `stilo.server`: serves one folder of
-documents over HTTP, as the [protocol](../protocol.md) describes, and the
+documents over HTTP, as the [protocol](protocol.md) describes, and the
 built web app. FastAPI and uvicorn.*
 
 | Module                          | Role                                           |

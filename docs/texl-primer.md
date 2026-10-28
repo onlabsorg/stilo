@@ -1,9 +1,9 @@
 # Texl primer for editor work
 
 *What you need to know about Texl to work on the editor, as of Texl 0.4
-(`@onlabsorg/texl` on npm), 2026-10-25. The full manual is at
-<https://www.onlabs.org/texl/>; the source is
-<https://github.com/onlabsorg/texl>. The results shown below were checked
+(`@onlabsorg/texl` on npm), 2026-10-25. For the language in
+depth, see the developer docs of <https://github.com/onlabsorg/texl>
+(`docs/language.md`). The results shown below were checked
 against the real engine.*
 
 ## Templates and tags
@@ -142,7 +142,7 @@ context.free();
 
 `context.names()` gives the names of a context, a possible basis for
 autocompletion ("intellisense"); see the open point in
-[design.md](design.md#rendering).
+[Editor design](editor-design.md#rendering).
 
 ### Values between JavaScript and Swan
 

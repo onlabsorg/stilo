@@ -34,9 +34,7 @@ cd web && npm install && npm run build && cd ..
 uv run stilo serve examples
 ```
 
-Open <http://127.0.0.1:8000/projects/beam/beam-check.texl>. See the
-[getting started guide](https://www.onlabs.org/stilo/book/getting-started.html)
-and the developer guide.
+Open <http://127.0.0.1:8000/projects/beam/beam-check.texl>.
 
 ## Parts
 
@@ -46,15 +44,19 @@ and the developer guide.
 | `src/stilo/` | The Python package `stilo`: `server/` (FastAPI, one folder of documents), `cli/` (the `stilo` command, `render` and `serve`), `web/` (the built web app) |
 | `tests/`  | The Python tests                                              |
 | `pyproject.toml` | The package `stilo`, the only one published (on PyPI: `stilo-cli`) |
-| `docs/`   | The documentation (manual, editor manual, landing page), published on <https://www.onlabs.org/stilo/>; `docs/build.sh` builds it into `target/site` |
+| `docs/`   | The developer documentation (plain Markdown)                  |
 | `examples/` | Sample documents                                            |
 
 ## Documentation
 
-<https://www.onlabs.org/stilo/>: getting started, the `stilo` command, the
-web editor (with an interactive editor manual), the protocol, the editor
-component and a developer guide. See also [CONTRIBUTING.md](https://github.com/onlabsorg/stilo/blob/main/CONTRIBUTING.md)
-and [CHANGELOG.md](https://github.com/onlabsorg/stilo/blob/main/CHANGELOG.md).
+- **Using Stilo:** the [OnLabs.org user manual](https://www.onlabs.org/manual/)
+  covers getting started, the web editor, the `stilo` command and the
+  document format.
+- **Working on Stilo:** the [developer documentation](https://github.com/onlabsorg/stilo/tree/main/docs)
+  covers the architecture, the protocol, the editor component and its API,
+  and the development setup. See also
+  [CONTRIBUTING.md](https://github.com/onlabsorg/stilo/blob/main/CONTRIBUTING.md)
+  and [CHANGELOG.md](https://github.com/onlabsorg/stilo/blob/main/CHANGELOG.md).
 
 ## License
 

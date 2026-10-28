@@ -28,5 +28,4 @@ the user's input into Texl and back.
 
 The editor is not yet published as a package of its own: you use it from
 a copy of Stilo's source code, where it is the folder `web/src/editor/`.
-For how it works inside, see [The editor](../dev/editor.md) in the
-developer guide.
+For how it works inside, see [The editor](../editor.md).

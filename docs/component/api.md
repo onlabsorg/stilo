@@ -21,7 +21,7 @@ API is young and will change before 1.0. The examples import the editor as
 - [Keyboard](#keyboard)
 
 See also: [the guide](guide.md) for a step-by-step introduction and
-[the architecture](../dev/editor.md) for how the parts fit together.
+[the architecture](../editor.md) for how the parts fit together.
 
 ## Importing
 
@@ -356,7 +356,7 @@ const doc = await engine.render("docs/report.texl", source);   // imports resolv
 const outputs = splitRendering(doc.rendering, parseDocument(source));
 ```
 
-See the [Texl primer](../dev/texl-primer.md#the-javascript-api-onlabsorgtexl) for
+See the [Texl primer](../texl-primer.md#the-javascript-api-onlabsorgtexl) for
 the engine API.
 
 ## Swan helpers

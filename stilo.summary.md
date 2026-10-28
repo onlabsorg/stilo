@@ -4,9 +4,10 @@
 words. The OnLabs.org coordination folder reads this file instead of the
 code; keep it current as described in `CLAUDE.md`.*
 
-Details: `CLAUDE.md` (stack, layout, commands), and the documentation in
-`docs/` (the protocol is `docs/src/protocol.md`), published on
-<https://www.onlabs.org/stilo/>.
+Details: `CLAUDE.md` (stack, layout, commands), and the developer
+documentation in `docs/` (the protocol is `docs/protocol.md`). The user
+manual is the OnLabs.org manual, <https://www.onlabs.org/manual/>, outside
+this repository.
 
 ## In one sentence
 
@@ -23,7 +24,7 @@ to Word and Excel users, and renders them from the command line.
 | Server | Python (FastAPI): serves one folder of documents and the web app, for one user. |
 | CLI    | The `stilo` command: `stilo render <file>` prints a rendered document (or writes it to a file); `stilo serve [folder]` starts the server on a folder. |
 | Protocol | Plain HTTP between web app and server: GET a file, CREATE (POST), UPDATE (PUT, with an ETag so concurrent saves don't overwrite each other), QUERY a folder's tree. |
-| Documentation | A static site, in the same style as the Texl and OnLabs.org sites: landing page and a manual (getting started, the `stilo` command, the web editor, the document format, the protocol, the editor component, a developer guide, contributing, changelog). Built and published on GitHub Pages by GitHub Actions. |
+| Documentation | Developer documentation only, as plain Markdown in `docs/`, read on GitHub: architecture, setup, server, CLI, web app, editor, the protocol, the editor component and its API. No site is built. Users read the OnLabs.org manual instead. |
 
 Web app, server and CLI ship as **one Python package**, `stilo`, with the
 built web app inside it. On PyPI it is named `stilo-cli` (`pip install
@@ -68,13 +69,20 @@ accept are not part of Stilo.
   package on PyPI and creates the GitHub release whenever a version tag is
   pushed; it needs a one-time setup on PyPI and GitHub, then the tag
   `v0.1.0`.
+- 2026-10-27: **0.1.0 released**: tagged `v0.1.0` and published on PyPI as
+  `stilo-cli` (`pip install stilo-cli`).
+- 2026-10-28: **documentation split**: the documentation site is gone (no
+  build, no publishing workflow). The user pages (getting started, the web
+  editor, the `stilo` command, the document format) were removed; users
+  are pointed to the OnLabs.org manual, <https://www.onlabs.org/manual/>,
+  from the README and the package's PyPI links. The developer pages stay
+  in `docs/` as plain Markdown read on GitHub. Commit messages now state
+  user-visible changes plainly.
 - Next: the table cell; a small editor API for the app (`runCommand`,
-  `select(line)`); publishing 0.1.0 on PyPI as `stilo-cli`.
+  `select(line)`).
 
 ## Known limitations
 
-- Not on PyPI until 0.1.0 is tagged and published: until then, install
-  from a checkout (`uv tool install .` after building the web app).
 - No authentication: serve to localhost, or behind your own access control.
 - The app drives editor commands with synthetic key presses and cannot
   select a line from the comments pane.

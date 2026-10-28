@@ -2,8 +2,7 @@
 
 You need git, Python 3.11 or later with [uv](https://docs.astral.sh/uv/),
 Node.js 22 or later, and Google Chrome or Chromium (the web tests run in
-it). To build the documentation you also need
-[mdBook](https://rust-lang.github.io/mdBook/) 0.4.
+it).
 
 ```sh
 git clone https://github.com/onlabsorg/stilo.git

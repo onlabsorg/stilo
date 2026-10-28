@@ -1,4 +1,4 @@
-// Client of protocol v0 (docs/src/protocol.md). Paths are relative to the
+// Client of protocol v0 (docs/protocol.md). Paths are relative to the
 // server root, without leading "/".
 
 const API = "/_api";

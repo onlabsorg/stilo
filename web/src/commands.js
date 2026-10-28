@@ -1,7 +1,7 @@
 // The user commands listed in the commands pane, with their shortcuts.
 //
 // App commands run a function of the app. Editor commands are the editor's
-// own keys (docs/src/component/api.md, Keyboard): clicking one sends the key to
+// own keys (docs/component/api.md, Keyboard): clicking one sends the key to
 // the editor as a synthetic keydown, until texl-editor offers a command API.
 // Commands without `run` are shown for reference only (the clipboard needs a
 // real key press; edit-mode keys need a cell in edit mode).

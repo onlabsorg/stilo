@@ -1,4 +1,4 @@
-"""HTTP layer: protocol v0 (docs/src/protocol.md) and the web app's files."""
+"""HTTP layer: protocol v0 (docs/protocol.md) and the web app's files."""
 
 from __future__ import annotations
 

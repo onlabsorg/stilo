@@ -3,7 +3,7 @@
 *A step-by-step tutorial, from an empty folder to an app that loads, edits
 and saves Texl documents, shows comments, and has a cell type of its own.
 For every detail, see the [API reference](api.md); for how the parts work
-inside, see the [architecture](../dev/editor.md).*
+inside, see the [architecture](../editor.md).*
 
 1. [Install](#1-install)
 2. [Configure Vite](#2-configure-vite)
@@ -36,7 +36,7 @@ Midspan moment: <% q * L ^ 2 / 8 %> kNm
 
 `<% ... %>` tags are formulas, written in the Swan language; a name bound in
 one cell (`L`, `q`) is visible in every cell below it. `<!--[ ... ]-->` is a
-comment on the cell. The [Texl primer](../dev/texl-primer.md) explains the
+comment on the cell. The [Texl primer](../texl-primer.md) explains the
 language.
 
 ## 1. Install
@@ -532,7 +532,7 @@ the bound value changes.
 ## Next steps
 
 - [API reference](api.md): every property, event, class and function.
-- [Architecture](../dev/editor.md): the modules and how they interact.
-- [Design](../dev/editor-design.md): the editing model and the open points.
-- [Texl primer](../dev/texl-primer.md) and the
-  [Texl manual](https://www.onlabs.org/texl/): the language.
+- [Architecture](../editor.md): the modules and how they interact.
+- [Design](../editor-design.md): the editing model and the open points.
+- [Texl primer](../texl-primer.md) and the developer docs of
+  [Texl](https://github.com/onlabsorg/texl): the language.

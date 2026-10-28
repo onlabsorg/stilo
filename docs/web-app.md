@@ -2,7 +2,7 @@
 
 *`web/`: the user interface around the editor. Lit 3 web components in
 plain JavaScript, bundled by Vite. The editor itself, `web/src/editor/`, has
-its own chapter: [The editor](editor.md).*
+its own page: [The editor](editor.md).*
 
 ## Modules
 

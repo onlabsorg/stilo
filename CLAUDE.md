@@ -45,7 +45,7 @@ it), and neither imports the web app's code. A future part (e.g. a
 desktop window around the web app) goes in as another subpackage of
 `stilo`, as a client of the server, with its dependencies as an extra.
 
-The **protocol** (`docs/src/protocol.md`, plain HTTP: GET, CREATE
+The **protocol** (`docs/protocol.md`, plain HTTP: GET, CREATE
 (POST), UPDATE (PUT with `If-Match`), QUERY tree) is the contract between
 web app and server. Change it there first, then in `src/stilo/server/` and
 `web/src/api.js`. Papiro is meant to speak the same protocol, so the web
@@ -143,21 +143,21 @@ creates the GitHub release. Bump the version in `pyproject.toml`,
 
 - `pyproject.toml` — the Python project and published package `stilo` (see
   above). `tests/` — its tests.
-- `docs/` — the documentation, as in Texl: `docs/build.sh` builds the
-  site into `target/site` (git-ignored); the workflow
-  `.github/workflows/docs.yml` builds and publishes it on GitHub Pages
-  (<https://www.onlabs.org/stilo/>) at every push to `main`. Style guide:
-  `docs/STYLE.md`.
-  - `src/` (mdBook, `book.toml`): user chapters (`getting-started.md`,
-    `cli/`, `editor/`, `file-format.md`), `protocol.md` (protocol v0: URL
-    space, the four interactions, errors, public document URLs, why plain
-    HTTP — also the contract), `component/` (embedding guide and editor
-    API reference), `dev/` (developer guide: architecture, setup, server,
-    CLI, web app, editor, editor design with open points, Texl primer,
-    docs).
-  - `site/index.html` (landing), `assets/` (copies of the Texl site's
-    CSS/JS, plus `stilo.css`, `book.js`).
-- `CONTRIBUTING.md`, `CHANGELOG.md` — included in the manual.
+- `docs/` — the developer documentation, plain Markdown read on GitHub
+  (no build, no site; relative links only). Index: `docs/README.md`;
+  style guide: `docs/STYLE.md`. `architecture.md`, `setup.md`,
+  `server.md`, `cli.md`, `web-app.md`, `editor.md`, `editor-design.md`
+  (editing model, open points), `texl-primer.md`, `protocol.md` (protocol
+  v0: URL space, the four interactions, errors, public document URLs, why
+  plain HTTP — also the contract), `component/` (embedding guide and
+  editor API reference).
+- The **user manual** (getting started, the web editor, the `stilo`
+  command, the file format) is not in this repository: it is the
+  OnLabs.org manual (<https://www.onlabs.org/manual/>), built from the
+  `onlabsorg.github.io` repository and kept current from this repository's
+  commits and docs by a session in the coordination folder (D21). Only
+  `README.md` links to it.
+- `CONTRIBUTING.md`, `CHANGELOG.md` — at the root.
 - `src/stilo/server/storage.py` — `Storage`: path validation (no `..`,
   no hidden segments, no `_` names at the root, no escape through symlinks),
   read / create / update / tree, ETags (sha256). Raises `StorageError`
@@ -230,9 +230,12 @@ valid Texl document that renders without the editor (`stilo render`,
   file is loaded relative to `texl_wasm.js`.
 - Keep the protocol plain HTTP and the stored documents plain Texl files.
 - When the protocol, a command, the layout, the editing model or the
-  editor API changes, update the matching chapters in `docs/`, rebuild the site with `docs/build.sh`, update this
+  editor API changes, update the matching pages in `docs/`, update this
   file, and add a line to `CHANGELOG.md`. Status changes go into
   `stilo.summary.md` (see above); decisions are recorded in the coordination folder (`../DECISIONS.md`), not here.
+- **Commit messages state user-visible changes plainly** (editor features,
+  keys, `stilo` options, file format, install): the OnLabs.org user manual
+  is updated from them.
 - `local/` is git-ignored, for local notes.
 - English; Markdown wrapped at about 80 characters.
 

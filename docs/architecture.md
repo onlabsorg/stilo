@@ -1,7 +1,6 @@
 # Architecture
 
-*This part of the manual is for developers who want to change Stilo. It
-describes how the code is organized, the parts and their most important
+*For developers who want to change Stilo. It describes how the code is organized, the parts and their most important
 modules, classes and functions. Start with [Development
 setup](setup.md).*
 
@@ -32,22 +31,22 @@ the CLI.
                                           stilo.cli (`stilo`): serve, render
 ```
 
-The [protocol](../protocol.md) is the contract between the web app and the
+The [protocol](protocol.md) is the contract between the web app and the
 server: four interactions over plain HTTP (GET, CREATE, UPDATE, QUERY the
 tree). The rules that follow from it:
 
 - The web app talks to the server **only** through the protocol, in
   `web/src/api.js`. So another server that speaks the protocol, in another
   language or with accounts and permissions, can replace the Python one.
-- A change to the protocol is made in `docs/src/protocol.md` first,
+- A change to the protocol is made in `docs/protocol.md` first,
   then in `src/stilo/server/` and `web/src/api.js`.
 - Documents stay plain Texl files, and the protocol stays plain HTTP: a
   document's address is all that `texl.import` needs to read it.
 
 The CLI depends on the server (it starts it), and on
-[`pytexl`](https://www.onlabs.org/texl/book/hosts/python.html) to render
+[`pytexl`](https://github.com/onlabsorg/texl) to render
 documents. The web app renders with
-[`@onlabsorg/texl`](https://www.onlabs.org/texl/book/hosts/javascript.html),
+[`@onlabsorg/texl`](https://github.com/onlabsorg/texl),
 the same Texl engine compiled to WebAssembly, in the browser. The server
 never renders a document: it only reads and writes files.
 
@@ -105,5 +104,7 @@ system can be added without restructuring:
 - [The editor](editor.md): `<texl-editor>`, cells, rendering;
   [Editor design](editor-design.md): the editing model and its open points.
 - [Texl primer](texl-primer.md): the Texl you need to work on the editor.
-- [The documentation](docs.md): how this site is built.
-- [Contributing](../contributing.md): how to propose a change.
+- [Protocol](protocol.md): the contract between web app and server.
+- [The editor component](component/README.md): embedding `<texl-editor>`
+  and its API.
+- [Contributing](../CONTRIBUTING.md): how to propose a change.

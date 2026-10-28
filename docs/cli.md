@@ -1,7 +1,7 @@
 # The CLI
 
 *`src/stilo/cli/`, the module `stilo.cli`: the `stilo` command. Its user
-manual is [The stilo command](../cli/index.md).*
+documentation is in the OnLabs.org user manual.*
 
 | Module                  | Role                                              |
 |-------------------------|---------------------------------------------------|
@@ -58,8 +58,9 @@ COMMANDS = [
 ```
 
 Print errors to standard error, prefixed with `stilo:`, and return 1. Add a
-test in `tests/cli/` that calls `main([...])`, and document the command in
-`docs/src/cli/`.
+test in `tests/cli/` that calls `main([...])`, and state the new command
+plainly in the commit message: the OnLabs.org user manual is updated from
+it.
 
 ## `render`
 

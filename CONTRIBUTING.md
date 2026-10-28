@@ -18,8 +18,7 @@ reason.
 
 1. Fork the repository and create a branch from `main`.
 2. Set up the development environment: see
-   [Development setup](https://www.onlabs.org/stilo/book/dev/setup.html)
-   (`docs/src/dev/setup.md`).
+   [Development setup](docs/setup.md).
 3. Make the change, with tests:
    - the server and the CLI: `tests/server/`, `tests/cli/`, run with
      `uv run pytest` at the root;
@@ -37,7 +36,7 @@ to discuss it.
 
 - **Three parts, one contract.** The web app talks to the server only
   through the protocol (`web/src/api.js`). A protocol change goes into
-  `docs/src/protocol.md` first, then into `src/stilo/server/` and the web app.
+  `docs/protocol.md` first, then into `src/stilo/server/` and the web app.
 - **One place per extension point**: cell types only through the registry
   (`web/src/editor/registry.js`), CLI commands only through `COMMANDS`
   (`src/stilo/cli/commands.py`), the server only through `create_app()`.
@@ -52,16 +51,19 @@ to discuss it.
   the light and the dark theme.
 - Python: 3.11 or later, Google-style docstrings.
 
-The [developer guide](https://www.onlabs.org/stilo/book/dev/index.html)
-explains the architecture and the modules.
+The [developer documentation](docs/README.md) explains the architecture
+and the modules.
 
 ## Documentation
 
-The documentation is in `docs/`, and is published on
-<https://www.onlabs.org/stilo/> at every push to `main`. When a change
-affects users or developers, update the matching chapter, and check it with
-`docs/build.sh` (it builds the site into `target/site`). The style guide is
-`docs/STYLE.md`.
+The developer documentation is in `docs/`, plain Markdown read on GitHub.
+When a change affects developers, update the matching page in the same pull
+request. The style guide is `docs/STYLE.md`.
+
+The user manual lives in the OnLabs.org manual, outside this repository,
+and is updated from Stilo's commits. When a change affects users (editor
+features, keys, `stilo` options, the file format, install), say so plainly
+in the commit message and in `CHANGELOG.md`.
 
 ## License
 

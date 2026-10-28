@@ -6,6 +6,12 @@ change the interfaces.
 
 ## Unreleased
 
+- The user manual (getting started, the web editor, the `stilo` command,
+  the document format) moved to the OnLabs.org manual,
+  <https://www.onlabs.org/manual/>. This repository keeps the developer
+  documentation, as plain Markdown in `docs/`; the site on
+  <https://www.onlabs.org/stilo/> is no longer built.
+
 ## 0.1.0 — 2026-10-27
 
 First release on PyPI, as `stilo-cli` (`pip install stilo-cli`; the
