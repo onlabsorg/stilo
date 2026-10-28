@@ -2,6 +2,7 @@ import { LitElement, html, css } from "lit";
 import { keyed } from "lit/directives/keyed.js";
 import { parseDocument, cellComments } from "../editor/index.js";
 import { base } from "./shared.js";
+import { closeIcon } from "../icons.js";
 import { readFile, createFile, updateFile, readTree, documentUrl, documentPath, ApiError } from "../api.js";
 import { readRoute, routeUrl } from "../route.js";
 import { commands, matchCommand, isMac } from "../commands.js";
@@ -31,6 +32,7 @@ export class StiloApp extends LitElement {
         _pane: { state: true },
         _comments: { state: true },
         _commentLine: { state: true },
+        _source: { state: true },
     };
 
     static styles = [
@@ -71,6 +73,31 @@ export class StiloApp extends LitElement {
                 box-shadow: var(--shadow);
                 background: var(--texl-paper, var(--surface));
                 color: var(--text);
+            }
+            .source {
+                flex: 1;
+                min-height: 0;
+                width: 100%;
+                max-width: 56rem;
+                margin: 0 auto;
+                display: flex;
+                flex-direction: column;
+                border-radius: var(--radius) var(--radius) 0 0;
+                box-shadow: var(--shadow);
+                background: var(--texl-paper, var(--surface));
+                color: var(--text);
+            }
+            .source pre {
+                flex: 1;
+                margin: 0;
+                padding: 0.5rem 1rem 1rem;
+                overflow: auto;
+                font-family: var(--texl-mono, ui-monospace, monospace);
+                font-size: 13px;
+                line-height: 1.5;
+                white-space: pre-wrap;
+                overflow-wrap: anywhere;
+                user-select: text;
             }
             .placeholder {
                 margin: auto;
@@ -132,6 +159,7 @@ export class StiloApp extends LitElement {
         this._pane = null;
         this._comments = [];
         this._commentLine = null;
+        this._source = null;
         this._etag = null;
         this._onKeyDown = this._onKeyDown.bind(this);
         this._onPopState = () => this._applyRoute(readRoute());
@@ -192,6 +220,7 @@ export class StiloApp extends LitElement {
         this._status = "";
         this._comments = [];
         this._commentLine = null;
+        this._source = null;
         if (!path) return;
         try {
             const { text, etag } = await readFile(path);
@@ -266,10 +295,20 @@ export class StiloApp extends LitElement {
         toggleTheme();
     }
 
+    /** Show the document's text, as it would be saved, instead of the
+     * editor; read-only. Again: back to the editor. */
+    toggleSource() {
+        const editor = this._editor;
+        if (!editor) return;
+        this._source = this._source === null ? editor.value : null;
+        if (this._source === null) this.updateComplete.then(() => editor.focus());
+    }
+
     /** Send a key to the editor, as if the user pressed it there. */
     sendEditorKey(key, { mod = false, altKey = false, shiftKey = false } = {}) {
         const editor = this._editor;
         if (!editor) return;
+        this._source = null;
         editor.focus();
         editor.dispatchEvent(
             new KeyboardEvent("keydown", {
@@ -334,14 +373,28 @@ export class StiloApp extends LitElement {
         // imports resolve from its folder, and imports are fetched again on
         // every rendering. A new editor per document still resets value, undo
         // history and dirty state.
-        return keyed(
-            this._doc,
-            html`<texl-editor
-                url=${documentUrl(this._doc)}
-                @change=${this._onEditorChange}
-                @comments-click=${this._onCommentsClick}
-            ></texl-editor>`,
-        );
+        // The source view hides the editor, so its state survives.
+        return html`${keyed(
+                this._doc,
+                html`<texl-editor
+                    ?hidden=${this._source !== null}
+                    url=${documentUrl(this._doc)}
+                    @change=${this._onEditorChange}
+                    @comments-click=${this._onCommentsClick}
+                ></texl-editor>`,
+            )}
+            ${this._source !== null
+                ? html`<div class="source">
+                      <div class="pane-header">
+                          Source (read-only)
+                          <span class="spacer"></span>
+                          <button class="icon-button" title="Back to the editor" aria-label="Back to the editor" @click=${this.toggleSource}>
+                              ${closeIcon}
+                          </button>
+                      </div>
+                      <pre>${this._source}</pre>
+                  </div>`
+                : ""}`;
     }
 
     render() {

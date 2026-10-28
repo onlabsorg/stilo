@@ -35,6 +35,7 @@ group, a collapsed folder).
 | `_status`                | The message in the top bar ("Saved", an error)  |
 | `_navOpen`, `_pane`      | Whether the navigation pane is open; which right pane is open (`"commands"`, `"comments"` or `null`) |
 | `_comments`, `_commentLine` | The comments of every line, and the line shown in the comments pane |
+| `_source`                | The document's text shown read-only in place of the editor (Show source), or `null` |
 
 The editor is created anew for every document (Lit's `keyed`), so value,
 undo history and selection start fresh. Its `url` is the document's public
@@ -51,6 +52,7 @@ The commands call these public methods:
 | `reload()`             | Reads the document again (after confirming, if dirty) |
 | `newDocument()`        | Asks for a name, `createFile` in the navigation root, opens it |
 | `toggleNav()`, `togglePane(pane)`, `toggleTheme()` | The view commands |
+| `toggleSource()`       | Shows the editor's value read-only in place of the editor (which stays, hidden), or goes back to it |
 | `runCommand(id)`       | Runs a command of `commands.js` by its id             |
 | `sendEditorKey(key, options)` | Sends a key to the editor as a synthetic `keydown` |
 

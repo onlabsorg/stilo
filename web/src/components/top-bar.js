@@ -103,8 +103,8 @@ export class TopBar extends LitElement {
                 ${this.status ? html`<span class="status">${this.status}</span>` : ""}
             </div>
             <div class="right">
-                ${this._paneButton("commands", "Commands", commandsIcon)}
                 ${this._paneButton("comments", "Comments", commentsIcon)}
+                ${this._paneButton("commands", "Commands", commandsIcon)}
             </div>
         `;
     }

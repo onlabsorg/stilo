@@ -80,6 +80,14 @@ export const commands = [
         run: (app) => app.togglePane("comments"),
     },
     {
+        id: "show-source",
+        label: "Show source",
+        keys: "Alt+U",
+        group: "View",
+        match: (e) => e.altKey && !mod(e) && e.code === "KeyU",
+        run: (app) => app.toggleSource(),
+    },
+    {
         id: "toggle-theme",
         label: "Switch light / dark theme",
         keys: "Alt+T",

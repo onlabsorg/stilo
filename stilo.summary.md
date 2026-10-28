@@ -78,6 +78,11 @@ accept are not part of Stilo.
   from the README and the package's PyPI links. The developer pages stay
   in `docs/` as plain Markdown read on GitHub. Commit messages now state
   user-visible changes plainly.
+- 2026-10-28: **Show source** (Alt+U): a command that shows the document's
+  plain text, read-only, in place of the editor. The button that opens the
+  commands pane is now a menu icon (⋮), the last one on the right of the
+  top bar. The sample `examples/sample.texl` imports its library from the
+  right folder and renders fully.
 - Next: the table cell; a small editor API for the app (`runCommand`,
   `select(line)`).
 
@@ -86,8 +91,6 @@ accept are not part of Stilo.
 - No authentication: serve to localhost, or behind your own access control.
 - The app drives editor commands with synthetic key presses and cannot
   select a line from the comments pane.
-- The sample `examples/sample.texl` imports a library from the wrong folder
-  and does not render fully.
 - Editor: if an imported document's rendering contains a marker with the
   same name as a later cell, the split into cells goes wrong (rare); a
   formula tag spanning two cells hides the later cell's output; links in

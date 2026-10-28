@@ -6,6 +6,12 @@ change the interfaces.
 
 ## Unreleased
 
+- **Show source** (Alt+U, View): shows the document's text, read-only,
+  in place of the editor, unsaved changes included; Alt+U again or the
+  close button goes back to the editor.
+- The button that opens the commands pane is now a menu icon (⋮), the
+  last one on the right of the top bar.
+- `examples/sample.texl` imports its library from the right folder.
 - The user manual (getting started, the web editor, the `stilo` command,
   the document format) moved to the OnLabs.org manual,
   <https://www.onlabs.org/manual/>. This repository keeps the developer
