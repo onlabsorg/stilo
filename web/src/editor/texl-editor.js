@@ -61,7 +61,9 @@ function isMod(e) {
  * - Mod+/ opens the menu of cell types for the selected cells, as the icon
  *   of a cell's type in the left margin does on a click. In the menu,
  *   ArrowUp/ArrowDown (or a type's first letter) pick a type, Enter changes
- *   the selected cells to it, Escape closes the menu;
+ *   the selected cells to it, Escape closes the menu. A type that does not
+ *   accept the source of every selected cell (e.g. a table, for a cell
+ *   that is not one) is greyed out, with the reason, and cannot be picked;
  * - Shift+F2 reports the comments of the selected line, as a click on its
  *   comment icon does (below), also when it has none.
  *
@@ -81,7 +83,8 @@ function isMod(e) {
  * document, as in Excel. The user knows cells by their line number; their
  * names, in the markers, are not shown (see below). Before the number, a discreet icon shows the cell's type (on the
  * empty lines, only under the mouse or when selected); a click on it opens
- * the menu of cell types. Changing the type keeps the cell's Texl source.
+ * the menu of cell types. Changing the type keeps the cell's Texl source,
+ * so it is offered only to the types that accept that source.
  * The right margin (part `right-margin`) is for the comments of a cell:
  * every cell comment (`<!--[ ... ]-->`) in its Texl source; other HTML
  * comments are ignored.
@@ -248,6 +251,18 @@ export class TexlEditor extends LitElement {
         .type-menu .label {
             flex: 1;
         }
+        /* A type the selected cells cannot change to */
+        .type-menu li.disabled {
+            cursor: default;
+            color: var(--texl-text-muted, #687085);
+        }
+        .type-menu li.disabled svg {
+            opacity: 0.5;
+        }
+        .type-menu .reason {
+            font-size: 0.8em;
+            white-space: nowrap;
+        }
         .type-menu .check {
             width: 0.875rem;
             height: 0.875rem;
@@ -405,24 +420,41 @@ export class TexlEditor extends LitElement {
     /** Keys while the menu of cell types is open: it takes them all. */
     _onMenuKeyDown(e) {
         const types = cellTypes();
+        // The next type, from `from` by `step`, that the selected cells can take
+        const next = (from, step, match = () => true) => {
+            for (let i = 1; i <= types.length; i++) {
+                const item = (from + i * step + types.length) % types.length;
+                if (this._canSetType(types[item]) && match(types[item])) return item;
+            }
+            return this._menuItem;
+        };
         const step = { ArrowUp: -1, ArrowDown: 1 }[e.key];
-        if (step) this._menuItem = (this._menuItem + step + types.length) % types.length;
-        else if (e.key === "Home") this._menuItem = 0;
-        else if (e.key === "End") this._menuItem = types.length - 1;
+        if (step) this._menuItem = next(this._menuItem, step);
+        else if (e.key === "Home") this._menuItem = next(-1, 1);
+        else if (e.key === "End") this._menuItem = next(types.length, -1);
         else if (e.key === "Enter" || e.key === " ") this._setType(types[this._menuItem]);
         else if (e.key === "Escape" || e.key === "Tab") this._closeMenu();
         else if (e.key.length === 1 && !hasModifier(e, "shiftKey")) {
             // A letter picks the next type whose name starts with it
             const letter = e.key.toLowerCase();
-            for (let i = 1; i <= types.length; i++) {
-                const item = (this._menuItem + i) % types.length;
-                if (typeLabel(types[item]).toLowerCase().startsWith(letter)) {
-                    this._menuItem = item;
-                    break;
-                }
-            }
+            this._menuItem = next(this._menuItem, 1, (type) => typeLabel(type).toLowerCase().startsWith(letter));
         }
         e.preventDefault();
+    }
+
+    /**
+     * Whether all the selected lines can change to `type`: it accepts the
+     * source of each one that has another type.
+     */
+    _canSetType(type) {
+        const cellType = cellClass(type);
+        if (!cellType) return false;
+        const [first, last] = this._range();
+        for (let i = first; i <= Math.min(last, this._cells.length - 1); i++) {
+            const cell = this._cells[i];
+            if (cell.type !== type && !cellType.accepts(cell.texl)) return false;
+        }
+        return true;
     }
 
     /**
@@ -439,7 +471,10 @@ export class TexlEditor extends LitElement {
         if (index < first || index > last) this._select(index);
         this._editing = -1;
         this._menu = index;
-        this._menuItem = Math.max(0, cellTypes().indexOf((this._cells[index] ?? EMPTY_LINE).type));
+        // The line's type is highlighted, unless another selected cell cannot take it
+        const type = (this._cells[index] ?? EMPTY_LINE).type;
+        const types = cellTypes();
+        this._menuItem = Math.max(0, types.indexOf(this._canSetType(type) ? type : types.find((t) => this._canSetType(t))));
         this.focus();
     }
 
@@ -450,8 +485,10 @@ export class TexlEditor extends LitElement {
     /**
      * Changes the selected cells to `type`, keeping their Texl source, and
      * closes the menu. Selected lines below the document are added to it.
+     * Nothing changes if the type does not accept a cell's source.
      */
     _setType(type) {
+        if (!this._canSetType(type)) return;
         this._closeMenu();
         this.focus();
         const [first, last] = this._range();
@@ -689,21 +726,26 @@ export class TexlEditor extends LitElement {
 
     /** The menu of cell types, with `current` checked. */
     _renderMenu(current) {
-        const items = cellTypes().map(
-            (type, i) => html`<li
+        const items = cellTypes().map((type, i) => {
+            const enabled = this._canSetType(type);
+            const reason = enabled ? "" : `Needs ${cellClass(type).needs}`;
+            return html`<li
                 role="menuitemradio"
                 aria-checked=${type === current ? "true" : "false"}
-                class=${i === this._menuItem ? "active" : ""}
-                @pointerenter=${() => (this._menuItem = i)}
+                aria-disabled=${enabled ? "false" : "true"}
+                title=${reason}
+                class=${[i === this._menuItem ? "active" : "", enabled ? "" : "disabled"].join(" ")}
+                @pointerenter=${() => enabled && (this._menuItem = i)}
                 @click=${() => this._setType(type)}
             >
                 ${cellClass(type).icon}
                 <span class="label">${typeLabel(type)}</span>
+                ${reason ? html`<span class="reason">${reason}</span>` : ""}
                 ${type === current
                     ? html`<svg class="check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></svg>`
                     : ""}
-            </li>`,
-        );
+            </li>`;
+        });
         return html`<ul class="type-menu" role="menu" aria-label="Cell type" @click=${(e) => e.stopPropagation()}>
             ${items}
         </ul>`;

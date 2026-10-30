@@ -196,8 +196,12 @@ creates the GitHub release. Bump the version in `pyproject.toml`,
   - `texl-cell.js` — `TexlCell`, base class of all cells: modes, layout,
     commit protocol (`cell-change` with `{texl}`, then `cell-exit`).
   - `cells/` — built-in cell types (`text`, `markdown`, `table`: a Markdown
-    pipe table edited as a grid); formulas are
-    `<% %>` tags inside them, there is no formula cell (D11).
+    pipe table edited as a grid, `formula`: one tag edited without its delimiters);
+    formulas are `<% %>` tags inside them. A type that needs a shape
+    overrides the static `accepts(source)` (white space and comments
+    never count against it): the type menu offers only accepting types,
+    and a cell refuses to commit a changed source its type rejects
+    (`inputError`), so a type change never converts content.
   - `registry.js` — `registerCell(CellClass)`; unknown types fall back to
     `text`. `document.js` — parse/serialise (round-trip exact), cell names,
     comments, `splitRendering`. `swan.js` — Swan highlighting. `engine.js`

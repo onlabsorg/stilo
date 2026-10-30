@@ -125,6 +125,8 @@ type; see [Writing a cell type](guide.md#7-write-your-own-cell-type).
 | `type`   | `string`        | The type written in the marker (`<!--{ name : type }-->`). Required by `registerCell`. |
 | `label`  | `string`        | The type's name shown in the type menu and tooltips; the type if empty. |
 | `icon`   | Lit `html` template | A 24×24 SVG drawn with strokes (`fill: none; stroke: currentColor` are set by the editor). Shown in the left margin and the type menu. |
+| `needs`  | `string`        | What the type needs of a source, e.g. `"a table"`; empty if it accepts any. Shown as "Needs …" in the type menu and in the commit error. |
+| `accepts(source)` | static method → `boolean` | Whether the type can edit and show `source`. The base accepts any source; a type that needs a shape overrides it. White space and HTML comments around the content must not make it return false. The type menu offers the type only for cells whose source it accepts. |
 | `styles` | Lit `css`       | The cell's styles: lined-paper layout, selected and edit looks. Extend it as `[TexlCell.styles, css`...`]`. |
 
 ### Properties
@@ -148,12 +150,13 @@ Set by the editor; a cell reads them and does not change them.
 | `renderEditor()`    | a "no editor" notice | Return the editing widget (a Lit template). |
 | `renderView()`      | `output` as HTML, sanitised with DOMPurify | Show the output differently (as `MarkdownCell` does). Always sanitise: documents are untrusted. |
 | `focusEditor()`     | focuses the first `textarea` or `input` | Focus your widget when it is not one of those. Called after entering edit mode. |
+| `inputError(texl)`  | a message if the type does not `accept` `texl`, else `""` | Give a more precise reason (as `FormulaCell` does for `%>`). Called on commit with the new source, only if it changed. |
 
 ### Methods to call
 
 | Method                   | Description |
 |--------------------------|-------------|
-| `exitEdit(commit = true)` | Leaves edit mode. With `commit`, calls `toTexl()` and fires `cell-change` if the source changed; then fires `cell-exit`. The editor calls it on Ctrl+Enter (commit) and Escape (discard); a cell may call it itself, e.g. from a "Done" button. |
+| `exitEdit(commit = true)` | Leaves edit mode. With `commit`, calls `toTexl()` and fires `cell-change` if the source changed; then fires `cell-exit`. A changed source that `inputError()` refuses is not committed: the cell stays in edit mode and shows the message below its widget. The editor calls it on Ctrl+Enter (commit) and Escape (discard); a cell may call it itself, e.g. from a "Done" button. |
 
 ### Events fired
 
@@ -214,6 +217,26 @@ Type `markdown`, label "Markdown". Extends `TextCell`. Adds Markdown
 highlighting in the editor (tags stay highlighted as Swan; Markdown does not
 look inside them) and shows its output as Markdown, converted with `marked`
 and sanitised with DOMPurify. New cells and empty lines are `markdown`.
+
+## `TableCell`
+
+Type `table`, label "Table". Extends `MarkdownCell`. Edits a Markdown pipe
+table as a grid of fields and shows it as Markdown. `accepts` a table, or a
+source with only blank lines and comments (which starts a new table), with
+blank lines and comments before and after the table and in its rows.
+`parseTable(source)` reads a table (`{rows, align, head, tail}`, or null)
+and `serializeTable(table)` writes one.
+
+## `FormulaCell`
+
+Type `formula`, label "Formula". Extends `TextCell`. A source that is one
+tag, `<% q * L ^ 2 / 8 %>`, edited without the delimiters, Swan
+highlighted (`swanExpression()`), and shown as its output.
+`accepts` one tag or nothing, with white space and comments around it,
+which are kept. An expression containing `%>` is not committed.
+`parseFormula(source)` returns `{before, body, after}` (`body` is the text
+between the delimiters, or null without a tag), or null;
+`serializeFormula(formula)` writes it back.
 
 ## Cell registry
 
@@ -308,6 +331,11 @@ they clash. Returns `cells` itself when nothing needs a name.
 The names used by more than one cell (compared without case) and the lines
 (from 1) of those cells.
 
+### `isBlank(texl) → boolean`
+
+Whether a source holds nothing but white space and HTML comments (cell
+comments among them).
+
 ### `cellComments(texl) → string[]`
 
 The trimmed text of each cell comment `<!--[ ... ]-->` in a cell body.
@@ -366,6 +394,7 @@ From `web/src/editor/swan.js`, for cells that use CodeMirror.
 | Export            | Description |
 |-------------------|-------------|
 | `swanTags()`      | CodeMirror extension: highlights the Swan code in every `<% %>` tag, wherever it is (also in Markdown code blocks). Classes `cm-texl-tag`, `cm-texl-delimiter`, `cm-swan-*`. |
+| `swanExpression()` | CodeMirror extension: highlights a text that is all Swan, e.g. a formula's expression. Classes `cm-swan-*`. |
 | `insertTag(view)` | CodeMirror command: wraps each selection (or the cursor) in `<%  %>`. |
 | `insertComment(view)` | CodeMirror command: wraps each selection (or the cursor) in `<!--[  ]-->`. |
 
@@ -404,6 +433,7 @@ the rendered text falls back to the next fonts in `--texl-font` and
 | `--texl-hover-bg`           | `rgb(15 23 42 / 0.06)`    | Hovered buttons in the margins |
 | `--texl-icon-active`        | `#4b5563`                 | Hovered type icon |
 | `--texl-menu-bg`, `--texl-menu-border`, `--texl-menu-text`, `--texl-menu-icon`, `--texl-menu-active-bg` | light card | Type menu |
+| `--texl-error`              | `#c2410c`                 | Why a commit was refused |
 
 | Part           | Element |
 |----------------|---------|

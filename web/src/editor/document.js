@@ -150,6 +150,19 @@ export function cellComments(texl) {
     return [...texl.matchAll(/<!--\[([\s\S]*?)\]-->/g)].map((match) => match[1].trim());
 }
 
+/** HTML comments, cell comments among them. */
+const COMMENT = /<!--[\s\S]*?-->/g;
+
+/**
+ * Whether a source holds nothing but white space and HTML comments (cell
+ * comments among them): nothing that renders.
+ * @param {string} texl
+ * @returns {boolean}
+ */
+export function isBlank(texl) {
+    return !texl.replace(COMMENT, "").trim();
+}
+
 /**
  * Joins cells into a document.
  * @param {CellData[]} cells

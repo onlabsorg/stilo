@@ -683,8 +683,10 @@ Third line
             typeButton(editor, 1).click();
             await editor.updateComplete;
             expect(cells(editor)[1].selected).to.be.true;
-            expect(items(editor).map((li) => li.textContent.trim())).to.deep.equal(["Text", "Markdown", "Table"]);
-            expect(items(editor).map((li) => li.getAttribute("aria-checked"))).to.deep.equal(["false", "true", "false"]);
+            const labels = items(editor).map((li) => li.querySelector(".label").textContent);
+            expect(labels).to.deep.equal(["Text", "Markdown", "Table", "Formula"]);
+            const checked = items(editor).map((li) => li.getAttribute("aria-checked"));
+            expect(checked).to.deep.equal(["false", "true", "false", "false"]);
 
             typeButton(editor, 1).click();
             await editor.updateComplete;
@@ -711,11 +713,10 @@ Third line
             key(editor, "ArrowDown");
             await editor.updateComplete;
             expect(items(editor)[1].classList.contains("active")).to.be.true;
-            key(editor, "ArrowDown");
+            // Table and Formula do not accept the cell: the arrows skip them
             key(editor, "ArrowDown");
             await editor.updateComplete;
             expect(items(editor)[0].classList.contains("active")).to.be.true;
-            key(editor, "ArrowUp");
             key(editor, "ArrowUp");
             key(editor, "Enter");
             await editor.rendered;
@@ -766,7 +767,40 @@ Third line
             key(editor, "End");
             key(editor, "Enter");
             await editor.updateComplete;
-            expect(anon(editor.value)).to.equal(anon("<!--{ tbl3 : table }-->\nHello\n"));
+            expect(anon(editor.value)).to.equal(anon("<!--{ mdn3 : markdown }-->\nHello\n"));
+        });
+
+        it("greys out the types that do not accept the selected cells, with the reason", async () => {
+            const editor = await editorWith(SOURCE);
+            key(editor, "ArrowDown", { shiftKey: true });
+            typeButton(editor, 1).click();
+            await editor.updateComplete;
+            // The text cell is neither a table nor a formula; the markdown one is a formula
+            const disabled = items(editor).map((li) => li.getAttribute("aria-disabled"));
+            expect(disabled).to.deep.equal(["false", "false", "true", "true"]);
+            expect(items(editor)[2].title).to.equal("Needs a table");
+            expect(items(editor)[3].querySelector(".reason").textContent).to.equal("Needs a single formula");
+            items(editor)[3].click();
+            await editor.updateComplete;
+            expect(menu(editor)).to.exist;
+            expect(anon(editor.value)).to.equal(anon(SOURCE));
+        });
+
+        it("changes a cell that is one tag to a formula, and an empty one to a table", async () => {
+            const editor = await editorWith(SOURCE);
+            typeButton(editor, 1).click();
+            await editor.updateComplete;
+            items(editor)[3].click();
+            typeButton(editor, 2).click();
+            await editor.updateComplete;
+            items(editor)[2].click();
+            await editor.rendered;
+            await editor.updateComplete;
+            expect(cells(editor)[1].localName).to.equal("texl-cell-formula");
+            // An empty table cell stays empty until it is edited
+            expect(anon(editor.value)).to.equal(
+                anon(SOURCE.replace("mdn3 : markdown", "frm4 : formula") + "<!--{ tbl5 : table }-->\n"),
+            );
         });
 
         it("leaves an empty line below the document empty when its type changes", async () => {

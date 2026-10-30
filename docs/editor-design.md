@@ -78,6 +78,7 @@ shown, and any structure they have, is up to the platform.
 | `text`      | Texl template shown as HTML; Swan highlighted in `<% %>` tags, Ctrl+Space inserts one | Boilerplate |
 | `markdown`  | `text` with Markdown: highlighted in the editor, turned into HTML for display | Boilerplate |
 | `table`     | A grid where each cell is edited on its own: a spreadsheet inside the document | Prototype: a Markdown pipe table (O5) edited as a grid of fields |
+| `formula`   | One tag, edited as its expression without the `<% %>`, shown as its output | First version |
 | `chart`     | Shows a chart; edits as a table of values    | Planned       |
 | `figure`    | A parametric figure                          | Idea          |
 | `ai`        | A prompt from which AI writes the cell's Texl | Idea         |
@@ -87,12 +88,14 @@ Other formats for raw templates (e.g. LaTeX) are possible later as cell
 types built on `text`, as `markdown` is.
 
 **Formulas** are `<% %>` tags inside a `text` or `markdown` cell, inserted
-with Ctrl+Space; there is no separate formula cell (decided 2026-10-21,
-parent D11). An `expression` cell, which wrapped its input in a tag behind
-the user's back, was dropped: a tag ends at the first `%>`, so typing `%>`
-or `<%` split it into several formulas, and changing a cell with tags to
-`expression` had no sound conversion. Files with `<!--% expression %-->`
-still open, as `text` with their type kept, like any unknown type.
+with Ctrl+Space, as fields in Word (parent D11). A cell that is one tag and
+nothing else can also be a `formula` cell (2026-10-30): its source stays
+that plain tag, edited without the delimiters. The reasons D11
+dropped the older `expression` cell are answered by the shape rule (see
+Editing model): the type is offered only for a source that is one tag, and
+an expression containing `%>`, which would split the tag, is not
+committed. Files with `<!--% expression %-->` still open, as `text` with
+their type kept, like any unknown type.
 
 ## Typography
 
@@ -273,12 +276,15 @@ this section keeps the outline.
   checked. ↑/↓ (or a type's first letter) pick a type, Enter or a click
   changes all selected cells to it, Escape or a click outside closes the
   menu. The cell keeps its Texl source: only how it is edited and shown
-  changes, so the change is lossless and Mod+Z undoes it. A first cell
+  changes, so the change is lossless and Mod+Z undoes it. Types that do
+  not accept the source of every selected cell are greyed out, with the
+  reason ("Needs a table"), and the keys skip them (see the shape rule
+  below). A first cell
   without marker gets one; empty lines below the document that change type
   are added to it, unless they stay empty `markdown` or `text` lines. Cell
   classes give the menu their `label` and `icon`.
-- **(open)** Formulas: an Excel-like `=` in a cell (`=q * L ^ 2 / 8` stored
-  as a cell that is exactly one tag, shown as `= …` while editing), formula
+- **(open)** Formulas: the `formula` cell (one tag, edited without the delimiters) is a
+  first version; still open: `=` on an empty line starting one, formula
   chips in the rich-text cell, Mathcad-style display ("M = 56.25"), units.
   Any of these must keep the formula a plain tag in the source.
 - **(open)** Tables: a first `table` cell (2026-10-30, to test O5 below)
@@ -290,39 +296,30 @@ this section keeps the outline.
   table cells (column formulas vs A1 references); which renderer functions
   the editor provides to documents, and how they stay available when the file
   is rendered without the editor (e.g. a Texl library imported by URL).
-- **(open, to decide)** Changing type to a cell type that needs a shape
-  (2026-10-30). A formula cell (exactly one tag) or a table cell accepts
-  only sources of a certain shape, so some type changes have no valid
-  result: formula → Markdown shows the bare `<% %>`, Markdown with text and
-  tags → formula or table has no sound conversion, and typing `%><%` in a
-  formula splits it in two (the reasons of D11). Common frame: each
-  structured type has `parse(source)` (its content, or nothing if the
-  source lacks the shape) and `serialize(content)`, with
-  `parse(serialize(x)) == x`; text and Markdown accept every source.
-  Options:
-  - O1: no type change at all (or only on empty cells). Safe and simple;
-    rigid, a wrong type means retyping.
-  - O2: change to text or Markdown always allowed. Always sound; one way
-    only unless combined with O3.
-  - O3: change allowed only if the target type can parse the source; in
-    the menu, other types are greyed out with a reason rather than failing
-    after the click. O2 is O3 for the types that accept everything.
-  - O4: no formula type: a text or Markdown cell whose whole source is
-    one tag is shown and edited as `= expr` and rendered as `M = 56.25`;
-    `=` on an empty line starts one. No conversion exists, D11 stands.
-  - O5: table cells stored as Markdown pipe tables with tags in the
-    cells: Markdown ↔ table becomes natural and renders without editor
-    helpers; no merged or multi-line cells, A1 references awkward. Tied
-    to how much spreadsheet the table needs.
-  - O6: besides "change type" (source kept), explicit "Convert to…"
-    commands that transform the source (wrap a selection in a tag, a
-    list into a table), undoable but not lossless; later, per type.
-  Independent of the choice: a structured cell refuses to commit a source
-  that fails the round-trip check (e.g. `%>` or `<%` in a formula, also
-  inside strings), staying in edit mode with a message, as Excel does.
+- **Shape rule** for changing type (decided 2026-10-30, O2 + O3 below). A
+  structured type accepts only sources of a certain shape: `table` a
+  Markdown pipe table, `formula` one tag; `text` and `markdown` accept any
+  source. Each type has `accepts(source)`; white space and HTML comments
+  (cell comments among them) around the content never make it refuse a
+  source, and an empty source (only those) is accepted by every type, so a
+  new or empty cell can take any type. The menu offers a type only if it
+  accepts every selected cell; the others are greyed out with the reason.
+  So a type change never converts content (D11 stands on that point).
+  A structured cell refuses to commit a changed source that fails the
+  round-trip check (e.g. `%>` in a formula, also inside a string): it
+  stays in edit mode with a message, as Excel does; Escape discards. A
+  cell whose source lacks its type's shape (edited by hand) is edited as
+  text, and commits only unchanged or once it has the shape.
+  Options considered (2026-10-30): O1 no type change, or only on empty
+  cells; O2 change to text or Markdown always allowed; O3 change allowed
+  only if the target type can parse the source (chosen, with O2 as its
+  case for types that accept everything); O4 no formula type, a cell that
+  is one tag shown as `= expr` (not chosen: a `formula` type under O3
+  instead); O5 tables as Markdown pipe tables (the current prototype,
+  decided with the table storage); O6 explicit "Convert to…" commands that
+  transform the source (e.g. a list into a table), undoable but not
+  lossless: later, per type, when a real case asks for it.
   To check: whether a Markdown cell can create a stray cell marker line.
-  Proposal (not decided): O2 + O3 as one rule, O4 for formulas, O5 vs Swan
-  data decided with the table storage, O6 later.
 - **(open)** The cells use CodeMirror 6, with Swan highlighting. Still to
   do: autocompletion (see Rendering), and a look that suits
   non-programmers.

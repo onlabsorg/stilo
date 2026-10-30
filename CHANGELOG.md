@@ -6,6 +6,23 @@ change the interfaces.
 
 ## Unreleased
 
+- **Formula cells**: a line that is a single formula can be a Formula
+  cell, edited as the expression alone, `q * L ^ 2 / 8`, without the
+  `<% %>` around it, and shown as its result.
+  Comments around the formula are kept. A formula that contains `%>` is
+  not saved: the cell says why, and Escape discards the change.
+- **Changing a cell's type only offers types that fit**: in the type
+  menu (Mod+/), Table is offered only for a cell that is a table or
+  empty, Formula only for a cell that is one formula or empty; other
+  types are greyed out with the reason ("Needs a table"). Blank lines and
+  comments never count against a type. Text and Markdown are always
+  offered.
+- **A table or formula cell refuses an invalid edit**: Ctrl+Enter keeps
+  the cell in edit mode with a message instead of saving something that
+  is no longer a table or a formula.
+- Table cells now accept blank lines and comments before and after the
+  table and inside its rows, and an empty table cell starts a new
+  two-column table.
 - **Table cells** (first version): a table is a Markdown table edited as a
   grid, one field per table cell, formulas allowed in each. Tab and
   Shift+Tab move between fields, Tab in the last one adds a row; buttons

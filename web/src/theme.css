@@ -60,6 +60,7 @@
     --texl-menu-text: #e4e7ec;
     --texl-menu-icon: #8b93a3;
     --texl-menu-active-bg: rgb(96 165 250 / 0.14);
+    --texl-error: #fb923c;
 }
 
 html,

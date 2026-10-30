@@ -144,6 +144,17 @@ export function swanTags() {
     return [highlighter(tagDecorations), theme];
 }
 
+function expressionDecorations(doc) {
+    const builder = new RangeSetBuilder();
+    addTokens(builder, doc.toString(), 0);
+    return builder.finish();
+}
+
+/** Highlights a text that is all Swan, e.g. the expression of a formula. */
+export function swanExpression() {
+    return [highlighter(expressionDecorations), theme];
+}
+
 /**
  * Command: puts `<%  %>` around each selection, or at the cursor, and
  * leaves the cursor (or the selected text) between the delimiters.

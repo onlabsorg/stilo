@@ -1,7 +1,7 @@
 import { expect, fixture, html, unsafeStatic } from "@open-wc/testing";
 import { EditorView } from "@codemirror/view";
 import { swanTokens, findTags } from "../src/editor/swan.js";
-import { parseTable, serializeTable } from "../src/editor/index.js";
+import { parseTable, serializeTable, parseFormula, TableCell, FormulaCell, TextCell, MarkdownCell } from "../src/editor/index.js";
 
 async function cellInEditMode(tag, texl) {
     const element = await fixture(html`<${unsafeStatic(tag)} .texl=${texl}></${unsafeStatic(tag)}>`);
@@ -171,5 +171,123 @@ describe("table cell", () => {
         const [cell, view] = await cellInEditMode("texl-cell-table", "Not a table\n");
         expect(view).to.exist;
         expect(cell.toTexl()).to.equal("Not a table\n");
+    });
+
+    it("reads a table with blank lines and comments around it and in its rows", () => {
+        const table = parseTable(
+            "\n  <!--[ head ]-->\n<!-- note -->\n" +
+            "<!--[ a ]--> | a | b |  <!--[ b ]-->\n" +
+            "|---|:--<!--[ d ]-->|\n" +
+            "  | <% x | y %> | 2 <!--[ c | d ]--> |   \n" +
+            "\n<!--[ tail ]-->\n  \n",
+        );
+        expect(table.head).to.equal("\n  <!--[ head ]-->\n<!-- note -->\n");
+        expect(table.rows).to.deep.equal([
+            ["<!--[ a ]--> a", "b <!--[ b ]--> <!--[ d ]-->"],
+            ["<% x | y %>", "2 <!--[ c | d ]-->"],
+        ]);
+        expect(table.align).to.deep.equal(["", "left"]);
+        expect(parseTable(serializeTable(table))).to.deep.equal(table);
+    });
+
+    it("accepts a table or an empty source, with blank lines and comments", () => {
+        expect(TableCell.accepts("| a |\n|---|\n")).to.be.true;
+        expect(TableCell.accepts("\n<!--[ c ]-->\n| a |\n|---|\n<!--[ d ]-->\n")).to.be.true;
+        expect(TableCell.accepts("")).to.be.true;
+        expect(TableCell.accepts("  \n<!--[ only a comment ]-->\n")).to.be.true;
+        expect(TableCell.accepts("Some text\n")).to.be.false;
+        expect(TableCell.accepts("| a |\n|---|\n<!--[ c ]-->\n| b |\n")).to.be.false;
+        expect(TableCell.accepts("<% x %>")).to.be.false;
+    });
+
+    it("starts a new table in an empty source, after its comments", async () => {
+        const cell = await fixture(html`<texl-cell-table .texl=${"<!--[ c ]-->\n"}></texl-cell-table>`);
+        cell.mode = "edit";
+        await cell.updateComplete;
+        const inputs = cell.shadowRoot.querySelectorAll(".grid input");
+        expect(inputs.length).to.equal(4);
+        expect(cell.toTexl()).to.equal("<!--[ c ]-->\n");
+        inputs[0].value = "a";
+        inputs[0].dispatchEvent(new Event("input"));
+        expect(cell.toTexl()).to.equal("<!--[ c ]-->\n| a   |     |\n|-----|-----|\n|     |     |\n");
+    });
+
+    it("refuses to commit a source that is not a table, and says why", async () => {
+        const [cell, view] = await cellInEditMode("texl-cell-table", "Not a table\n");
+        let changes = 0;
+        cell.addEventListener("cell-change", () => changes++);
+        view.dispatch({ changes: { from: 0, insert: "Still " } });
+        cell.exitEdit(true);
+        await cell.updateComplete;
+        expect(changes).to.equal(0);
+        expect(cell.mode).to.equal("edit");
+        expect(cell.shadowRoot.querySelector(".input-error").textContent).to.contain("needs a table");
+    });
+});
+
+describe("formula cell", () => {
+    it("reads one tag, or nothing, with white space and comments around it", () => {
+        expect(parseFormula("<% a + 1 %>")).to.deep.equal({ before: "", body: " a + 1 ", after: "" });
+        expect(parseFormula("\n <!--[ c ]-->\n<% a %>  <!-- d -->\n")).to.deep.equal({
+            before: "\n <!--[ c ]-->\n",
+            body: " a ",
+            after: "  <!-- d -->\n",
+        });
+        expect(parseFormula(" <!--[ c ]--> ")).to.deep.equal({ before: " <!--[ c ]--> ", body: null, after: "" });
+        expect(parseFormula("<% a %> m")).to.be.null;
+        expect(parseFormula("<% a %><% b %>")).to.be.null;
+        expect(parseFormula("<% a")).to.be.null;
+    });
+
+    it("accepts what it reads; text and Markdown accept any source", () => {
+        expect(FormulaCell.accepts("  <% a %>\n<!--[ c ]-->\n")).to.be.true;
+        expect(FormulaCell.accepts("")).to.be.true;
+        expect(FormulaCell.accepts("Span: <% L %> m\n")).to.be.false;
+        expect(TextCell.accepts("anything <%")).to.be.true;
+        expect(MarkdownCell.accepts("| a |")).to.be.true;
+    });
+
+    it("edits the expression without the delimiters, keeping the comments", async () => {
+        const source = "<!--[ c ]-->\n<%  q * L ^ 2 / 8 %>\n";
+        const [cell, view] = await cellInEditMode("texl-cell-formula", source);
+        expect(view.state.doc.toString()).to.equal("q * L ^ 2 / 8");
+        expect(cell.toTexl()).to.equal(source);
+        view.dispatch({ changes: { from: view.state.doc.length, insert: " + 1" } });
+        expect(cell.toTexl()).to.equal("<!--[ c ]-->\n<% q * L ^ 2 / 8 + 1 %>\n");
+    });
+
+    it("writes a tag in an empty formula, and removes it when the formula is emptied", async () => {
+        const [cell, view] = await cellInEditMode("texl-cell-formula", "");
+        view.dispatch({ changes: { from: 0, insert: "1 + 1" } });
+        expect(cell.toTexl()).to.equal("<% 1 + 1 %>");
+        const [other, otherView] = await cellInEditMode("texl-cell-formula", "<% a %>\n");
+        otherView.dispatch({ changes: { from: 0, to: 1 } });
+        expect(other.toTexl()).to.equal("\n");
+    });
+
+    it("refuses to commit an expression with %>, and says why", async () => {
+        const [cell, view] = await cellInEditMode("texl-cell-formula", "<% a %>\n");
+        let changes = 0;
+        cell.addEventListener("cell-change", () => changes++);
+        view.dispatch({ changes: { from: 1, insert: " %> b" } });
+        cell.exitEdit(true);
+        await cell.updateComplete;
+        expect(changes).to.equal(0);
+        expect(cell.shadowRoot.querySelector(".input-error").textContent).to.contain("%>");
+        view.dispatch({ changes: { from: 1, to: 6 } });
+        cell.exitEdit(true);
+        expect(changes).to.equal(0);
+        view.dispatch({ changes: { from: 1, insert: " + 1" } });
+        cell.exitEdit(true);
+        expect(changes).to.equal(1);
+    });
+
+    it("edits a source that is not a formula as text, and commits it unchanged", async () => {
+        const [cell, view] = await cellInEditMode("texl-cell-formula", "Span: <% L %> m\n");
+        let exits = 0;
+        cell.addEventListener("cell-exit", () => exits++);
+        expect(view.state.doc.toString()).to.equal("Span: <% L %> m");
+        cell.exitEdit(true);
+        expect(exits).to.equal(1);
     });
 });

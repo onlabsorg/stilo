@@ -20,6 +20,14 @@ import DOMPurify from "dompurify";
  * They also set the static `type`, and `label` and `icon`, which the
  * editor shows in the left margin and in the menu of cell types.
  *
+ * A type may need a source of a certain shape (a table, a formula): it
+ * overrides the static `accepts(source)` and says what it needs in
+ * `needs`. White space and HTML comments around the content never make a
+ * source unacceptable. The editor offers a type change only to the types
+ * that accept the cell's source, and a cell refuses to commit a changed
+ * source its type does not accept: it stays in edit mode and shows why
+ * (`inputError(texl)`), as Excel does with an invalid formula.
+ *
  * Reactive properties are declared in `static properties` and initialised in
  * the constructor (not as class fields, which would shadow Lit's accessors).
  */
@@ -33,11 +41,26 @@ export class TexlCell extends LitElement {
     /** The type's icon: a Lit template of a 24×24 SVG drawn with strokes. */
     static icon = html`<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" /></svg>`;
 
+    /** What the type needs of a source, e.g. "a table"; empty if it accepts any. */
+    static needs = "";
+
+    /**
+     * Whether the type can edit and show `source`. The base accepts any
+     * source; a type that needs a shape overrides it.
+     * @param {string} source
+     * @returns {boolean}
+     */
+    static accepts(source) {
+        return true;
+    }
+
     static properties = {
         texl: { type: String },
         output: { type: String },
         mode: { type: String, reflect: true },
         selected: { type: Boolean, reflect: true },
+        /** Why the last commit was refused, or empty. */
+        _error: { state: true },
     };
 
     // Lined paper: every cell is at least one line high and ruled below.
@@ -191,6 +214,11 @@ export class TexlCell extends LitElement {
         .no-editor {
             color: #999;
         }
+        .input-error {
+            margin: 0.25rem 0 0;
+            font-size: 0.85em;
+            color: var(--texl-error, #c2410c);
+        }
     `;
 
     constructor() {
@@ -199,9 +227,11 @@ export class TexlCell extends LitElement {
         this.output = "";
         this.mode = "render";
         this.selected = false;
+        this._error = "";
     }
 
     willUpdate(changed) {
+        if (changed.has("mode")) this._error = "";
         if (changed.has("mode") && this.mode === "edit") this.fromTexl(this.texl);
     }
 
@@ -219,11 +249,33 @@ export class TexlCell extends LitElement {
         return this.input ?? "";
     }
 
-    /** Leaves edit mode; reports the new source if `commit` and it changed. */
+    /**
+     * Why `texl`, the source of the current input, cannot be committed, or
+     * an empty string. The base refuses a source its type does not accept.
+     * @param {string} texl
+     * @returns {string}
+     */
+    inputError(texl) {
+        const cellType = /** @type {typeof TexlCell} */ (this.constructor);
+        if (cellType.accepts(texl)) return "";
+        const { needs, label, type } = cellType;
+        return `A ${(label || type).toLowerCase()} cell needs ${needs}: correct it, or press Escape to discard the changes.`;
+    }
+
+    /**
+     * Leaves edit mode; reports the new source if `commit` and it changed.
+     * A changed source that `inputError` refuses is not committed: the cell
+     * stays in edit mode and shows the error.
+     */
     exitEdit(commit = true) {
         if (this.mode !== "edit") return;
         if (commit) {
             const texl = this.toTexl();
+            const error = texl !== this.texl ? this.inputError(texl) : "";
+            if (error) {
+                this._error = error;
+                return;
+            }
             if (texl !== this.texl) {
                 this.dispatchEvent(
                     new CustomEvent("cell-change", {
@@ -243,7 +295,9 @@ export class TexlCell extends LitElement {
     }
 
     render() {
-        return this.mode === "edit" ? this.renderEditor() : this.renderView();
+        if (this.mode !== "edit") return this.renderView();
+        const error = this._error ? html`<p class="input-error" role="alert">${this._error}</p>` : "";
+        return html`${this.renderEditor()}${error}`;
     }
 
     /** The editing widget. Subclasses override it. */

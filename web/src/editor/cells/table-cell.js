@@ -1,16 +1,39 @@
 import { html, css } from "lit";
 import { MarkdownCell } from "./markdown-cell.js";
 import { TAG_OPEN, TAG_CLOSE } from "../swan.js";
+import { isBlank } from "../document.js";
 
 // A delimiter cell of the row under the header: `---`, `:--`, `--:`, `:-:`.
 const DELIMITER = /^\s*(:?)-+(:?)\s*$/;
 
-// Lines a table source may end with: blank lines and cell comments.
-const TAIL = /^(\s*<!--\[[\s\S]*?\]-->)*\s*$/;
+// HTML comments, cell comments among them.
+const COMMENT = /<!--[\s\S]*?-->/g;
 
 /**
- * Splits a source into lines, keeping a line break inside a tag in its
- * line, so a tag over several lines stays in one table row.
+ * The end of the tag or HTML comment that starts at `i` in `text`, or -1
+ * if none starts there. Pipes and line breaks inside them do not count.
+ * @param {string} text
+ * @param {number} i
+ * @returns {number}
+ */
+function atomEnd(text, i) {
+    for (const [open, close] of [
+        [TAG_OPEN, TAG_CLOSE],
+        ["<!--", "-->"],
+    ]) {
+        if (!text.startsWith(open, i)) continue;
+        const end = text.indexOf(close, i + open.length);
+        return end < 0 ? text.length : end + close.length;
+    }
+    return -1;
+}
+
+/** Joins the parts of a cell's text that are not empty with a space. */
+const joinText = (...parts) => parts.filter(Boolean).join(" ");
+
+/**
+ * Splits a source into lines, keeping a line break inside a tag or a
+ * comment in its line, so a tag over several lines stays in one table row.
  * @param {string} source
  * @returns {string[]}
  */
@@ -18,9 +41,8 @@ function splitLines(source) {
     const lines = [];
     let line = "";
     for (let i = 0; i < source.length; i++) {
-        if (source.startsWith(TAG_OPEN, i)) {
-            const close = source.indexOf(TAG_CLOSE, i + TAG_OPEN.length);
-            const end = close < 0 ? source.length : close + TAG_CLOSE.length;
+        const end = atomEnd(source, i);
+        if (end >= 0) {
             line += source.slice(i, end);
             i = end - 1;
         } else if (source[i] === "\n") {
@@ -33,21 +55,23 @@ function splitLines(source) {
 }
 
 /**
- * Splits a table row into its cells: at the pipes outside tags that are
- * not escaped. Outside tags `\|` becomes `|`; tags are kept as written.
- * Returns null if the line is not a row (it must start with a pipe).
+ * Splits a table row into its cells: at the pipes outside tags and
+ * comments that are not escaped. Outside them `\|` becomes `|`; tags and
+ * comments are kept as written. Comments before the first pipe go to the
+ * first cell, and after the last pipe to the last cell. Returns null if
+ * the line is not a row (it must start with a pipe, after any comments).
  * @param {string} line
  * @returns {string[] | null}
  */
 function splitRow(line) {
-    const text = line.trim();
+    const [lead] = /^(\s*<!--[\s\S]*?-->)*\s*/.exec(line);
+    const text = line.slice(lead.length).trimEnd();
     if (!text.startsWith("|")) return null;
     const cells = [];
     let cell = "";
     for (let i = 1; i < text.length; i++) {
-        if (text.startsWith(TAG_OPEN, i)) {
-            const close = text.indexOf(TAG_CLOSE, i + TAG_OPEN.length);
-            const end = close < 0 ? text.length : close + TAG_CLOSE.length;
+        const end = atomEnd(text, i);
+        if (end >= 0) {
             cell += text.slice(i, end);
             i = end - 1;
         } else if (text.startsWith("\\|", i)) {
@@ -58,17 +82,19 @@ function splitRow(line) {
             cell = "";
         } else cell += text[i];
     }
-    if (cell.trim()) cells.push(cell.trim());
+    const rest = cell.trim();
+    if (rest && isBlank(rest) && cells.length > 0) cells.push(joinText(cells.pop(), rest));
+    else if (rest) cells.push(rest);
+    if (lead.trim()) cells[0] = joinText(lead.trim(), cells[0]);
     return cells;
 }
 
-/** Escapes the pipes outside tags of a cell's text. */
+/** Escapes the pipes outside tags and comments of a cell's text. */
 function escapeCell(text) {
     let out = "";
     for (let i = 0; i < text.length; i++) {
-        if (text.startsWith(TAG_OPEN, i)) {
-            const close = text.indexOf(TAG_CLOSE, i + TAG_OPEN.length);
-            const end = close < 0 ? text.length : close + TAG_CLOSE.length;
+        const end = atomEnd(text, i);
+        if (end >= 0) {
             out += text.slice(i, end);
             i = end - 1;
         } else out += text[i] === "|" ? "\\|" : text[i];
@@ -81,36 +107,66 @@ function escapeCell(text) {
  * @property {string[][]} rows The header row, then the body rows, all as
  *   long as the header.
  * @property {("left" | "right" | "center" | "")[]} align Per column.
- * @property {string} tail Blank lines and cell comments after the table.
+ * @property {string} [head] Blank lines and comments before the table,
+ *   each line with its line break.
+ * @property {string} tail Blank lines and comments after the table.
  */
 
 /**
  * Reads a Markdown pipe table, whose cells may hold tags. Returns null if
- * the source is not a table, followed only by blank lines and comments.
+ * the source is not a table, with only blank lines and comments (HTML or
+ * cell comments) before and after it. Comments in a row stay in its cells;
+ * comments in the delimiter row go to the header cells above them.
  * @param {string} source
  * @returns {Table | null}
  */
 export function parseTable(source) {
     const lines = splitLines(source);
-    const header = splitRow(lines[0] ?? "");
-    const delimiters = splitRow(lines[1] ?? "");
+    let first = 0;
+    while (first < lines.length && isBlank(lines[first])) first++;
+    const head = lines
+        .slice(0, first)
+        .map((line) => line + "\n")
+        .join("");
+    const header = splitRow(lines[first] ?? "");
+    const delimiters = splitRow(lines[first + 1] ?? "");
     if (!header?.length || delimiters?.length !== header.length) return null;
     const align = [];
-    for (const cell of delimiters) {
-        const match = DELIMITER.exec(cell);
+    for (const [j, cell] of delimiters.entries()) {
+        const match = DELIMITER.exec(cell.replace(COMMENT, ""));
         if (!match) return null;
         align.push(match[1] && match[2] ? "center" : match[2] ? "right" : match[1] ? "left" : "");
+        header[j] = joinText(header[j], ...(cell.match(COMMENT) ?? []));
     }
     const rows = [header];
-    let i = 2;
+    let i = first + 2;
     for (; i < lines.length; i++) {
         const row = splitRow(lines[i]);
         if (!row) break;
         rows.push(header.map((_, j) => row[j] ?? ""));
     }
     const tail = lines.slice(i).join("\n");
-    if (!TAIL.test(tail)) return null;
-    return { rows, align, tail };
+    if (!isBlank(tail)) return null;
+    return { rows, align, head, tail };
+}
+
+/**
+ * A new, empty table of two columns, a header and a body row, after
+ * `source`: a source with only blank lines and comments.
+ * @param {string} source
+ * @returns {Table}
+ */
+function newTable(source) {
+    const head = source.trimEnd();
+    return {
+        rows: [
+            ["", ""],
+            ["", ""],
+        ],
+        align: ["", ""],
+        head: head ? head + "\n" : "",
+        tail: "",
+    };
 }
 
 /**
@@ -118,7 +174,7 @@ export function parseTable(source) {
  * @param {Table} table
  * @returns {string}
  */
-export function serializeTable({ rows, align, tail }) {
+export function serializeTable({ rows, align, head = "", tail }) {
     const cells = rows.map((row) => row.map(escapeCell));
     const widths = align.map((_, j) => Math.max(3, ...cells.map((row) => row[j].length)));
     const line = (row) => "| " + row.map((cell, j) => cell.padEnd(widths[j])).join(" | ") + " |";
@@ -126,7 +182,7 @@ export function serializeTable({ rows, align, tail }) {
         (a === "left" || a === "center" ? ":" : "-") + "-".repeat(w - 2) + (a === "right" || a === "center" ? ":" : "-");
     const lines = [line(cells[0]), "|" + align.map((a, j) => rule(a, widths[j] + 2)).join("|") + "|"];
     for (const row of cells.slice(1)) lines.push(line(row));
-    return lines.join("\n") + (tail ? "\n" + tail : "");
+    return head + lines.join("\n") + (tail ? "\n" + tail : "");
 }
 
 /**
@@ -137,8 +193,12 @@ export function serializeTable({ rows, align, tail }) {
  *
  * In the grid, Tab and Shift+Tab move to the next and previous field (Tab
  * in the last one adds a row, as in Word), ↑/↓ to the field above and
- * below; the buttons above the grid insert and delete rows and columns. A
- * source that is not a table is edited as Markdown text.
+ * below; the buttons above the grid insert and delete rows and columns.
+ * An empty source (blank lines and comments only) starts a new table.
+ *
+ * The type accepts only a table or an empty source, with blank lines and
+ * comments around it; a source that is not a table (e.g. edited by hand)
+ * is edited as Markdown text, and must be a table to be committed.
  *
  * Proposal under test: how tables are stored is still open (see
  * docs/editor-design.md, O5 vs Swan data).
@@ -154,6 +214,12 @@ export class TableCell extends MarkdownCell {
         <path d="M3 15h18" />
         <path d="M10 4v16" />
     </svg>`;
+
+    static needs = "a table";
+
+    static accepts(source) {
+        return isBlank(source) || parseTable(source) !== null;
+    }
 
     static properties = {
         /** The table being edited, or null when the source is not a table. */
@@ -226,7 +292,7 @@ export class TableCell extends MarkdownCell {
     fromTexl(texl) {
         super.fromTexl(texl);
         this._source = this.input;
-        this._table = parseTable(this.input);
+        this._table = parseTable(this.input) ?? (isBlank(this.input) ? newTable(this.input) : null);
         this._parsed = JSON.stringify(this._table);
         this._focus = [0, 0];
     }

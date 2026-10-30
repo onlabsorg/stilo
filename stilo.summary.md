@@ -20,7 +20,7 @@ to Word and Excel users, and renders them from the command line.
 | Part   | What                                                          |
 |--------|---------------------------------------------------------------|
 | Web app | The user interface (Lit web components, Vite): top bar, navigation pane with the folder's files, the editor, right pane with commands and cell comments. Light and dark theme. |
-| Editor | Inside the web app: `<texl-editor>`, a document as a stack of typed cells (text, Markdown and a first table cell; formulas as `<% %>` tags), live rendering, cell comments. Until 2026-10-26 the separate `texl-editor` package. |
+| Editor | Inside the web app: `<texl-editor>`, a document as a stack of typed cells (text, Markdown, a first table cell and a formula cell; formulas as `<% %>` tags), live rendering, cell comments. Until 2026-10-26 the separate `texl-editor` package. |
 | Server | Python (FastAPI): serves one folder of documents and the web app, for one user. |
 | CLI    | The `stilo` command: `stilo render <file>` prints a rendered document (or writes it to a file); `stilo serve [folder]` starts the server on a folder. |
 | Protocol | Plain HTTP between web app and server: GET a file, CREATE (POST), UPDATE (PUT, with an ETag so concurrent saves don't overwrite each other), QUERY a folder's tree. |
@@ -96,6 +96,15 @@ accept are not part of Stilo.
   end; buttons add and remove rows and columns). A Markdown cell holding a
   table can change to Table and back without loss. A prototype to try out
   this way of storing tables; the sample document uses it.
+- 2026-10-30: **changing a cell's type only offers types that fit**: the
+  type menu greys out, with the reason ("Needs a table"), the types that
+  cannot hold the cell's content, so changing type never alters it.
+  Blank lines and comments never count against a type. A table or
+  formula cell refuses an edit that would no longer fit, and says why.
+  New **formula cell**: a line that is a single formula, edited as the
+  expression alone (without the `<% %>`) and shown as its result. Table
+  cells now accept blank lines and comments around and inside the table,
+  and an empty one starts a new table.
 - Next: the table cell, beyond the prototype; a small editor API for the app (`runCommand`,
   `select(line)`).
 

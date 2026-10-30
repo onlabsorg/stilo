@@ -203,7 +203,9 @@ because keyboard events are composed and bubble out of shadow roots. The
 rules:
 
 - an event already default-prevented (by a cell) is ignored;
-- with the type menu open, the menu takes every key;
+- with the type menu open, the menu takes every key; the arrows, Home,
+  End and the letters skip the types greyed out because they do not
+  `accept` a selected cell's source (`_canSetType`);
 - in edit mode, only Mod+Enter (commit) and Escape (discard) are handled:
   the editor calls `exitEdit(commit)` on the editing cell;
 - otherwise the navigation and cell keys apply (see
@@ -220,7 +222,9 @@ Texl with their markers (`serializeDocument`); a paste parses it
 LitElement
   └─ TexlCell                 modes, lined-paper layout, commit protocol, renderView
        ├─ TextCell            CodeMirror editor, Swan highlighting   (type "text")
-       │    └─ MarkdownCell   Markdown highlighting and output       (type "markdown")
+       │    ├─ MarkdownCell   Markdown highlighting and output       (type "markdown")
+       │    │    └─ TableCell a Markdown table edited as a grid       (type "table")
+       │    └─ FormulaCell    one tag, edited as its expression      (type "formula")
        └─ your cells          e.g. QuantityCell (type "quantity")
 ```
 
@@ -252,6 +256,18 @@ sequenceDiagram
 
 Escape follows the same path with `exitEdit(false)`: no `toTexl()`, no
 `cell-change`, only `cell-exit`.
+
+**Shapes.** A type that needs a source of a certain shape (`table`,
+`formula`) overrides the static `accepts(source)` and sets `needs`. White
+space and HTML comments around the content never make a source
+unacceptable (`isBlank` in `document.js` tells a source that has nothing
+else). The type menu offers a type only if it accepts every selected
+cell's source, so a type change never converts content. On commit,
+`exitEdit` checks a changed source with `inputError(texl)`; a refused one
+is not committed, and the cell stays in edit mode with the message (the
+round-trip check: e.g. `%>` in a formula would split its tag). A cell whose
+source lacks its type's shape (edited by hand) is edited as text, and can
+be committed unchanged or once it has the shape.
 
 The contract for a subclass is three methods:
 
