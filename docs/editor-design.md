@@ -94,6 +94,21 @@ or `<%` split it into several formulas, and changing a cell with tags to
 `expression` had no sound conversion. Files with `<!--% expression %-->`
 still open, as `text` with their type kept, like any unknown type.
 
+## Typography
+
+The rendered document reads like a well-set engineering report
+(2026-10-30, chosen among six options): **Literata** for the text, a serif
+designed for reading on screens, at 16 px with line height 1.65; **Source
+Sans 3**, a humanist sans close to Calibri and Segoe UI, for headings and
+table headers. Tables are ruled as in print (heavier rules at top and
+bottom and under the header, light rules between rows) with tabular
+figures, so numbers line up; sub- and superscripts do not open up the line.
+The styles are the cells' (`.view` in `TexlCell`), so every cell type
+shares them; a host changes the fonts with `--texl-font`,
+`--texl-heading-font` and `--texl-font-size`, and loads the font files
+itself (Stilo bundles them, so it works offline). Edit mode keeps the
+monospace font (`--texl-mono`).
+
 ## File format
 
 A document is still **one Texl text file**. Each cell starts with a marker
@@ -270,6 +285,39 @@ this section keeps the outline.
   table cells (column formulas vs A1 references); which renderer functions
   the editor provides to documents, and how they stay available when the file
   is rendered without the editor (e.g. a Texl library imported by URL).
+- **(open, to decide)** Changing type to a cell type that needs a shape
+  (2026-10-30). A formula cell (exactly one tag) or a table cell accepts
+  only sources of a certain shape, so some type changes have no valid
+  result: formula → Markdown shows the bare `<% %>`, Markdown with text and
+  tags → formula or table has no sound conversion, and typing `%><%` in a
+  formula splits it in two (the reasons of D11). Common frame: each
+  structured type has `parse(source)` (its content, or nothing if the
+  source lacks the shape) and `serialize(content)`, with
+  `parse(serialize(x)) == x`; text and Markdown accept every source.
+  Options:
+  - O1: no type change at all (or only on empty cells). Safe and simple;
+    rigid, a wrong type means retyping.
+  - O2: change to text or Markdown always allowed. Always sound; one way
+    only unless combined with O3.
+  - O3: change allowed only if the target type can parse the source; in
+    the menu, other types are greyed out with a reason rather than failing
+    after the click. O2 is O3 for the types that accept everything.
+  - O4: no formula type: a text or Markdown cell whose whole source is
+    one tag is shown and edited as `= expr` and rendered as `M = 56.25`;
+    `=` on an empty line starts one. No conversion exists, D11 stands.
+  - O5: table cells stored as Markdown pipe tables with tags in the
+    cells: Markdown ↔ table becomes natural and renders without editor
+    helpers; no merged or multi-line cells, A1 references awkward. Tied
+    to how much spreadsheet the table needs.
+  - O6: besides "change type" (source kept), explicit "Convert to…"
+    commands that transform the source (wrap a selection in a tag, a
+    list into a table), undoable but not lossless; later, per type.
+  Independent of the choice: a structured cell refuses to commit a source
+  that fails the round-trip check (e.g. `%>` or `<%` in a formula, also
+  inside strings), staying in edit mode with a message, as Excel does.
+  To check: whether a Markdown cell can create a stray cell marker line.
+  Proposal (not decided): O2 + O3 as one rule, O4 for formulas, O5 vs Swan
+  data decided with the table storage, O6 later.
 - **(open)** The cells use CodeMirror 6, with Swan highlighting. Still to
   do: autocompletion (see Rendering), and a look that suits
   non-programmers.

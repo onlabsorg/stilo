@@ -130,7 +130,9 @@ root, without a leading `/`.
 fonts, sizes), in a light and a dark variant, chosen by the `data-theme`
 attribute of `<html>`. It also maps them onto the editor's `--texl-*`
 properties. Components use colors only through these tokens, so both
-themes always work.
+themes always work. `main.js` imports the document fonts (Literata and
+Source Sans 3, from `@fontsource-variable/*`), which the build bundles with
+the app, so Stilo needs no network for them.
 
 `theme.js` switches the theme (`toggleTheme`) and remembers it in the
 browser. The default is dark; `index.html` applies the saved theme before

@@ -107,7 +107,10 @@ uv build                              # after npm run build: dist/stilo_cli-*.wh
 TypeScript, no build step for the source) with Lit 3 web components, built
 with Vite. Texl runs in the browser as WebAssembly (`@onlabsorg/texl`).
 Cell output is sanitised with DOMPurify; Markdown cells convert it with
-`marked` first. Text is edited with CodeMirror 6 (`@codemirror/*`).
+`marked` first. Text is edited with CodeMirror 6 (`@codemirror/*`). The document fonts
+(Literata, Source Sans 3) come from `@fontsource-variable/*`, imported in
+`web/src/main.js` and bundled by the build; the typography is in
+`TexlCell`'s styles (`.view`), see `docs/editor-design.md`.
 Requires Node.js 22 or later; locally Node is managed by nvm, so
 non-interactive shells must run `source ~/.nvm/nvm.sh` first.
 
