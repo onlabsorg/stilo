@@ -20,7 +20,7 @@ to Word and Excel users, and renders them from the command line.
 | Part   | What                                                          |
 |--------|---------------------------------------------------------------|
 | Web app | The user interface (Lit web components, Vite): top bar, navigation pane with the folder's files, the editor, right pane with commands and cell comments. Light and dark theme. |
-| Editor | Inside the web app: `<texl-editor>`, a document as a stack of typed cells (text and Markdown so far; formulas as `<% %>` tags), live rendering, cell comments. Until 2026-10-26 the separate `texl-editor` package. |
+| Editor | Inside the web app: `<texl-editor>`, a document as a stack of typed cells (text, Markdown and a first table cell; formulas as `<% %>` tags), live rendering, cell comments. Until 2026-10-26 the separate `texl-editor` package. |
 | Server | Python (FastAPI): serves one folder of documents and the web app, for one user. |
 | CLI    | The `stilo` command: `stilo render <file>` prints a rendered document (or writes it to a file); `stilo serve [folder]` starts the server on a folder. |
 | Protocol | Plain HTTP between web app and server: GET a file, CREATE (POST), UPDATE (PUT, with an ETag so concurrent saves don't overwrite each other), QUERY a folder's tree. |
@@ -90,7 +90,13 @@ accept are not part of Stilo.
   superscripts no longer open up the line. The fonts ship inside the
   package, so no network is needed. Pages that embed the editor can choose
   other fonts.
-- Next: the table cell; a small editor API for the app (`runCommand`,
+- 2026-10-30: **first table cell**: a table is stored as an ordinary
+  Markdown table, formulas allowed in each table cell, and edited as a
+  grid with one field per table cell (Tab moves on and adds a row at the
+  end; buttons add and remove rows and columns). A Markdown cell holding a
+  table can change to Table and back without loss. A prototype to try out
+  this way of storing tables; the sample document uses it.
+- Next: the table cell, beyond the prototype; a small editor API for the app (`runCommand`,
   `select(line)`).
 
 ## Known limitations
@@ -105,3 +111,5 @@ accept are not part of Stilo.
   the document; autocompletion of names must be redesigned.
 - The editor is not published as a package of its own: pages that embed it
   use it from a copy of the source code.
+- Table cell: plain fields without formula highlighting; column alignment
+  is kept but cannot be changed in the grid.

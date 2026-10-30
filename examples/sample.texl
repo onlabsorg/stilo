@@ -37,11 +37,13 @@ sigma = MEd * 1000000 / section.W,
 fyd = steel.grade.fy / steel.gammaM0,
 u = sigma / fyd
 %>
-| Quantity         | Value                           |
-|------------------|---------------------------------|
-| Bending stress σ | <% math.round sigma %> N/mm²    |
-| Design strength  | <% math.round fyd %> N/mm²      |
-| Utilisation      | <% math.round (u * 100) %> %    |
+<!--{ buf9 : table }-->
+| Quantity          | Value                        |
+|-------------------|------------------------------|
+| Bending stress σ: | <% math.round sigma %> N/mm² |
+| Design strength:  | <% math.round fyd %> N/mm²   |
+| Utilisation:      | <% math.round (u * 100) %> % |
+<!--{ bab5 : markdown }-->
 
 The <% section.name %> is <% u <= 1 ? "**adequate**" ; "**not adequate**" %>.
 <!--[ Marco: fine for the report. ]-->

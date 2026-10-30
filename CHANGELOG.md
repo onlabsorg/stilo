@@ -6,6 +6,11 @@ change the interfaces.
 
 ## Unreleased
 
+- **Table cells** (first version): a table is a Markdown table edited as a
+  grid, one field per table cell, formulas allowed in each. Tab and
+  Shift+Tab move between fields, Tab in the last one adds a row; buttons
+  insert and delete rows and columns. A Markdown cell holding a table can
+  change to Table and back without loss.
 - **New document typography**: text in Literata, headings and table
   headers in Source Sans 3; tables ruled as in a printed report, with
   numbers lined up in columns; sub- and superscripts no longer open up the

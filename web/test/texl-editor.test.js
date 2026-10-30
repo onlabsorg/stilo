@@ -683,8 +683,8 @@ Third line
             typeButton(editor, 1).click();
             await editor.updateComplete;
             expect(cells(editor)[1].selected).to.be.true;
-            expect(items(editor).map((li) => li.textContent.trim())).to.deep.equal(["Text", "Markdown"]);
-            expect(items(editor).map((li) => li.getAttribute("aria-checked"))).to.deep.equal(["false", "true"]);
+            expect(items(editor).map((li) => li.textContent.trim())).to.deep.equal(["Text", "Markdown", "Table"]);
+            expect(items(editor).map((li) => li.getAttribute("aria-checked"))).to.deep.equal(["false", "true", "false"]);
 
             typeButton(editor, 1).click();
             await editor.updateComplete;
@@ -712,8 +712,10 @@ Third line
             await editor.updateComplete;
             expect(items(editor)[1].classList.contains("active")).to.be.true;
             key(editor, "ArrowDown");
+            key(editor, "ArrowDown");
             await editor.updateComplete;
             expect(items(editor)[0].classList.contains("active")).to.be.true;
+            key(editor, "ArrowUp");
             key(editor, "ArrowUp");
             key(editor, "Enter");
             await editor.rendered;
@@ -764,7 +766,7 @@ Third line
             key(editor, "End");
             key(editor, "Enter");
             await editor.updateComplete;
-            expect(anon(editor.value)).to.equal(anon("<!--{ mdn3 : markdown }-->\nHello\n"));
+            expect(anon(editor.value)).to.equal(anon("<!--{ tbl3 : table }-->\nHello\n"));
         });
 
         it("leaves an empty line below the document empty when its type changes", async () => {

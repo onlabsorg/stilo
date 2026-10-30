@@ -77,7 +77,7 @@ shown, and any structure they have, is up to the platform.
 |-------------|----------------------------------------------|---------------|
 | `text`      | Texl template shown as HTML; Swan highlighted in `<% %>` tags, Ctrl+Space inserts one | Boilerplate |
 | `markdown`  | `text` with Markdown: highlighted in the editor, turned into HTML for display | Boilerplate |
-| `table`     | A grid where each cell is edited on its own: a spreadsheet inside the document | Planned (MVP) |
+| `table`     | A grid where each cell is edited on its own: a spreadsheet inside the document | Prototype: a Markdown pipe table (O5) edited as a grid of fields |
 | `chart`     | Shows a chart; edits as a table of values    | Planned       |
 | `figure`    | A parametric figure                          | Idea          |
 | `ai`        | A prompt from which AI writes the cell's Texl | Idea         |
@@ -281,7 +281,12 @@ this section keeps the outline.
   as a cell that is exactly one tag, shown as `= …` while editing), formula
   chips in the rich-text cell, Mathcad-style display ("M = 56.25"), units.
   Any of these must keep the formula a plain tag in the source.
-- **(open)** Tables: storage as Swan data plus a render call; formulas inside
+- **(open)** Tables: a first `table` cell (2026-10-30, to test O5 below)
+  stores a Markdown pipe table with tags in its cells and edits it as a
+  grid of plain fields (Tab, Shift+Tab, ↑/↓; Tab in the last field adds a
+  row; buttons insert and delete rows and columns); a source that is not
+  a table is edited as Markdown text, and an unchanged table keeps its
+  source as written. Still open: storage as Swan data plus a render call; formulas inside
   table cells (column formulas vs A1 references); which renderer functions
   the editor provides to documents, and how they stay available when the file
   is rendered without the editor (e.g. a Texl library imported by URL).

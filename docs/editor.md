@@ -40,6 +40,7 @@ exactly the text that is saved.
 | `web/src/editor/texl-cell.js`            | `TexlCell`: base class of the cells; modes, layout, commit protocol | Lit, DOMPurify | [`TexlCell`](component/api.md#texlcell) |
 | `web/src/editor/cells/text-cell.js`      | `TextCell`: Texl template edited in CodeMirror 6; fallback type | texl-cell, swan, CodeMirror | [`TextCell`](component/api.md#textcell) |
 | `web/src/editor/cells/markdown-cell.js`  | `MarkdownCell`: `TextCell` with Markdown highlighting and Markdown output | text-cell, swan, marked, DOMPurify | [`MarkdownCell`](component/api.md#markdowncell) |
+| `web/src/editor/cells/table-cell.js`     | `TableCell`: a Markdown pipe table edited as a grid; `parseTable`, `serializeTable` | markdown-cell, swan | — |
 | `web/src/editor/registry.js`             | Maps cell types to custom element tags | — | [Cell registry](component/api.md#cell-registry) |
 | `web/src/editor/document.js`             | The file format: parse, serialise, names, comments, split a rendering. Pure functions, no DOM | — | [Document functions](component/api.md#document-functions) |
 | `web/src/editor/engine.js`               | Loads the Texl WebAssembly module once, creates engines | `@onlabsorg/texl` | [Engine](component/api.md#engine) |
@@ -54,10 +55,12 @@ graph TD
     index[index.js] --> editor[texl-editor.js]
     index --> text[cells/text-cell.js]
     index --> md[cells/markdown-cell.js]
+    index --> table[cells/table-cell.js]
     editor --> document[document.js]
     editor --> registry[registry.js]
     editor --> engine[engine.js]
     editor --> cell[texl-cell.js]
+    table --> md
     md --> text
     text --> cell
     text --> swan[swan.js]
