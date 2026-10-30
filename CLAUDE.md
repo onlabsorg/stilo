@@ -17,7 +17,8 @@ concern Stilo. Accounts, organisations, permissions, revisions, release and
 accept belong to Papiro, the private OnLabs platform built on top of Stilo.
 The strategy lives one folder up, in the OnLabs.org coordination folder
 (`../VISION.md`, `../CONCEPTS.md`, `../DECISIONS.md`, D18–D19); read it only
-when a task needs the "why".
+when a task needs the "why". Stilo's own decisions (design, technology,
+architecture) are in `DECISIONS.md` at the root of this repository.
 
 A monorepo with three parts, kept strictly modular:
 
@@ -82,7 +83,8 @@ end and suggest running `/commit-changes`.
 `../DECISIONS.md` exists, check it for entries dated after the last commit
 that changed the summary (`git log -1 --format=%ad --date=short --
 stilo.summary.md`) that concern this repository, and tell the user about
-any you find before starting the task.
+any you find before starting the task. Their consequences for Stilo are
+recorded in this repository's `DECISIONS.md` (see Conventions).
 
 Rules:
 
@@ -161,6 +163,7 @@ creates the GitHub release. Bump the version in `pyproject.toml`,
   commits and docs by a session in the coordination folder (D21). Only
   `README.md` links to it.
 - `CONTRIBUTING.md`, `CHANGELOG.md` — at the root.
+- `DECISIONS.md` — Stilo's decision log (S1, S2, …), at the root.
 - `src/stilo/server/storage.py` — `Storage`: path validation (no `..`,
   no hidden segments, no `_` names at the root, no escape through symlinks),
   read / create / update / tree, ETags (sha256). Raises `StorageError`
@@ -240,7 +243,15 @@ valid Texl document that renders without the editor (`stilo render`,
 - When the protocol, a command, the layout, the editing model or the
   editor API changes, update the matching pages in `docs/`, update this
   file, and add a line to `CHANGELOG.md`. Status changes go into
-  `stilo.summary.md` (see above); decisions are recorded in the coordination folder (`../DECISIONS.md`), not here.
+  `stilo.summary.md` (see above).
+- **Decisions** (OnLabs D22): a decision about Stilo's design, technology
+  or architecture goes in `DECISIONS.md` as a new entry (`S<n>`, date,
+  decision, reason); never rewrite old entries, supersede them. Detailed
+  editor design choices stay in `docs/editor-design.md`, with an entry in
+  `DECISIONS.md` only when one shapes the whole repository. Decisions
+  about OnLabs as a whole (products, business, repositories) belong in
+  the coordination folder (`../DECISIONS.md`), not here; if one comes up,
+  say so.
 - **Commit messages state user-visible changes plainly** (editor features,
   keys, `stilo` options, file format, install): the OnLabs.org user manual
   is updated from them.

@@ -5,7 +5,8 @@ words. The OnLabs.org coordination folder reads this file instead of the
 code; keep it current as described in `CLAUDE.md`.*
 
 Details: `CLAUDE.md` (stack, layout, commands), and the developer
-documentation in `docs/` (the protocol is `docs/protocol.md`). The user
+documentation in `docs/` (the protocol is `docs/protocol.md`); the
+decisions behind Stilo's design are logged in `DECISIONS.md`. The user
 manual is the OnLabs.org manual, <https://www.onlabs.org/manual/>, outside
 this repository.
 
