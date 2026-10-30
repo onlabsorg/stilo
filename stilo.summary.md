@@ -85,8 +85,8 @@ accept are not part of Stilo.
   right folder and renders fully.
 - 2026-10-30: **new document typography**, chosen among six options: text
   in Literata (a serif made for reading on screens), headings and table
-  headers in Source Sans 3; tables ruled as in a printed report, with
-  numbers lined up in columns; more room above titles; sub- and
+  headers in Source Sans 3; tables full width with equal columns, ruled
+  as in a printed report, with numbers lined up in columns; more room above titles; sub- and
   superscripts no longer open up the line. The fonts ship inside the
   package, so no network is needed. Pages that embed the editor can choose
   other fonts.

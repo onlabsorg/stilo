@@ -12,8 +12,8 @@ change the interfaces.
   insert and delete rows and columns. A Markdown cell holding a table can
   change to Table and back without loss.
 - **New document typography**: text in Literata, headings and table
-  headers in Source Sans 3; tables ruled as in a printed report, with
-  numbers lined up in columns; sub- and superscripts no longer open up the
+  headers in Source Sans 3; tables full width with equal columns, ruled
+  as in a printed report, with numbers lined up in columns; sub- and superscripts no longer open up the
   line. The fonts ship with Stilo, so no network is needed.
 - **Show source** (Alt+U, View): shows the document's text, read-only,
   in place of the editor, unsaved changes included; Alt+U again or the

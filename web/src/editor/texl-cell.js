@@ -145,6 +145,8 @@ export class TexlCell extends LitElement {
             top: -0.45em;
         }
         .view table {
+            width: 100%;
+            table-layout: fixed;
             border-collapse: collapse;
             margin: 0.25em 0 0.75em;
             font-size: 0.94em;

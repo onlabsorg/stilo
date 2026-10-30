@@ -100,9 +100,9 @@ The rendered document reads like a well-set engineering report
 (2026-10-30, chosen among six options): **Literata** for the text, a serif
 designed for reading on screens, at 16 px with line height 1.65; **Source
 Sans 3**, a humanist sans close to Calibri and Segoe UI, for headings and
-table headers. Tables are ruled as in print (heavier rules at top and
-bottom and under the header, light rules between rows) with tabular
-figures, so numbers line up; sub- and superscripts do not open up the line.
+table headers. Tables span the full width with equal columns, and are
+ruled as in print (heavier rules at top and bottom and under the header,
+light rules between rows) with tabular figures, so numbers line up; sub- and superscripts do not open up the line.
 The styles are the cells' (`.view` in `TexlCell`), so every cell type
 shares them; a host changes the fonts with `--texl-font`,
 `--texl-heading-font` and `--texl-font-size`, and loads the font files
