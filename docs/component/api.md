@@ -270,7 +270,10 @@ and sanitised with DOMPurify. New cells and empty lines are `markdown`.
 ## `TableCell`
 
 Type `table`, label "Table". Extends `MarkdownCell`. Edits a Markdown pipe
-table as a grid of fields and shows it as Markdown. `accepts` a table, or a
+table as a grid of fields, one per table cell with its Texl source, and
+shows it as Markdown. Buttons above the grid insert and delete rows and
+columns, and align the current field's column left, centred or right.
+`accepts` a table, or a
 source with only blank lines and comments (which starts a new table), with
 blank lines and comments before and after the table and in its rows.
 `parseTable(source)` reads a table (`{rows, align, head, tail}`, or null)

@@ -21,7 +21,7 @@ to Word and Excel users, and renders them from the command line.
 | Part   | What                                                          |
 |--------|---------------------------------------------------------------|
 | Web app | The user interface (Lit web components, Vite): top bar, navigation pane with the folder's files, the editor, right pane with commands and cell comments. Light and dark theme. |
-| Editor | Inside the web app: `<texl-editor>`, a document as a stack of typed cells (text, Markdown, a first table cell and a formula cell; formulas as `<% %>` tags), live rendering, cell comments. Until 2026-10-26 the separate `texl-editor` package. |
+| Editor | Inside the web app: `<texl-editor>`, a document as a stack of typed cells (text, Markdown, table and formula; formulas as `<% %>` tags), live rendering, cell comments. Until 2026-10-26 the separate `texl-editor` package. |
 | Server | Python (FastAPI): serves one folder of documents and the web app, for one user. |
 | CLI    | The `stilo` command: `stilo render <file>` prints a rendered document (or writes it to a file); `stilo serve [folder]` starts the server on a folder. |
 | Protocol | Plain HTTP between web app and server: GET a file, CREATE (POST), UPDATE (PUT, with an ETag so concurrent saves don't overwrite each other), QUERY a folder's tree. |
@@ -125,9 +125,11 @@ accept are not part of Stilo.
   formulas between `<% %>` as anywhere else. Table cells cannot refer to
   each other, as spreadsheet cells do; a value needed elsewhere is given a
   name inside its formula.
-- Next: the table cell, beyond the prototype: editing shows each table
-  cell's Texl source, viewing shows the rendered table, and buttons set
-  the alignment of a column.
+- 2026-10-31: **table cell ready for use**: three buttons above the grid,
+  as in Word, align a column left, centred or right, and the grid shows
+  the alignment while editing. Each field shows its table cell's Texl
+  text; outside editing the cell shows the rendered table. The table cell
+  is no longer a prototype.
 
 ## Known limitations
 
@@ -139,5 +141,4 @@ accept are not part of Stilo.
   the document; autocompletion of names must be redesigned.
 - The editor is not published as a package of its own: pages that embed it
   use it from a copy of the source code.
-- Table cell: plain fields without formula highlighting; column alignment
-  is kept but cannot be changed in the grid.
+- Table cell: plain fields without formula highlighting.

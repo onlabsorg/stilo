@@ -167,6 +167,34 @@ describe("table cell", () => {
         expect(cell.toTexl()).to.equal("| a   |\n|-----|\n| b   |\n|     |\n");
     });
 
+    it("aligns the column of the current field with the buttons", async () => {
+        const cell = await fixture(html`<texl-cell-table .texl=${source}></texl-cell-table>`);
+        cell.mode = "edit";
+        await cell.updateComplete;
+        const button = (value) => cell.shadowRoot.querySelector(`.align button[data-align="${value}"]`);
+        const pressed = () => [...cell.shadowRoot.querySelectorAll(".align button")].find((b) => b.ariaPressed === "true").dataset.align;
+        // A column without alignment counts as left, and left keeps it as written
+        expect(pressed()).to.equal("left");
+        button("left").click();
+        await cell.updateComplete;
+        expect(cell.toTexl()).to.equal(source);
+        button("center").click();
+        await cell.updateComplete;
+        expect(parseTable(cell.toTexl()).align).to.deep.equal(["center", "right"]);
+        expect(pressed()).to.equal("center");
+        expect(cell.shadowRoot.activeElement).to.equal(cell.shadowRoot.querySelector('input[data-row="0"][data-col="0"]'));
+        expect(cell.shadowRoot.querySelector('input[data-row="1"][data-col="0"]').classList.contains("center")).to.be.true;
+        // The buttons follow the current field's column
+        // (the focus event is sent by hand: a test page may not have the window's focus)
+        cell.shadowRoot.querySelector('input[data-row="2"][data-col="1"]').dispatchEvent(new FocusEvent("focus"));
+        await cell.updateComplete;
+        expect(pressed()).to.equal("right");
+        button("left").click();
+        await cell.updateComplete;
+        expect(parseTable(cell.toTexl()).align).to.deep.equal(["center", "left"]);
+        expect(cell.toTexl().split("\n")[1]).to.match(/^\|:-+:\|:-+\|$/);
+    });
+
     it("edits a source that is not a table as text", async () => {
         const [cell, view] = await cellInEditMode("texl-cell-table", "Not a table\n");
         expect(view).to.exist;

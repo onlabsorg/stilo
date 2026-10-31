@@ -77,7 +77,7 @@ shown, and any structure they have, is up to the platform.
 |-------------|----------------------------------------------|---------------|
 | `text`      | Texl template shown as HTML; Swan highlighted in `<% %>` tags, Ctrl+Space inserts one | Boilerplate |
 | `markdown`  | `text` with Markdown: highlighted in the editor, turned into HTML for display | Boilerplate |
-| `table`     | A grid where each cell is edited on its own: a spreadsheet inside the document | Prototype: a Markdown pipe table (O5) edited as a grid of fields |
+| `table`     | A grid where each table cell's Texl source is edited in its own field; shown as the rendered table | Ready for the MVP (2026-10-31): a Markdown pipe table (O5) edited as a grid of fields |
 | `formula`   | One tag, edited as its expression without the `<% %>`, shown as its output | First version |
 | `chart`     | Shows a chart; edits as a table of values    | Planned       |
 | `figure`    | A parametric figure                          | Idea          |
@@ -296,20 +296,23 @@ this section keeps the outline.
   first version, started with `=` (see the type keys above); still open: formula
   chips in the rich-text cell, Mathcad-style display ("M = 56.25"), units.
   Any of these must keep the formula a plain tag in the source.
-- **(open)** Tables: a first `table` cell (2026-10-30, to test O5 below)
-  stores a Markdown pipe table with tags in its cells and edits it as a
-  grid of plain fields (Tab, Shift+Tab, ↑/↓; Tab in the last field adds a
-  row; buttons insert and delete rows and columns); a source that is not
-  a table is edited as Markdown text, and an unchanged table keeps its
+- Tables (ready for the MVP, 2026-10-31): the `table` cell stores a
+  Markdown pipe table and edits it as a grid of plain fields, one per
+  table cell, each showing that cell's Texl source (Tab, Shift+Tab, ↑/↓;
+  Tab in the last field adds a row; buttons insert and delete rows and
+  columns). Outside edit mode it shows the rendered table. Three buttons,
+  as in Word, align the column of the current field left, centred or
+  right (`:--`, `:-:`, `--:` in the delimiter row); the pressed one shows
+  the column's alignment, and a column without alignment (`---`) counts as
+  left and keeps its delimiter when set to left. A source that is not a
+  table is edited as Markdown text, and an unchanged table keeps its
   source as written. Decided 2026-10-31 (O5): the table stays a Markdown
   pipe table, and each table cell is ordinary Texl template, with
-  expressions between `<% %>`; there are no references to table cells
-  (no column formulas, no A1 references): a value needed elsewhere is
-  labelled in its expression. So no renderer helper functions are needed.
-  To do before Christmas 2026: edit mode shows each table cell's Texl
-  source, view mode the rendered table; no `=` in a cell; buttons to set
-  column alignment. No syntax highlighting in table cells for the MVP
-  (nice to have).
+  expressions between `<% %>` (no `=`); there are no references to table
+  cells (no column formulas, no A1 references): a value needed elsewhere
+  is labelled in its expression. So no renderer helper functions are
+  needed. Syntax highlighting in table cells is a nice to have, after the
+  MVP.
 - **Shape rule** for changing type (decided 2026-10-30, O2 + O3 below). A
   structured type accepts only sources of a certain shape: `table` a
   Markdown pipe table, `formula` one tag; `text` and `markdown` accept any

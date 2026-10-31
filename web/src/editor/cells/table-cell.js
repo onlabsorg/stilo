@@ -185,6 +185,13 @@ export function serializeTable({ rows, align, head = "", tail }) {
     return head + lines.join("\n") + (tail ? "\n" + tail : "");
 }
 
+/** The alignment buttons: value, tooltip, icon (lines aligned as the text). */
+const ALIGNMENTS = [
+    ["left", "Align the column left", html`<svg viewBox="0 0 24 24"><path d="M4 6h16M4 10h10M4 14h16M4 18h10" /></svg>`],
+    ["center", "Centre the column", html`<svg viewBox="0 0 24 24"><path d="M4 6h16M7 10h10M4 14h16M7 18h10" /></svg>`],
+    ["right", "Align the column right", html`<svg viewBox="0 0 24 24"><path d="M4 6h16M10 10h10M4 14h16M10 18h10" /></svg>`],
+];
+
 /**
  * A table: a Markdown pipe table whose cells may hold tags, edited as a grid
  * where each cell has its own field, and shown as Markdown. The source stays
@@ -193,15 +200,19 @@ export function serializeTable({ rows, align, head = "", tail }) {
  *
  * In the grid, Tab and Shift+Tab move to the next and previous field (Tab
  * in the last one adds a row, as in Word), ↑/↓ to the field above and
- * below; the buttons above the grid insert and delete rows and columns.
- * An empty source (blank lines and comments only) starts a new table.
+ * below; the buttons above the grid insert and delete rows and columns,
+ * and align the column of the current field left, centred or right (as
+ * the `:` of its delimiter, `:--`, `:-:`, `--:`); a column without
+ * alignment counts as left. An empty source (blank lines and comments
+ * only) starts a new table.
  *
  * The type accepts only a table or an empty source, with blank lines and
  * comments around it; a source that is not a table (e.g. edited by hand)
  * is edited as Markdown text, and must be a table to be committed.
  *
- * Proposal under test: how tables are stored is still open (see
- * docs/editor-design.md, O5 vs Swan data).
+ * Each field holds its table cell's Texl source, with formulas between
+ * `<% %>` as anywhere else; the cell shows the rendered table outside edit
+ * mode. Table cells cannot refer to each other (docs/editor-design.md, O5).
  */
 export class TableCell extends MarkdownCell {
     static type = "table";
@@ -226,6 +237,8 @@ export class TableCell extends MarkdownCell {
     static properties = {
         /** The table being edited, or null when the source is not a table. */
         _table: { state: true },
+        /** The field that has the focus, or had it last: [row, column]. */
+        _focus: { state: true },
     };
 
     static styles = [
@@ -249,6 +262,39 @@ export class TableCell extends MarkdownCell {
             .grid-tools button:hover {
                 color: var(--texl-accent, #2563eb);
                 border-color: currentColor;
+            }
+            .grid-tools .align {
+                display: flex;
+                margin-left: 0.5rem;
+            }
+            .grid-tools .align button {
+                display: flex;
+                align-items: center;
+                padding: 0.1rem 0.3rem;
+                border-radius: 0;
+            }
+            .grid-tools .align button:first-child {
+                border-radius: 4px 0 0 4px;
+            }
+            .grid-tools .align button:last-child {
+                border-radius: 0 4px 4px 0;
+            }
+            .grid-tools .align button + button {
+                margin-left: -1px;
+            }
+            .grid-tools .align button[aria-pressed="true"] {
+                color: var(--texl-accent, #2563eb);
+                background: var(--texl-edit-bg, #f8f9fb);
+                border-color: currentColor;
+                position: relative;
+            }
+            .grid-tools .align svg {
+                width: 1rem;
+                height: 1rem;
+                fill: none;
+                stroke: currentColor;
+                stroke-width: 2;
+                stroke-linecap: round;
             }
             table.grid {
                 border-collapse: collapse;
@@ -274,6 +320,12 @@ export class TableCell extends MarkdownCell {
             .grid tr:first-child input {
                 font-weight: 600;
             }
+            .grid input.center {
+                text-align: center;
+            }
+            .grid input.right {
+                text-align: right;
+            }
             .grid input:focus {
                 outline: 2px solid var(--texl-accent, #2563eb);
                 outline-offset: -2px;
@@ -287,7 +339,6 @@ export class TableCell extends MarkdownCell {
         /** The source read when editing started, and its table as text. */
         this._source = "";
         this._parsed = "";
-        /** The field to focus after the next update: [row, column]. */
         this._focus = [0, 0];
     }
 
@@ -320,12 +371,27 @@ export class TableCell extends MarkdownCell {
 
     renderEditor() {
         if (!this._table) return super.renderEditor();
-        const { rows } = this._table;
+        const { rows, align } = this._table;
+        const current = align[this._focus[1]] || "left";
         return html`<div class="grid-tools">
                 <button @click=${() => this._insertRow()} title="Insert a row below">+ Row</button>
                 <button @click=${() => this._insertColumn()} title="Insert a column to the right">+ Column</button>
                 <button @click=${() => this._deleteRow()} title="Delete the row">− Row</button>
                 <button @click=${() => this._deleteColumn()} title="Delete the column">− Column</button>
+                <div class="align" role="group" aria-label="Column alignment">
+                    ${ALIGNMENTS.map(
+                        ([value, title, icon]) =>
+                            html`<button
+                                data-align=${value}
+                                title=${title}
+                                aria-pressed=${current === value ? "true" : "false"}
+                                @mousedown=${(e) => e.preventDefault()}
+                                @click=${() => this._alignColumn(value)}
+                            >
+                                ${icon}
+                            </button>`,
+                    )}
+                </div>
             </div>
             <table class="grid">
                 ${rows.map(
@@ -337,9 +403,10 @@ export class TableCell extends MarkdownCell {
                                         <input
                                             data-row=${r}
                                             data-col=${c}
+                                            class=${align[c] || "left"}
                                             .value=${cell}
                                             @input=${(e) => this._setCell(r, c, e.target.value)}
-                                            @focus=${() => (this._focus = [r, c])}
+                                            @focus=${() => this._focusField(r, c)}
                                             @keydown=${(e) => this._onGridKeyDown(e, r, c)}
                                         />
                                     </td>`,
@@ -347,6 +414,12 @@ export class TableCell extends MarkdownCell {
                         </tr>`,
                 )}
             </table>`;
+    }
+
+    _focusField(row, col) {
+        // Only a new field updates the buttons: the grid focuses the current
+        // one again after each update
+        if (this._focus[0] !== row || this._focus[1] !== col) this._focus = [row, col];
     }
 
     _setCell(row, col, value) {
@@ -387,6 +460,18 @@ export class TableCell extends MarkdownCell {
         if (this._table.align.length <= 1) return;
         const rows = this._table.rows.map((cells) => cells.toSpliced(col, 1));
         this._setTable({ rows, align: this._table.align.toSpliced(col, 1) }, [row, Math.min(col, rows[0].length - 1)]);
+    }
+
+    /**
+     * Aligns the column of the current field. A column without alignment
+     * already counts as left, so it keeps its delimiter (`---`) when set to
+     * left.
+     * @param {"left" | "center" | "right"} value
+     */
+    _alignColumn(value) {
+        const [row, col] = this._focus;
+        if ((this._table.align[col] || "left") === value) return this.focusEditor();
+        this._setTable({ align: this._table.align.with(col, value) }, [row, col]);
     }
 
     _onGridKeyDown(e, row, col) {

@@ -6,6 +6,12 @@ change the interfaces.
 
 ## Unreleased
 
+- **Table cell: column alignment**. Three buttons above the grid, as in
+  Word, align the column of the current field left, centred or right; the
+  pressed one shows the column's alignment, and the fields line up the
+  same way. The table cell is now ready for use: each field shows its
+  table cell's Texl source, and outside editing the cell shows the
+  rendered table.
 - **Commands pane**: Copy, Cut, Paste, Commit and Discard now run from
   the pane too (the browser may ask before pasting), and every command
   there does exactly what its key does.
