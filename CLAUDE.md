@@ -182,8 +182,7 @@ creates the GitHub release. Bump the version in `pyproject.toml`,
   `comments-pane.js` — the parts of the layout. They fire events; the app
   holds the state.
 - `web/src/commands.js` — the command list shown in the commands pane, with
-  shortcuts. Editor commands send the editor's own key as a synthetic
-  `keydown` (a stopgap until the editor has a command API).
+  shortcuts. Editor commands call the editor's `runCommand(name)`.
 - `web/src/route.js` — browser URL ↔ `{root, doc}`. `web/src/api.js` —
   protocol client. `web/src/theme.js`,
   `theme.css` — light/dark theme (default dark), design tokens as CSS custom properties, also mapped onto
@@ -194,8 +193,10 @@ creates the GitHub release. Bump the version in `pyproject.toml`,
   - `texl-editor.js` — `TexlEditor`: holds the cells, keyboard navigation,
     edit mode, and rendering (one `engine.render` of the whole document per
     pass, split into cell outputs at the markers by `splitRendering`).
-    Public surface: `value`, `url`, `rows`, events `change`,
-    `comments-click`, `selection-change`, `name-conflict`, and `rendered`.
+    Public surface: `value`, `url`, `rows`, `rendered`, `runCommand(name)`,
+    `select(line)`, `commands`, events `change`, `comments-click`,
+    `selection-change`, `name-conflict`. Keys and `runCommand` share one
+    table of commands (`_commands()`); a new editor action goes there.
   - `texl-cell.js` — `TexlCell`, base class of all cells: modes, layout,
     commit protocol (`cell-change` with `{texl}`, then `cell-exit`).
   - `cells/` — built-in cell types (`text`, `markdown`, `table`: a Markdown
@@ -262,9 +263,6 @@ valid Texl document that renders without the editor (`stilo render`,
 
 - **Save** writes the editor's committed cells: a cell still in edit mode
   is not saved until committed (Mod+Enter).
-- **App ↔ editor:** the app drives editor commands with synthetic keys and
-  cannot select a line from the comments pane; the editor needs a small
-  API (`runCommand(name)`, `select(line)`).
 - **No authentication:** `stilo serve` is meant for one user; bind it to
   localhost, or put it behind your own access control when serving
   remotely.

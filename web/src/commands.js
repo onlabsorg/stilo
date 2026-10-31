@@ -1,10 +1,9 @@
 // The user commands listed in the commands pane, with their shortcuts.
 //
-// App commands run a function of the app. Editor commands are the editor's
-// own keys (docs/component/api.md, Keyboard): clicking one sends the key to
-// the editor as a synthetic keydown, until texl-editor offers a command API.
-// Commands without `run` are shown for reference only (the clipboard needs a
-// real key press; edit-mode keys need a cell in edit mode).
+// App commands run a function of the app. Editor commands run a command of
+// the editor (`runCommand`, docs/component/api.md), the one its key runs;
+// their shortcuts are the editor's own keys. Commands without `run` are
+// shown for reference only (keys of a cell's own text editor).
 
 export const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
 
@@ -20,15 +19,9 @@ export const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
 
 const mod = (e) => (isMac ? e.metaKey : e.ctrlKey);
 
-/** A command that sends a key to the editor. */
-function editorKey(id, label, keys, key, options = {}) {
-    return {
-        id,
-        label,
-        keys,
-        group: "Document",
-        run: (app) => app.sendEditorKey(key, options),
-    };
+/** A command of the editor, by its name there, which is also its id. */
+function editorCommand(id, label, keys, group = "Document") {
+    return { id, label, keys, group, run: (app) => app.runEditorCommand(id) };
 }
 
 /** @type {Command[]} */
@@ -96,26 +89,26 @@ export const commands = [
         run: (app) => app.toggleTheme(),
     },
 
-    editorKey("edit-cell", "Edit the selected cell", "Enter", "Enter"),
-    editorKey("insert-below", "Insert a cell below", "Alt+Enter", "Enter", { altKey: true }),
-    editorKey("insert-above", "Insert a cell above", "Alt+Shift+Enter", "Enter", { altKey: true, shiftKey: true }),
-    editorKey("move-up", "Move cells up", "Alt+↑", "ArrowUp", { altKey: true }),
-    editorKey("move-down", "Move cells down", "Alt+↓", "ArrowDown", { altKey: true }),
-    editorKey("delete-cells", "Delete the selected cells", "Delete", "Delete"),
-    editorKey("cell-type", "Change the cell type…", "Mod+/", "/", { mod: true }),
-    editorKey("make-formula", "Make it a formula and edit", "=", "="),
-    editorKey("make-text", "Make it text and edit", "T", "t"),
-    editorKey("make-markdown", "Make it Markdown and edit", "M", "m"),
-    editorKey("make-table", "Make it a table and edit", "Shift+T", "T", { shiftKey: true }),
-    editorKey("undo", "Undo", "Mod+Z", "z", { mod: true }),
-    editorKey("redo", "Redo", "Mod+Shift+Z", "z", { mod: true, shiftKey: true }),
-    editorKey("cell-comments", "Show the cell's comments", "Shift+F2", "F2", { shiftKey: true }),
-    { id: "copy", label: "Copy cells", keys: "Mod+C", group: "Document" },
-    { id: "cut", label: "Cut cells", keys: "Mod+X", group: "Document" },
-    { id: "paste", label: "Paste cells", keys: "Mod+V", group: "Document" },
+    editorCommand("edit", "Edit the selected cell", "Enter"),
+    editorCommand("insert-below", "Insert a cell below", "Alt+Enter"),
+    editorCommand("insert-above", "Insert a cell above", "Alt+Shift+Enter"),
+    editorCommand("move-up", "Move cells up", "Alt+↑"),
+    editorCommand("move-down", "Move cells down", "Alt+↓"),
+    editorCommand("delete", "Delete the selected cells", "Delete"),
+    editorCommand("cell-type", "Change the cell type…", "Mod+/"),
+    editorCommand("make-formula", "Make it a formula and edit", "="),
+    editorCommand("make-text", "Make it text and edit", "T"),
+    editorCommand("make-markdown", "Make it Markdown and edit", "M"),
+    editorCommand("make-table", "Make it a table and edit", "Shift+T"),
+    editorCommand("undo", "Undo", "Mod+Z"),
+    editorCommand("redo", "Redo", "Mod+Shift+Z"),
+    editorCommand("comments", "Show the cell's comments", "Shift+F2"),
+    editorCommand("copy", "Copy cells", "Mod+C"),
+    editorCommand("cut", "Cut cells", "Mod+X"),
+    editorCommand("paste", "Paste cells", "Mod+V"),
 
-    { id: "commit", label: "Commit the edit", keys: "Mod+Enter", group: "While editing a cell" },
-    { id: "discard", label: "Discard the edit", keys: "Escape", group: "While editing a cell" },
+    editorCommand("commit", "Commit the edit", "Mod+Enter", "While editing a cell"),
+    editorCommand("discard", "Discard the edit", "Escape", "While editing a cell"),
     { id: "insert-tag", label: "Insert a formula tag", keys: "Ctrl+Space", group: "While editing a cell" },
     { id: "insert-comment", label: "Insert a cell comment", keys: "Shift+F2", group: "While editing a cell" },
 ];

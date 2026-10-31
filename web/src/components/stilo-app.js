@@ -5,7 +5,7 @@ import { base } from "./shared.js";
 import { closeIcon } from "../icons.js";
 import { readFile, createFile, updateFile, readTree, documentUrl, documentPath, ApiError } from "../api.js";
 import { readRoute, routeUrl } from "../route.js";
-import { commands, matchCommand, isMac } from "../commands.js";
+import { commands, matchCommand } from "../commands.js";
 import { toggleTheme } from "../theme.js";
 import "./top-bar.js";
 import "./nav-pane.js";
@@ -304,24 +304,13 @@ export class StiloApp extends LitElement {
         if (this._source === null) this.updateComplete.then(() => editor.focus());
     }
 
-    /** Send a key to the editor, as if the user pressed it there. */
-    sendEditorKey(key, { mod = false, altKey = false, shiftKey = false } = {}) {
+    /** Run a command of the editor (`runCommand`), back in the editor view. */
+    runEditorCommand(name) {
         const editor = this._editor;
         if (!editor) return;
         this._source = null;
         editor.focus();
-        editor.dispatchEvent(
-            new KeyboardEvent("keydown", {
-                key,
-                altKey,
-                shiftKey,
-                ctrlKey: mod && !isMac,
-                metaKey: mod && isMac,
-                bubbles: true,
-                composed: true,
-                cancelable: true,
-            }),
-        );
+        editor.runCommand(name);
     }
 
     // -- editor events -------------------------------------------------------
@@ -342,6 +331,16 @@ export class StiloApp extends LitElement {
         if (!path) return;
         e.preventDefault();
         this._go({ root: this._root, doc: path });
+    }
+
+    /** A comment in the comments pane was clicked: select its line. */
+    _onCommentClick(e) {
+        const editor = this._editor;
+        if (!editor) return;
+        this._commentLine = e.detail.line;
+        this._source = null;
+        editor.select(e.detail.line);
+        editor.focus();
     }
 
     _onCommentsClick(e) {
@@ -420,7 +419,11 @@ export class StiloApp extends LitElement {
             <aside ?hidden=${!this._pane} @close-pane=${() => (this._pane = null)} @run-command=${(e) => this.runCommand(e.detail.id)}>
                 ${this._pane === "commands" ? html`<commands-pane></commands-pane>` : ""}
                 ${this._pane === "comments"
-                    ? html`<comments-pane .comments=${this._comments} .line=${this._commentLine}></comments-pane>`
+                    ? html`<comments-pane
+                          .comments=${this._comments}
+                          .line=${this._commentLine}
+                          @comment-click=${this._onCommentClick}
+                      ></comments-pane>`
                     : ""}
             </aside>
         `;

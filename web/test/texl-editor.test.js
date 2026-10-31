@@ -965,6 +965,236 @@ Third line
         });
     });
 
+    describe("commands", () => {
+        const settle = async (editor) => {
+            await editor.rendered;
+            await editor.updateComplete;
+        };
+        const FORMULA = "<!--{ mdn3 : markdown }-->\n<% q * L ^ 2 / 8 %>\n";
+
+        it("lists its commands, with one per cell type", async () => {
+            const editor = await editorWith(SOURCE);
+            expect(editor.commands).to.include.members([
+                "edit",
+                "commit",
+                "discard",
+                "insert-below",
+                "insert-above",
+                "move-up",
+                "move-down",
+                "delete",
+                "copy",
+                "cut",
+                "paste",
+                "undo",
+                "redo",
+                "cell-type",
+                "comments",
+                "make-text",
+                "make-markdown",
+                "make-table",
+                "make-formula",
+            ]);
+        });
+
+        it("rejects an unknown command", async () => {
+            const editor = await editorWith(SOURCE);
+            let error;
+            await editor.runCommand("fly").catch((e) => (error = e));
+            expect(error?.message).to.contain('"fly"');
+        });
+
+        it("runs a command as its key does", async () => {
+            const editor = await editorWith(SOURCE);
+            let changes = 0;
+            editor.addEventListener("change", () => changes++);
+            expect(await editor.runCommand("insert-below")).to.be.true;
+            await settle(editor);
+            expect(anon(editor.value)).to.equal(
+                anon(SOURCE.replace("<!--{ mdn3 : markdown", "<!--{ mdn3 : markdown }-->\n<!--{ mdn3 : markdown")),
+            );
+            expect(cells(editor)[1].selected).to.be.true;
+            expect(changes).to.equal(1);
+
+            expect(await editor.runCommand("delete")).to.be.true;
+            expect(await editor.runCommand("move-up")).to.be.true;
+            await settle(editor);
+            expect(anon(editor.value)).to.equal(anon(FORMULA + SOURCE.slice(0, -FORMULA.length)));
+        });
+
+        it("reports a command that does not apply", async () => {
+            const editor = await editorWith(SOURCE);
+            expect(await editor.runCommand("move-up")).to.be.false;
+            expect(await editor.runCommand("undo")).to.be.false;
+            expect(await editor.runCommand("redo")).to.be.false;
+            expect(await editor.runCommand("commit")).to.be.false;
+            expect(await editor.runCommand("discard")).to.be.false;
+            expect(anon(editor.value)).to.equal(anon(SOURCE));
+        });
+
+        it("undoes and redoes", async () => {
+            const editor = await editorWith(SOURCE);
+            await editor.runCommand("delete");
+            expect(await editor.runCommand("undo")).to.be.true;
+            expect(anon(editor.value)).to.equal(anon(SOURCE));
+            expect(await editor.runCommand("redo")).to.be.true;
+            expect(anon(editor.value)).to.equal(anon(FORMULA));
+        });
+
+        it("edits, then only commits or discards", async () => {
+            const editor = await editorWith(SOURCE);
+            expect(await editor.runCommand("edit")).to.be.true;
+            await editor.updateComplete;
+            expect(cells(editor)[0].mode).to.equal("edit");
+            expect(await editor.runCommand("delete")).to.be.false;
+            expect(await editor.runCommand("edit")).to.be.false;
+            expect(await editor.runCommand("discard")).to.be.true;
+            await editor.updateComplete;
+            expect(cells(editor)[0].mode).to.equal("render");
+
+            await editor.runCommand("edit");
+            await editor.updateComplete;
+            expect(await editor.runCommand("commit")).to.be.true;
+            await editor.updateComplete;
+            expect(cells(editor)[0].mode).to.equal("render");
+            expect(anon(editor.value)).to.equal(anon(SOURCE));
+        });
+
+        it("does not commit an edit the cell refuses", async () => {
+            const editor = await editorWith("<!--{ frm1 : formula }-->\n<% 1 %>\n");
+            await editor.runCommand("edit");
+            await editor.updateComplete;
+            const cell = cells(editor)[0];
+            await cell.updateComplete;
+            const view = EditorView.findFromDOM(cell.shadowRoot.querySelector(".cm-editor"));
+            view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: "1 %> 2" } });
+            expect(await editor.runCommand("commit")).to.be.false;
+            await editor.updateComplete;
+            expect(cell.mode).to.equal("edit");
+            expect(await editor.runCommand("discard")).to.be.true;
+        });
+
+        it("changes the type and edits with make-<type>, or shows why not", async () => {
+            const editor = await editorWith(SOURCE);
+            editor.select(2);
+            expect(await editor.runCommand("make-formula")).to.be.true;
+            await settle(editor);
+            expect(cells(editor)[1].localName).to.equal("texl-cell-formula");
+            expect(cells(editor)[1].mode).to.equal("edit");
+            await editor.runCommand("discard");
+
+            editor.select(1);
+            expect(await editor.runCommand("make-table")).to.be.false;
+            await editor.updateComplete;
+            expect(editor.shadowRoot.querySelector(".notice").textContent).to.equal("Needs a table");
+            expect(cells(editor)[0].localName).to.equal("texl-cell-text");
+        });
+
+        it("opens the menu of types, and closes it on another command", async () => {
+            const editor = await editorWith(SOURCE);
+            await editor.runCommand("cell-type");
+            await editor.updateComplete;
+            expect(editor.shadowRoot.querySelector(".type-menu")).to.exist;
+            await editor.runCommand("insert-below");
+            await editor.updateComplete;
+            expect(editor.shadowRoot.querySelector(".type-menu")).to.be.null;
+        });
+
+        it("reports the selected line's comments", async () => {
+            const editor = await editorWith("<!--{ txt2 : text }-->\nA <!--[ check ]-->\n");
+            let detail;
+            editor.addEventListener("comments-click", (e) => (detail = e.detail));
+            await editor.runCommand("comments");
+            expect(detail).to.deep.equal({ line: 1, comments: ["check"] });
+        });
+
+        describe("with the system clipboard", () => {
+            let text = "";
+            let refuse = false;
+            before(() => {
+                const clipboard = {
+                    writeText: async (value) => {
+                        if (refuse) throw new DOMException("Denied", "NotAllowedError");
+                        text = value;
+                    },
+                    readText: async () => {
+                        if (refuse) throw new DOMException("Denied", "NotAllowedError");
+                        return text;
+                    },
+                };
+                Object.defineProperty(navigator, "clipboard", { value: clipboard, configurable: true });
+            });
+            after(() => delete navigator.clipboard);
+            beforeEach(() => {
+                text = "";
+                refuse = false;
+            });
+
+            it("copies, cuts and pastes cells", async () => {
+                const editor = await editorWith(SOURCE);
+                editor.select(2);
+                expect(await editor.runCommand("copy")).to.be.true;
+                expect(anon(text)).to.equal(anon(FORMULA));
+                expect(await editor.runCommand("cut")).to.be.true;
+                expect(anon(editor.value)).to.equal(anon(SOURCE.slice(0, -FORMULA.length)));
+                editor.select(1);
+                expect(await editor.runCommand("paste")).to.be.true;
+                await settle(editor);
+                expect(anon(editor.value)).to.equal(anon(FORMULA));
+                expect(cells(editor)[0].output.trim()).to.equal("[[Undefined]]");
+            });
+
+            it("reports a refused clipboard and changes nothing", async () => {
+                const editor = await editorWith(SOURCE);
+                refuse = true;
+                expect(await editor.runCommand("copy")).to.be.false;
+                expect(await editor.runCommand("cut")).to.be.false;
+                expect(await editor.runCommand("paste")).to.be.false;
+                expect(anon(editor.value)).to.equal(anon(SOURCE));
+            });
+        });
+    });
+
+    describe("select", () => {
+        it("selects a line, counted from 1, and reports it", async () => {
+            const editor = await editorWith(SOURCE);
+            let line;
+            editor.addEventListener("selection-change", (e) => (line = e.detail.line));
+            editor.select(2);
+            await editor.updateComplete;
+            expect(line).to.equal(2);
+            expect(cells(editor).map((c) => c.selected).slice(0, 3)).to.deep.equal([false, true, false]);
+        });
+
+        it("extends the selection from the anchor", async () => {
+            const editor = await editorWith(SOURCE);
+            editor.select(3, true);
+            await editor.updateComplete;
+            expect(cells(editor).map((c) => c.selected).slice(0, 4)).to.deep.equal([true, true, true, false]);
+            await editor.runCommand("delete");
+            expect(editor.value).to.equal("");
+        });
+
+        it("keeps the line within the sheet", async () => {
+            const editor = await editorWith(SOURCE);
+            editor.select(1000);
+            await editor.updateComplete;
+            expect(cells(editor)[99].selected).to.be.true;
+            editor.select(-5);
+            await editor.updateComplete;
+            expect(cells(editor)[0].selected).to.be.true;
+        });
+
+        it("closes the menu of types", async () => {
+            const editor = await editorWith(SOURCE);
+            await editor.runCommand("cell-type");
+            await editor.updateComplete;
+            editor.select(2);
+            await editor.updateComplete;
+            expect(editor.shadowRoot.querySelector(".type-menu")).to.be.null;
+        });
+    });
+
     it("shows unknown cell types as text and keeps their type", async () => {
         const source = "<!--{ crt4 : chart }-->\nsome data\n";
         const editor = await editorWith(source);

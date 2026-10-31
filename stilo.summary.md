@@ -113,14 +113,18 @@ accept are not part of Stilo.
   type stays as it is, with the reason shown, as in the type menu, which
   now shows each type's key. The developer documentation now covers the
   table and formula cells everywhere and links the decision log.
-- Next: the table cell, beyond the prototype; a small editor API for the app (`runCommand`,
-  `select(line)`).
+- 2026-10-31: **editor API**: the app now tells the editor what to do by
+  naming a command ("insert a cell below", "undo", "make it a table", …)
+  and can select a line, instead of imitating key presses. Each command
+  does exactly what its key does. As a result, Copy, Cut, Paste, Commit
+  and Discard work from the commands pane too (the browser may ask before
+  pasting), and clicking a comment in the comments pane selects its line.
+  Pages that embed the editor can use the same commands.
+- Next: the table cell, beyond the prototype.
 
 ## Known limitations
 
 - No authentication: serve to localhost, or behind your own access control.
-- The app drives editor commands with synthetic key presses and cannot
-  select a line from the comments pane.
 - Editor: if an imported document's rendering contains a marker with the
   same name as a later cell, the split into cells goes wrong (rare); a
   formula tag spanning two cells hides the later cell's output; links in

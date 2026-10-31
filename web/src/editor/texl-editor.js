@@ -109,6 +109,9 @@ function isMod(e) {
  * When another line is selected, the editor fires `selection-change`, whose
  * `detail` has the selected line number (`line`, from 1).
  *
+ * A page drives the editor with `runCommand(name)`, which does what a key
+ * does (the names are in `commands`), and `select(line)`.
+ *
  * Every cell with a marker has a name, unique in the document: the editor
  * gives one to cells without (new, or read without one), and new names to
  * pasted cells whose names are in use. Names edited by hand may clash: the
@@ -447,25 +450,119 @@ export class TexlEditor extends LitElement {
             return;
         }
         const step = { ArrowUp: -1, ArrowDown: 1 }[e.key];
-        if (step && e.altKey && !hasModifier(e, "altKey")) this._moveCells(step);
+        let command;
+        if (step && e.altKey && !hasModifier(e, "altKey")) command = step < 0 ? "move-up" : "move-down";
         else if (step && !hasModifier(e, "shiftKey")) this._select(this._selected + step, e.shiftKey);
-        else if (e.key === "F2" && e.shiftKey && !hasModifier(e, "shiftKey"))
-            this._onCommentsClick(this._selected, cellComments((this._cells[this._selected] ?? EMPTY_LINE).texl));
+        else if (e.key === "F2" && e.shiftKey && !hasModifier(e, "shiftKey")) command = "comments";
         else if (e.key === "Enter" && e.altKey && !hasModifier(e, "altKey", "shiftKey"))
-            this._insertCell(e.shiftKey ? "above" : "below");
-        else if ((e.key === "Enter" || e.key === "F2") && this._rowCount() > 0) this._edit(this._selected);
+            command = e.shiftKey ? "insert-above" : "insert-below";
+        else if (e.key === "Enter" || e.key === "F2") command = "edit";
         // Ctrl+Insert, Shift+Insert and Shift+Delete are left to the browser:
         // they copy, paste and cut
-        else if (e.key === "Insert" && !hasModifier(e)) this._insertCell("below");
-        else if ((e.key === "Delete" || e.key === "Backspace") && !hasModifier(e)) this._deleteCells();
-        else if (isMod(e) && !e.altKey && e.key.toLowerCase() === "z") this._undo(e.shiftKey ? "redo" : "undo");
-        else if (isMod(e) && !hasModifier(e, "ctrlKey", "metaKey") && e.key.toLowerCase() === "y") this._undo("redo");
+        else if (e.key === "Insert" && !hasModifier(e)) command = "insert-below";
+        else if ((e.key === "Delete" || e.key === "Backspace") && !hasModifier(e)) command = "delete";
+        else if (isMod(e) && !e.altKey && e.key.toLowerCase() === "z") command = e.shiftKey ? "redo" : "undo";
+        else if (isMod(e) && !hasModifier(e, "ctrlKey", "metaKey") && e.key.toLowerCase() === "y") command = "redo";
         // Shift is allowed: some layouts need it for "/"
-        else if (isMod(e) && !e.altKey && e.key === "/") this._openMenu(this._selected);
+        else if (isMod(e) && !e.altKey && e.key === "/") command = "cell-type";
         // Shift is allowed: "T" needs it, and so does "=" on some layouts
-        else if (!hasModifier(e, "shiftKey") && this._typeOfKey(e.key)) this._editAs(this._typeOfKey(e.key));
+        else if (!hasModifier(e, "shiftKey") && this._typeOfKey(e.key)) command = `make-${this._typeOfKey(e.key)}`;
         else return;
+        if (command) this._commands()[command]();
         e.preventDefault();
+    }
+
+    /**
+     * The names of the commands that `runCommand` takes: the editor's own
+     * actions, and `make-<type>` for every registered cell type.
+     */
+    get commands() {
+        return Object.keys(this._commands());
+    }
+
+    /**
+     * Runs the command `name` (see `commands`), as its key does. While a
+     * cell is in edit mode only `commit` and `discard` run, and only then;
+     * an open menu of cell types is closed first. Resolves to whether the
+     * command ran: false if it does not apply now, e.g. `undo` with nothing
+     * to undo, `move-up` on the first line, `make-table` on a line that is
+     * not a table (which shows why, as the key does), or `commit` of an
+     * edit the cell refuses. Rejects for an unknown name. `copy`, `cut`
+     * and `paste` use the system clipboard (`navigator.clipboard`), which
+     * the browser may refuse or ask the user about; they resolve to false
+     * if it does.
+     */
+    async runCommand(name) {
+        const command = this._commands()[name];
+        if (!command) throw new Error(`Unknown editor command "${name}"`);
+        const editOnly = name === "commit" || name === "discard";
+        if ((this._editing >= 0) !== editOnly) return false;
+        this._notice = null;
+        if (name !== "cell-type") this._closeMenu();
+        return (await command()) !== false;
+    }
+
+    /**
+     * Selects line `line` (from 1), or the lines from the anchor to it with
+     * `extend`, as a click on it does, and scrolls it into view. The line
+     * is kept within the sheet. Does not take the focus.
+     */
+    select(line, extend = false) {
+        this._notice = null;
+        this._closeMenu();
+        this._select(line - 1, extend);
+    }
+
+    /**
+     * The commands by name, as functions that do what their key does and
+     * return false when they do not apply (or a promise of it).
+     */
+    _commands() {
+        const commands = {
+            edit: () => this._rowCount() > 0 && this._edit(this._selected),
+            // A refused edit stays in edit mode: the command did not apply
+            commit: () => {
+                this._cellElement(this._editing)?.exitEdit(true);
+                return this._editing < 0;
+            },
+            discard: () => this._cellElement(this._editing)?.exitEdit(false),
+            "insert-below": () => this._insertCell("below"),
+            "insert-above": () => this._insertCell("above"),
+            "move-up": () => this._moveCells(-1),
+            "move-down": () => this._moveCells(1),
+            delete: () => this._deleteCells(),
+            copy: () => this._writeClipboard(),
+            cut: async () => (await this._writeClipboard()) && this._deleteCells(),
+            paste: () => this._readClipboard(),
+            undo: () => this._undo("undo"),
+            redo: () => this._undo("redo"),
+            "cell-type": () => this._openMenu(this._selected),
+            comments: () =>
+                this._onCommentsClick(this._selected, cellComments((this._cells[this._selected] ?? EMPTY_LINE).texl)),
+        };
+        for (const type of cellTypes()) commands[`make-${type}`] = () => this._editAs(type);
+        return commands;
+    }
+
+    /** Copies the selected cells to the system clipboard; false if refused. */
+    async _writeClipboard() {
+        try {
+            await navigator.clipboard.writeText(this._copiedText());
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
+    /** Pastes the system clipboard over the selected cells; false if refused. */
+    async _readClipboard() {
+        let text;
+        try {
+            text = await navigator.clipboard.readText();
+        } catch {
+            return false;
+        }
+        return this._paste(text);
     }
 
     /** Keys while the menu of cell types is open: it takes them all. */
@@ -553,7 +650,7 @@ export class TexlEditor extends LitElement {
         const refusal = this._typeRefusal(type);
         if (refusal) {
             this._notice = { index, text: refusal };
-            return;
+            return false;
         }
         this._setType(type);
         this._edit(index);
@@ -607,32 +704,42 @@ export class TexlEditor extends LitElement {
         if (this._editing >= 0 || !e.clipboardData || e.target !== this || document.getSelection()?.toString())
             return;
         e.preventDefault();
-        const [first, last] = this._range();
-        if (e.type === "paste") {
-            let pasted = parseDocument(e.clipboardData.getData("text/plain"));
-            if (pasted.length === 0) return;
-            // Pasted cells whose names are in use (e.g. copied ones) get new names
-            const taken = new Set(
-                this._cells.filter((_, i) => i < first || i > last).map((cell) => cell.name?.toLowerCase()),
-            );
-            pasted = nameCells(
-                pasted.map(({ name, ...cell }) => {
-                    if (!name || taken.has(name.toLowerCase())) return cell;
-                    taken.add(name.toLowerCase());
-                    return { ...cell, name };
-                }),
-                taken,
-            );
-            this._spliceCells(first, last - first + 1, pasted);
-            this._select(first);
-            this._select(first + pasted.length - 1, true);
-            return;
+        if (e.type === "paste") this._paste(e.clipboardData.getData("text/plain"));
+        else {
+            e.clipboardData.setData("text/plain", this._copiedText());
+            if (e.type === "cut") this._deleteCells();
         }
+    }
+
+    /** The selected cells as Texl source, without their marker flags. */
+    _copiedText() {
+        const [first, last] = this._range();
         // Lines below the document are left out, unless only they are selected
         const copied = this._cells.slice(first, last + 1);
         const cells = (copied.length > 0 ? copied : [EMPTY_LINE]).map(({ marker, ...cell }) => cell);
-        e.clipboardData.setData("text/plain", serializeDocument(cells));
-        if (e.type === "cut") this._deleteCells();
+        return serializeDocument(cells);
+    }
+
+    /** Replaces the selected cells with the cells of `text`; false if it has none. */
+    _paste(text) {
+        const [first, last] = this._range();
+        let pasted = parseDocument(text);
+        if (pasted.length === 0) return false;
+        // Pasted cells whose names are in use (e.g. copied ones) get new names
+        const taken = new Set(
+            this._cells.filter((_, i) => i < first || i > last).map((cell) => cell.name?.toLowerCase()),
+        );
+        pasted = nameCells(
+            pasted.map(({ name, ...cell }) => {
+                if (!name || taken.has(name.toLowerCase())) return cell;
+                taken.add(name.toLowerCase());
+                return { ...cell, name };
+            }),
+            taken,
+        );
+        this._spliceCells(first, last - first + 1, pasted);
+        this._select(first);
+        this._select(first + pasted.length - 1, true);
     }
 
     _deleteCells() {
@@ -653,7 +760,7 @@ export class TexlEditor extends LitElement {
     /** Moves the selected cells one line up (`step` -1) or down (1). */
     _moveCells(step) {
         const [first, last] = this._range();
-        if (first + step < 0 || last + step >= this._rowCount()) return;
+        if (first + step < 0 || last + step >= this._rowCount()) return false;
         // Below the document all lines are empty: only the selection moves
         if (first < this._cells.length) {
             const cells = [...this._cells];
@@ -674,7 +781,7 @@ export class TexlEditor extends LitElement {
     _undo(direction) {
         const [from, to] = direction === "undo" ? [this._undoStack, this._redoStack] : [this._redoStack, this._undoStack];
         const state = from.pop();
-        if (!state) return;
+        if (!state) return false;
         to.push(this._state());
         this._cells = state.cells;
         this._checkNames();

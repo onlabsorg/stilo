@@ -6,7 +6,8 @@ import { closeIcon } from "../icons.js";
  * Right pane: the cell comments of the open document, by line.
  * `comments` is `[{line, comments: string[]}]`; `line` highlights one.
  *
- * Fires `close-pane`.
+ * Fires `close-pane`, and `comment-click` with `{line}` when an entry is
+ * clicked.
  */
 export class CommentsPane extends LitElement {
     static properties = {
@@ -33,6 +34,10 @@ export class CommentsPane extends LitElement {
                 border: 1px solid var(--border);
                 border-radius: var(--radius);
                 background: var(--surface-2);
+                cursor: pointer;
+            }
+            .entry:hover {
+                border-color: var(--text-muted);
             }
             .entry.current {
                 border-color: var(--accent);
@@ -77,7 +82,14 @@ export class CommentsPane extends LitElement {
             <div class="list">
                 ${entries.length
                     ? entries.map(
-                          ({ line, comments }) => html`<div class="entry ${line === this.line ? "current" : ""}">
+                          ({ line, comments }) => html`<div
+                              class="entry ${line === this.line ? "current" : ""}"
+                              title="Go to line ${line}"
+                              @click=${() =>
+                                  this.dispatchEvent(
+                                      new CustomEvent("comment-click", { detail: { line }, bubbles: true, composed: true }),
+                                  )}
+                          >
                               <div class="where">Line ${line}</div>
                               ${comments.map((text) => html`<p>${text}</p>`)}
                           </div>`,

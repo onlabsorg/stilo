@@ -6,6 +6,13 @@ change the interfaces.
 
 ## Unreleased
 
+- **Commands pane**: Copy, Cut, Paste, Commit and Discard now run from
+  the pane too (the browser may ask before pasting), and every command
+  there does exactly what its key does.
+- **Comments pane**: clicking a comment selects its line in the document.
+- Editor API: `runCommand(name)` runs any editor command by name (the
+  list is in `commands`), and `select(line)` selects a line; the app uses
+  them instead of simulating key presses.
 - **Type keys**: on a selected line, `=` makes it a Formula cell and
   starts editing, as `=` starts a formula in Excel; `t` does the same for
   Text, `m` for Markdown and Shift+T for Table. On a line that already has

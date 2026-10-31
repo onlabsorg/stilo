@@ -74,6 +74,53 @@ The editor scrolls its own lines (`overflow-y: auto`): give it a height
 (e.g. with flexbox or `height: 80vh`) to get a scrollbar that keeps the
 selected line in view.
 
+### Methods
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `runCommand(name)` | `Promise<boolean>` | Runs an editor command by name: the same action as its key (see [Commands](#commands)). Resolves to `true` if the command ran, `false` if it does not apply now. Rejects for an unknown name. |
+| `select(line, extend = false)` | — | Selects line `line` (from 1), as a click on it does, and scrolls it into view; with `extend`, selects the lines from the anchor to it, as Shift+click does. The line is kept within the sheet. Closes the type menu; does not leave edit mode or take the focus. Fires `selection-change` if the line changed. |
+| `commands` (getter) | `string[]` | The names `runCommand` takes, including `make-<type>` for every registered cell type. |
+
+### Commands
+
+The editor's keys and `runCommand` run the same commands, so a page can
+offer them in its own menus and toolbars without faking key presses.
+
+| Name | Key | Does | `false` when |
+|------|-----|------|--------------|
+| `edit` | Enter, F2 | Edit the selected cell | the sheet has no lines |
+| `commit` | Mod+Enter, in edit mode | Commit the edit and leave edit mode | not editing, or the cell refuses the edit (`inputError`): it stays in edit mode and shows why |
+| `discard` | Escape, in edit mode | Discard the edit and leave edit mode | not editing |
+| `insert-below` | Alt+Enter, Insert | Insert an empty cell below the selection and select it | — |
+| `insert-above` | Alt+Shift+Enter | Insert an empty cell above the selection and select it | — |
+| `move-up`, `move-down` | Alt+↑ / ↓ | Move the selected cells one line | at the top or bottom of the sheet |
+| `delete` | Delete, Backspace | Delete the selected cells | — |
+| `copy` | Mod+C | Copy the selected cells to the system clipboard, as Texl with markers | the browser refuses the clipboard |
+| `cut` | Mod+X | Copy, then delete the selected cells | the browser refuses the clipboard |
+| `paste` | Mod+V | Replace the selected cells with the clipboard's | the browser refuses the clipboard |
+| `undo`, `redo` | Mod+Z; Mod+Shift+Z, Mod+Y | Undo or redo the last change to the cells | nothing to undo or redo |
+| `cell-type` | Mod+/ | Open the type menu on the selected line, or close it | — |
+| `comments` | Shift+F2 | Fire `comments-click` for the selected line | — |
+| `make-<type>` | the type's `key`, if any | Change the selected line to `<type>` and edit it, as the type keys do | the type refuses the line's source: the line shows why ("Needs a table") |
+
+While a cell is in edit mode, only `commit` and `discard` run; any other
+command resolves to `false` and does nothing. An open type menu is closed
+before a command runs (`cell-type` toggles it).
+
+`copy`, `cut` and `paste` use `navigator.clipboard`, unlike the keys,
+which use the browser's clipboard events. The browser allows it only after
+a user action, such as the click on a menu item that calls `runCommand`,
+and may ask the user before a paste.
+
+```js
+toolbar.querySelector("#insert").onclick = () => editor.runCommand("insert-below");
+commentList.onclick = (e) => {
+    editor.select(Number(e.target.dataset.line));
+    editor.focus();
+};
+```
+
 ### Events
 
 All events bubble and are composed.
@@ -455,7 +502,8 @@ texl-editor::part(right-margin) {
 
 ## Keyboard
 
-Mod is Ctrl, or Cmd on macOS.
+Mod is Ctrl, or Cmd on macOS. Most of these keys run an editor command,
+which a page can also run with [`runCommand`](#commands).
 
 | Keys | Outside edit mode |
 |------|-------------------|

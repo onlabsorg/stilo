@@ -215,7 +215,8 @@ rules:
   the editor calls `exitEdit(commit)` on the editing cell;
 - otherwise the navigation and cell keys apply (see
   [Keyboard](component/api.md#keyboard)), and a type's `key` (Shift
-  allowed, no other modifier) calls `_editAs(type)`: it selects the active
+  allowed, no other modifier) runs `make-<type>`, which calls
+  `_editAs(type)`: it selects the active
   line alone, changes it to the type with `_setType` and edits it, or, if
   the type refuses the source, sets `_notice` to the menu's reason
   (`_typeRefusal`). `typeKey` reads the key as an own property of the
@@ -224,8 +225,24 @@ rules:
 
 Copy, cut and paste use the browser's clipboard events rather than keys, so
 every platform shortcut works. The clipboard holds the selected cells as
-Texl with their markers (`serializeDocument`); a paste parses it
-(`parseDocument`) and renames pasted cells whose names are already in use.
+Texl with their markers (`serializeDocument`, in `_copiedText`); a paste
+parses it (`parseDocument`, in `_paste`) and renames pasted cells whose
+names are already in use.
+
+### Commands
+
+Every action a key triggers, apart from moving the selection, is a named
+command in one table, `_commands()`: `edit`, `commit`, `insert-below`,
+`move-up`, `undo`, `cell-type`, `make-<type>` for each registered type,
+and so on. The key handler maps the key to a name and runs the command;
+`runCommand(name)` runs the same function for a page, after the checks a
+key gets (edit mode allows only `commit` and `discard`; an open menu is
+closed). A command returns `false` when it does not apply, which
+`runCommand` reports. Its `copy`, `cut` and `paste` go through
+`navigator.clipboard` (`_writeClipboard`, `_readClipboard`), since a page
+cannot fire trusted clipboard events. `select(line)` sets the selection as
+a click does. A new editor action is added to `_commands()`, so its key
+and `runCommand` stay the same; see [Commands](component/api.md#commands).
 
 ## Cells: `TexlCell` and its subclasses
 

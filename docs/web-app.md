@@ -54,7 +54,7 @@ The commands call these public methods:
 | `toggleNav()`, `togglePane(pane)`, `toggleTheme()` | The view commands |
 | `toggleSource()`       | Shows the editor's value read-only in place of the editor (which stays, hidden), or goes back to it |
 | `runCommand(id)`       | Runs a command of `commands.js` by its id             |
-| `sendEditorKey(key, options)` | Sends a key to the editor as a synthetic `keydown` |
+| `runEditorCommand(name)` | Runs a command of the editor (`editor.runCommand(name)`) and focuses it |
 
 ### Events
 
@@ -65,6 +65,7 @@ The commands call these public methods:
 | `<nav-pane>`    | `open-document`, `navigate` | Opens a document, changes the root       |
 | `<top-bar>`     | `toggle-nav`, `toggle-pane` | Toggles a pane                           |
 | right pane      | `run-command`, `close-pane` | Runs a command, closes the pane          |
+| `<comments-pane>` | `comment-click`           | Selects that line in the editor (`select(line)`) and focuses it |
 | main area       | click on a link             | Opens a link to a `.texl` document under the root in the app, resolved from the open document's address |
 
 ## Routing: `route.js`
@@ -100,12 +101,12 @@ document (`_go`) and applies the route again on `popstate`.
 
 - **App commands** have `run` and `match`: the app's `keydown` listener
   finds them with `matchCommand(e)`.
-- **Editor commands** are the editor's own keys. Clicking one runs
-  `app.sendEditorKey(...)`, which sends the key to the editor as a
-  synthetic `keydown`. This is a stopgap until the editor has a command API
-  (`runCommand(name)`).
-- Commands without `run` (copy, paste, the keys while editing) are listed
-  for reference: they need a real key press.
+- **Editor commands** have the id of an editor command
+  (`docs/component/api.md`, Commands) and its key as shortcut. Clicking
+  one runs `app.runEditorCommand(id)`, which calls the editor's
+  `runCommand`; the editor handles the key itself.
+- Commands without `run` (Ctrl+Space and Shift+F2 inside a cell's text
+  editor) are listed for reference: they belong to the cell.
 
 `formatKeys(keys)` turns `Mod+S` into the platform's notation.
 
