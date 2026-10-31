@@ -39,6 +39,8 @@ export class TextCell extends TexlCell {
 
     static label = "Text";
 
+    static key = "t";
+
     static icon = html`<svg viewBox="0 0 24 24">
         <path d="M4 7V4h16v3" />
         <path d="M9 20h6" />

@@ -28,8 +28,9 @@ from the repository's [README](../README.md).
 - [Style guide](STYLE.md): how to write these pages, docstrings and
   comments.
 
-At the repository root: [CONTRIBUTING.md](../CONTRIBUTING.md) and
-[CHANGELOG.md](../CHANGELOG.md).
+At the repository root: [CONTRIBUTING.md](../CONTRIBUTING.md),
+[CHANGELOG.md](../CHANGELOG.md) and [DECISIONS.md](../DECISIONS.md), the
+log of Stilo's design, technology and architecture decisions.
 
 ## How the documentation is organized
 

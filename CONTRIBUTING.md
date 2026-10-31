@@ -52,7 +52,8 @@ to discuss it.
 - Python: 3.11 or later, Google-style docstrings.
 
 The [developer documentation](docs/README.md) explains the architecture
-and the modules.
+and the modules; [DECISIONS.md](DECISIONS.md) records the decisions behind
+them. A change that goes against one of them starts with an issue.
 
 ## Documentation
 

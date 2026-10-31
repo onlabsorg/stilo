@@ -156,7 +156,7 @@ as Markdown, and empty numbered lines below them. Try it:
 Things to notice:
 
 - Importing the package defines `<texl-editor>` and the built-in cells
-  (`text`, `markdown`). You only need the import once per page.
+  (`text`, `markdown`, `table`, `formula`). You only need the import once per page.
 - `value` is a **property**, not an attribute. Set it from JavaScript.
 - The markers above have no names. The editor gives every cell a name when
   it reads the document (`<!--{ kem5 : markdown }-->`): the `change` log

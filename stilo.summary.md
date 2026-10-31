@@ -106,6 +106,13 @@ accept are not part of Stilo.
   expression alone (without the `<% %>`) and shown as its result. Table
   cells now accept blank lines and comments around and inside the table,
   and an empty one starts a new table.
+- 2026-10-31: **type keys**: on a selected line, `=` makes it a formula
+  cell and starts editing it, as `=` starts a formula in Excel; `t`, `m`
+  and Shift+T do the same for text, Markdown and table. On a line of that
+  type already, the key just starts editing. A line that cannot take the
+  type stays as it is, with the reason shown, as in the type menu, which
+  now shows each type's key. The developer documentation now covers the
+  table and formula cells everywhere and links the decision log.
 - Next: the table cell, beyond the prototype; a small editor API for the app (`runCommand`,
   `select(line)`).
 

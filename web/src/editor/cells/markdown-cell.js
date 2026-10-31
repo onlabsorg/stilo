@@ -35,6 +35,8 @@ export class MarkdownCell extends TextCell {
 
     static label = "Markdown";
 
+    static key = "m";
+
     static icon = html`<svg viewBox="0 0 24 24">
         <rect x="2" y="5" width="20" height="14" rx="2" />
         <path d="M6 15V9l3 3 3-3v6" />

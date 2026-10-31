@@ -245,6 +245,15 @@ this section keeps the outline.
   cell (a new line in text). Cells must leave these keys to the editor.
 - Typing on a selected cell does not start editing it, unlike Excel, until
   it is clear how that would work for other cell types (e.g. tables).
+  The exception is the type keys (2026-10-31): `=` (formula), `t` (text),
+  `m` (Markdown) and `T` (table) change the selected line to that type and
+  edit it, as `=` starts a formula in Excel. On a line of that type
+  already, the key edits it, as Enter does; if the type does not accept
+  the line's source, nothing changes and the line shows the reason the
+  type menu shows ("Needs a table"). The key itself is not typed into the
+  cell. With several lines selected, it acts on the active line alone.
+  A cell class sets its key (`key`, not inherited); the type menu shows
+  it next to each type.
 - Cell keys, outside edit mode (Mod is Ctrl, or Cmd on macOS). They are
   chosen to exist on every keyboard (Mac and laptops have no Insert key,
   Mac's ⌫ is Backspace) and not to clash with the browser or the OS:
@@ -284,7 +293,7 @@ this section keeps the outline.
   are added to it, unless they stay empty `markdown` or `text` lines. Cell
   classes give the menu their `label` and `icon`.
 - **(open)** Formulas: the `formula` cell (one tag, edited without the delimiters) is a
-  first version; still open: `=` on an empty line starting one, formula
+  first version, started with `=` (see the type keys above); still open: formula
   chips in the rich-text cell, Mathcad-style display ("M = 56.25"), units.
   Any of these must keep the formula a plain tag in the source.
 - **(open)** Tables: a first `table` cell (2026-10-30, to test O5 below)

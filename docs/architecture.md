@@ -107,4 +107,5 @@ system can be added without restructuring:
 - [Protocol](protocol.md): the contract between web app and server.
 - [The editor component](component/README.md): embedding `<texl-editor>`
   and its API.
+- [Decisions](../DECISIONS.md): the decisions behind this design.
 - [Contributing](../CONTRIBUTING.md): how to propose a change.

@@ -6,6 +6,12 @@ change the interfaces.
 
 ## Unreleased
 
+- **Type keys**: on a selected line, `=` makes it a Formula cell and
+  starts editing, as `=` starts a formula in Excel; `t` does the same for
+  Text, `m` for Markdown and Shift+T for Table. On a line that already has
+  that type, the key just starts editing, as Enter does. If the line
+  cannot take the type, it stays as it is and a message says why ("Needs
+  a table"), as in the type menu, which now shows each type's key.
 - **Formula cells**: a line that is a single formula can be a Formula
   cell, edited as the expression alone, `q * L ^ 2 / 8`, without the
   `<% %>` around it, and shown as its result.

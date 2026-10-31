@@ -18,7 +18,8 @@ import DOMPurify from "dompurify";
  * - `renderEditor()`: the editing widget (the base only shows a notice);
  * - `renderView()`, rarely: the base shows `output` as sanitised HTML.
  * They also set the static `type`, and `label` and `icon`, which the
- * editor shows in the left margin and in the menu of cell types.
+ * editor shows in the left margin and in the menu of cell types, and may
+ * set `key`, the key that changes a selected cell to the type and edits it.
  *
  * A type may need a source of a certain shape (a table, a formula): it
  * overrides the static `accepts(source)` and says what it needs in
@@ -40,6 +41,12 @@ export class TexlCell extends LitElement {
 
     /** The type's icon: a Lit template of a 24×24 SVG drawn with strokes. */
     static icon = html`<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" /></svg>`;
+
+    /**
+     * The key that changes the selected cell to this type and edits it, e.g.
+     * "=" for formulas; empty for none. Not inherited: a subclass sets its own.
+     */
+    static key = "";
 
     /** What the type needs of a source, e.g. "a table"; empty if it accepts any. */
     static needs = "";

@@ -40,7 +40,8 @@ exactly the text that is saved.
 | `web/src/editor/texl-cell.js`            | `TexlCell`: base class of the cells; modes, layout, commit protocol | Lit, DOMPurify | [`TexlCell`](component/api.md#texlcell) |
 | `web/src/editor/cells/text-cell.js`      | `TextCell`: Texl template edited in CodeMirror 6; fallback type | texl-cell, swan, CodeMirror | [`TextCell`](component/api.md#textcell) |
 | `web/src/editor/cells/markdown-cell.js`  | `MarkdownCell`: `TextCell` with Markdown highlighting and Markdown output | text-cell, swan, marked, DOMPurify | [`MarkdownCell`](component/api.md#markdowncell) |
-| `web/src/editor/cells/table-cell.js`     | `TableCell`: a Markdown pipe table edited as a grid; `parseTable`, `serializeTable` | markdown-cell, swan | — |
+| `web/src/editor/cells/table-cell.js`     | `TableCell`: a Markdown pipe table edited as a grid; `parseTable`, `serializeTable` | markdown-cell, swan | [`TableCell`](component/api.md#tablecell) |
+| `web/src/editor/cells/formula-cell.js`   | `FormulaCell`: one tag, edited without its delimiters; `parseFormula`, `serializeFormula` | text-cell, swan | [`FormulaCell`](component/api.md#formulacell) |
 | `web/src/editor/registry.js`             | Maps cell types to custom element tags | — | [Cell registry](component/api.md#cell-registry) |
 | `web/src/editor/document.js`             | The file format: parse, serialise, names, comments, split a rendering. Pure functions, no DOM | — | [Document functions](component/api.md#document-functions) |
 | `web/src/editor/engine.js`               | Loads the Texl WebAssembly module once, creates engines | `@onlabsorg/texl` | [Engine](component/api.md#engine) |
@@ -56,11 +57,14 @@ graph TD
     index --> text[cells/text-cell.js]
     index --> md[cells/markdown-cell.js]
     index --> table[cells/table-cell.js]
+    index --> formula[cells/formula-cell.js]
     editor --> document[document.js]
     editor --> registry[registry.js]
     editor --> engine[engine.js]
     editor --> cell[texl-cell.js]
     table --> md
+    formula --> text
+    formula --> swan
     md --> text
     text --> cell
     text --> swan[swan.js]
@@ -114,6 +118,7 @@ private reactive properties:
 | `_anchor`, `_selected` | The selection: from the anchor line to the active line. |
 | `_editing`   | The line in edit mode, or -1. |
 | `_menu`, `_menuItem` | The line whose type menu is open, and its highlighted item. |
+| `_notice`    | A message shown at a line, `{index, text}`, e.g. why a type key was refused; or null. |
 | `_undoStack`, `_redoStack` | Earlier states `{cells, anchor, selected}` (not reactive). |
 
 ### Rendering the sheet
@@ -209,7 +214,13 @@ rules:
 - in edit mode, only Mod+Enter (commit) and Escape (discard) are handled:
   the editor calls `exitEdit(commit)` on the editing cell;
 - otherwise the navigation and cell keys apply (see
-  [Keyboard](component/api.md#keyboard)).
+  [Keyboard](component/api.md#keyboard)), and a type's `key` (Shift
+  allowed, no other modifier) calls `_editAs(type)`: it selects the active
+  line alone, changes it to the type with `_setType` and edits it, or, if
+  the type refuses the source, sets `_notice` to the menu's reason
+  (`_typeRefusal`). `typeKey` reads the key as an own property of the
+  class, so subclasses do not inherit it; the first registered type wins.
+  The notice is cleared by the next key or pointer press.
 
 Copy, cut and paste use the browser's clipboard events rather than keys, so
 every platform shortcut works. The clipboard holds the selected cells as
@@ -330,7 +341,7 @@ import { registerCell, cellTagName, cellTypes } from "stilo-editor/index.js";
 registerCell(QuantityCell);
 cellTagName("quantity");   // "texl-cell-quantity"
 cellTagName("chart");      // "texl-cell-text" (not registered)
-cellTypes();               // ["text", "markdown", "quantity"]
+cellTypes();               // ["text", "markdown", "table", "formula", "quantity"]
 ```
 
 → [Cell registry](component/api.md#cell-registry)

@@ -25,6 +25,15 @@ function typeLabel(type) {
     return cellClass(type)?.label || type;
 }
 
+/**
+ * The key of a cell type (`TexlCell.key`), or "" if it has none. A subclass
+ * does not inherit its parent's key.
+ */
+function typeKey(type) {
+    const cellType = cellClass(type);
+    return cellType && Object.hasOwn(cellType, "key") ? cellType.key : "";
+}
+
 /** The most changes that can be undone. */
 const HISTORY_SIZE = 100;
 
@@ -65,7 +74,13 @@ function isMod(e) {
  *   accept the source of every selected cell (e.g. a table, for a cell
  *   that is not one) is greyed out, with the reason, and cannot be picked;
  * - Shift+F2 reports the comments of the selected line, as a click on its
- *   comment icon does (below), also when it has none.
+ *   comment icon does (below), also when it has none;
+ * - a type's key (`TexlCell.key`: "t" text, "m" Markdown, "T" table, "="
+ *   formula) changes the selected line to that type and edits it; on a
+ *   line that has the type already it edits it, as Enter does. If the type
+ *   does not accept the line's source, nothing changes and the line shows
+ *   why, as the menu does. Several selected lines: it acts on the last
+ *   one selected, alone.
  *
  * The editor looks like a sheet of lined paper: each line is a cell. The
  * sheet has `rows` lines (100 by default), or more if the document has more
@@ -119,6 +134,7 @@ export class TexlEditor extends LitElement {
         _editing: { state: true },
         _menu: { state: true },
         _menuItem: { state: true },
+        _notice: { state: true },
     };
 
     static styles = css`
@@ -263,6 +279,34 @@ export class TexlEditor extends LitElement {
             font-size: 0.8em;
             white-space: nowrap;
         }
+        /* A type's key, as shortcuts are shown in a desktop menu */
+        .type-menu .key {
+            min-width: 1.5em;
+            font-family: inherit;
+            font-size: 0.8em;
+            text-align: right;
+            color: var(--texl-text-muted, #687085);
+        }
+        /* A message at a line, e.g. why its type cannot change */
+        .notice {
+            position: absolute;
+            top: calc(100% - 0.125rem);
+            left: 0.25rem;
+            z-index: 10;
+            padding: 0.3125rem 0.625rem;
+            border: 1px solid var(--texl-menu-border, rgb(15 23 42 / 0.08));
+            border-radius: 8px;
+            background: var(--texl-menu-bg, #fff);
+            box-shadow:
+                0 1px 2px rgb(15 23 42 / 0.06),
+                0 8px 24px rgb(15 23 42 / 0.1);
+            font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+            font-size: 0.8125rem;
+            line-height: 1.25rem;
+            white-space: nowrap;
+            color: var(--texl-menu-text, #1f2937);
+            animation: menu-in 0.12s ease-out;
+        }
         .type-menu .check {
             width: 0.875rem;
             height: 0.875rem;
@@ -317,8 +361,11 @@ export class TexlEditor extends LitElement {
         this._menu = -1;
         /** The highlighted item of the menu, an index in `cellTypes()`. */
         this._menuItem = 0;
+        /** A message shown at a line until the next key or press, as `{index, text}`, or null. */
+        this._notice = null;
         /** Closes the menu on a press outside it and its icon. */
         this._onPointerDown = (e) => {
+            this._notice = null;
             const path = e.composedPath();
             if (!path.some((node) => node.classList?.contains("type-menu") || node.classList?.contains("type-button")))
                 this._closeMenu();
@@ -359,6 +406,7 @@ export class TexlEditor extends LitElement {
         this._selected = 0;
         this._editing = -1;
         this._menu = -1;
+        this._notice = null;
         this._undoStack = [];
         this._redoStack = [];
         this.rendered = this._renderCells();
@@ -385,6 +433,7 @@ export class TexlEditor extends LitElement {
     _onKeyDown(e) {
         // Keys from children of the editor (put there by the page) are theirs
         if (e.defaultPrevented || e.target !== this) return;
+        this._notice = null;
         if (this._menu >= 0) {
             this._onMenuKeyDown(e);
             return;
@@ -413,6 +462,8 @@ export class TexlEditor extends LitElement {
         else if (isMod(e) && !hasModifier(e, "ctrlKey", "metaKey") && e.key.toLowerCase() === "y") this._undo("redo");
         // Shift is allowed: some layouts need it for "/"
         else if (isMod(e) && !e.altKey && e.key === "/") this._openMenu(this._selected);
+        // Shift is allowed: "T" needs it, and so does "=" on some layouts
+        else if (!hasModifier(e, "shiftKey") && this._typeOfKey(e.key)) this._editAs(this._typeOfKey(e.key));
         else return;
         e.preventDefault();
     }
@@ -480,6 +531,32 @@ export class TexlEditor extends LitElement {
 
     _closeMenu() {
         this._menu = -1;
+    }
+
+    /** Why the selected lines cannot change to `type`, or "" if they can. */
+    _typeRefusal(type) {
+        return this._canSetType(type) ? "" : `Needs ${cellClass(type).needs}`;
+    }
+
+    /** The cell type whose key is `key`, or undefined. */
+    _typeOfKey(key) {
+        return key ? cellTypes().find((type) => typeKey(type) === key) : undefined;
+    }
+
+    /**
+     * Changes the selected line, alone, to `type` and edits it; if the type
+     * does not accept its source, shows why at the line instead.
+     */
+    _editAs(type) {
+        const index = this._selected;
+        this._select(index);
+        const refusal = this._typeRefusal(type);
+        if (refusal) {
+            this._notice = { index, text: refusal };
+            return;
+        }
+        this._setType(type);
+        this._edit(index);
     }
 
     /**
@@ -727,8 +804,9 @@ export class TexlEditor extends LitElement {
     /** The menu of cell types, with `current` checked. */
     _renderMenu(current) {
         const items = cellTypes().map((type, i) => {
-            const enabled = this._canSetType(type);
-            const reason = enabled ? "" : `Needs ${cellClass(type).needs}`;
+            const reason = this._typeRefusal(type);
+            const enabled = !reason;
+            const key = typeKey(type);
             return html`<li
                 role="menuitemradio"
                 aria-checked=${type === current ? "true" : "false"}
@@ -741,6 +819,7 @@ export class TexlEditor extends LitElement {
                 ${cellClass(type).icon}
                 <span class="label">${typeLabel(type)}</span>
                 ${reason ? html`<span class="reason">${reason}</span>` : ""}
+                ${key ? html`<kbd class="key">${key}</kbd>` : ""}
                 ${type === current
                     ? html`<svg class="check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></svg>`
                     : ""}
@@ -763,6 +842,9 @@ export class TexlEditor extends LitElement {
             const classes = [i >= first && i <= last ? "selected" : "", i >= this._cells.length ? "empty" : ""].join(" ");
             return html`<div class="margin left ${classes}" part="left-margin" @click=${(e) => this._select(i, e.shiftKey)}>
                     ${this._renderTypeButton(i, cell.type)}<span class="line-number">${i + 1}</span>
+                    ${this._notice?.index === i
+                        ? html`<div class="notice" role="alert">${this._notice.text}</div>`
+                        : ""}
                 </div>
                 <${tag}
                 data-index=${i}

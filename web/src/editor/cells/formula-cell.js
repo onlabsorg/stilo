@@ -66,6 +66,8 @@ export class FormulaCell extends TextCell {
 
     static label = "Formula";
 
+    static key = "=";
+
     static icon = html`<svg viewBox="0 0 24 24">
         <rect x="3" y="4" width="18" height="16" rx="2" />
         <path d="M9 17c2 0 2.8-1 2.8-2.8V10c0-2 1-3.3 3.2-3" />

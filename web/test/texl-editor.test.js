@@ -786,6 +786,88 @@ Third line
             expect(anon(editor.value)).to.equal(anon(SOURCE));
         });
 
+        it("changes an empty line to a formula with = and edits it", async () => {
+            const editor = await editorWith(SOURCE);
+            key(editor, "ArrowDown");
+            key(editor, "ArrowDown");
+            const event = new KeyboardEvent("keydown", { key: "=", cancelable: true });
+            editor.dispatchEvent(event);
+            await editor.rendered;
+            await editor.updateComplete;
+            expect(event.defaultPrevented).to.be.true;
+            expect(cells(editor)[2].localName).to.equal("texl-cell-formula");
+            expect(cells(editor)[2].mode).to.equal("edit");
+            expect(anon(editor.value)).to.equal(anon(SOURCE + "<!--{ frm4 : formula }-->\n"));
+        });
+
+        it("edits a line that has the key's type already, as Enter does", async () => {
+            const editor = await editorWith(SOURCE);
+            key(editor, "t");
+            await editor.updateComplete;
+            expect(cells(editor)[0].mode).to.equal("edit");
+            expect(anon(editor.value)).to.equal(anon(SOURCE));
+        });
+
+        it("changes a line to the key's type if it accepts the source: m, t, = and T", async () => {
+            const editor = await editorWith(SOURCE);
+            key(editor, "m");
+            await editor.rendered;
+            await editor.updateComplete;
+            expect(cells(editor)[0].localName).to.equal("texl-cell-markdown");
+            expect(cells(editor)[0].mode).to.equal("edit");
+            key(editor, "Escape");
+            key(editor, "ArrowDown");
+            key(editor, "=");
+            await editor.rendered;
+            await editor.updateComplete;
+            expect(cells(editor)[1].localName).to.equal("texl-cell-formula");
+            key(editor, "Escape");
+            key(editor, "ArrowDown");
+            key(editor, "T", { shiftKey: true });
+            await editor.rendered;
+            await editor.updateComplete;
+            expect(cells(editor)[2].localName).to.equal("texl-cell-table");
+            expect(cells(editor)[2].mode).to.equal("edit");
+        });
+
+        it("shows why a line cannot take the key's type, until the next key", async () => {
+            const editor = await editorWith(SOURCE);
+            const notice = () => editor.shadowRoot.querySelector(".notice");
+            key(editor, "=");
+            await editor.updateComplete;
+            expect(notice().textContent).to.equal("Needs a single formula");
+            expect(cells(editor)[0].mode).to.equal("render");
+            expect(anon(editor.value)).to.equal(anon(SOURCE));
+            key(editor, "ArrowDown");
+            await editor.updateComplete;
+            expect(notice()).to.be.null;
+            key(editor, "T", { shiftKey: true });
+            await editor.updateComplete;
+            expect(notice().textContent).to.equal("Needs a table");
+        });
+
+        it("acts on the last selected line alone, and ignores keys with Ctrl or Alt", async () => {
+            const editor = await editorWith(SOURCE);
+            key(editor, "ArrowDown", { shiftKey: true });
+            key(editor, "=", { ctrlKey: true });
+            key(editor, "=", { altKey: true });
+            await editor.updateComplete;
+            expect(cells(editor)[1].localName).to.equal("texl-cell-markdown");
+            key(editor, "=");
+            await editor.rendered;
+            await editor.updateComplete;
+            expect(cells(editor).slice(0, 2).map((c) => c.localName)).to.deep.equal(["texl-cell-text", "texl-cell-formula"]);
+            expect(cells(editor)[0].selected).to.be.false;
+            expect(cells(editor)[1].mode).to.equal("edit");
+        });
+
+        it("shows each type's key in the menu", async () => {
+            const editor = await editorWith(SOURCE);
+            typeButton(editor, 0).click();
+            await editor.updateComplete;
+            expect(items(editor).map((li) => li.querySelector(".key")?.textContent)).to.deep.equal(["t", "m", "T", "="]);
+        });
+
         it("changes a cell that is one tag to a formula, and an empty one to a table", async () => {
             const editor = await editorWith(SOURCE);
             typeButton(editor, 1).click();

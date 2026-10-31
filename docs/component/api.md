@@ -10,7 +10,8 @@ API is young and will change before 1.0. The examples import the editor as
 - [Importing](#importing)
 - [`<texl-editor>`](#texl-editor) — the editor element
 - [`TexlCell`](#texlcell) — base class of all cells
-- [`TextCell`](#textcell) and [`MarkdownCell`](#markdowncell) — built-in cells
+- [`TextCell`](#textcell), [`MarkdownCell`](#markdowncell),
+  [`TableCell`](#tablecell) and [`FormulaCell`](#formulacell) — built-in cells
 - [Cell registry](#cell-registry) — `registerCell`, `cellTagName`,
   `cellClass`, `cellTypes`
 - [Document functions](#document-functions) — parse, serialise, names,
@@ -125,6 +126,7 @@ type; see [Writing a cell type](guide.md#7-write-your-own-cell-type).
 | `type`   | `string`        | The type written in the marker (`<!--{ name : type }-->`). Required by `registerCell`. |
 | `label`  | `string`        | The type's name shown in the type menu and tooltips; the type if empty. |
 | `icon`   | Lit `html` template | A 24×24 SVG drawn with strokes (`fill: none; stroke: currentColor` are set by the editor). Shown in the left margin and the type menu. |
+| `key`    | `string`        | The key that changes the selected line to this type and edits it (`"="` for `formula`); empty for none. Not inherited: read as an own property. Shown in the type menu. |
 | `needs`  | `string`        | What the type needs of a source, e.g. `"a table"`; empty if it accepts any. Shown as "Needs …" in the type menu and in the commit error. |
 | `accepts(source)` | static method → `boolean` | Whether the type can edit and show `source`. The base accepts any source; a type that needs a shape overrides it. White space and HTML comments around the content must not make it return false. The type menu offers the type only for cells whose source it accepts. |
 | `styles` | Lit `css`       | The cell's styles: lined-paper layout, selected and edit looks. Extend it as `[TexlCell.styles, css`...`]`. |
@@ -468,6 +470,7 @@ Mod is Ctrl, or Cmd on macOS.
 | Mod+Z; Mod+Shift+Z, Mod+Y | Undo; redo |
 | Mod+/ | Open the type menu |
 | Shift+F2 | Fire `comments-click` for the selected line |
+| `=`, `t`, `m`, `T` (a type's `key`) | Change the selected line to formula, text, Markdown or table and edit it; on a line of that type, edit it. If the type refuses the source, show why at the line |
 
 | Keys | In edit mode (text cells) |
 |------|---------------------------|

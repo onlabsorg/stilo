@@ -208,6 +208,8 @@ export class TableCell extends MarkdownCell {
 
     static label = "Table";
 
+    static key = "T";
+
     static icon = html`<svg viewBox="0 0 24 24">
         <rect x="3" y="4" width="18" height="16" rx="2" />
         <path d="M3 10h18" />
