@@ -120,7 +120,14 @@ accept are not part of Stilo.
   and Discard work from the commands pane too (the browser may ask before
   pasting), and clicking a comment in the comments pane selects its line.
   Pages that embed the editor can use the same commands.
-- Next: the table cell, beyond the prototype.
+- 2026-10-31: **how tables are stored is settled**: a table stays an
+  ordinary Markdown table, and each table cell is plain Texl text, with
+  formulas between `<% %>` as anywhere else. Table cells cannot refer to
+  each other, as spreadsheet cells do; a value needed elsewhere is given a
+  name inside its formula.
+- Next: the table cell, beyond the prototype: editing shows each table
+  cell's Texl source, viewing shows the rendered table, and buttons set
+  the alignment of a column.
 
 ## Known limitations
 

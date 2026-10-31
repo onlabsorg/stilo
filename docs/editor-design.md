@@ -301,10 +301,15 @@ this section keeps the outline.
   grid of plain fields (Tab, Shift+Tab, ↑/↓; Tab in the last field adds a
   row; buttons insert and delete rows and columns); a source that is not
   a table is edited as Markdown text, and an unchanged table keeps its
-  source as written. Still open: storage as Swan data plus a render call; formulas inside
-  table cells (column formulas vs A1 references); which renderer functions
-  the editor provides to documents, and how they stay available when the file
-  is rendered without the editor (e.g. a Texl library imported by URL).
+  source as written. Decided 2026-10-31 (O5): the table stays a Markdown
+  pipe table, and each table cell is ordinary Texl template, with
+  expressions between `<% %>`; there are no references to table cells
+  (no column formulas, no A1 references): a value needed elsewhere is
+  labelled in its expression. So no renderer helper functions are needed.
+  To do before Christmas 2026: edit mode shows each table cell's Texl
+  source, view mode the rendered table; no `=` in a cell; buttons to set
+  column alignment. No syntax highlighting in table cells for the MVP
+  (nice to have).
 - **Shape rule** for changing type (decided 2026-10-30, O2 + O3 below). A
   structured type accepts only sources of a certain shape: `table` a
   Markdown pipe table, `formula` one tag; `text` and `markdown` accept any
