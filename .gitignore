@@ -16,3 +16,5 @@ src/stilo/web/
 
 # Locals
 local/
+*.todo.md
+
