@@ -1,7 +1,7 @@
 # Texl primer for editor work
 
-*What you need to know about Texl to work on the editor, as of Texl 0.4
-(`@onlabsorg/texl` on npm), 2026-10-25. For the language in
+*What you need to know about Texl to work on the editor, as of Texl 0.5
+(`@onlabsorg/texl` on npm), 2026-11-04. For the language in
 depth, see the developer docs of <https://github.com/onlabsorg/texl>
 (`docs/language.md`). The results shown below were checked
 against the real engine.*
@@ -77,14 +77,16 @@ Swan is small, dynamically typed and expression-only (no statements).
 Every error, including a syntax error, produces an **undefined value**,
 which flows on like any other value and renders as `[[Undefined]]`. A broken
 cell therefore never breaks the document; the editor should show such values
-clearly (`undef.inspect` gives details). Promises never reject: a failure
-resolves to `Nothing`.
+clearly (`undef.inspect` gives details). Tokens left over after an
+expression, such as a stray `)`, make the whole tag undefined. Promises never
+reject: a failed operation resolves to its undefined value, while a failed
+import or a rejected JavaScript promise resolves to `Nothing`.
 
 ## Documents and imports
 
 A *document* is a template loaded by URL. `texl.import(uri)` loads, renders
-and returns a promise of `{uri, source, data, rendering}`: its source text,
-the names its tags bound, and its rendered text. Documents act as partials,
+and returns a promise of `{uri, source, data, text, tags}`: its source text,
+the names its tags bound, its rendered text, and its tags. Documents act as partials,
 libraries or data sources:
 
 ```texl
@@ -114,7 +116,7 @@ import init, { TexlEngine } from "@onlabsorg/texl";
 
 await init();                                   // load the wasm module, once
 const engine = new TexlEngine(globals, baseUrl); // both optional
-const doc = await engine.render("docs/report.texl", source); // {uri, source, data, rendering}
+const doc = await engine.render("docs/report.texl", source); // {uri, source, data, text, tags}
 await engine.fetch("report.texl");              // the source only, or null
 await engine.load("report.texl");               // fetch + render, or null if the fetch fails
 engine.set("today", "2026-10-18");              // global for all templates
@@ -127,6 +129,11 @@ cannot be resolved. The editor renders the whole document with one
 `engine.render(url, source)` per pass and splits the rendering at the
 markers.
 
+`doc.tags` lists every tag in source order, including those that render
+nothing, as `{start, end, out_start, out_end, value}`: its span in the source,
+its span in the text (UTF-16 indices), and its value. `isUndefined(value)`
+(exported by the package) tells whether a value is an error.
+
 A **context** is a scope that keeps its names across renders. It is not a
 document: `texl.import` is not defined in it. After freeing a context that
 defined functions, call `collect()` (exported by the package):
@@ -135,7 +142,7 @@ defined functions, call `collect()` (exported by the package):
 const context = engine.createContext({ price: 12.5 });
 await context.render("<% total = price * 4 %>");
 context.get("total");                          // 50
-await context.render("Total: <% total %>");    // "Total: 50"
+await context.render("Total: <% total %>");    // {text: "Total: 50", data, tags}
 context.names();                               // ["price", "texl", "total"]
 context.free();
 ```
@@ -153,7 +160,8 @@ autocompletion ("intellisense"); see the open point in
 | array → `List`                            | `List`, `Tuple` → array         |
 | Promise / thenable → `Promise`            | `Promise` → Promise             |
 | function → `Func`                         | `Namespace` → plain object      |
-| other object → `Namespace`                | `Func`, `Undefined` → `undefined` |
+| other object → `Namespace`                | `Func` → `undefined`            |
+| `TexlUndefined` → the original `Undefined` | `Undefined` → `TexlUndefined`  |
 
 A JavaScript function becomes a Swan function of **one** argument; a Swan
 call with several arguments passes them as one array (`add: ([a, b]) => a +
@@ -161,6 +169,11 @@ b`). If it throws, the result is `Nothing`; an `async` function gives a
 promise, and the tag waits for it. Host functions are how the editor (and
 later the platform) can offer cell helpers, such as a table renderer, to
 documents.
+
+A `TexlUndefined` is a frozen object describing the error: `type`,
+`description` (in plain words), `pos` and `uri` (where it is; `null` when
+unknown), `cause` (the first undefined operand, leading to the root cause),
+and `op`, `val`, `lhv`, `rhv`, `expected`, `token` where they apply.
 
 ### Loading the module with a bundler
 

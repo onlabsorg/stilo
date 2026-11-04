@@ -176,7 +176,7 @@ const engine = await this._engine;
 let outputs = [];
 try {
     const doc = await engine.render(this.url, serializeDocument(cells));
-    outputs = splitRendering(doc.rendering, cells);
+    outputs = splitRendering(doc.text, cells);
 } catch {
     // The URL cannot be resolved: the cells show no output
 }

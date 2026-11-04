@@ -6,6 +6,12 @@ change the interfaces.
 
 ## Unreleased
 
+- **Texl 0.5** (`pytexl` and `@onlabsorg/texl`). Formulas are stricter: text
+  left over after an expression, such as a stray `)`, now makes the whole
+  formula show `[[Undefined]]`; before, it was ignored. A formula whose
+  promise ends in an error also shows `[[Undefined]]`; before, it showed
+  nothing. In documents, the rendered text of an imported document is now
+  `lib.text`, no longer `lib.rendering`.
 - **Table cell: column alignment**. Three buttons above the grid, as in
   Word, align the column of the current field left, centred or right; the
   pressed one shows the column's alignment, and the fields line up the

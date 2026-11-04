@@ -167,7 +167,7 @@ lines, which render to themselves (HTML comments without tags):
 - Only the cells' own markers count, matched in order: marker *i* is
   searched after marker *i − 1*, at the start of a line. Other marker lines
   in the output are content, e.g. those of an imported editor document
-  rendered with `<% lib.rendering %>`. Known limitation: an imported
+  rendered with `<% lib.text %>`. Known limitation: an imported
   rendering with a marker of the *same name* as a later cell of the
   document splits wrongly (random names make this rare).
 - The leading cell without marker gets the text before the first marker.

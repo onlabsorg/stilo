@@ -413,7 +413,7 @@ cell is not part of its output.
 
 ```js
 const doc = await engine.render("report.texl", serializeDocument(cells));
-const outputs = splitRendering(doc.rendering, cells);
+const outputs = splitRendering(doc.text, cells);
 ```
 
 ## Engine
@@ -433,7 +433,7 @@ import { createEngine, parseDocument, splitRendering } from "stilo-editor/index.
 
 const engine = await createEngine();
 const doc = await engine.render("docs/report.texl", source);   // imports resolve in docs/
-const outputs = splitRendering(doc.rendering, parseDocument(source));
+const outputs = splitRendering(doc.text, parseDocument(source));
 ```
 
 See the [Texl primer](../texl-primer.md#the-javascript-api-onlabsorgtexl) for

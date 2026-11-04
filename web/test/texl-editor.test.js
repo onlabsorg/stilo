@@ -1260,7 +1260,7 @@ Twice: <% 2 * lib.w %>
     it("keeps the rendering of an imported editor document in one cell", async () => {
         served.set("https://example.com/docs/lib.texl", "<!--{ lib5 : text }-->\nlib\n<!--{ xyz3 : text }-->\nend\n");
         const source = `<!--{ abc2 : text }-->
-<% texl.import("lib.texl") ~> (lib -> lib.rendering) %>
+<% texl.import("lib.texl") ~> (lib -> lib.text) %>
 <!--{ pim4 : text }-->
 after
 `;

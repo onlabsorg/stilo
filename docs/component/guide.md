@@ -469,7 +469,7 @@ const comments = cells.flatMap((cell, i) =>
 // The rendered output of every cell, as the editor renders it
 const engine = await createEngine();
 const doc = await engine.render("docs/report.texl", text);   // the document's URL
-const outputs = splitRendering(doc.rendering, cells);
+const outputs = splitRendering(doc.text, cells);
 ```
 
 `serializeDocument(cells)` turns cells back into text, so you can also

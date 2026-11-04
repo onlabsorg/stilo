@@ -45,12 +45,12 @@ def render(args) -> int:
         return 1
     if args.output:
         try:
-            args.output.write_text(doc.rendering, encoding="utf-8")
+            args.output.write_text(doc.text, encoding="utf-8")
         except OSError as e:
             print(f"stilo: {args.output}: {e}", file=sys.stderr)
             return 1
     else:
-        sys.stdout.write(doc.rendering)
+        sys.stdout.write(doc.text)
     return 0
 
 

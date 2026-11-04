@@ -130,6 +130,13 @@ accept are not part of Stilo.
   the alignment while editing. Each field shows its table cell's Texl
   text; outside editing the cell shows the rendered table. The table cell
   is no longer a prototype.
+- 2026-11-04: **moved to Texl 0.5**, in the browser and on the command line.
+  Formulas are stricter: text left over after an expression, such as a
+  stray `)`, now makes the whole formula show `[[Undefined]]`, where it used
+  to be ignored. A formula whose promise ends in an error also shows
+  `[[Undefined]]`, where it used to show nothing. A document that shows the
+  rendered text of an imported document now reads it as `text`, no longer
+  `rendering`.
 
 ## Known limitations
 
