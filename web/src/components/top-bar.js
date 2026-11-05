@@ -1,6 +1,6 @@
 import { LitElement, html, css } from "lit";
 import { base } from "./shared.js";
-import { menuIcon, commandsIcon, commentsIcon } from "../icons.js";
+import { menuIcon, commandsIcon, commentsIcon, errorsIcon } from "../icons.js";
 
 /**
  * The title/tool bar: navigation toggle on the left, title in the middle,
@@ -14,6 +14,7 @@ export class TopBar extends LitElement {
         status: { type: String },
         navOpen: { type: Boolean, attribute: "nav-open" },
         pane: { type: String },
+        errorCount: { type: Number },
     };
 
     static styles = [
@@ -57,6 +58,16 @@ export class TopBar extends LitElement {
                 font-size: 12px;
                 color: var(--text-muted);
             }
+            button.icon-button.has-errors {
+                width: auto;
+                gap: 0.25rem;
+                padding: 0 0.375rem;
+                color: var(--danger);
+            }
+            .count {
+                font-size: 12px;
+                font-weight: 600;
+            }
         `,
     ];
 
@@ -66,6 +77,7 @@ export class TopBar extends LitElement {
         this.status = "";
         this.navOpen = true;
         this.pane = null;
+        this.errorCount = 0;
     }
 
     _fire(name, detail) {
@@ -81,6 +93,21 @@ export class TopBar extends LitElement {
             @click=${() => this._fire("toggle-pane", { pane })}
         >
             ${icon}
+        </button>`;
+    }
+
+    /** The button of the errors pane, with their number if there are any. */
+    _errorsButton() {
+        const count = this.errorCount;
+        const label = count === 1 ? "1 error" : count ? `${count} errors` : "Errors";
+        return html`<button
+            class="icon-button ${count ? "has-errors" : ""}"
+            title=${label}
+            aria-label=${label}
+            aria-pressed=${this.pane === "errors"}
+            @click=${() => this._fire("toggle-pane", { pane: "errors" })}
+        >
+            ${errorsIcon}${count ? html`<span class="count">${count}</span>` : ""}
         </button>`;
     }
 
@@ -103,6 +130,7 @@ export class TopBar extends LitElement {
                 ${this.status ? html`<span class="status">${this.status}</span>` : ""}
             </div>
             <div class="right">
+                ${this._errorsButton()}
                 ${this._paneButton("comments", "Comments", commentsIcon)}
                 ${this._paneButton("commands", "Commands", commandsIcon)}
             </div>

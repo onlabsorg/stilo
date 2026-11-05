@@ -20,10 +20,10 @@ to Word and Excel users, and renders them from the command line.
 
 | Part   | What                                                          |
 |--------|---------------------------------------------------------------|
-| Web app | The user interface (Lit web components, Vite): top bar, navigation pane with the folder's files, the editor, right pane with commands and cell comments. Light and dark theme. |
-| Editor | Inside the web app: `<texl-editor>`, a document as a stack of typed cells (text, Markdown, table and formula; formulas as `<% %>` tags), live rendering, cell comments. Until 2026-10-26 the separate `texl-editor` package. |
+| Web app | The user interface (Lit web components, Vite): top bar, navigation pane with the folder's files, the editor, right pane with commands, cell comments and errors. Light and dark theme. |
+| Editor | Inside the web app: `<texl-editor>`, a document as a stack of typed cells (text, Markdown, table and formula; formulas as `<% %>` tags), live rendering, cell comments, errors shown where they happen. Until 2026-10-26 the separate `texl-editor` package. |
 | Server | Python (FastAPI): serves one folder of documents and the web app, for one user. |
-| CLI    | The `stilo` command: `stilo render <file>` prints a rendered document (or writes it to a file); `stilo serve [folder]` starts the server on a folder. |
+| CLI    | The `stilo` command: `stilo render <file>` prints a rendered document (or writes it to a file), says how many errors it has and can explain them; `stilo serve [folder]` starts the server on a folder. |
 | Protocol | Plain HTTP between web app and server: GET a file, CREATE (POST), UPDATE (PUT, with an ETag so concurrent saves don't overwrite each other), QUERY a folder's tree. |
 | Documentation | Developer documentation only, as plain Markdown in `docs/`, read on GitHub: architecture, setup, server, CLI, web app, editor, the protocol, the editor component and its API. No site is built. Users read the OnLabs.org manual instead. |
 
@@ -141,6 +141,18 @@ accept are not part of Stilo.
   A broken link between documents is now visible: a formula whose import
   fails shows `[[Undefined]]`, where it used to show nothing. `stilo render`
   now says why a document cannot be loaded.
+- 2026-11-05: **errors can be found and explained**, in the web editor and on
+  the command line. An error is an undefined value that a formula returns,
+  also as one of several values; one that is only given a name, or sits
+  inside a list or namespace, does not count. In the editor each error is
+  highlighted in its cell, with the reason when pointed at, the right margin
+  shows how many a line has, and a new Errors pane lists them all, in plain
+  words: what went wrong, the source line with the place marked, what caused
+  it, and where it was made, also in an imported document, which a link opens.
+  Positions read "Cell 3, line 12"; the comments pane now says "Cell 3" too.
+  `stilo render` keeps its output as it was and adds one line saying how many
+  errors there are; `--debug` numbers them in the output and explains each one,
+  and `--strict` makes the command fail if there are any.
 
 ## Known limitations
 
@@ -153,3 +165,6 @@ accept are not part of Stilo.
 - The editor is not published as a package of its own: pages that embed it
   use it from a copy of the source code.
 - Table cell: plain fields without formula highlighting.
+- Errors: a value inside a link's address or another HTML attribute counts but
+  cannot be highlighted. The failing place is marked in the Errors pane, not
+  in the source while editing.

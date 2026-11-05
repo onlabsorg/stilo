@@ -174,12 +174,14 @@ creates the GitHub release. Bump the version in `pyproject.toml`,
 - `src/stilo/cli/commands.py` — the subcommands (`render`, `serve`) as
   `Command` entries in `COMMANDS`; `main()` in `src/stilo/cli/__init__.py`
   builds the parser from them (the `stilo` script, `python -m stilo`).
+- `src/stilo/cli/errors.py` — finds the undefined values a document returned
+  and formats the report of `stilo render`.
 - `web/src/main.js` — entry: theme CSS, the editor, the app.
 - `web/src/components/stilo-app.js` — the shell: layout, state (navigation
   root and tree, open document, ETag, dirty flag, open pane), routing,
   commands (save, new, …), editor events.
 - `web/src/components/top-bar.js`, `nav-pane.js`, `commands-pane.js`,
-  `comments-pane.js` — the parts of the layout. They fire events; the app
+  `comments-pane.js`, `errors-pane.js` — the parts of the layout. They fire events; the app
   holds the state.
 - `web/src/commands.js` — the command list shown in the commands pane, with
   shortcuts. Editor commands call the editor's `runCommand(name)`.
@@ -193,9 +195,10 @@ creates the GitHub release. Bump the version in `pyproject.toml`,
   - `texl-editor.js` — `TexlEditor`: holds the cells, keyboard navigation,
     edit mode, and rendering (one `engine.render` of the whole document per
     pass, split into cell outputs at the markers by `splitRendering`).
-    Public surface: `value`, `url`, `rows`, `rendered`, `runCommand(name)`,
-    `select(line)`, `commands`, events `change`, `comments-click`,
-    `selection-change`, `name-conflict`. Keys and `runCommand` share one
+    Public surface: `value`, `url`, `rows`, `rendered`, `errors`,
+    `runCommand(name)`, `select(line)`, `commands`, events `change`,
+    `comments-click`, `errors-change`, `error-click`, `selection-change`,
+    `name-conflict`. Keys and `runCommand` share one
     table of commands (`_commands()`); a new editor action goes there.
   - `texl-cell.js` — `TexlCell`, base class of all cells: modes, layout,
     commit protocol (`cell-change` with `{texl}`, then `cell-exit`).
@@ -206,6 +209,9 @@ creates the GitHub release. Bump the version in `pyproject.toml`,
     never count against it): the type menu offers only accepting types,
     and a cell refuses to commit a changed source its type rejects
     (`inputError`), so a type change never converts content.
+  - `errors.js` — the errors of a rendering: the undefined values tags
+    returned (the same rule as `src/stilo/cli/errors.py`; S7), their marks in
+    the output, `sanitizeOutput` (the one way a cell shows HTML).
   - `registry.js` — `registerCell(CellClass)`; unknown types fall back to
     `text`. `document.js` — parse/serialise (round-trip exact), cell names,
     comments, `splitRendering`. `swan.js` — Swan highlighting. `engine.js`

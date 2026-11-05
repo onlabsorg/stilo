@@ -66,6 +66,7 @@ count). It owns the document: set it with `value`, read it back from `value`.
 | `url`     | `url`      | `string`         | `"untitled.texl"` | The URL of the document, resolved against the page URL. The document renders as the document at this URL: relative `texl.import` URIs resolve against its folder. It may change at any time: the editor renders again. The default puts an unsaved document in the page's folder. |
 | `rows`    | `rows`     | `number`         | `100`   | Lines on the sheet. The sheet shows more if the document has more cells. |
 | `rendered`| —          | `Promise<void>`  | resolved | The current rendering pass. Await it after setting `value` (or after a change) to read the rendered outputs. Read-only by convention. |
+| `errors`  | —          | `DocumentError[]` | `[]`   | The errors of the document, as of the last rendering (see [Errors](#errors)). Read-only. |
 
 The element sets `tabindex="0"` on itself if it has none, so it can take
 focus; call `editor.focus()` to give it the keyboard.
@@ -102,6 +103,7 @@ offer them in its own menus and toolbars without faking key presses.
 | `undo`, `redo` | Mod+Z; Mod+Shift+Z, Mod+Y | Undo or redo the last change to the cells | nothing to undo or redo |
 | `cell-type` | Mod+/ | Open the type menu on the selected line, or close it | — |
 | `comments` | Shift+F2 | Fire `comments-click` for the selected line | — |
+| `errors` | — | Fire `error-click` for the selected line, with its first error | — |
 | `make-<type>` | the type's `key`, if any | Change the selected line to `<type>` and edit it, as the type keys do | the type refuses the line's source: the line shows why ("Needs a table") |
 
 While a cell is in edit mode, only `commit` and `discard` run; any other
@@ -130,6 +132,8 @@ All events bubble and are composed.
 | `change`           | none (`Event`)                             | The cells changed by a user action: committed edit, insert, delete, move, paste, cut, type change, undo, redo. Not fired when `value` is set. Read `editor.value` for the new text. |
 | `selection-change` | `{line}`                                   | The selected line changed. `line` counts from 1. Also fired on the first render (line 1). |
 | `comments-click`   | `{line, comments}`                         | The user clicked a line's comment icon, or pressed Shift+F2 on the selected line (also when it has no comments). `comments` is an array of strings: the trimmed text of each cell comment `<!--[ ... ]-->`. |
+| `errors-change`    | `{errors}`                                 | A rendering finished. `errors` is the same list as the `errors` property. Fired after every rendering, also when nothing changed. |
+| `error-click`      | `{line, error}`                            | The user clicked a highlighted value (`error` is its error) or a line's error icon (the line's first error), or the `errors` command ran (`error` is null on a line with none). `line` counts from 1. |
 | `name-conflict`    | `{conflicts}`                              | Several cells share a name (compared without case). Each conflict is `{name, lines}`, with `lines` counted from 1. Fired again only when the set of clashing names changes. The editor does not rename them. |
 
 ```js
@@ -153,6 +157,38 @@ sees the names bound by the cells above it. Only the latest pass updates the
 cells; `rendered` is its promise, and it never rejects: if `url` cannot be
 resolved, the cells show no output. Errors in a cell never stop rendering:
 they show as `[[Undefined]]`.
+
+### Errors
+
+An error is an undefined value that a tag returned, directly or as an item of
+a returned tuple. An undefined value that was only assigned, or that sits
+inside a list or a namespace, is not one, and neither is `Nothing`
+([S7](../../DECISIONS.md)). The cell highlights each one, and the right margin
+shows the line's count, with every returned value counted.
+
+Values with the same origin and description are one `DocumentError`, however
+many lines return them. It is plain data, with no reference to the engine:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `key` | `string` | Identifies the error; stays the same across renderings while the error stays. |
+| `description` | `string` | What went wrong, in plain words. Parts between backticks are code. |
+| `rootCause` | `string` | The description at the end of the chain of causes. It is the hover text of a highlighted value. |
+| `location` | `ErrorLocation` | Where it was made. A value with no position, such as one from `undef.from`, points at the tag that returned it. |
+| `causes` | `{description, location}[]` | The undefined values that caused it, outermost first. `location` is null for a value with no position. |
+| `lines` | `number[]` | The lines that returned it, from 1. |
+| `count` | `number` | How many values were returned, repeats included. |
+
+An `ErrorLocation` has `uri` (null for code run by Swan's `parse`), `local`
+(whether it is this document), `pos` (an index in `source`), `source` (the text
+of that document), `line` (its line there, that is its cell, from 1, or null for
+parsed code) and `textLine` (the line of text within that cell, from 1, or null
+if the cell has only one or for parsed code).
+`excerptAt(source, pos)` gives `{before, at, after}`, the source line split
+around the position.
+
+A value inside an attribute, such as the address of a link, shows as plain
+`[[Undefined]]`: it counts, but cannot be highlighted.
 
 The editor creates its Texl engine on the first render, with no globals,
 and frees it when it leaves the page. The engine caches nothing: every pass
@@ -185,7 +221,8 @@ Set by the editor; a cell reads them and does not change them.
 | Property   | Type      | Reflected | Description |
 |------------|-----------|-----------|-------------|
 | `texl`     | `string`  | no        | The cell's Texl source (the body after its marker). |
-| `output`   | `string`  | no        | The text Texl rendered from `texl`. |
+| `output`   | `string`  | no        | The text Texl rendered from `texl`, with a private mark in place of each error (see `renderView()`). |
+| `errorMessages` | `string[]` | no   | The hover text of the errors marked in `output`, by index. |
 | `mode`     | `"render" \| "edit"` | yes (`mode` attribute) | Which of `renderView()` and `renderEditor()` is shown. |
 | `selected` | `boolean` | yes (`selected` attribute) | Whether the line is selected. |
 | `input`    | any       | no        | The widget's input while editing; not reactive. Set by `fromTexl`, read by `toTexl`. Its shape is up to the subclass. |
@@ -197,7 +234,7 @@ Set by the editor; a cell reads them and does not change them.
 | `fromTexl(texl)`    | `this.input = texl` | Read the widget's input back from the Texl source. Called when the cell enters edit mode, before rendering. |
 | `toTexl()`          | `this.input ?? ""` | Produce the Texl source for the current input. Called on commit. |
 | `renderEditor()`    | a "no editor" notice | Return the editing widget (a Lit template). |
-| `renderView()`      | `output` as HTML, sanitised with DOMPurify | Show the output differently (as `MarkdownCell` does). Always sanitise: documents are untrusted. |
+| `renderView()`      | `output` as HTML, through `sanitizeOutput(html, errorMessages)` of `errors.js`: sanitised with DOMPurify, marks shown as highlighted values | Show the output differently (as `MarkdownCell` does). Always pass the result through `sanitizeOutput`: documents are untrusted, and the marks are not meant to be seen. |
 | `focusEditor()`     | focuses the first `textarea` or `input` | Focus your widget when it is not one of those. Called after entering edit mode. |
 | `inputError(texl)`  | a message if the type does not `accept` `texl`, else `""` | Give a more precise reason (as `FormulaCell` does for `%>`). Called on commit with the new source, only if it changed. |
 
@@ -482,6 +519,8 @@ the rendered text falls back to the next fonts in `--texl-font` and
 | `--texl-rule`               | `#1d2330`                 | Heavier table rules (top, bottom, under the header) |
 | `--texl-text-muted`         | `#687085`                 | List markers, quotations |
 | `--texl-comment`            | `#b7791f`                 | Comment icon and count |
+| `--texl-error`              | `#b91c1c`                 | Highlighted errors, error icon and count |
+| `--texl-error-bg`           | `rgb(220 38 38 / 0.1)`    | Background of highlighted errors |
 | `--texl-hover-bg`           | `rgb(15 23 42 / 0.06)`    | Hovered buttons in the margins |
 | `--texl-icon-active`        | `#4b5563`                 | Hovered type icon |
 | `--texl-menu-bg`, `--texl-menu-border`, `--texl-menu-text`, `--texl-menu-icon`, `--texl-menu-active-bg` | light card | Type menu |

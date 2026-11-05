@@ -10,6 +10,7 @@ import {
 } from "./document.js";
 import { cellTagName, cellClass, cellTypes } from "./registry.js";
 import { createEngine } from "./engine.js";
+import { findErrors, markErrors } from "./errors.js";
 import { TexlCell } from "./texl-cell.js";
 
 /** What an empty line below the document shows: an empty markdown cell. */
@@ -106,6 +107,13 @@ function isMod(e) {
  * The margin shows a comment icon with their number; a click on it fires
  * `comments-click`, whose `detail` has the line number (`line`, from 1)
  * and the comments as strings (`comments`). Showing them is up to the page.
+ * It also shows the errors of a cell: the undefined values its tags returned,
+ * directly or as items of a tuple, which the cell highlights. The margin
+ * shows a warning icon with their number. A click on it or on a highlighted
+ * value fires `error-click`, whose `detail` has the line number (`line`, from
+ * 1) and the error (`error`). The errors of the document are in `errors`;
+ * `errors-change` is fired after every rendering, with the same list in
+ * `detail.errors`. Showing them is up to the page.
  * When another line is selected, the editor fires `selection-change`, whose
  * `detail` has the selected line number (`line`, from 1).
  *
@@ -132,6 +140,7 @@ export class TexlEditor extends LitElement {
         rows: { type: Number },
         _cells: { state: true },
         _outputs: { state: true },
+        _errors: { state: true },
         _anchor: { state: true },
         _selected: { state: true },
         _editing: { state: true },
@@ -319,7 +328,8 @@ export class TexlEditor extends LitElement {
             border-left: 1px solid var(--texl-margin-line, #7aa2f0);
             padding: 0.25rem 0.5rem;
         }
-        .comment-count {
+        .comment-count,
+        .error-count {
             display: inline-flex;
             align-items: center;
             gap: 0.25rem;
@@ -333,10 +343,15 @@ export class TexlEditor extends LitElement {
             color: var(--texl-comment, #b7791f);
             cursor: pointer;
         }
-        .comment-count:hover {
+        .error-count {
+            color: var(--texl-error, #b91c1c);
+        }
+        .comment-count:hover,
+        .error-count:hover {
             background: var(--texl-hover-bg, rgb(15 23 42 / 0.06));
         }
-        .comment-count svg {
+        .comment-count svg,
+        .error-count svg {
             width: 1rem;
             height: 1rem;
         }
@@ -351,6 +366,11 @@ export class TexlEditor extends LitElement {
         /** The clashing names last reported with `name-conflict`. */
         this._reportedConflicts = "";
         this._outputs = [];
+        this._errors = [];
+        /** The returned undefined values, as `ErrorPlace`s; a mark's index is its place here. */
+        this._errorPlaces = [];
+        /** The hover text of each marked error, for the cells. */
+        this._errorMessages = [];
         this._anchor = 0;
         this._selected = 0;
         this._editing = -1;
@@ -415,6 +435,11 @@ export class TexlEditor extends LitElement {
         this.rendered = this._renderCells();
     }
 
+    /** The errors of the document, as of the last rendering (`DocumentError`). */
+    get errors() {
+        return this._errors;
+    }
+
     /** Resolves when the outputs of the current cells are rendered. */
     rendered = Promise.resolve();
 
@@ -423,14 +448,19 @@ export class TexlEditor extends LitElement {
         const cells = this._cells;
         this._engine ??= createEngine();
         const engine = await this._engine;
-        let outputs = [];
+        let doc = null;
         try {
-            const doc = await engine.render(this.url, serializeDocument(cells));
-            outputs = splitRendering(doc.text, cells);
+            doc = await engine.render(this.url, serializeDocument(cells));
         } catch {
             // The URL cannot be resolved: the cells show no output
         }
-        if (generation === this._generation) this._outputs = outputs;
+        if (generation !== this._generation) return;
+        const { errors, places } = doc ? findErrors(doc, cells) : { errors: [], places: [] };
+        this._outputs = doc ? splitRendering(markErrors(doc.text, places), cells) : [];
+        this._errors = errors;
+        this._errorPlaces = places;
+        this._errorMessages = places.map(({ error }) => error.rootCause);
+        this.dispatchEvent(new CustomEvent("errors-change", { detail: { errors }, bubbles: true, composed: true }));
     }
 
     _onKeyDown(e) {
@@ -539,6 +569,7 @@ export class TexlEditor extends LitElement {
             "cell-type": () => this._openMenu(this._selected),
             comments: () =>
                 this._onCommentsClick(this._selected, cellComments((this._cells[this._selected] ?? EMPTY_LINE).texl)),
+            errors: () => this._onErrorClick(this._selected, this._errorPlaces.find(({ line }) => line === this._selected + 1)),
         };
         for (const type of cellTypes()) commands[`make-${type}`] = () => this._editAs(type);
         return commands;
@@ -867,6 +898,50 @@ export class TexlEditor extends LitElement {
         );
     }
 
+    /** Selects line `index` and reports the error of `place` (may be none) with `error-click`. */
+    _onErrorClick(index, place) {
+        this._select(index);
+        this.focus();
+        this.dispatchEvent(
+            new CustomEvent("error-click", {
+                detail: { line: index + 1, error: place?.error ?? null },
+                bubbles: true,
+                composed: true,
+            }),
+        );
+    }
+
+    /** A click on line `index`'s cell selects it; on a highlighted value, also reports that error. */
+    _onCellClick(index, e) {
+        this._select(index, e.shiftKey);
+        if (e.shiftKey) return;
+        const value = e.composedPath().find((node) => node.classList?.contains("undefined-value"));
+        const place = this._errorPlaces[value?.dataset.error];
+        if (place) this._onErrorClick(index, place);
+    }
+
+    /** A warning icon with the number of errors of line `index`, or nothing. */
+    _renderErrorCount(index) {
+        const places = this._errorPlaces.filter(({ line }) => line === index + 1);
+        if (places.length === 0) return "";
+        const label = places.length === 1 ? "1 error" : `${places.length} errors`;
+        return html`<button
+            class="error-count"
+            type="button"
+            tabindex="-1"
+            title=${label}
+            aria-label=${label}
+            @mousedown=${(e) => e.preventDefault()}
+            @click=${() => this._onErrorClick(index, places[0])}
+        >
+            <svg viewBox="0 0 24 24">
+                <path d="M12 4 3 20h18z" />
+                <path d="M12 10v4" />
+                <path d="M12 17h.01" /></svg
+            >${places.length}
+        </button>`;
+    }
+
     /** A comment icon with the number of `comments` of line `index`, or nothing. */
     _renderCommentCount(index, comments) {
         if (comments.length === 0) return "";
@@ -957,15 +1032,16 @@ export class TexlEditor extends LitElement {
                 data-index=${i}
                 .texl=${cell.texl}
                 .output=${this._outputs[i] ?? ""}
+                .errorMessages=${this._errorMessages}
                 .mode=${i === this._editing ? "edit" : "render"}
                 .selected=${i >= first && i <= last}
-                @click=${(e) => this._select(i, e.shiftKey)}
+                @click=${(e) => this._onCellClick(i, e)}
                 @dblclick=${() => this._edit(i)}
                 @cell-change=${(e) => this._onCellChange(i, e.detail.texl)}
                 @cell-exit=${() => this._onCellExit()}
             ></${tag}>
                 <div class="margin right" part="right-margin">
-                    ${this._renderCommentCount(i, cellComments(cell.texl))}
+                    ${this._renderErrorCount(i)}${this._renderCommentCount(i, cellComments(cell.texl))}
                 </div>`;
         });
         return html`<div class="sheet">${rows}</div>`;

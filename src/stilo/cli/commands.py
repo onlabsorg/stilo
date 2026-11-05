@@ -16,6 +16,8 @@ import uvicorn
 
 from stilo.server import create_app
 
+from .errors import count_returned, find_errors, format_report, numbered_text
+
 # The built web app, `stilo/web`: written there by `npm run build` in a
 # checkout, shipped there in the package
 WEB_DIST = Path(__file__).resolve().parents[1] / "web"
@@ -34,6 +36,10 @@ def render_arguments(parser):
                         help="document to render; relative imports resolve from its folder")
     parser.add_argument("-o", "--output", type=Path,
                         help="output file (default: standard output)")
+    parser.add_argument("-d", "--debug", action="store_true",
+                        help="number the undefined values in the output and explain each one on standard error")
+    parser.add_argument("--strict", action="store_true",
+                        help="exit with status 1 if the document returned an undefined value")
 
 
 def render(args) -> int:
@@ -44,15 +50,30 @@ def render(args) -> int:
     except pytexl.LoadError as e:
         print(f"stilo: {args.file}: could not be loaded: {e.reason}", file=sys.stderr)
         return 1
+    errors = find_errors(doc)
+    text = numbered_text(doc, errors) if args.debug else doc.text
     if args.output:
         try:
-            args.output.write_text(doc.text, encoding="utf-8")
+            args.output.write_text(text, encoding="utf-8")
         except OSError as e:
             print(f"stilo: {args.output}: {e}", file=sys.stderr)
             return 1
     else:
-        sys.stdout.write(doc.text)
-    return 0
+        sys.stdout.write(text)
+        sys.stdout.flush()  # the document comes before the report on a terminal
+    if errors:
+        report_errors(args, doc, errors)
+    return 1 if errors and args.strict else 0
+
+
+def report_errors(args, doc, errors):
+    """Says on standard error how many undefined values `doc` returned, and, with `--debug`, why."""
+    count = count_returned(errors)
+    summary = f"stilo: {args.file}: {count} undefined value{'' if count == 1 else 's'}"
+    if args.debug:
+        print(f"{summary}\n\n{format_report(doc, errors)}", file=sys.stderr)
+    else:
+        print(f"{summary} (use --debug to list them)", file=sys.stderr)
 
 
 def serve_arguments(parser):

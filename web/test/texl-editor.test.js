@@ -1141,7 +1141,8 @@ Third line
                 expect(await editor.runCommand("paste")).to.be.true;
                 await settle(editor);
                 expect(anon(editor.value)).to.equal(anon(FORMULA));
-                expect(cells(editor)[0].output.trim()).to.equal("[[Undefined]]");
+                await cells(editor)[0].updateComplete;
+                expect(cells(editor)[0].shadowRoot.querySelector(".view").textContent.trim()).to.equal("[[Undefined]]");
             });
 
             it("reports a refused clipboard and changes nothing", async () => {

@@ -102,3 +102,17 @@ apart.
 *Since then:* the editor's docs are `docs/editor.md`, `docs/editor-design.md`
 and `docs/component/` (not `docs/editor/`); server and CLI are one Python
 package, `stilo` (`stilo-cli` on PyPI).
+
+## S7 — 2026-11-05 — Only a returned undefined value is an error
+
+The CLI and the editor report an undefined value only when a tag returns it,
+directly or as an item of a returned tuple. An undefined value that is only
+assigned, or that sits inside a list or a namespace, is not reported, and
+neither is `Nothing`. All undefined values count alike, including those made
+with `undef.from`. The default output stays `[[Undefined]]`, as in every other
+Texl host; a host adds its report beside it.
+*Reason:* an undefined value is like an error object: creating one is harmless,
+and returning one is throwing it. So what the reader sees as `[[Undefined]]` is
+exactly what gets reported. Scanning `data` for assigned values, and marking
+`undef.from` values as made on purpose, were considered and rejected. Blanks
+from unknown names are Texl's behaviour, not something a host should patch.

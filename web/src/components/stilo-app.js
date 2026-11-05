@@ -11,6 +11,7 @@ import "./top-bar.js";
 import "./nav-pane.js";
 import "./commands-pane.js";
 import "./comments-pane.js";
+import "./errors-pane.js";
 
 const NEW_DOCUMENT = (title) => `<!--{ markdown }-->\n# ${title}\n`;
 
@@ -31,6 +32,8 @@ export class StiloApp extends LitElement {
         _navOpen: { state: true },
         _pane: { state: true },
         _comments: { state: true },
+        _errors: { state: true },
+        _currentError: { state: true },
         _commentLine: { state: true },
         _source: { state: true },
     };
@@ -159,6 +162,8 @@ export class StiloApp extends LitElement {
         this._pane = null;
         this._comments = [];
         this._commentLine = null;
+        this._errors = [];
+        this._currentError = null;
         this._source = null;
         this._etag = null;
         this._onKeyDown = this._onKeyDown.bind(this);
@@ -200,7 +205,7 @@ export class StiloApp extends LitElement {
     _go(route) {
         if (this._dirty && route.doc !== this._doc && !confirm("Discard unsaved changes?")) return;
         history.pushState(null, "", routeUrl(route));
-        this._applyRoute(route);
+        return this._applyRoute(route);
     }
 
     async _loadTree() {
@@ -220,6 +225,8 @@ export class StiloApp extends LitElement {
         this._status = "";
         this._comments = [];
         this._commentLine = null;
+        this._errors = [];
+        this._currentError = null;
         this._source = null;
         if (!path) return;
         try {
@@ -348,6 +355,29 @@ export class StiloApp extends LitElement {
         this._pane = "comments";
     }
 
+    _onErrorsChange(e) {
+        this._errors = e.detail.errors;
+    }
+
+    /** A highlighted value or a margin icon was clicked: show its error. */
+    _onErrorClick(e) {
+        this._currentError = e.detail.error?.key ?? null;
+        this._pane = "errors";
+    }
+
+    /** A place in the errors pane was clicked: go there, in another document if needed. */
+    async _onErrorGoTo(e) {
+        const { uri, line } = e.detail;
+        const path = uri ? documentPath(new URL(uri)) : this._doc;
+        if (!path) return;
+        if (path !== this._doc) await this._go({ root: this._root, doc: path });
+        if (path !== this._doc) return; // the user kept the unsaved changes
+        this._source = null;
+        await this.updateComplete;
+        this._editor?.select(line);
+        this._editor?.focus();
+    }
+
     _updateComments() {
         const text = this._editor?.value ?? "";
         this._comments = parseDocument(text).map((cell, i) => ({ line: i + 1, comments: cellComments(cell.texl) }));
@@ -380,6 +410,8 @@ export class StiloApp extends LitElement {
                     url=${documentUrl(this._doc)}
                     @change=${this._onEditorChange}
                     @comments-click=${this._onCommentsClick}
+                    @errors-change=${this._onErrorsChange}
+                    @error-click=${this._onErrorClick}
                 ></texl-editor>`,
             )}
             ${this._source !== null
@@ -403,6 +435,7 @@ export class StiloApp extends LitElement {
                 .status=${this._status}
                 ?nav-open=${this._navOpen}
                 .pane=${this._pane}
+                .errorCount=${this._errors.reduce((sum, error) => sum + error.count, 0)}
                 @toggle-nav=${this.toggleNav}
                 @toggle-pane=${(e) => this.togglePane(e.detail.pane)}
             ></top-bar>
@@ -424,6 +457,9 @@ export class StiloApp extends LitElement {
                           .line=${this._commentLine}
                           @comment-click=${this._onCommentClick}
                       ></comments-pane>`
+                    : ""}
+                ${this._pane === "errors"
+                    ? html`<errors-pane .errors=${this._errors} .current=${this._currentError} @go-to=${this._onErrorGoTo}></errors-pane>`
                     : ""}
             </aside>
         `;

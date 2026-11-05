@@ -44,6 +44,7 @@ exactly the text that is saved.
 | `web/src/editor/cells/formula-cell.js`   | `FormulaCell`: one tag, edited without its delimiters; `parseFormula`, `serializeFormula` | text-cell, swan | [`FormulaCell`](component/api.md#formulacell) |
 | `web/src/editor/registry.js`             | Maps cell types to custom element tags | — | [Cell registry](component/api.md#cell-registry) |
 | `web/src/editor/document.js`             | The file format: parse, serialise, names, comments, split a rendering. Pure functions, no DOM | — | [Document functions](component/api.md#document-functions) |
+| `web/src/editor/errors.js`               | The errors of a rendering (`findErrors`), their marks in the output (`markErrors`, `sanitizeOutput`), `excerptAt` | document, `@onlabsorg/texl`, DOMPurify | [Errors](component/api.md#errors) |
 | `web/src/editor/engine.js`               | Loads the Texl WebAssembly module once, creates engines | `@onlabsorg/texl` | [Engine](component/api.md#engine) |
 | `web/src/editor/swan.js`                 | Swan highlighting and the tag/comment commands for CodeMirror | CodeMirror | [Swan helpers](component/api.md#swan-helpers) |
 
@@ -200,6 +201,26 @@ if (generation === this._generation) this._outputs = outputs;
   open point in [Editor design](editor-design.md).
 
 → [`<texl-editor>`](component/api.md#texl-editor)
+
+### Showing errors
+
+`_renderCells` passes the document to `findErrors` (`errors.js`), which goes
+through `doc.tags` and collects the undefined values returned, directly or as
+items of a tuple. Each is assigned to a line by its tag's source position
+(`lineAtOffset`). Then:
+
+1. `markErrors` replaces the text of each value in the rendering with a mark of
+   private-use characters holding its index, before the rendering is split. It
+   has to happen here: only `doc.text` has the positions, and they are lost once
+   Markdown has run.
+2. The cell's `renderView` passes its HTML to `sanitizeOutput`, which sanitises
+   it and then replaces the marks in text nodes with a highlighted `<span>`. A
+   mark in an attribute becomes plain `[[Undefined]]`; Markdown percent-encodes
+   the marks in a link's address, so both forms are matched there.
+
+A plain string replacement after sanitising would not do: a mark in an attribute
+would put an element inside it. A click on a value is matched to its place by
+the span's `data-error`.
 
 ### Keyboard, clipboard and menu
 

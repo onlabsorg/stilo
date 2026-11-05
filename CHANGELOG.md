@@ -6,6 +6,26 @@ change the interfaces.
 
 ## Unreleased
 
+- **Comments pane**: each comment now says "Cell 3" instead of "Line 3", as the
+  Errors pane does.
+- **The web editor shows errors.** A value a formula returned as undefined is
+  highlighted in its cell, with the reason as hover text, and the right margin
+  shows the number of errors on each line. A new button in the top bar shows
+  the document's total and opens the Errors pane: each error's description,
+  its source line with the failing position marked, its causes and where it
+  was made and shows, as "Cell 3, line 12" (the line is left out when the cell
+  has only one). A click on a highlighted value or a margin count opens that
+  error; a click on an entry selects its line; a link opens the imported
+  document where the error was made. A double click still edits the cell. Only
+  a value returned by a formula counts, directly or as an item of a tuple: not
+  an assignment, not a value inside a list or namespace.
+- **`stilo render` reports undefined values.** When a document returns
+  undefined values, one line on standard error says how many; the output is
+  unchanged. `-d` / `--debug` explains each one on standard error (location,
+  source line, description, causes) and numbers them in the output as
+  `[[Undefined #1]]`. `--strict` exits with status 1 if there are any. Only a
+  value returned by a formula counts, directly or as an item of a tuple: not
+  an assignment, not a value inside a list or namespace.
 - **Texl 0.6** (`pytexl` and `@onlabsorg/texl`). A broken link is now visible:
   a formula whose `texl.import` fails shows `[[Undefined]]`; before, it showed
   nothing. `stilo render` says why a document cannot be loaded, e.g. `stilo:

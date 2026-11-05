@@ -51,6 +51,8 @@
     --texl-selected-ring: rgb(96 165 250 / 0.4);
     --texl-edit-bg: #22262e;
     --texl-comment: #e0a64b;
+    --texl-error: #f87171;
+    --texl-error-bg: rgb(248 113 113 / 0.15);
     --texl-rule: #8b93a3;
     --texl-text-muted: #8b93a3;
     --texl-hover-bg: rgb(255 255 255 / 0.07);

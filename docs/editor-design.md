@@ -343,6 +343,13 @@ this section keeps the outline.
 - **(open)** Ctrl+Space inserts a `<%  %>` tag, but it is also the usual
   autocompletion key (CodeMirror, VS Code) and switches the input source on
   macOS. Keep it, or move one of the two (e.g. Mod+E for a tag)?
-- **(open)** Undefined values: how a cell shows an error clearly.
+- **(decided 2026-11-05)** Undefined values: a value a tag returned shows as a
+  highlighted `[[Undefined]]`, and the right margin counts them per line. A
+  click opens it in an Errors pane: description, source line, causes and where
+  it shows, as "Cell 3, line 12": in this pane a row is a cell, and a line is a
+  line of text within it (left out when the cell has only one). A double click still edits. What counts as an error: S7 in
+  `DECISIONS.md`. Underlining the failing position in the source while editing
+  is still to do: formula and table cells need their positions mapped, and
+  `pos` is a single point.
 - **(open)** Shadow DOM and rich-text editors: ProseMirror's selection
   handling inside shadow roots needs checking before choosing it.

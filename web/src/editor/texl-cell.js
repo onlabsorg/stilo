@@ -1,6 +1,6 @@
 import { LitElement, html, css } from "lit";
 import { unsafeHTML } from "lit/directives/unsafe-html.js";
-import DOMPurify from "dompurify";
+import { sanitizeOutput } from "./errors.js";
 
 /**
  * Base class of all cells.
@@ -64,6 +64,8 @@ export class TexlCell extends LitElement {
     static properties = {
         texl: { type: String },
         output: { type: String },
+        /** The hover text of the errors marked in `output`, by index. */
+        errorMessages: { attribute: false },
         mode: { type: String, reflect: true },
         selected: { type: Boolean, reflect: true },
         /** Why the last commit was refused, or empty. */
@@ -201,6 +203,14 @@ export class TexlCell extends LitElement {
         .view :is(th, td):last-child {
             padding-right: 0;
         }
+        /* A returned undefined value: an error */
+        .view .undefined-value {
+            padding: 0 0.2em;
+            border-radius: 3px;
+            background: var(--texl-error-bg, rgb(220 38 38 / 0.1));
+            color: var(--texl-error, #b91c1c);
+            cursor: pointer;
+        }
         .view code {
             font-family: var(--texl-mono, ui-monospace, monospace);
             font-size: 0.88em;
@@ -232,6 +242,7 @@ export class TexlCell extends LitElement {
         super();
         this.texl = "";
         this.output = "";
+        this.errorMessages = [];
         this.mode = "render";
         this.selected = false;
         this._error = "";
@@ -314,7 +325,7 @@ export class TexlCell extends LitElement {
 
     /** Shows `output` as HTML, sanitised: documents are untrusted. */
     renderView() {
-        const content = DOMPurify.sanitize(this.output);
+        const content = sanitizeOutput(this.output, this.errorMessages);
         return html`<div class="view">${unsafeHTML(content)}</div>`;
     }
 }

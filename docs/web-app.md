@@ -14,6 +14,7 @@ its own page: [The editor](editor.md).*
 | `src/components/nav-pane.js`   | `<nav-pane>`: the folder tree                       |
 | `src/components/commands-pane.js` | `<commands-pane>`: the command list, by group, foldable |
 | `src/components/comments-pane.js` | `<comments-pane>`: the comments of each line     |
+| `src/components/errors-pane.js` | `<errors-pane>`: the errors of the document       |
 | `src/components/shared.js`     | Shared styles (`base`) and icons for the components |
 | `src/commands.js`              | The command list, with shortcuts                    |
 | `src/api.js`                   | The protocol client: the only module that talks to the server |
@@ -33,8 +34,9 @@ group, a collapsed folder).
 | `_root`, `_tree`         | The navigation root (a folder path) and its tree |
 | `_doc`, `_etag`, `_dirty` | The open document's path, its ETag from the last read or write, and whether it has unsaved changes |
 | `_status`                | The message in the top bar ("Saved", an error)  |
-| `_navOpen`, `_pane`      | Whether the navigation pane is open; which right pane is open (`"commands"`, `"comments"` or `null`) |
+| `_navOpen`, `_pane`      | Whether the navigation pane is open; which right pane is open (`"commands"`, `"comments"`, `"errors"` or `null`) |
 | `_comments`, `_commentLine` | The comments of every line, and the line shown in the comments pane |
+| `_errors`, `_currentError` | The errors of the document, and the key of the one highlighted in the errors pane |
 | `_source`                | The document's text shown read-only in place of the editor (Show source), or `null` |
 
 The editor is created anew for every document (Lit's `keyed`), so value,
@@ -62,10 +64,13 @@ The commands call these public methods:
 |-----------------|-----------------------------|------------------------------------------|
 | `<texl-editor>` | `change`                    | Sets `_dirty`, updates the comments      |
 | `<texl-editor>` | `comments-click`            | Opens the comments pane on that line     |
+| `<texl-editor>` | `errors-change`             | Updates the errors and the count in the top bar |
+| `<texl-editor>` | `error-click`               | Opens the errors pane on that error      |
 | `<nav-pane>`    | `open-document`, `navigate` | Opens a document, changes the root       |
 | `<top-bar>`     | `toggle-nav`, `toggle-pane` | Toggles a pane                           |
 | right pane      | `run-command`, `close-pane` | Runs a command, closes the pane          |
 | `<comments-pane>` | `comment-click`           | Selects that line in the editor (`select(line)`) and focuses it |
+| `<errors-pane>` | `go-to`                     | Selects that line, opening another document first if the error was made there |
 | main area       | click on a link             | Opens a link to a `.texl` document under the root in the app, resolved from the open document's address |
 
 ## Routing: `route.js`

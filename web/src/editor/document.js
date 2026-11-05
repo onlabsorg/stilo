@@ -169,13 +169,51 @@ export function isBlank(texl) {
  * @returns {string}
  */
 export function serializeDocument(cells) {
-    return cells
-        .map((cell, i) => {
-            let texl = cell.texl;
-            if (texl && i < cells.length - 1 && !texl.endsWith("\n")) texl += "\n";
-            return cell.marker === false ? texl : formatMarker(cell) + "\n" + texl;
-        })
-        .join("");
+    return cells.map((cell, i) => serializeCell(cell, i, cells)).join("");
+}
+
+/** The text of cell `i` in its document. */
+function serializeCell(cell, i, cells) {
+    let texl = cell.texl;
+    if (texl && i < cells.length - 1 && !texl.endsWith("\n")) texl += "\n";
+    return cell.marker === false ? texl : formatMarker(cell) + "\n" + texl;
+}
+
+/**
+ * The line (cell) of a document that holds a position in its text.
+ * @param {CellData[]} cells
+ * @param {number} offset - Index in `serializeDocument(cells)`.
+ * @returns {number} The line, from 1; the last one if `offset` is past the end.
+ */
+export function lineAtOffset(cells, offset) {
+    return cellAtOffset(cells, offset).index + 1;
+}
+
+/**
+ * The line of text within a cell that holds a position in the document.
+ * @param {CellData[]} cells
+ * @param {number} offset - Index in `serializeDocument(cells)`.
+ * @returns {number | null} The line of the cell's source, from 1, not counting
+ *   its marker; null if the cell has only one line.
+ */
+export function textLineAtOffset(cells, offset) {
+    const { index, start } = cellAtOffset(cells, offset);
+    const cell = cells[index];
+    if (!cell || !cell.texl.replace(/\n$/, "").includes("\n")) return null;
+    const marker = cell.marker === false ? 0 : formatMarker(cell).length + 1;
+    const before = cell.texl.slice(0, Math.max(0, offset - start - marker));
+    return before.split("\n").length;
+}
+
+/** The index of the cell holding a position, and where the cell starts. */
+function cellAtOffset(cells, offset) {
+    let start = 0;
+    for (let i = 0; i < cells.length; i++) {
+        const end = start + serializeCell(cells[i], i, cells).length;
+        if (offset < end || i === cells.length - 1) return { index: i, start };
+        start = end;
+    }
+    return { index: 0, start: 0 };
 }
 
 /**

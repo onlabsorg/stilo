@@ -1,7 +1,7 @@
 import { html } from "lit";
 import { unsafeHTML } from "lit/directives/unsafe-html.js";
 import { marked } from "marked";
-import DOMPurify from "dompurify";
+import { sanitizeOutput } from "../errors.js";
 import { syntaxHighlighting, defaultHighlightStyle } from "@codemirror/language";
 import { markdown } from "@codemirror/lang-markdown";
 import { TextCell } from "./text-cell.js";
@@ -54,7 +54,7 @@ export class MarkdownCell extends TextCell {
 
     /** Shows `output` as Markdown, sanitised: documents are untrusted. */
     renderView() {
-        const content = DOMPurify.sanitize(marked.parse(this.output));
+        const content = sanitizeOutput(marked.parse(this.output), this.errorMessages);
         return html`<div class="view">${unsafeHTML(content)}</div>`;
     }
 }

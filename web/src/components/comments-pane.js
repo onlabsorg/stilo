@@ -84,13 +84,13 @@ export class CommentsPane extends LitElement {
                     ? entries.map(
                           ({ line, comments }) => html`<div
                               class="entry ${line === this.line ? "current" : ""}"
-                              title="Go to line ${line}"
+                              title="Go to cell ${line}"
                               @click=${() =>
                                   this.dispatchEvent(
                                       new CustomEvent("comment-click", { detail: { line }, bubbles: true, composed: true }),
                                   )}
                           >
-                              <div class="where">Line ${line}</div>
+                              <div class="where">Cell ${line}</div>
                               ${comments.map((text) => html`<p>${text}</p>`)}
                           </div>`,
                       )

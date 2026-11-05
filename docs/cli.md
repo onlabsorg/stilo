@@ -74,6 +74,40 @@ rendering to standard output or to `args.output`. Returns 1 if the document
 cannot be loaded (`pytexl.LoadError`; the message says why) or the output
 cannot be written.
 
+If the document returned undefined values, one line on standard error says how
+many. The output stays as any Texl host renders it, and the exit status stays
+0. Two options change that:
+
+- `-d`, `--debug` numbers the values in the output (`[[Undefined #1]]`, the
+  same value keeps its number) and explains each one on standard error.
+- `--strict` returns 1 if there are any. The output is still written.
+
+```text
+#2 report.texl:9:33  cannot multiply an undefined value by the number `2`
+     A chain of causes: <% (2 + "b") * 2 %>
+                                     ^
+     caused by report.texl:9:26: cannot add the number `2` and the text `"b"`
+```
+
+### `errors.py`
+
+`src/stilo/cli/errors.py` finds and formats the errors. An error is an undefined
+value a tag returned, directly or as an item of a tuple
+([S7](../DECISIONS.md)):
+
+| Function | Purpose |
+|----------|---------|
+| `find_errors(doc)` | The `DocumentError`s of a document: number, value and places. Values with the same `uri`, `pos` and `description` are one error with several places; a value with no `pos` is told apart by its tag. |
+| `count_returned(errors)` | How many values were returned, repeats included. |
+| `numbered_text(doc, errors)` | The text with each value as `[[Undefined #n]]`. |
+| `format_report(doc, errors)` | The report above. |
+
+The location comes from the value (`uri`, `pos`, `source`), so an error made in
+an imported document points into that document, without loading it again. A
+value with no `pos`, such as one from `undef.from`, points at the tag that
+returned it. `cause` is walked with `is not None`, since an undefined value is
+falsy in Python.
+
 ## `serve`
 
 ```python
@@ -92,6 +126,8 @@ looks for the web app itself: the CLI hands it over to `create_app()`.
 
 `tests/cli/test_render.py` runs `main()` on the sample documents in
 `examples/`: rendering with imports, writing to a file, and a missing file.
+`tests/cli/test_errors.py` covers the report of undefined values, on documents
+it writes to a temporary folder.
 
 ```sh
 uv run pytest tests/cli

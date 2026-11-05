@@ -103,6 +103,7 @@ export const commands = [
     editorCommand("undo", "Undo", "Mod+Z"),
     editorCommand("redo", "Redo", "Mod+Shift+Z"),
     editorCommand("comments", "Show the cell's comments", "Shift+F2"),
+    editorCommand("errors", "Show the cell's errors", ""),
     editorCommand("copy", "Copy cells", "Mod+C"),
     editorCommand("cut", "Cut cells", "Mod+X"),
     editorCommand("paste", "Paste cells", "Mod+V"),
