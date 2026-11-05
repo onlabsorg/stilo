@@ -195,7 +195,7 @@ creates the GitHub release. Bump the version in `pyproject.toml`,
   - `texl-editor.js` — `TexlEditor`: holds the cells, keyboard navigation,
     edit mode, and rendering (one `engine.render` of the whole document per
     pass, split into cell outputs at the markers by `splitRendering`).
-    Public surface: `value`, `url`, `rows`, `rendered`, `errors`,
+    Public surface: `value`, `url`, `rows`, `rendered`, `errors`, `editing`,
     `runCommand(name)`, `select(line)`, `commands`, events `change`,
     `comments-click`, `errors-change`, `error-click`, `selection-change`,
     `name-conflict`. Keys and `runCommand` share one
@@ -267,8 +267,6 @@ valid Texl document that renders without the editor (`stilo render`,
 
 ## Known limitations
 
-- **Save** writes the editor's committed cells: a cell still in edit mode
-  is not saved until committed (Mod+Enter).
 - **No authentication:** `stilo serve` is meant for one user; bind it to
   localhost, or put it behind your own access control when serving
   remotely.

@@ -67,8 +67,9 @@ When a user opens `http://127.0.0.1:8000/projects/beam/beam-check.texl`:
 4. An import, `texl.import("../../library/steel.texl")`, is fetched by Texl
    from the public address `/library/steel.texl`, without `text/html`, so the
    server returns the file.
-5. Ctrl+S sends the text back with `PUT /_api/files/...` and the ETag of
-   the last read, so a file changed meanwhile is not overwritten.
+5. Ctrl+S commits the cell being edited and sends the text back with
+   `PUT /_api/files/...` and the ETag of the last read, so a file changed
+   meanwhile is not overwritten.
 
 ## Extension points
 

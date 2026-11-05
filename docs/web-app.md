@@ -50,7 +50,7 @@ The commands call these public methods:
 
 | Method                 | Does                                                  |
 |------------------------|-------------------------------------------------------|
-| `save()`               | `updateFile` with the editor's value and the ETag; a `412` shows "changed on the server, reload it" |
+| `save()`               | Commits the cell being edited, then `updateFile` with the editor's value and the ETag; a cell that refuses its edit stops the save, a `412` shows "changed on the server, reload it" |
 | `reload()`             | Reads the document again (after confirming, if dirty) |
 | `newDocument()`        | Asks for a name, `createFile` in the navigation root, opens it |
 | `toggleNav()`, `togglePane(pane)`, `toggleTheme()` | The view commands |

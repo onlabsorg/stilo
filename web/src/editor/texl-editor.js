@@ -502,6 +502,11 @@ export class TexlEditor extends LitElement {
         e.preventDefault();
     }
 
+    /** Whether a cell is in edit mode. Its edit is not in `value` until committed. */
+    get editing() {
+        return this._editing >= 0;
+    }
+
     /**
      * The names of the commands that `runCommand` takes: the editor's own
      * actions, and `make-<type>` for every registered cell type.

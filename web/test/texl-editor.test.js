@@ -1071,7 +1071,9 @@ Third line
             expect(await editor.runCommand("commit")).to.be.false;
             await editor.updateComplete;
             expect(cell.mode).to.equal("edit");
+            expect(editor.editing).to.be.true;
             expect(await editor.runCommand("discard")).to.be.true;
+            expect(editor.editing).to.be.false;
         });
 
         it("changes the type and edits with make-<type>, or shows why not", async () => {

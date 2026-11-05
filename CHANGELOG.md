@@ -6,6 +6,11 @@ change the interfaces.
 
 ## Unreleased
 
+- **Saving includes the cell being edited.** Ctrl+S (or Save in the commands
+  pane) now commits a cell in edit mode before saving, instead of leaving its
+  edit out of the file. If the cell refuses the edit, it stays in edit mode
+  with its message and nothing is saved.
+- Editor API: new read-only property `editing`.
 - **Comments pane**: each comment now says "Cell 3" instead of "Line 3", as the
   Errors pane does.
 - **The web editor shows errors.** A value a formula returned as undefined is

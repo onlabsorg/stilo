@@ -67,6 +67,7 @@ count). It owns the document: set it with `value`, read it back from `value`.
 | `rows`    | `rows`     | `number`         | `100`   | Lines on the sheet. The sheet shows more if the document has more cells. |
 | `rendered`| —          | `Promise<void>`  | resolved | The current rendering pass. Await it after setting `value` (or after a change) to read the rendered outputs. Read-only by convention. |
 | `errors`  | —          | `DocumentError[]` | `[]`   | The errors of the document, as of the last rendering (see [Errors](#errors)). Read-only. |
+| `editing` | —          | `boolean`        | `false` | Whether a cell is in edit mode. Its edit is not in `value` until committed (the `commit` command). Read-only. |
 
 The element sets `tabindex="0"` on itself if it has none, so it can take
 focus; call `editor.focus()` to give it the keyboard.

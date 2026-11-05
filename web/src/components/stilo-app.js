@@ -259,6 +259,12 @@ export class StiloApp extends LitElement {
 
     async save() {
         if (!this._doc || !this._editor) return;
+        // The cell being edited goes in too; one that refuses its edit shows why
+        if (this._editor.editing && !(await this._editor.runCommand("commit"))) {
+            this._source = null;
+            this._status = "Not saved: correct the cell being edited";
+            return;
+        }
         this._status = "Saving…";
         try {
             this._etag = await updateFile(this._doc, this._editor.value, this._etag);
