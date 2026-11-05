@@ -22,7 +22,7 @@ license-files = ["LICENSE"]
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.115",
-    "pytexl>=0.5",
+    "pytexl>=0.6.0",
     "uvicorn>=0.30",
 ]
 

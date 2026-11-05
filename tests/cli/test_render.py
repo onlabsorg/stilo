@@ -20,4 +20,6 @@ def test_render_to_file(tmp_path):
 
 def test_render_missing_file(capsys):
     assert main(["render", "does-not-exist.texl"]) == 1
-    assert "could not be loaded" in capsys.readouterr().err
+    err = capsys.readouterr().err
+    assert "could not be loaded" in err
+    assert "FileNotFoundError" in err  # says why

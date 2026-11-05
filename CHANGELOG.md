@@ -6,6 +6,10 @@ change the interfaces.
 
 ## Unreleased
 
+- **Texl 0.6** (`pytexl` and `@onlabsorg/texl`). A broken link is now visible:
+  a formula whose `texl.import` fails shows `[[Undefined]]`; before, it showed
+  nothing. `stilo render` says why a document cannot be loaded, e.g. `stilo:
+  report.texl: could not be loaded: FileNotFoundError: ...`.
 - **Texl 0.5** (`pytexl` and `@onlabsorg/texl`). Formulas are stricter: text
   left over after an expression, such as a stray `)`, now makes the whole
   formula show `[[Undefined]]`; before, it was ignored. A formula whose

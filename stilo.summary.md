@@ -137,6 +137,10 @@ accept are not part of Stilo.
   `[[Undefined]]`, where it used to show nothing. A document that shows the
   rendered text of an imported document now reads it as `text`, no longer
   `rendering`.
+- 2026-11-05: **moved to Texl 0.6**, in the browser and on the command line.
+  A broken link between documents is now visible: a formula whose import
+  fails shows `[[Undefined]]`, where it used to show nothing. `stilo render`
+  now says why a document cannot be loaded.
 
 ## Known limitations
 

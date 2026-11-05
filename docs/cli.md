@@ -71,7 +71,8 @@ def render(args) -> int
 Renders `args.file` with a new `pytexl.Engine`, loading it by its `file:`
 URI so that relative imports resolve from its folder, and writes the
 rendering to standard output or to `args.output`. Returns 1 if the document
-cannot be loaded or the output cannot be written.
+cannot be loaded (`pytexl.LoadError`; the message says why) or the output
+cannot be written.
 
 ## `serve`
 

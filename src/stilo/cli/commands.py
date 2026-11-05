@@ -39,9 +39,10 @@ def render_arguments(parser):
 def render(args) -> int:
     """Renders a document to standard output or a file, like `texl`."""
     path = args.file.resolve()
-    doc = asyncio.run(pytexl.Engine().load(path.as_uri()))
-    if doc is None:
-        print(f"stilo: {args.file}: could not be loaded", file=sys.stderr)
+    try:
+        doc = asyncio.run(pytexl.Engine().load(path.as_uri()))
+    except pytexl.LoadError as e:
+        print(f"stilo: {args.file}: could not be loaded: {e.reason}", file=sys.stderr)
         return 1
     if args.output:
         try:

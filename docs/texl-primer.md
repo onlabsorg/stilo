@@ -1,7 +1,7 @@
 # Texl primer for editor work
 
-*What you need to know about Texl to work on the editor, as of Texl 0.5
-(`@onlabsorg/texl` on npm), 2026-11-04. For the language in
+*What you need to know about Texl to work on the editor, as of Texl 0.6
+(`@onlabsorg/texl` on npm), 2026-11-05. For the language in
 depth, see the developer docs of <https://github.com/onlabsorg/texl>
 (`docs/language.md`). The results shown below were checked
 against the real engine.*
@@ -79,8 +79,8 @@ which flows on like any other value and renders as `[[Undefined]]`. A broken
 cell therefore never breaks the document; the editor should show such values
 clearly (`undef.inspect` gives details). Tokens left over after an
 expression, such as a stray `)`, make the whole tag undefined. Promises never
-reject: a failed operation resolves to its undefined value, while a failed
-import or a rejected JavaScript promise resolves to `Nothing`.
+reject: a failed operation, a failed import or a rejected JavaScript promise
+resolves to an undefined value.
 
 ## Documents and imports
 
@@ -117,15 +117,17 @@ import init, { TexlEngine } from "@onlabsorg/texl";
 await init();                                   // load the wasm module, once
 const engine = new TexlEngine(globals, baseUrl); // both optional
 const doc = await engine.render("docs/report.texl", source); // {uri, source, data, text, tags}
-await engine.fetch("report.texl");              // the source only, or null
-await engine.load("report.texl");               // fetch + render, or null if the fetch fails
+await engine.fetch("report.texl");              // the source only
+await engine.load("report.texl");               // fetch + render
 engine.set("today", "2026-10-18");              // global for all templates
 ```
 
 The engine holds configuration only (globals, base URL): every `render` and
 `load` starts from a new scope and a new import cache, and runs the cycle
-collector when done. Their promises reject (with a string) only if `uri`
-cannot be resolved. The editor renders the whole document with one
+collector when done. `render` rejects, with an `Error`, only if `uri` cannot
+be resolved. `fetch` and `load` also reject when the document cannot be
+loaded, with an `Error` named `LoadError` that has `uri` and `reason`. The
+editor renders the whole document with one
 `engine.render(url, source)` per pass and splits the rendering at the
 markers.
 
@@ -157,23 +159,33 @@ autocompletion ("intellisense"); see the open point in
 |-------------------------------------------|---------------------------------|
 | `null`, `undefined` → `Nothing`           | `Nothing` → `null`              |
 | boolean, number, string → same            | `Bool`, `Numb`, `Text` → same   |
-| array → `List`                            | `List`, `Tuple` → array         |
+| `Tuple` → `Tuple`                         | `Tuple` → `Tuple`               |
+| other array → `List`                      | `List` → array                  |
 | Promise / thenable → `Promise`            | `Promise` → Promise             |
 | function → `Func`                         | `Namespace` → plain object      |
 | other object → `Namespace`                | `Func` → `undefined`            |
 | `TexlUndefined` → the original `Undefined` | `Undefined` → `TexlUndefined`  |
 
+`Tuple`, exported by the package, is a subclass of `Array` that adds nothing,
+so `instanceof` tells a tuple from a list. Lists follow Swan's rule wherever
+they are built: tuple items are spread into the list and `null` or `undefined`
+items are dropped, so later items move down. `normalize` (exported) gives a
+JavaScript value this form.
+
 A JavaScript function becomes a Swan function of **one** argument; a Swan
-call with several arguments passes them as one array (`add: ([a, b]) => a +
-b`). If it throws, the result is `Nothing`; an `async` function gives a
-promise, and the tag waits for it. Host functions are how the editor (and
+call with several arguments passes them as one `Tuple` (`add: ([a, b]) => a +
+b`). If it throws, the result is an undefined value of type `HostError`, with
+the text of the error in `error`; an `async` function gives a promise, and the
+tag waits for it. Host functions are how the editor (and
 later the platform) can offer cell helpers, such as a table renderer, to
 documents.
 
 A `TexlUndefined` is a frozen object describing the error: `type`,
 `description` (in plain words), `pos` and `uri` (where it is; `null` when
-unknown), `cause` (the first undefined operand, leading to the root cause),
-and `op`, `val`, `lhv`, `rhv`, `expected`, `token` where they apply.
+unknown), `source` (the text `pos` is an index of), `cause` (the first
+undefined operand, leading to the root cause), and `op`, `val`, `lhv`, `rhv`,
+`expected`, `token`, `error` where they apply. A failed import is a binary
+operation with the URL in `lhv` and the reason in `rhv`.
 
 ### Loading the module with a bundler
 
