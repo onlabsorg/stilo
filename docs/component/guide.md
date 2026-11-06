@@ -148,8 +148,8 @@ Run `npx vite` and open the address it prints. You see two cells, rendered
 as Markdown, and empty numbered lines below them. Try it:
 
 - ↑/↓ select a line; Enter (or F2, or a double click) edits it.
-- While editing, Ctrl+Space inserts a `<%  %>` tag; Ctrl+Enter saves,
-  Escape discards.
+- While editing, Ctrl+E (Cmd+E on macOS) inserts a `<%  %>` tag; Ctrl+Enter
+  saves, Escape discards.
 - Write on an empty line below the document: it becomes part of it.
 - The icon left of the line number (or Ctrl+/) changes the cell type.
 

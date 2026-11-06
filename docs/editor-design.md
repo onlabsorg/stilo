@@ -75,7 +75,7 @@ shown, and any structure they have, is up to the platform.
 
 | Type        | Edit mode                                    | Status        |
 |-------------|----------------------------------------------|---------------|
-| `text`      | Texl template shown as HTML; Swan highlighted in `<% %>` tags, Ctrl+Space inserts one | Boilerplate |
+| `text`      | Texl template shown as HTML; Swan highlighted in `<% %>` tags, Mod+E inserts one | Boilerplate |
 | `markdown`  | `text` with Markdown: highlighted in the editor, turned into HTML for display | Boilerplate |
 | `table`     | A grid where each table cell's Texl source is edited in its own field; shown as the rendered table | Ready for the MVP (2026-10-31): a Markdown pipe table (O5) edited as a grid of fields |
 | `formula`   | One tag, edited as its expression without the `<% %>`, shown as its output | First version |
@@ -88,7 +88,7 @@ Other formats for raw templates (e.g. LaTeX) are possible later as cell
 types built on `text`, as `markdown` is.
 
 **Formulas** are `<% %>` tags inside a `text` or `markdown` cell, inserted
-with Ctrl+Space, as fields in Word (parent D11). A cell that is one tag and
+with Mod+E, as fields in Word (parent D11). A cell that is one tag and
 nothing else can also be a `formula` cell (2026-10-30): its source stays
 that plain tag, edited without the delimiters. The reasons D11
 dropped the older `expression` cell are answered by the shape rule (see
@@ -218,7 +218,7 @@ this section keeps the outline.
   in edit mode and keeps `input` up to date (without the line break that
   ends the cell body, which belongs to the file format and is added back).
   Its `languageExtensions()` give the editor its language: Swan
-  highlighting inside `<% %>` tags, Ctrl+Space to insert a tag and
+  highlighting inside `<% %>` tags, Mod+E to insert a tag and
   Shift+F2 to insert a comment (`web/src/editor/swan.js`). `MarkdownCell` extends it with Markdown highlighting
   (tags stay Swan, Markdown does not look inside them) and renders its
   output as Markdown.
@@ -340,9 +340,11 @@ this section keeps the outline.
 - **(open)** The cells use CodeMirror 6, with Swan highlighting. Still to
   do: autocompletion (see Rendering), and a look that suits
   non-programmers.
-- **(open)** Ctrl+Space inserts a `<%  %>` tag, but it is also the usual
-  autocompletion key (CodeMirror, VS Code) and switches the input source on
-  macOS. Keep it, or move one of the two (e.g. Mod+E for a tag)?
+- **(decided 2026-11-06)** Mod+E (Ctrl+E, or Cmd+E on macOS) inserts a `<%  %>`
+  tag, E for expression. It replaces Ctrl+Space, which switches the input
+  source on macOS and is the usual autocompletion key, kept free for that.
+  Mod+E is two keys on every keyboard layout; while editing a cell it
+  overrides the browser's search shortcut.
 - **(decided 2026-11-05)** Undefined values: a value a tag returned shows as a
   highlighted `[[Undefined]]`, and the right margin counts them per line. A
   click opens it in an Errors pane: description, source line, causes and where

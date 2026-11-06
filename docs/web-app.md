@@ -110,7 +110,7 @@ document (`_go`) and applies the route again on `popstate`.
   (`docs/component/api.md`, Commands) and its key as shortcut. Clicking
   one runs `app.runEditorCommand(id)`, which calls the editor's
   `runCommand`; the editor handles the key itself.
-- Commands without `run` (Ctrl+Space and Shift+F2 inside a cell's text
+- Commands without `run` (Mod+E and Shift+F2 inside a cell's text
   editor) are listed for reference: they belong to the cell.
 
 `formatKeys(keys)` turns `Mod+S` into the platform's notation.

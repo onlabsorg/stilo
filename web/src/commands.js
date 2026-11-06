@@ -110,7 +110,7 @@ export const commands = [
 
     editorCommand("commit", "Commit the edit", "Mod+Enter", "While editing a cell"),
     editorCommand("discard", "Discard the edit", "Escape", "While editing a cell"),
-    { id: "insert-tag", label: "Insert a formula tag", keys: "Ctrl+Space", group: "While editing a cell" },
+    { id: "insert-tag", label: "Insert a formula tag", keys: "Mod+E", group: "While editing a cell" },
     { id: "insert-comment", label: "Insert a cell comment", keys: "Shift+F2", group: "While editing a cell" },
 ];
 

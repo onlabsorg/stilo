@@ -273,7 +273,7 @@ is kept on save.
   as the user types; the cursor starts at the end of the text.
 - The line break that ends the cell body is kept out of `input` and added
   back by `toTexl()`.
-- Keys: Ctrl+Space inserts a `<%  %>` tag, Shift+F2 a cell comment
+- Keys: Mod+E inserts a `<%  %>` tag, Shift+F2 a cell comment
   `<!--[  ]-->`, around the selection or at the cursor. Enter adds a line;
   Mod+Z / Mod+Shift+Z undo and redo inside the cell.
 
@@ -281,7 +281,7 @@ is kept on save.
 
 | Method                 | Description |
 |------------------------|-------------|
-| `languageExtensions()` | CodeMirror extensions for the input's language. The default is Swan highlighting of tags (`swanTags()`) and the keymap for Ctrl+Space and Shift+F2. Override to add a language, and include `super.languageExtensions()` to keep them. |
+| `languageExtensions()` | CodeMirror extensions for the input's language. The default is Swan highlighting of tags (`swanTags()`) and the keymap for Mod+E and Shift+F2. Override to add a language, and include `super.languageExtensions()` to keep them. |
 | `editorExtensions()`   | All CodeMirror extensions of the view: history, selection drawing, line wrapping, `languageExtensions()`, the default keymap (without Mod+Enter and Escape) and the listener that updates `input`. Override rarely. |
 
 ```js
@@ -567,7 +567,7 @@ which a page can also run with [`runCommand`](#commands).
 |------|---------------------------|
 | Mod+Enter | Commit and leave |
 | Escape | Discard and leave |
-| Ctrl+Space | Insert a `<%  %>` tag |
+| Mod+E | Insert a `<%  %>` tag |
 | Shift+F2 | Insert a cell comment |
 
 In the type menu: ↑ / ↓ or a type's first letter pick, Enter or Space

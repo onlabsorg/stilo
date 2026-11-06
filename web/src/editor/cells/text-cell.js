@@ -11,18 +11,18 @@ const EDITOR_KEYS = new Set(["Mod-Enter", "Escape"]);
 const cellKeymap = defaultKeymap.filter((binding) => !EDITOR_KEYS.has(binding.key));
 
 /**
- * Ctrl+Space inserts a tag, `<%  %>`, and Shift+F2 a comment, `<!--[  ]-->`
+ * Mod+E inserts a tag, `<%  %>`, and Shift+F2 a comment, `<!--[  ]-->`
  * (the Excel key for a comment), with the cursor inside it.
  */
 const templateKeymap = [
-    { key: "Ctrl-Space", run: insertTag },
+    { key: "Mod-e", run: insertTag },
     { key: "Shift-F2", run: insertComment },
 ];
 
 /**
  * A Texl template, edited as source in a CodeMirror 6 editor and shown as
  * HTML, like the base cell. Inline expressions are written as `<% ... %>`
- * tags, highlighted as Swan; Ctrl+Space inserts one, Shift+F2 a comment.
+ * tags, highlighted as Swan; Mod+E inserts one, Shift+F2 a comment.
  * Also the fallback for unknown cell types.
  *
  * The CodeMirror view exists only in edit mode: it is created after the

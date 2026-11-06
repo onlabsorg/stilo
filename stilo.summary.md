@@ -153,6 +153,13 @@ accept are not part of Stilo.
   `stilo render` keeps its output as it was and adds one line saying how many
   errors there are; `--debug` numbers them in the output and explains each one,
   and `--strict` makes the command fail if there are any.
+- 2026-11-05: **saving includes the cell being edited**: Ctrl+S now commits a
+  cell in edit mode before saving, where its edit used to be left out of the
+  file. If the cell refuses the edit, it stays open with its message and
+  nothing is saved.
+- 2026-11-06: **new key to insert a formula** while editing a cell: Ctrl+E
+  (Cmd+E on macOS) instead of Ctrl+Space, which switches the keyboard's input
+  source on macOS.
 
 ## Known limitations
 

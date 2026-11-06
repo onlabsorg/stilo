@@ -342,7 +342,7 @@ A CodeMirror update listener keeps `input` current; the line break that
 ends the body belongs to the file format and is kept out of `input`.
 
 Its language comes from `languageExtensions()`: Swan highlighting
-(`swanTags()`) and the keymap for Ctrl+Space (insert a tag) and Shift+F2
+(`swanTags()`) and the keymap for Mod+E (insert a tag) and Shift+F2
 (insert a comment). `MarkdownCell` adds Markdown highlighting in front of
 them, with a small Markdown parser extension so that Markdown does not
 interpret what is inside a tag, and overrides `renderView()` to convert its

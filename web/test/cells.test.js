@@ -10,9 +10,10 @@ async function cellInEditMode(tag, texl) {
     return [element, EditorView.findFromDOM(element.shadowRoot.querySelector(".cm-editor"))];
 }
 
-function ctrlSpace(view) {
+function modE(view) {
+    const mod = /Mac|iPhone|iPad/.test(navigator.platform) ? { metaKey: true } : { ctrlKey: true };
     const event = new KeyboardEvent("keydown", {
-        key: " ", code: "Space", keyCode: 32, ctrlKey: true, bubbles: true, cancelable: true,
+        key: "e", code: "KeyE", keyCode: 69, ...mod, bubbles: true, cancelable: true,
     });
     view.contentDOM.dispatchEvent(event);
     return event;
@@ -76,10 +77,10 @@ describe("Swan highlighting", () => {
     }
 });
 
-describe("Ctrl+Space", () => {
+describe("Mod+E", () => {
     it("inserts a tag with the cursor between the delimiters", async () => {
         const [, view] = await cellInEditMode("texl-cell-text", "Span: \n");
-        expect(ctrlSpace(view).defaultPrevented).to.be.true;
+        expect(modE(view).defaultPrevented).to.be.true;
         expect(view.state.doc.toString()).to.equal("Span: <%  %>");
         expect(view.state.selection.main.head).to.equal("Span: <% ".length);
     });
@@ -87,7 +88,7 @@ describe("Ctrl+Space", () => {
     it("puts the selected text in a tag", async () => {
         const [, view] = await cellInEditMode("texl-cell-markdown", "Span: L\n");
         view.dispatch({ selection: { anchor: 6, head: 7 } });
-        ctrlSpace(view);
+        modE(view);
         expect(view.state.doc.toString()).to.equal("Span: <% L %>");
         expect(view.state.sliceDoc(view.state.selection.main.from, view.state.selection.main.to)).to.equal("L");
     });

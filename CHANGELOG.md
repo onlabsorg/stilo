@@ -6,6 +6,8 @@ change the interfaces.
 
 ## Unreleased
 
+- **Inserting a formula tag is now Ctrl+E** (Cmd+E on macOS), instead of
+  Ctrl+Space, which switches the input source on macOS.
 - **Saving includes the cell being edited.** Ctrl+S (or Save in the commands
   pane) now commits a cell in edit mode before saving, instead of leaving its
   edit out of the file. If the cell refuses the edit, it stays in edit mode
