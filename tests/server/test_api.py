@@ -177,6 +177,65 @@ def test_public_url_serves_the_file_to_other_clients(client):
     assert client.get("/library/nope.texl").status_code == 404
 
 
+@pytest.mark.parametrize("name, media_type", [
+    ("photo.png", "image/png"),
+    ("photo.webp", "image/webp"),
+    ("report.pdf", "application/pdf"),
+    ("data.csv", "text/csv; charset=utf-8"),
+    ("blob.unknownext", "application/octet-stream"),
+    ("no-extension", "application/octet-stream"),
+    ("page.xhtml", "application/octet-stream"),  # not in the table: downloads, never runs
+    ("archive.tar.gz", "application/octet-stream"),
+])
+@pytest.mark.parametrize("headers", [HTML, {"Accept": "*/*"}])
+def test_public_url_serves_other_files_as_themselves(client, root, name, media_type, headers):
+    (root / "library" / name).write_bytes(b"content")
+    response = client.get(f"/library/{name}", headers=headers)
+    assert response.status_code == 200
+    assert response.content == b"content"
+    assert response.headers["content-type"] == media_type
+    assert response.headers["etag"] == etag(b"content")
+    assert response.headers["cache-control"] == "no-cache"
+    assert response.headers["x-content-type-options"] == "nosniff"
+    assert "content-security-policy" not in response.headers
+
+
+@pytest.mark.parametrize("name", ["page.html", "page.htm", "picture.svg", "data.xml", "style.xsl"])
+def test_public_url_sandboxes_files_that_can_run_scripts(client, root, name):
+    (root / "library" / name).write_text("<script>alert(1)</script>")
+    response = client.get(f"/library/{name}", headers=HTML)
+    assert response.headers["content-security-policy"] == "sandbox"
+    assert response.headers["x-content-type-options"] == "nosniff"
+
+
+def test_public_url_head_of_another_file(client, root):
+    (root / "library" / "report.pdf").write_bytes(b"content")
+    response = client.head("/library/report.pdf", headers=HTML)
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/pdf"
+    assert response.content == b""
+
+
+def test_public_url_of_a_refused_path_serves_no_file(client, root):
+    (root / "projects" / ".hidden" / "secret.pdf").write_bytes(b"secret")
+    (root / "library" / "outside.pdf").symlink_to(root.parent / "outside.pdf")
+    (root.parent / "outside.pdf").write_bytes(b"secret")
+    for path in ("/projects/.hidden/secret.pdf", "/library/outside.pdf"):
+        assert b"secret" not in client.get(path, headers=HTML).content
+        assert client.get(path).status_code == 400
+
+
+def test_public_url_of_a_missing_file(client):
+    assert "not built" in client.get("/library/nope.pdf", headers=HTML).text
+    assert client.get("/library/nope.pdf").status_code == 404
+
+
+def test_api_serves_other_files_as_plain_text(client, root):
+    (root / "library" / "page.html").write_text("<script>alert(1)</script>")
+    response = client.get("/_api/files/library/page.html")
+    assert response.headers["content-type"] == "text/plain; charset=utf-8"
+
+
 # -- CREATE a folder -----------------------------------------------------------
 
 def test_create_folder(client, root):

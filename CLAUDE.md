@@ -132,8 +132,8 @@ Two ways to run it:
   at the root; open <http://127.0.0.1:8000/projects/beam/beam-check.texl>.
 - **Development:** `uv run stilo serve examples` and `npm run dev` side
   by side; open <http://localhost:5173/projects/beam/beam-check.texl>.
-  Vite serves the pages and forwards `/_api` and non-HTML `.texl` requests
-  (imports).
+  Vite serves the pages and forwards `/_api` and the public URLs of files
+  (imports, images, PDFs).
 
 The app shell has no tests yet (the editor has). To check the UI, run the
 server and drive it with a headless browser (puppeteer-core with the local
@@ -247,7 +247,9 @@ valid Texl document that renders without the editor (`stilo render`,
 - A cell that handles a key itself calls `preventDefault()`; the editor
   ignores keydown events that are already default-prevented.
 - Documents are untrusted: rendered HTML is always sanitised; the server
-  never executes documents.
+  never executes documents. Other files are untrusted too: by their public
+  URL they get their real type, sandboxed if they could run scripts
+  (`docs/protocol.md`); links opening in a new tab use `noopener`.
 - Tests of the editor run in a real browser (custom elements, wasm).
   Synthetic key events in tests need `cancelable: true`.
 - `vite.config.js` excludes `@onlabsorg/texl` from `optimizeDeps`; the wasm

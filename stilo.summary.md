@@ -34,10 +34,13 @@ project; the command is still `stilo`. The server stays independent of the CLI (
 checks it), so it can be reused or replaced on its own.
 
 Each document has one URL, `/path/to/doc.texl`: a browser gets the web app,
-`texl.import` gets the file. A link in a document to another document opens
-it in the app. Imports with relative paths resolve from the document's own
-folder, the same in the browser and on the command line, and are fetched
-again at every rendering.
+`texl.import` gets the file. Any other file in the folder, such as an image or
+a PDF, has its URL too and is served as itself. A link in a document to another
+document opens it in the app; a link to another file or website opens in a new
+tab. Imports with relative paths resolve from the document's own folder, the
+same in the browser and on the command line, and are fetched again at every
+rendering. Relative links in text shown from an imported document resolve from
+the document showing it.
 
 Single-user by design: no accounts or permissions. Revisions, release and
 accept are not part of Stilo.
@@ -182,16 +185,24 @@ accept are not part of Stilo.
   changed; closing the formula separates them again. A marker line typed in a
   cell makes a new cell when you leave it. File format: a marker line inside a
   formula is not a marker.
+- 2026-11-07: **links to other files work**: a relative link or image in a
+  document can point to an image, a PDF or any other file in the folder. A PDF
+  link used to show an empty Stilo and an SVG image did not show. Clicking a
+  link to a file or a website opens a new tab, so the document stays open.
+  Files of unknown type download. HTML, XML and SVG files opened by their
+  address are sandboxed, so they cannot run scripts on Stilo's address.
 
 ## Known limitations
 
 - No authentication: serve to localhost, or behind your own access control.
-- Editor: links in rendered text to files other than documents resolve
-  against the page, not the document; autocompletion of names must be
-  redesigned; plain text cannot hold a literal `<%` above a later formula, as
+- Editor: autocompletion of names must be redesigned; plain text cannot hold a literal `<%` above a later formula, as
   the formula's `%>` would close it (the editor refuses this, and says why).
 - The editor is not published as a package of its own: pages that embed it
-  use it from a copy of the source code.
+  use it from a copy of the source code. On a page whose address differs from
+  its document's, links in rendered text resolve against the page.
+- Links: a link to a file that does not exist opens an empty Stilo in the new
+  tab, not a "file not found" page. Images and other files can only be added to
+  the folder outside Stilo, and their links typed by hand.
 - Files and folders: renaming or moving does not update links to the item;
   documents are got back from `.trash` by hand, as there is no restore command.
 - Table cell: plain fields without formula highlighting.

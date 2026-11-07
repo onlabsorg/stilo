@@ -78,6 +78,15 @@ class Storage:
         content = target.read_bytes()
         return content, etag(content)
 
+    def is_other_file(self, path: str) -> bool:
+        """Whether `path` is an existing file that is not a Texl document. A
+        path the protocol refuses is not one."""
+        try:
+            target = self.resolve(path)
+        except BadRequest:
+            return False
+        return target.is_file() and target.suffix != DOCUMENT_SUFFIX
+
     def create(self, path: str, content: bytes) -> str:
         target = self._writable(path)
         target.parent.mkdir(parents=True, exist_ok=True)

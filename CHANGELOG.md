@@ -6,6 +6,18 @@ change the interfaces.
 
 ## Unreleased
 
+- **Links to other files work.** An image, PDF or other file in the folder now
+  opens from a relative link in a document. Before, a PDF link showed an empty
+  Stilo, and an SVG image did not show.
+  - **Clicking a link** to a file or to another website opens it in a new tab,
+    so your document stays open. A link to a `.texl` document still opens in
+    place.
+  - **Relative links in imported text** resolve from the document showing them,
+    not from the imported document's folder.
+  - **Server:** other files are served at their public URL with their real
+    content type, also to a browser asking for HTML. Files of unknown type
+    download; HTML, XML and SVG opened directly are sandboxed, so they cannot
+    run scripts on Stilo's address.
 - **A formula can no longer run across cells.** A `<%` left open used to close
   at the first `%>` of a later cell, leaving the cells in between blank.
   - **In the editor**, leaving a cell in that state is refused with a message

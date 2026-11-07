@@ -53,7 +53,7 @@ Two ways:
 
     and open <http://localhost:5173/projects/beam/beam-check.texl>. Vite
     serves the pages and forwards to the server the protocol (`/_api`)
-    and the `.texl` files requested by anything but a page (the imports).
+    and the public URLs of files: imports, images, PDFs.
     For a server on another port: `STILO_SERVER=http://127.0.0.1:8765 npm
     run dev`.
 

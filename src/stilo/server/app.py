@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import mimetypes
 from pathlib import Path
 
 from fastapi import FastAPI, Query, Request
@@ -16,9 +17,27 @@ TEXT = "text/plain; charset=utf-8"
 # browsers must not reuse a stored copy without asking the server again.
 NO_CACHE = {"Cache-Control": "no-cache"}
 
+# Python's own table of types, not the machine's, so that every installation
+# answers the same. WebP is missing from the table of Python 3.11.
+FILE_TYPES = mimetypes.MimeTypes()
+FILE_TYPES.add_type("image/webp", ".webp")
+
 NO_BUILD = """<!doctype html><meta charset="utf-8"><title>Stilo</title>
 <p>The web app is not built. Run <code>npm run build</code> in <code>web/</code>
 of the Stilo checkout, or use the Vite dev server (<code>npm run dev</code>).</p>"""
+
+
+def other_file_response(path: str, content: bytes, tag: str) -> Response:
+    """A file that is not a Texl document, by its public URL. Files are
+    untrusted: one opened by its URL must not run scripts on this origin, which
+    can write to every document (docs/protocol.md)."""
+    media_type, encoding = FILE_TYPES.guess_type(path)
+    if media_type is None or encoding is not None:
+        media_type = "application/octet-stream"
+    headers = {"ETag": tag, "X-Content-Type-Options": "nosniff", **NO_CACHE, "Vary": "Accept"}
+    if media_type.endswith(("/html", "/xml", "+xml")):
+        headers["Content-Security-Policy"] = "sandbox"
+    return Response(content, media_type=media_type, headers=headers)
 
 
 def create_app(root: Path | str, web_dist: Path | str | None = None) -> FastAPI:
@@ -84,13 +103,15 @@ def create_app(root: Path | str, web_dist: Path | str | None = None) -> FastAPI:
         # The bundle is built with base "/_app/" (web/vite.config.js).
         app.mount("/_app", StaticFiles(directory=dist), name="app")
 
-    # Every other path is a document's public URL. Browsers asking for HTML
-    # get the web app, which reads the open document from the URL path (and
-    # the navigation root from ?root=); any other client (texl.import) gets
-    # the file itself.
+    # Every other path is a public URL. A file that is not a document is served
+    # as itself to everyone. For the rest, browsers asking for HTML get the web
+    # app, which reads the open document from the URL path (and the navigation
+    # root from ?root=); any other client (texl.import) gets the file itself.
     @app.api_route("/{path:path}", methods=["GET", "HEAD"], include_in_schema=False)
     async def page(path: str, request: Request):
         vary = {"Vary": "Accept"}
+        if storage.is_other_file(path):
+            return other_file_response(path, *storage.read(path))
         if "text/html" not in request.headers.get("accept", ""):
             content, tag = storage.read(path)
             return Response(content, media_type=TEXT,

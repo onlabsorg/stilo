@@ -86,7 +86,7 @@ The commands call these public methods:
 | right pane      | `run-command`, `close-pane` | Runs a command, closes the pane          |
 | `<comments-pane>` | `comment-click`           | Selects that line in the editor (`select(line)`) and focuses it |
 | `<errors-pane>` | `go-to`                     | Selects that line, opening another document first if the error was made there |
-| main area       | click on a link             | Opens a link to a `.texl` document under the root in the app, resolved from the open document's address |
+| main area       | click on a link             | Resolves the link from the open document's address. A `.texl` document on this server opens in the app; anything else over HTTP, another file or another site, opens in a new tab; other schemes (`mailto:`) stay with the browser |
 
 ## Routing: `route.js`
 

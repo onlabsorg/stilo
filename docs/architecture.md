@@ -91,7 +91,8 @@ system can be added without restructuring:
 - **The editor owns the document.** Cells are views of their Texl source
   and report changes by events. No cell data lives outside the source.
 - **Documents are untrusted.** Rendered HTML is always sanitized
-  (DOMPurify), and the server never executes documents.
+  (DOMPurify), and the server never executes documents; other files opened
+  by their URL are sandboxed if they could run scripts (`docs/protocol.md`).
 - **Single user.** Accounts, organizations, permissions, revisions,
   release and accept are not Stilo's job: they belong to a platform built
   on top of it, which speaks the same protocol.

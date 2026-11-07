@@ -246,8 +246,8 @@ Nothing is cached between renderings: every rendering fetches the imported
 documents again, so a changed library shows on the next one (the browser's
 HTTP cache still applies). Imports are loaded by the browser, so the usual
 CORS rules apply. Links in the rendered output, e.g. `[steel](steel.texl)`
-in Markdown, are resolved by the browser against the page, not the
-document.
+in Markdown, are resolved by the browser against the page, not `url`: a page
+whose address differs from its document's must handle that itself.
 
 ## 6. Comments and cell names
 

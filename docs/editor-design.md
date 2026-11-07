@@ -208,8 +208,17 @@ cells' markers, which render to themselves (HTML comments without tags):
   Options: the names of `doc.data` filtered by the cell where they are first
   bound; a separate context render of the cells above the edited one (no
   imports there); a Texl API for the names at each tag.
-- **(open)** Links in rendered HTML (e.g. `[lib](lib.texl)`) resolve against
-  the page, not the document URL.
+- Links in rendered HTML (e.g. `[lib](lib.texl)`) resolve from the folder of
+  the document showing them, because the app's page address is the document's
+  public address. Text from an imported document is part of the document
+  showing it, so its relative links resolve from there too. The `uri` that
+  `texl.import` returns lets an author build the right address.
+- A link to a document on the same server opens in the app; a link to anything
+  else, another file or another site, opens in a new tab, so the document stays
+  open.
+- **(open)** A page embedding `<texl-editor>` at an address other than its
+  `url` gets links resolved against the page. The fix, when an embedder needs
+  it, is to resolve them against `url` in `sanitizeOutput`.
 - **(open)** Every rendering fetches and renders all imports again (the
   browser HTTP cache absorbs repeated fetches). If it gets slow: debounce,
   and later cache sources at loader level (a Texl feature).

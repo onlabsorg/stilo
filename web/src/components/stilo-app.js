@@ -632,16 +632,25 @@ export class StiloApp extends LitElement {
         this._updateComments();
     }
 
-    /** A click on a link to a document under the root opens it in the app.
-     * The link resolves from the open document, as its imports do. */
+    /** A click on a link to a document on this server opens it in the app;
+     * a link to anything else on the web, another file or another site, opens
+     * in a new tab, with the document left as it is. The link resolves from
+     * the open document, as its imports do. Other schemes (mailto:) stay with
+     * the browser. */
     _onLinkClick(e) {
         if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
         const link = e.composedPath().find((node) => node instanceof HTMLAnchorElement && node.hasAttribute("href"));
         if (!link || link.target || !this._doc) return;
-        const path = documentPath(new URL(link.getAttribute("href"), documentUrl(this._doc)));
-        if (!path) return;
-        e.preventDefault();
-        this._go({ root: this._root, doc: path });
+        const url = new URL(link.getAttribute("href"), documentUrl(this._doc));
+        const path = documentPath(url);
+        if (path) {
+            e.preventDefault();
+            this._go({ root: this._root, doc: path });
+        } else if (url.protocol === "http:" || url.protocol === "https:") {
+            e.preventDefault();
+            // Documents are untrusted: the new tab gets no hold on this one.
+            window.open(url.href, "_blank", "noopener");
+        }
     }
 
     /** A comment in the comments pane was clicked: select its line. */

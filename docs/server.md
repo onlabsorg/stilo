@@ -185,7 +185,7 @@ The routes, in the order they match:
 | `/_api/tree/{path}`                | GET          | `Storage.tree`, with `?depth=` (1 or more) |
 | `/_api/{path}`                     | any          | `404`: unknown endpoint                  |
 | `/_app/...`                        | GET          | The web app's static files (`web_dist`)  |
-| `/{path}`                          | GET, HEAD    | The public address: the web app for a browser (`Accept` includes `text/html`), the file for anything else; `Vary: Accept` |
+| `/{path}`                          | GET, HEAD    | The public address. A file that is not a document: itself, for every client, with its real type and the safety headers of the protocol (`other_file_response`). Otherwise the web app for a browser (`Accept` includes `text/html`), the file for anything else. `Vary: Accept` |
 
 `create_app()` is the server's extension point: new endpoints go under
 `/_api/`, added here, without changing the existing ones.

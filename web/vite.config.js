@@ -4,8 +4,9 @@ import { defineConfig } from "vite";
 const SERVER = process.env.STILO_SERVER ?? "http://127.0.0.1:8000";
 
 // `npm run dev` serves the app on :5173 and forwards to the Python server on
-// :8000 the protocol (/_api) and the Texl files asked for by anything but a
-// browser page (texl.import of a public URL, see docs/protocol.md).
+// :8000 the protocol (/_api) and the public URLs of files: everything with an
+// extension outside Vite's own paths, except the .texl pages a browser asks
+// for, which are the app (see docs/protocol.md).
 // `npm run build` writes the app into the Python package, src/stilo/web,
 // which the server serves itself: index.html for every page, the bundle under
 // /_app/.
@@ -25,9 +26,12 @@ export default defineConfig(({ command }) => ({
     server: {
         proxy: {
             "/_api": SERVER,
-            "^/.*\\.texl$": {
+            "^/(?!src/|node_modules/|@)[^?]*\\.[^/?]+(\\?.*)?$": {
                 target: SERVER,
-                bypass: (req) => (req.headers.accept?.includes("text/html") ? req.url : undefined),
+                bypass: (req) =>
+                    req.headers.accept?.includes("text/html") && req.url.split("?")[0].endsWith(".texl")
+                        ? req.url
+                        : undefined,
             },
         },
     },

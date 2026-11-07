@@ -18,7 +18,7 @@ root; document folders and files cannot use them there.
 | `/_api/tree/<path>`   | Folder structure, as JSON; create and delete folders |
 | `/_api/move/<path>`   | Move or rename a document or a folder            |
 | `/_app/...`           | The web app's static assets (built bundle)       |
-| `/<path>`             | Any other path: the document's **public URL** (GET, HEAD) |
+| `/<path>`             | Any other path: the **public URL** of a document or other file (GET, HEAD) |
 
 `<path>` is a path relative to the server root, with `/` separators.
 Segments must not be empty, `.`, `..`, or start with `.` (no hidden files).
@@ -36,12 +36,38 @@ Texl, by content negotiation on `Accept`:
 Responses carry `Vary: Accept`. The `/_api/files/` form is the explicit API
 used by the web app for reading and writing.
 
+Any **other file** under the root, such as an image or a PDF, has a public
+URL too, so a document can link to it. Every client gets the file itself,
+also a browser asking for HTML, with `ETag` and `Cache-Control: no-cache` as
+above and these headers:
+
+| Header                    | Value                                          |
+|---------------------------|------------------------------------------------|
+| `Content-Type`            | The type of the file's extension; `application/octet-stream` if it has no known type, or a compressed one, which a browser downloads |
+| `X-Content-Type-Options`  | `nosniff`: clients must keep to that type      |
+| `Content-Security-Policy` | `sandbox`, only for HTML and XML types, SVG included |
+
+Files are untrusted, and the server's origin can write to every document. So
+a file opened by its URL must not run scripts there: HTML, XML and SVG are
+sandboxed, while an SVG shown in an `<img>` runs no scripts and still shows.
+The `/_api/files/` form always answers `text/plain`, so it never runs
+anything either.
+
+A browser asking for a path that is not a file gets the web app, which
+opens no document unless the path ends in `.texl`.
+
 **Imports:** the editor renders a document as the document at its public
 URL, so a relative import resolves from the document's folder
 (`texl.import("steel.texl")` in `/library/beam.texl` fetches
 `/library/steel.texl`). Imports are fetched again on every rendering, so file
 responses carry `Cache-Control: no-cache`: the browser never reuses a stored
 copy without asking the server.
+
+**Links:** a relative link or image in rendered text resolves from the folder
+of the document showing it. Text from an imported document is part of the
+document showing it, so its relative links resolve from there too, not from
+the imported document's folder. A document stores links as written: the
+server and the web app do not rewrite them.
 
 ## Interactions
 
