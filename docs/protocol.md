@@ -8,8 +8,9 @@ writable.*
 
 ## URL space
 
-The server answers three kinds of paths. Names starting with `_` are
-reserved at the root; document folders and files cannot use them there.
+The server answers three kinds of paths: the API (`/_api/`), the web app's
+assets (`/_app/`) and public URLs. Names starting with `_` are reserved at the
+root; document folders and files cannot use them there.
 
 | Path                  | What                                             |
 |-----------------------|--------------------------------------------------|
@@ -56,7 +57,8 @@ GET /_api/files/projects/beam/beam-check.texl
 ```
 
 Any regular file under the root can be read (Texl documents import other
-files too). `404` if it does not exist, `400` if the path is a folder.
+files too). `404` if it does not exist, `400` if the path is a folder. `HEAD`
+answers the same, without the body.
 
 ### CREATE a new file
 
@@ -85,7 +87,8 @@ PUT /_api/files/projects/beam/beam-check.texl
 ```
 
 The body replaces the whole file. `404` if the file does not exist (update
-never creates). With `If-Match`, the server refuses the write with
+never creates). Only `.texl` files can be written (`400` otherwise, whether or
+not the file exists). With `If-Match`, the server refuses the write with
 `412 Precondition Failed` if the file changed since the client read it, so
 two people saving the same document do not silently overwrite each other.
 Without `If-Match` the write is unconditional; the web app always sends it.
