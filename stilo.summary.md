@@ -191,6 +191,8 @@ accept are not part of Stilo.
   link to a file or a website opens a new tab, so the document stays open.
   Files of unknown type download. HTML, XML and SVG files opened by their
   address are sandboxed, so they cannot run scripts on Stilo's address.
+- 2026-11-07: **0.2.0 released**: tagged `v0.2.0` and published on PyPI as
+  `stilo-cli`, with all the changes since 0.1.0 listed above.
 
 ## Known limitations
 
