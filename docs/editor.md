@@ -40,6 +40,8 @@ exactly the text that is saved.
 | `web/src/editor/texl-cell.js`            | `TexlCell`: base class of the cells; modes, layout, commit protocol | Lit, DOMPurify | [`TexlCell`](component/api.md#texlcell) |
 | `web/src/editor/cells/text-cell.js`      | `TextCell`: Texl template edited in CodeMirror 6; fallback type | texl-cell, swan, CodeMirror | [`TextCell`](component/api.md#textcell) |
 | `web/src/editor/cells/markdown-cell.js`  | `MarkdownCell`: `TextCell` with Markdown highlighting and Markdown output, equations included | text-cell, swan, marked, DOMPurify | [`MarkdownCell`](component/api.md#markdowncell) |
+| `web/src/editor/cells/rich-cell.js`      | `RichCell`: WYSIWYG editing of Markdown with ProseMirror; toolbar, formula chips, the field under a chip |
+| `web/src/editor/rich/`                   | `schema.js` (what it can hold), `markdown.js` (source ↔ document, `acceptsRich`), `commands.js` (keys, typing shortcuts) |
 | `web/src/editor/cells/table-cell.js`     | `TableCell`: a Markdown pipe table edited as a grid; `parseTable`, `serializeTable` | markdown-cell, swan | [`TableCell`](component/api.md#tablecell) |
 | `web/src/editor/cells/formula-cell.js`   | `FormulaCell`: one tag, edited without its delimiters; `parseFormula`, `serializeFormula` | text-cell, swan | [`FormulaCell`](component/api.md#formulacell) |
 | `web/src/editor/math.js`                 | Equations in Markdown: finds `$...$` and `$$...$$`, typesets them, declares the fonts in the document | KaTeX, errors |
@@ -134,7 +136,7 @@ private reactive properties:
 
 `render()` draws one grid row per line: left margin, cell element, right
 margin. The sheet has `max(rows, cells.length)` lines; lines below the
-document show an empty `markdown` cell that is not part of the document.
+document show an empty `rich` cell that is not part of the document.
 
 For each line the editor asks the registry which element to use
 (`cellTagName(type)`) and creates it with Lit's static templates, binding
@@ -160,7 +162,7 @@ So a custom cell type gets the same treatment as a built-in one.
 Every change goes through one method, `_setCells(cells)`:
 
 1. push the current state on the undo stack (at most 100) and clear redo;
-2. drop empty `markdown`/`text` cells at the end (they look like the empty
+2. drop empty `rich`/`markdown`/`text` cells at the end (they look like the empty
    lines below the document);
 3. make sure only the first cell goes without marker, and name unnamed
    cells (`nameCells`);

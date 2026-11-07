@@ -4,6 +4,7 @@ import {
     parseDocument,
     serializeDocument,
     outputSpans,
+    tagOutputs,
     cellsFromSource,
     spanningTag,
     cellComments,
@@ -15,16 +16,18 @@ import { createEngine } from "./engine.js";
 import { findErrors, markErrors } from "./errors.js";
 import { TexlCell } from "./texl-cell.js";
 
-/** What an empty line below the document shows: an empty markdown cell. */
-const EMPTY_LINE = { type: "markdown", texl: "" };
+/** What an empty line below the document shows: an empty rich text cell. */
+const EMPTY_LINE = { type: "rich", texl: "" };
 
 /** Says that a tag would run into a later cell (`spanningTag`). */
+const NO_TAG_OUTPUTS = new Map();
+
 const spanMessage = ({ opens, reaches }) =>
     `The “<%” on line ${opens + 1} has no closing “%>”, so it would run into line ${reaches + 1}`;
 
-/** Whether a cell looks like an empty line: an empty markdown or text cell. */
+/** Whether a cell looks like an empty line: an empty rich text, markdown or text cell. */
 function isEmptyLine(cell) {
-    return (cell.type === "markdown" || cell.type === "text") && !cell.texl;
+    return (cell.type === "rich" || cell.type === "markdown" || cell.type === "text") && !cell.texl;
 }
 
 /** The name of a cell type shown to the user. */
@@ -392,10 +395,13 @@ export class TexlEditor extends LitElement {
         this._menuItem = 0;
         /** A message shown at a line until the next key or press, as `{index, text}`, or null. */
         this._notice = null;
+        /** Whether the last press was in the cell being edited. */
+        this._pressedInEdit = false;
         /** Closes the menu on a press outside it and its icon. */
         this._onPointerDown = (e) => {
             this._notice = null;
             const path = e.composedPath();
+            this._pressedInEdit = this._editing >= 0 && path.includes(this._cellElement(this._editing));
             if (!path.some((node) => node.classList?.contains("type-menu") || node.classList?.contains("type-button")))
                 this._closeMenu();
         };
@@ -463,6 +469,7 @@ export class TexlEditor extends LitElement {
         if (generation !== this._generation) return;
         const { errors, places } = doc ? findErrors(doc, cells) : { errors: [], places: [] };
         this._outputs = doc ? outputSpans(doc, cells).map((span) => markErrors(doc.text, places, span)) : [];
+        this._tagOutputs = doc ? tagOutputs(doc, cells) : [];
         this._errors = errors;
         this._errorPlaces = places;
         this._errorMessages = places.map(({ error }) => error.rootCause);
@@ -733,8 +740,25 @@ export class TexlEditor extends LitElement {
         if (!extend) this._anchor = this._selected;
     }
 
-    /** Selects line `index` alone and edits it. */
+    /**
+     * A click elsewhere in the sheet commits the cell being edited, before the
+     * click does what it does. If the cell refuses, it stays in edit mode, says
+     * why, and the click does nothing. A selection dragged out of the cell is no
+     * click elsewhere.
+     */
+    _onSheetClick(e) {
+        if (this._editing < 0) return;
+        const cell = this._cellElement(this._editing);
+        if (this._pressedInEdit || e.composedPath().includes(cell)) return;
+        cell.exitEdit(true);
+        if (this._editing < 0) return;
+        e.stopPropagation();
+        cell.focusEditor();
+    }
+
+    /** Selects line `index` alone and edits it, unless another line is being edited. */
     _edit(index) {
+        if (this._editing >= 0 && this._editing !== index) return;
         this._closeMenu();
         this._select(index);
         this._editing = index;
@@ -1082,6 +1106,7 @@ export class TexlEditor extends LitElement {
                 data-index=${i}
                 .texl=${cell.texl}
                 .output=${this._outputs[i] ?? ""}
+                .tagOutputs=${this._tagOutputs?.[i] ?? NO_TAG_OUTPUTS}
                 .errorMessages=${this._errorMessages}
                 .mode=${i === this._editing ? "edit" : "render"}
                 .selected=${i >= first && i <= last}
@@ -1095,6 +1120,6 @@ export class TexlEditor extends LitElement {
                     ${this._renderErrorCount(i)}${this._renderCommentCount(i, cellComments(cell.texl))}
                 </div>`;
         });
-        return html`<div class="sheet">${rows}</div>`;
+        return html`<div class="sheet" @click=${{ handleEvent: (e) => this._onSheetClick(e), capture: true }}>${rows}</div>`;
     }
 }

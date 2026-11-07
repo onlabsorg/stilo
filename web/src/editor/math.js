@@ -73,6 +73,16 @@ function typeset({ raw, tex, display }) {
     });
 }
 
+/**
+ * The HTML of one equation, for what shows equations outside Markdown.
+ * @param {string} tex
+ * @param {boolean} display
+ * @returns {string}
+ */
+export function typesetEquation(tex, display) {
+    return typeset({ raw: tex, tex, display });
+}
+
 /** The `marked` extensions that find equations and typeset them. */
 export const mathMarkdown = {
     extensions: [

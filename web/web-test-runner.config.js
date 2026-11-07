@@ -15,6 +15,8 @@ const inlineCss = {
 // are custom elements and Texl runs as WebAssembly.
 export default {
     files: "test/**/*.test.js",
+    // The repository, so that tests can read the documents in examples/
+    rootDir: "..",
     nodeResolve: true,
     plugins: [inlineCss],
     // One file at a time: the tests check the focus and wait for animation

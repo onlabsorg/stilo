@@ -135,3 +135,16 @@ code, which cannot be rewritten reliably. A git repository can ignore `.trash`.
 A folder document (a file in each folder, shown as the folder) was considered and
 dropped: a folder is just a folder. As a consequence, git does not keep empty
 folders.
+
+## S9 — 2026-11-07 — Rich text cell: ProseMirror over Markdown, the default type
+The `rich` cell edits text as in Word, with ProseMirror, and stores it as the
+Markdown of the `markdown` cell, read with the same parser (`marked`). New cells
+and empty lines are `rich`; a configuration file may change that default later.
+The type refuses, with a message, a source it could not write back with the same
+meaning (raw HTML, tables). Word's colours, fonts and alignment are left out, and
+repeated empty paragraphs collapse. In edit mode arrow keys stay in the cell.
+*Reason:* the MVP must feel like Office to Office users, while files stay readable
+and small to diff, since a release is a commit. Markdown keeps a type change from
+converting anything, and one parser cannot disagree with itself; that is why
+TipTap and `prosemirror-markdown` (markdown-it) were not used. HTML as the source
+would allow all of Word's formatting, at the cost of files people cannot review.

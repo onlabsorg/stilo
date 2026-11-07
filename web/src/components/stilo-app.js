@@ -25,7 +25,7 @@ import "./comments-pane.js";
 import "./errors-pane.js";
 import "./move-dialog.js";
 
-const NEW_DOCUMENT = (title) => `<!--{ markdown }-->\n# ${title}\n`;
+const NEW_DOCUMENT = (title) => `<!--{ rich }-->\n# ${title}\n`;
 const SHOW_EMPTY_KEY = "stilo-show-empty";
 
 const parentFolder = (path) => (path.includes("/") ? path.slice(0, path.lastIndexOf("/")) : "");

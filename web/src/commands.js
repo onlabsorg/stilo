@@ -125,6 +125,7 @@ export const commands = [
     editorCommand("delete", "Delete the selected cells", "Delete"),
     editorCommand("cell-type", "Change the cell type…", "Mod+/"),
     editorCommand("make-formula", "Make it a formula and edit", "="),
+    editorCommand("make-rich", "Make it rich text and edit", "R"),
     editorCommand("make-text", "Make it text and edit", "T"),
     editorCommand("make-markdown", "Make it Markdown and edit", "M"),
     editorCommand("make-table", "Make it a table and edit", "Shift+T"),

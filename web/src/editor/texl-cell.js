@@ -64,6 +64,8 @@ export class TexlCell extends LitElement {
     static properties = {
         texl: { type: String },
         output: { type: String },
+        /** What each tag of the cell output in the last rendering, by its source. */
+        tagOutputs: { attribute: false },
         /** The hover text of the errors marked in `output`, by index. */
         errorMessages: { attribute: false },
         mode: { type: String, reflect: true },
@@ -242,6 +244,7 @@ export class TexlCell extends LitElement {
         super();
         this.texl = "";
         this.output = "";
+        this.tagOutputs = new Map();
         this.errorMessages = [];
         /**
          * Set by the editor: why a new source cannot be committed given the

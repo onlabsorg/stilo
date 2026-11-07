@@ -27,7 +27,16 @@
     "dompurify": "^3.4.17",
     "katex": "^0.19.1",
     "lit": "^3.3.3",
-    "marked": "^18.1.1"
+    "marked": "^18.1.1",
+    "prosemirror-commands": "^1.7.2",
+    "prosemirror-gapcursor": "^1.4.1",
+    "prosemirror-history": "^1.5.1",
+    "prosemirror-inputrules": "^1.5.1",
+    "prosemirror-keymap": "^1.2.3",
+    "prosemirror-model": "^1.25.12",
+    "prosemirror-schema-list": "^1.6.0",
+    "prosemirror-state": "^1.4.4",
+    "prosemirror-view": "^1.42.9"
   },
   "devDependencies": {
     "@open-wc/testing": "^5.0.0",

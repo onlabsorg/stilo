@@ -10,7 +10,7 @@ API is young and will change before 1.0. The examples import the editor as
 - [Importing](#importing)
 - [`<texl-editor>`](#texl-editor) — the editor element
 - [`TexlCell`](#texlcell) — base class of all cells
-- [`TextCell`](#textcell), [`MarkdownCell`](#markdowncell),
+- [`RichCell`](#richcell), [`TextCell`](#textcell), [`MarkdownCell`](#markdowncell),
   [`TableCell`](#tablecell) and [`FormulaCell`](#formulacell) — built-in cells
 - [Cell registry](#cell-registry) — `registerCell`, `cellTagName`,
   `cellClass`, `cellTypes`
@@ -31,8 +31,7 @@ import "stilo-editor/index.js";            // defines <texl-editor> and the buil
 import { TexlCell, registerCell } from "stilo-editor/index.js";
 ```
 
-Importing the entry point has side effects: it registers `TextCell` and
-`MarkdownCell` and defines the custom element `texl-editor` (unless already
+Importing the entry point has side effects: it registers the built-in cells and defines the custom element `texl-editor` (unless already
 defined). The cell modules are also exported on their own, without side
 effects:
 
@@ -298,14 +297,23 @@ class HtmlCell extends TextCell {
 registerCell(HtmlCell);
 ```
 
+## `RichCell`
+
+Type `rich`, label "Rich text", key `r`. Extends `MarkdownCell`: it has the same
+source and shows it the same way, and edits it with ProseMirror, with a toolbar.
+Tags show as chips with their value, from `tagOutputs`, a `Map` from a tag's
+source to its output that the editor sets on every cell. New cells and empty
+lines are `rich`. `accepts(source)` is true
+only if the source can be written back with the same meaning. See
+[Rich text](../editor-design.md#rich-text).
+
 ## `MarkdownCell`
 
 Type `markdown`, label "Markdown". Extends `TextCell`. Adds Markdown
 highlighting in the editor (tags stay highlighted as Swan; Markdown does not
 look inside them) and shows its output as Markdown, converted with `marked`
 and sanitised with DOMPurify. LaTeX equations in the Markdown, `$...$` in the
-text and `$$...$$` on lines of their own, are typeset with KaTeX. New cells
-and empty lines are `markdown`.
+text and `$$...$$` on lines of their own, are typeset with KaTeX.
 
 ## `TableCell`
 
@@ -592,7 +600,7 @@ which a page can also run with [`runCommand`](#commands).
 | Mod+Z; Mod+Shift+Z, Mod+Y | Undo; redo |
 | Mod+/ | Open the type menu |
 | Shift+F2 | Fire `comments-click` for the selected line |
-| `=`, `t`, `m`, `T` (a type's `key`) | Change the selected line to formula, text, Markdown or table and edit it; on a line of that type, edit it. If the type refuses the source, show why at the line |
+| `=`, `r`, `t`, `m`, `T` (a type's `key`) | Change the selected line to formula, rich text, text, Markdown or table and edit it; on a line of that type, edit it. If the type refuses the source, show why at the line |
 
 | Keys | In edit mode (text cells) |
 |------|---------------------------|

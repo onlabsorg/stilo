@@ -21,7 +21,7 @@ to Word and Excel users, and renders them from the command line.
 | Part   | What                                                          |
 |--------|---------------------------------------------------------------|
 | Web app | The user interface (Lit web components, Vite): top bar, navigation pane with the folder's files and commands to manage them, the editor, right pane with commands, cell comments and errors. Light and dark theme. |
-| Editor | Inside the web app: `<texl-editor>`, a document as a stack of typed cells (text, Markdown, table and formula; formulas as `<% %>` tags; LaTeX equations in Markdown and tables), live rendering, cell comments, errors shown where they happen. Until 2026-10-26 the separate `texl-editor` package. |
+| Editor | Inside the web app: `<texl-editor>`, a document as a stack of typed cells (rich text, the default; text, Markdown, table and formula; formulas as `<% %>` tags; LaTeX equations in Markdown and tables), live rendering, cell comments, errors shown where they happen. Until 2026-10-26 the separate `texl-editor` package. |
 | Server | Python (FastAPI): serves one folder of documents and the web app, for one user. |
 | CLI    | The `stilo` command: `stilo render <file>` prints a rendered document (or writes it to a file), says how many errors it has and can explain them; `stilo serve [folder]` starts the server on a folder. |
 | Protocol | Plain HTTP between web app and server: GET a file, CREATE (POST), UPDATE (PUT, with an ETag so concurrent saves don't overwrite each other), QUERY a folder's tree, create a folder, move or rename a document or folder, delete a document or folder. |
@@ -202,6 +202,20 @@ accept are not part of Stilo.
   file format does not change: `stilo render` returns the LaTeX as text. The
   sample documents use equations, and the link to the library in
   `examples/sample.texl` now works.
+- 2026-11-07: **rich text cell, the default for new cells**: text is edited as
+  in Word, on the same typography as the output, with a toolbar and Word's keys
+  for bold, italic, underline, headings, lists and links. Formulas show as chips
+  with their value, the expression on hover and in a small field on a click; one
+  with no output shows a small ƒ. Equations are typeset while editing, with a
+  preview when changed. Shift+F2 adds a comment. Pasting keeps the supported
+  formatting. File format: the source is the same Markdown as a Markdown cell's,
+  under the new type `rich`, so the two change into each other with nothing
+  converted, and only the changed paragraphs differ in the file. A cell with raw
+  HTML or a table cannot be rich text, and the type menu says why. Arrow keys
+  stay in the cell while editing.
+- 2026-11-07: **a click on another line commits the cell being edited**, in every
+  cell type, as in Excel; a cell that refuses its edit stays open and says why. A
+  double click on another line could lose the edit; it no longer does.
 
 ## Known limitations
 
@@ -217,6 +231,12 @@ accept are not part of Stilo.
 - Files and folders: renaming or moving does not update links to the item;
   documents are got back from `.trash` by hand, as there is no restore command.
 - Table cell: plain fields without formula highlighting.
+- Rich text cell: no colours, fonts or alignment; repeated empty paragraphs
+  collapse; images are shown and kept but cannot be inserted; a comment can be
+  added but not edited; a new or changed formula shows its expression, not its
+  value, until the cell is committed; the toolbar moves the text down a line when
+  editing starts. Tried in Chrome; ProseMirror, the library under it, also in
+  Firefox and Linux WebKit; not on Safari on a Mac.
 - Equations: in a table, a `|` inside an equation ends the table cell (write
   `\vert`). Only the editor typesets them: other outputs show the LaTeX as text.
 - Errors: a value inside a link's address or another HTML attribute counts but

@@ -6,6 +6,25 @@ change the interfaces.
 
 ## Unreleased
 
+- **Rich text cells, as in Word, and the default for new cells.** Bold is bold and
+  a title is a title while you edit, with a toolbar and Word's keys: Ctrl+B, I, U,
+  Ctrl+K for a link, Ctrl+Alt+1 to 3 for headings, Tab to indent a list, `# ` or `- `
+  to start a heading or a list. Press `r` on a line to make it rich text.
+  - **Formulas are chips** that show their value, with the expression on hover. A
+    click edits it; Ctrl+E or typing `<%` inserts one. A formula with no output
+    (`<% L = 6 %>`) shows a small ƒ.
+  - **Equations** are typeset as you edit; a click edits the LaTeX, with a preview.
+  - **Comments:** Shift+F2 adds one to the line.
+  - **Files stay plain Markdown,** so a rich text cell and a Markdown cell change
+    into each other with no conversion, and only the paragraphs you change differ
+    in the file. Colours, fonts and alignment are not available, and repeated empty
+    paragraphs collapse.
+  - **Raw HTML and tables:** a cell with them cannot be rich text, and the type menu
+    says why. Use a table cell for tables.
+  - **Arrow keys stay in the cell** while editing. Ctrl+Enter commits, Escape
+    discards.
+- **A click on another line commits the cell you are editing,** in every cell type,
+  as in Excel. A cell that cannot be committed stays open and says why.
 - **Equations in Markdown and table cells.** Write LaTeX between `$...$` in the
   text, or `$$...$$` on lines of their own, and it is typeset when you leave the
   cell. A formula inside an equation shows its value:

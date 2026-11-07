@@ -32,8 +32,8 @@ export default defineConfig(({ command }) => ({
     build: {
         outDir: "../src/stilo/web",
         emptyOutDir: true,
-        // Texl (WebAssembly glue), CodeMirror and KaTeX make one large bundle; fine for now.
-        chunkSizeWarningLimit: 1200,
+        // Texl (WebAssembly glue), CodeMirror, ProseMirror and KaTeX make one large bundle; fine for now.
+        chunkSizeWarningLimit: 1400,
     },
     server: {
         proxy: {

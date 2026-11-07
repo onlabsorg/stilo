@@ -19,9 +19,10 @@ content needs it.
 
 - The sheet has a fixed number of lines (`rows`, 100 by default), or more if
   the document has more cells. Lines below the last cell are empty and not
-  stored. Writing in one adds it to the document as a `markdown` cell,
-  together with empty `markdown` cells for the empty lines above it, so it
-  stays where it was written. Inserted cells are `markdown` too.
+  stored. Writing in one adds it to the document as a `rich` cell,
+  together with empty `rich` cells for the empty lines above it, so it
+  stays where it was written. Inserted cells are `rich` too (S9). Later, a
+  configuration file may let the user choose this default type.
 
 - Two vertical blue lines (`--texl-margin-line`) rule a **margin** on each
   side of the cells, as on legal paper. The cells fill the middle column.
@@ -41,15 +42,19 @@ content needs it.
     when it has none. Showing them is up to the page (the demo lists them
     beside the sheet until another line is selected: the editor fires
     `selection-change` with the selected line). In the text editors,
-    comments are written as `<!--[ ... ]-->`; Shift+F2 inserts one.
-    **(open)** How comments are added and edited outside the source (e.g.
-    in a WYSIWYG cell).
+    comments are written as `<!--[ ... ]-->`; Shift+F2 inserts one. In a
+    `rich` cell Shift+F2 opens a field and adds the comment at the end of the
+    cell. **(open)** Editing a comment outside the source.
   - Both margins are `--texl-margin` wide (6rem); they are the CSS parts
     `left-margin` and `right-margin`.
     **(open)** The layout on narrow screens.
 
 - The user moves between cells with the keyboard (or mouse) and presses
-  Enter to edit one, as in Excel.
+  Enter to edit one, as in Excel. A click elsewhere in the sheet commits the cell
+  being edited and then does what it does (decided 2026-11-07). If the cell refuses
+  its edit it stays in edit mode, says why, and the click does nothing. A selection
+  dragged out of the cell, or the scrollbar, does not commit. Clicks outside the
+  sheet (panes, top bar) leave the edit open.
 - Each cell has a **type**, which decides how it is edited and shown.
 - People know cells by their **line number** (each cell also has a name
   in the file, not shown: see File format), shown in
@@ -82,7 +87,7 @@ shown, and any structure they have, is up to the platform.
 | `chart`     | Shows a chart; edits as a table of values    | Planned       |
 | `figure`    | A parametric figure                          | Idea          |
 | `ai`        | A prompt from which AI writes the cell's Texl | Idea         |
-| rich text   | WYSIWYG version of `text` (TipTap/ProseMirror), formulas as inline chips | After Markdown; Christmas if possible |
+| `rich`      | WYSIWYG, with a toolbar; formulas as chips that show their value (see Rich text below) | Default type of new cells; first version |
 
 Other formats for raw templates (e.g. LaTeX) are possible later as cell
 types built on `text`, as `markdown` is.
@@ -96,6 +101,47 @@ Editing model): the type is offered only for a source that is one tag, and
 an expression containing `%>`, which would split the tag, is not
 committed. Files with `<!--% expression %-->` still open, as `text` with
 their type kept, like any unknown type.
+
+## Rich text
+
+*Decided 2026-11-07 (S9).* The `rich` cell is what a Word user expects: bold is
+bold, a title is a title. It shows its output as a `markdown` cell does, and in
+edit mode a ProseMirror editor takes CodeMirror's place, with the same typography.
+
+- **Source:** the same Markdown as a `markdown` cell, so changing between the two
+  types converts nothing. Underline, sub- and superscripts are inline HTML (`<u>`,
+  `<sub>`, `<sup>`); `<strong>`, `<em>` and `<del>` are written where Markdown's
+  delimiters would not work (`x<strong>"q"</strong>y`).
+- **What it holds:** titles, paragraphs, lists, quotes, code blocks, rules, links,
+  images, equations, formulas. Not colours, fonts, alignment or tables in the text
+  (the `table` cell does that). Repeated empty paragraphs collapse: Markdown has
+  none, and empty lines of the sheet make the room.
+- **Formulas are chips.** Tags are found first, as Texl does, so Swan is never read
+  as Markdown. A chip shows the tag's value from the last rendering, with the
+  expression on hover; a tag with no output, such as `<% L = 6 %>`, shows a small
+  ƒ; a new or changed one shows its expression until the cell is committed. A
+  click, or Enter when it is selected, opens a field for the expression; Mod+E or
+  typing `<%` inserts one. A tag whose output is Markdown shows as one chip.
+- **Equations** are typeset, with the values of the tags in them. A click opens a
+  field for the LaTeX, with a preview; typing a closing `$` makes one.
+- **Nothing is lost.** The type accepts a source only if what it would write shows
+  the same as the source; otherwise the menu greys it out with the reason, and a
+  `rich` cell with such a source (edited by hand) is edited as Markdown and must be
+  accepted to commit. Text the user types cannot become a tag or a marker: `<%` is
+  written `&lt;%`.
+- **Small diffs.** An unchanged cell keeps its source exactly, and in a changed one
+  each unchanged block keeps its text. Comments go to the end of a changed cell.
+- **Keys** follow Word: Mod+B/I/U, Mod+= and Mod+Shift+= for sub- and superscript,
+  Mod+K for a link, Mod+Alt+0 to 3 for the style, Tab and Shift+Tab to indent a
+  list, Shift+Enter for a line break; `# `, `- `, `1. `, `> ` and three backticks
+  format the line. Arrow keys stay in the cell; Mod+Enter commits, Escape discards.
+- **Paste** keeps the supported formatting of HTML and drops the rest. Tags in plain
+  text become formulas. Pasted HTML cannot put anything else into the source.
+- **Tried in browsers (2026-11-07):** inside two shadow roots ProseMirror passes
+  focus, typing, mouse and keyboard selection, chips, undo and clipboard in Chrome
+  and Firefox and in Playwright's WebKit on Linux, and IME input in Chrome. Not yet
+  tried on Safari on a Mac. ProseMirror calls `preventDefault` on Escape and
+  Enter, so the cell handles the keys that leave edit mode itself.
 
 ## Typography
 
@@ -342,8 +388,8 @@ this section keeps the outline.
   are added to it, unless they stay empty `markdown` or `text` lines. Cell
   classes give the menu their `label` and `icon`.
 - **(open)** Formulas: the `formula` cell (one tag, edited without the delimiters) is a
-  first version, started with `=` (see the type keys above); still open: formula
-  chips in the rich-text cell, Mathcad-style display ("M = 56.25"), units.
+  first version, started with `=` (see the type keys above); still open:
+  Mathcad-style display ("M = 56.25"), units.
   Any of these must keep the formula a plain tag in the source.
 - Tables (ready for the MVP, 2026-10-31): the `table` cell stores a
   Markdown pipe table and edits it as a grid of plain fields, one per
@@ -403,5 +449,3 @@ this section keeps the outline.
   `DECISIONS.md`. Underlining the failing position in the source while editing
   is still to do: formula and table cells need their positions mapped, and
   `pos` is a single point.
-- **(open)** Shadow DOM and rich-text editors: ProseMirror's selection
-  handling inside shadow roots needs checking before choosing it.

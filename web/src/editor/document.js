@@ -337,6 +337,25 @@ export function outputSpans(doc, cells) {
 }
 
 /**
+ * What each tag of each cell output in a rendering, by the tag's source. Of
+ * the same tag twice in a cell, the first counts.
+ * @param {{text: string, tags: {start: number, end: number, out_start: number, out_end: number}[]}} doc
+ *   The rendering of `serializeDocument(cells)`.
+ * @param {CellData[]} cells
+ * @returns {Map<string, string>[]} One map per cell.
+ */
+export function tagOutputs(doc, cells) {
+    const source = serializeDocument(cells);
+    const outputs = cells.map(() => new Map());
+    for (const { start, end, out_start, out_end } of doc.tags) {
+        const map = outputs[cellAtOffset(cells, start).index];
+        const tag = source.slice(start, end);
+        if (map && !map.has(tag)) map.set(tag, doc.text.slice(out_start, out_end));
+    }
+    return outputs;
+}
+
+/**
  * Splits the rendering of a whole document into the outputs of its cells
  * (see `outputSpans`).
  * @param {{text: string, tags: object[]}} doc - The rendering of `serializeDocument(cells)`.

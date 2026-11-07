@@ -110,7 +110,7 @@ uv build                              # after npm run build: dist/stilo_cli-*.wh
 TypeScript, no build step for the source) with Lit 3 web components, built
 with Vite. Texl runs in the browser as WebAssembly (`@onlabsorg/texl`).
 Cell output is sanitised with DOMPurify; Markdown cells convert it with
-`marked` first, typesetting LaTeX equations with KaTeX (`math.js`). Text is edited with CodeMirror 6 (`@codemirror/*`). The document fonts
+`marked` first, typesetting LaTeX equations with KaTeX (`math.js`). Source text is edited with CodeMirror 6 (`@codemirror/*`), rich text with ProseMirror (`prosemirror-*`). The document fonts
 (Literata, Source Sans 3) come from `@fontsource-variable/*`, imported in
 `web/src/main.js` and bundled by the build; the typography is in
 `TexlCell`'s styles (`.view`), see `docs/editor-design.md`.
@@ -206,13 +206,17 @@ creates the GitHub release. Bump the version in `pyproject.toml`,
     table of commands (`_commands()`); a new editor action goes there.
   - `texl-cell.js` — `TexlCell`, base class of all cells: modes, layout,
     commit protocol (`cell-change` with `{texl}`, then `cell-exit`).
-  - `cells/` — built-in cell types (`text`, `markdown`, `table`: a Markdown
+  - `cells/` — built-in cell types (`rich`, the default: WYSIWYG, its source
+    the same Markdown as `markdown`; `text`, `markdown`, `table`: a Markdown
     pipe table edited as a grid, `formula`: one tag edited without its delimiters);
     formulas are `<% %>` tags inside them. A type that needs a shape
     overrides the static `accepts(source)` (white space and comments
     never count against it): the type menu offers only accepting types,
     and a cell refuses to commit a changed source its type rejects
     (`inputError`), so a type change never converts content.
+  - `rich/` — the `rich` cell's `schema.js` (what it can hold), `markdown.js`
+    (source ↔ ProseMirror document, read with `marked`; `acceptsRich` refuses
+    what would not survive) and `commands.js` (keys and typing shortcuts).
   - `errors.js` — the errors of a rendering: the undefined values tags
     returned (the same rule as `src/stilo/cli/errors.py`; S7), their marks in
     the output, `sanitizeOutput` (the one way a cell shows HTML).
