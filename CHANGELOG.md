@@ -6,6 +6,18 @@ change the interfaces.
 
 ## Unreleased
 
+- **Equations in Markdown and table cells.** Write LaTeX between `$...$` in the
+  text, or `$$...$$` on lines of their own, and it is typeset when you leave the
+  cell. A formula inside an equation shows its value:
+  `$\sigma = <% M / W %>$`.
+  - **Amounts of money stay text:** in `$5 and $10` nothing is an equation. An
+    equation's opening `$` has no space after it, and its closing `$` no space
+    before it and no digit after it. Write `\$` for a plain dollar.
+  - **Bad LaTeX** shows in red with the reason on hover. An equation with an
+    undefined value shows as its source, with the value highlighted.
+  - **In a table**, write `\vert` for a `|` inside an equation.
+  - The file format does not change: `stilo render` returns the LaTeX as text.
+
 ## 0.2.0 — 2026-11-07
 
 - **Links to other files work.** An image, PDF or other file in the folder now

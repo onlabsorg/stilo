@@ -51,14 +51,16 @@ git clone https://github.com/onlabsorg/stilo.git
 mkdir my-app && cd my-app
 npm init -y
 npm pkg set type=module
-npm install lit dompurify marked @onlabsorg/texl \
+npm install lit dompurify marked katex @onlabsorg/texl \
     @codemirror/state @codemirror/view @codemirror/commands \
     @codemirror/language @codemirror/lang-markdown
 npm install --save-dev vite
 ```
 
-You need Node.js 22 or later. Any bundler that resolves bare module imports
-and serves `.wasm` files works; this guide uses Vite. Take the versions from
+You need Node.js 22 or later. Any bundler that resolves bare module imports,
+serves `.wasm` files and gives a stylesheet as text for an import ending in
+`.css?inline` works (the Markdown cell needs KaTeX's styles in its shadow
+root); this guide uses Vite. Take the versions from
 `web/package.json` in the checkout if a newer one does not work.
 
 ## 2. Configure Vite
@@ -81,7 +83,7 @@ export default defineConfig({
         },
         // Resolve the editor's imports from this app's node_modules
         dedupe: [
-            "lit", "dompurify", "marked", "@onlabsorg/texl", "@codemirror/state", "@codemirror/view",
+            "lit", "dompurify", "marked", "katex", "@onlabsorg/texl", "@codemirror/state", "@codemirror/view",
             "@codemirror/commands", "@codemirror/language", "@codemirror/lang-markdown",
         ],
     },

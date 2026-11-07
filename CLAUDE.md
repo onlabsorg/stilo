@@ -110,7 +110,7 @@ uv build                              # after npm run build: dist/stilo_cli-*.wh
 TypeScript, no build step for the source) with Lit 3 web components, built
 with Vite. Texl runs in the browser as WebAssembly (`@onlabsorg/texl`).
 Cell output is sanitised with DOMPurify; Markdown cells convert it with
-`marked` first. Text is edited with CodeMirror 6 (`@codemirror/*`). The document fonts
+`marked` first, typesetting LaTeX equations with KaTeX (`math.js`). Text is edited with CodeMirror 6 (`@codemirror/*`). The document fonts
 (Literata, Source Sans 3) come from `@fontsource-variable/*`, imported in
 `web/src/main.js` and bundled by the build; the typography is in
 `TexlCell`'s styles (`.view`), see `docs/editor-design.md`.
@@ -216,6 +216,10 @@ creates the GitHub release. Bump the version in `pyproject.toml`,
   - `errors.js` — the errors of a rendering: the undefined values tags
     returned (the same rule as `src/stilo/cli/errors.py`; S7), their marks in
     the output, `sanitizeOutput` (the one way a cell shows HTML).
+  - `math.js` — equations in Markdown: finds `$...$` and `$$...$$`, typesets
+    them with KaTeX, declares its fonts in the document (a shadow root ignores
+    them). Imports KaTeX's styles with `?inline`, as Vite does and as
+    `web-test-runner.config.js` imitates.
   - `registry.js` — `registerCell(CellClass)`; unknown types fall back to
     `text`. `document.js` — parse/serialise (round-trip exact), tags and markers
     (`tagSpans`, `spanningTag`, `cellsFromSource`), cell names, comments, `outputSpans`, `splitRendering`. `swan.js` — Swan highlighting. `engine.js`

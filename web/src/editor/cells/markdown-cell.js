@@ -1,7 +1,8 @@
 import { html } from "lit";
 import { unsafeHTML } from "lit/directives/unsafe-html.js";
-import { marked } from "marked";
+import { Marked } from "marked";
 import { sanitizeOutput } from "../errors.js";
+import { mathMarkdown, mathStyles, matchInlineMath } from "../math.js";
 import { syntaxHighlighting, defaultHighlightStyle } from "@codemirror/language";
 import { markdown } from "@codemirror/lang-markdown";
 import { TextCell } from "./text-cell.js";
@@ -25,10 +26,28 @@ const texlTags = {
     ],
 };
 
+// Nor inside an equation: its LaTeX is not emphasis either.
+const texlMath = {
+    defineNodes: ["TexlMath"],
+    parseInline: [
+        {
+            name: "TexlMath",
+            before: "Emphasis",
+            parse(cx, next, pos) {
+                if (next !== 36 /* $ */) return -1;
+                const math = matchInlineMath(cx.slice(pos, cx.end));
+                return math ? cx.addElement(cx.elt("TexlMath", pos, pos + math.raw.length)) : -1;
+            },
+        },
+    ],
+};
+
+const markdownParser = new Marked(mathMarkdown);
+
 /**
  * A Markdown Texl template: the text cell, with Markdown highlighting in
  * the editor (the Swan highlighting of tags stays) and the output turned
- * from Markdown into HTML before it is shown.
+ * from Markdown into HTML before it is shown, with equations typeset.
  */
 export class MarkdownCell extends TextCell {
     static type = "markdown";
@@ -36,6 +55,8 @@ export class MarkdownCell extends TextCell {
     static label = "Markdown";
 
     static key = "m";
+
+    static styles = [TextCell.styles, mathStyles];
 
     static icon = html`<svg viewBox="0 0 24 24">
         <rect x="2" y="5" width="20" height="14" rx="2" />
@@ -46,7 +67,7 @@ export class MarkdownCell extends TextCell {
 
     languageExtensions() {
         return [
-            markdown({ extensions: [texlTags] }),
+            markdown({ extensions: [texlTags, texlMath] }),
             syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
             super.languageExtensions(),
         ];
@@ -54,7 +75,7 @@ export class MarkdownCell extends TextCell {
 
     /** Shows `output` as Markdown, sanitised: documents are untrusted. */
     renderView() {
-        const content = sanitizeOutput(marked.parse(this.output), this.errorMessages);
+        const content = sanitizeOutput(markdownParser.parse(this.output), this.errorMessages);
         return html`<div class="view">${unsafeHTML(content)}</div>`;
     }
 }

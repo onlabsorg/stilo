@@ -39,9 +39,10 @@ exactly the text that is saved.
 | `web/src/editor/texl-editor.js`          | `TexlEditor`: holds the cells, selection, undo history, keyboard, clipboard, type menu, rendering | document, registry, engine, texl-cell | [`<texl-editor>`](component/api.md#texl-editor) |
 | `web/src/editor/texl-cell.js`            | `TexlCell`: base class of the cells; modes, layout, commit protocol | Lit, DOMPurify | [`TexlCell`](component/api.md#texlcell) |
 | `web/src/editor/cells/text-cell.js`      | `TextCell`: Texl template edited in CodeMirror 6; fallback type | texl-cell, swan, CodeMirror | [`TextCell`](component/api.md#textcell) |
-| `web/src/editor/cells/markdown-cell.js`  | `MarkdownCell`: `TextCell` with Markdown highlighting and Markdown output | text-cell, swan, marked, DOMPurify | [`MarkdownCell`](component/api.md#markdowncell) |
+| `web/src/editor/cells/markdown-cell.js`  | `MarkdownCell`: `TextCell` with Markdown highlighting and Markdown output, equations included | text-cell, swan, marked, DOMPurify | [`MarkdownCell`](component/api.md#markdowncell) |
 | `web/src/editor/cells/table-cell.js`     | `TableCell`: a Markdown pipe table edited as a grid; `parseTable`, `serializeTable` | markdown-cell, swan | [`TableCell`](component/api.md#tablecell) |
 | `web/src/editor/cells/formula-cell.js`   | `FormulaCell`: one tag, edited without its delimiters; `parseFormula`, `serializeFormula` | text-cell, swan | [`FormulaCell`](component/api.md#formulacell) |
+| `web/src/editor/math.js`                 | Equations in Markdown: finds `$...$` and `$$...$$`, typesets them, declares the fonts in the document | KaTeX, errors |
 | `web/src/editor/registry.js`             | Maps cell types to custom element tags | — | [Cell registry](component/api.md#cell-registry) |
 | `web/src/editor/document.js`             | The file format: parse, serialise, names, comments, split a rendering. Pure functions, no DOM | — | [Document functions](component/api.md#document-functions) |
 | `web/src/editor/errors.js`               | The errors of a rendering (`findErrors`), their marks in the output (`markErrors`, `sanitizeOutput`), `excerptAt` | document, `@onlabsorg/texl`, DOMPurify | [Errors](component/api.md#errors) |
@@ -74,6 +75,8 @@ graph TD
     cell --> lit[Lit, DOMPurify]
     text --> cm[CodeMirror 6]
     md --> marked[marked]
+    md --> math[math.js]
+    math --> katex[KaTeX]
 ```
 
 ## The file format: `document.js`

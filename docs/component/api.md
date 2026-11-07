@@ -303,13 +303,15 @@ registerCell(HtmlCell);
 Type `markdown`, label "Markdown". Extends `TextCell`. Adds Markdown
 highlighting in the editor (tags stay highlighted as Swan; Markdown does not
 look inside them) and shows its output as Markdown, converted with `marked`
-and sanitised with DOMPurify. New cells and empty lines are `markdown`.
+and sanitised with DOMPurify. LaTeX equations in the Markdown, `$...$` in the
+text and `$$...$$` on lines of their own, are typeset with KaTeX. New cells
+and empty lines are `markdown`.
 
 ## `TableCell`
 
 Type `table`, label "Table". Extends `MarkdownCell`. Edits a Markdown pipe
 table as a grid of fields, one per table cell with its Texl source, and
-shows it as Markdown. Buttons above the grid insert and delete rows and
+shows it as Markdown, equations included. Buttons above the grid insert and delete rows and
 columns, and align the current field's column left, centred or right.
 `accepts` a table, or a
 source with only blank lines and comments (which starts a new table), with

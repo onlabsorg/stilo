@@ -21,7 +21,7 @@ to Word and Excel users, and renders them from the command line.
 | Part   | What                                                          |
 |--------|---------------------------------------------------------------|
 | Web app | The user interface (Lit web components, Vite): top bar, navigation pane with the folder's files and commands to manage them, the editor, right pane with commands, cell comments and errors. Light and dark theme. |
-| Editor | Inside the web app: `<texl-editor>`, a document as a stack of typed cells (text, Markdown, table and formula; formulas as `<% %>` tags), live rendering, cell comments, errors shown where they happen. Until 2026-10-26 the separate `texl-editor` package. |
+| Editor | Inside the web app: `<texl-editor>`, a document as a stack of typed cells (text, Markdown, table and formula; formulas as `<% %>` tags; LaTeX equations in Markdown and tables), live rendering, cell comments, errors shown where they happen. Until 2026-10-26 the separate `texl-editor` package. |
 | Server | Python (FastAPI): serves one folder of documents and the web app, for one user. |
 | CLI    | The `stilo` command: `stilo render <file>` prints a rendered document (or writes it to a file), says how many errors it has and can explain them; `stilo serve [folder]` starts the server on a folder. |
 | Protocol | Plain HTTP between web app and server: GET a file, CREATE (POST), UPDATE (PUT, with an ETag so concurrent saves don't overwrite each other), QUERY a folder's tree, create a folder, move or rename a document or folder, delete a document or folder. |
@@ -193,6 +193,15 @@ accept are not part of Stilo.
   address are sandboxed, so they cannot run scripts on Stilo's address.
 - 2026-11-07: **0.2.0 released**: tagged `v0.2.0` and published on PyPI as
   `stilo-cli`, with all the changes since 0.1.0 listed above.
+- 2026-11-07: **equations in Markdown and table cells**: LaTeX between `$...$`
+  in the text, or `$$...$$` on lines of their own, is typeset when you leave the
+  cell, in the browser and with fonts inside the package. A formula inside an
+  equation shows its value. Amounts of money such as `$5 and $10` stay text, and
+  `\$` is a plain dollar. Bad LaTeX shows in red with the reason; an equation
+  with an undefined value shows as its source, with the value highlighted. The
+  file format does not change: `stilo render` returns the LaTeX as text. The
+  sample documents use equations, and the link to the library in
+  `examples/sample.texl` now works.
 
 ## Known limitations
 
@@ -208,6 +217,8 @@ accept are not part of Stilo.
 - Files and folders: renaming or moving does not update links to the item;
   documents are got back from `.trash` by hand, as there is no restore command.
 - Table cell: plain fields without formula highlighting.
+- Equations: in a table, a `|` inside an equation ends the table cell (write
+  `\vert`). Only the editor typesets them: other outputs show the LaTeX as text.
 - Errors: a value inside a link's address or another HTML attribute counts but
   cannot be highlighted. The failing place is marked in the Errors pane, not
   in the source while editing.

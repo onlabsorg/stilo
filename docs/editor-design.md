@@ -203,6 +203,23 @@ cells' markers, which render to themselves (HTML comments without tags):
 - If the URL cannot be resolved, the cells show no output.
 - Cell output is HTML, sanitised with DOMPurify (documents may come from
   other parties). `markdown` output is first turned into HTML with `marked`.
+- **Equations** in `markdown` and `table` cells (2026-11-07): LaTeX between
+  `$...$` in the text, or `$$...$$` on lines of their own, typeset with
+  KaTeX (HTML output, `web/src/editor/math.js`). They are read after Texl
+  has rendered, so a tag inside one shows its value:
+  `$\sigma = <% M / W %>$`. In the UI they are "equations": "formula" means a
+  `<% %>` tag. Choices:
+  - Dollars follow Pandoc's rule so that money stays text: the opening `$`
+    has no white space after it, the closing one none before it and no
+    digit after it; `\$` is a plain dollar. An equation has no blank line.
+  - An equation holding an undefined value stays source text, so that the
+    value is highlighted and clickable like any other. Bad LaTeX shows in
+    red with the reason on hover; it is not a document error (S7).
+  - KaTeX's trust stays off: LaTeX cannot make links, classes or images.
+  - In a table, a `|` inside an equation still ends the table cell; write
+    `\vert`.
+  - `stilo render` and imports see the LaTeX as text: the file format does
+    not change.
 - **(open)** Names for autocompletion. One rendering gives only `doc.data`,
   the names at the end of the document, not the names visible to each cell.
   Options: the names of `doc.data` filtered by the cell where they are first

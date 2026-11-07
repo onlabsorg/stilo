@@ -2,7 +2,7 @@
 # Beam check
 
 A simply supported steel beam under a uniform load. The section properties
-come from the library [steel.texl](examples/steel.texl).
+come from the library [steel.texl](library/steel.texl).
 <% texl.import("library/steel.texl") ~> (lib -> bind "steel" lib.data) %>
 <!--{ lod2 : markdown }-->
 ## Input
@@ -25,9 +25,17 @@ gs = section.mass * 9.81 / 1000,   # self-weight in kN/m
 qd = 1.35 * (gk + gs) + 1.5 * qk,
 MEd = qd * L ^ 2 / 8
 %>
-The self-weight is <% math.round (gs * 100) / 100 %> kN/m, so the design
-load is q<sub>d</sub> = <% math.round (qd * 100) / 100 %> kN/m and the
-midspan moment is **M<sub>Ed</sub> = <% math.round (MEd * 10) / 10 %> kNm**.
+The self-weight is $g_s = <% math.round (gs * 100) / 100 %>\ \text{kN/m}$, so
+the design load and the midspan moment are:
+
+$$
+q_d = 1.35\,(g_k + g_s) + 1.5\,q_k = <% math.round (qd * 100) / 100 %>\ \text{kN/m}
+$$
+
+$$
+M_{Ed} = \frac{q_d L^2}{8} = <% math.round (MEd * 10) / 10 %>\ \text{kNm}
+$$
+
 <!--[ Marco: partial factors from EN 1990, table A1.2(B). ]-->
 <!--{ siz5 : markdown }-->
 ## Bending check
@@ -38,13 +46,24 @@ fyd = steel.grade.fy / steel.gammaM0,
 u = sigma / fyd
 %>
 <!--{ buf9 : table }-->
-| Quantity          | Value                        |
-|-------------------|------------------------------|
-| Bending stress σ: | <% math.round sigma %> N/mm² |
-| Design strength:  | <% math.round fyd %> N/mm²   |
-| Utilisation:      | <% math.round (u * 100) %> % |
+| Quantity | Value |
+|---|---|
+| Bending stress $\sigma = M_{Ed} / W$: | <% math.round sigma %> N/mm² |
+| Design strength $f_{yd} = f_y / \gamma_{M0}$: | <% math.round fyd %> N/mm² |
+| Utilisation $u = \sigma / f_{yd}$: | <% math.round (u * 100) %> % |
 <!--{ bab5 : markdown }-->
 
 The <% section.name %> is <% u <= 1 ? "**adequate**" ; "**not adequate**" %>.
 <!--[ Marco: fine for the report. ]-->
 <!--[ Anna: try an IPE 270 too. ]-->
+<!--{ cos3 : markdown }-->
+## Cost
+
+<%
+price = 2,                   # steel price per kg
+cost = price * section.mass * L
+%>
+Steel sells at $<% price %> to $3 per kg: these dollars are amounts of money,
+not an equation. The beam costs $C = p \, m \, L$, which is about
+$<% math.round cost %>. Where a price would look like an equation, write the
+dollars as `\$`: \$2/kg, or 84\$/m.

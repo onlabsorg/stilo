@@ -184,6 +184,15 @@ export function markErrors(text, places, span) {
 }
 
 /**
+ * Whether a text holds a mark of `markErrors`.
+ * @param {string} text
+ * @returns {boolean}
+ */
+export function hasErrorMark(text) {
+    return text.includes(MARK_OPEN);
+}
+
+/**
  * Sanitises a cell's HTML output: documents are untrusted. Then shows the
  * marks of `markErrors` as highlighted `[[Undefined]]` values, carrying the
  * mark's index in `data-error`. A mark inside an attribute, such as the
