@@ -2,9 +2,20 @@ import { LitElement, html, css } from "lit";
 import { keyed } from "lit/directives/keyed.js";
 import { parseDocument, cellComments } from "../editor/index.js";
 import { base } from "./shared.js";
-import { closeIcon } from "../icons.js";
-import { readFile, createFile, updateFile, readTree, documentUrl, documentPath, ApiError } from "../api.js";
-import { readRoute, routeUrl } from "../route.js";
+import { closeIcon, fileIcon, folderIcon } from "../icons.js";
+import {
+    readFile,
+    createFile,
+    updateFile,
+    readTree,
+    createFolder,
+    moveItem,
+    deleteFile,
+    deleteFolder,
+    documentUrl,
+    documentPath,
+} from "../api.js";
+import { readRoute, routeUrl, relativeLink } from "../route.js";
 import { commands, matchCommand } from "../commands.js";
 import { toggleTheme } from "../theme.js";
 import "./top-bar.js";
@@ -12,8 +23,35 @@ import "./nav-pane.js";
 import "./commands-pane.js";
 import "./comments-pane.js";
 import "./errors-pane.js";
+import "./move-dialog.js";
 
 const NEW_DOCUMENT = (title) => `<!--{ markdown }-->\n# ${title}\n`;
+const SHOW_EMPTY_KEY = "stilo-show-empty";
+
+const parentFolder = (path) => (path.includes("/") ? path.slice(0, path.lastIndexOf("/")) : "");
+const baseName = (path) => path.slice(path.lastIndexOf("/") + 1);
+const documentName = (path) => baseName(path).replace(/\.texl$/, "");
+const join = (folder, name) => (folder ? `${folder}/${name}` : name);
+/** Whether `path` is the item at `item`, or inside it. */
+const isIn = (path, item) => path === item || !!path?.startsWith(`${item}/`);
+
+/** Put text on the clipboard. The clipboard API needs a secure page, so a server
+ * reached over plain HTTP needs the old way. Returns whether it worked. */
+async function copyText(text) {
+    try {
+        await navigator.clipboard.writeText(text);
+        return true;
+    } catch {
+        const area = document.createElement("textarea");
+        area.value = text;
+        area.style.position = "fixed";
+        document.body.append(area);
+        area.select();
+        const copied = document.execCommand("copy");
+        area.remove();
+        return copied;
+    }
+}
 
 /**
  * The app shell: top bar, navigation pane, editor, right pane. Holds the
@@ -25,6 +63,8 @@ export class StiloApp extends LitElement {
         _root: { state: true },
         _tree: { state: true },
         _treeError: { state: true },
+        _showEmpty: { state: true },
+        _moving: { state: true },
         _doc: { state: true },
         _docError: { state: true },
         _dirty: { state: true },
@@ -155,6 +195,11 @@ export class StiloApp extends LitElement {
         super();
         this._tree = null;
         this._treeError = "";
+        this._moving = null;
+        this._showEmpty = true;
+        try {
+            this._showEmpty = localStorage.getItem(SHOW_EMPTY_KEY) !== "false";
+        } catch {}
         this._docError = "";
         this._dirty = false;
         this._status = "";
@@ -197,6 +242,7 @@ export class StiloApp extends LitElement {
     async _applyRoute({ root, doc }) {
         if (root !== this._root) {
             this._root = root;
+            this._tree = null;
             this._loadTree();
         }
         if (doc !== this._doc) await this._loadDocument(doc);
@@ -208,13 +254,18 @@ export class StiloApp extends LitElement {
         return this._applyRoute(route);
     }
 
+    /** Read the tree of the root again. The old tree stays until the new one
+     * is there, so reading it again does not flash. */
     async _loadTree() {
-        this._tree = null;
-        this._treeError = "";
+        const root = this._root;
         try {
-            this._tree = await readTree(this._root);
+            const tree = await readTree(root);
+            if (root !== this._root) return; // the root moved meanwhile
+            this._tree = tree;
+            this._treeError = "";
         } catch (error) {
-            this._treeError = error.status === 404 ? `Folder /${this._root} not found.` : error.message;
+            if (root !== this._root) return;
+            this._treeError = error.status === 404 ? `Folder /${root} not found.` : error.message;
         }
     }
 
@@ -246,15 +297,30 @@ export class StiloApp extends LitElement {
     // -- commands ------------------------------------------------------------
 
     _onKeyDown(e) {
-        if (e.defaultPrevented) return;
+        if (e.defaultPrevented || this._moving) return;
         const command = matchCommand(e);
         if (!command) return;
         e.preventDefault();
         command.run(this);
     }
 
-    runCommand(id) {
-        commands.find((c) => c.id === id)?.run?.(this);
+    runCommand(id, node) {
+        commands.find((c) => c.id === id)?.run?.(this, node);
+    }
+
+    /** What a tree command acts on when no item is given: the item last used
+     * in the navigation pane, or else the open document. */
+    get treeTarget() {
+        return this._nav?.current ?? (this._doc ? { path: this._doc, name: baseName(this._doc), type: "file" } : null);
+    }
+
+    get _nav() {
+        return this.renderRoot.querySelector("nav-pane");
+    }
+
+    /** Whether the open document has changes not saved yet, a cell being edited included. */
+    get _unsaved() {
+        return this._dirty || !!this._editor?.editing;
     }
 
     async save() {
@@ -281,19 +347,251 @@ export class StiloApp extends LitElement {
         await this._loadDocument(this._doc);
     }
 
-    async newDocument() {
-        const name = prompt(`New document in /${this._root}`, "untitled");
-        if (!name) return;
-        const file = name.endsWith(".texl") ? name : `${name}.texl`;
-        const path = this._root ? `${this._root}/${file}` : file;
-        try {
-            await createFile(path, NEW_DOCUMENT(name.replace(/\.texl$/, "")));
-        } catch (error) {
-            alert(error instanceof ApiError && error.status === 409 ? `/${path} already exists.` : error.message);
+    /** The folder a new item goes in: `node` if it is one, the folder of `node` if
+     * it is a document, else likewise for the item last used in the tree, else the
+     * navigation root. */
+    _folderFor(node) {
+        const item = node ?? this._nav?.current;
+        return !item ? this._root : item.type === "folder" ? item.path : parentFolder(item.path);
+    }
+
+    /** Check a name typed for a document or a folder in `folder`: `{name}`, without
+     * the extension a document's may have, and `problem` if it cannot be used. */
+    _checkName(typed, folder, type) {
+        const name = type === "file" ? typed.replace(/\.texl$/, "") : typed;
+        const problem = !name
+            ? "Type a name."
+            : /[/\\]/.test(name)
+              ? "A name cannot contain / or \\."
+              : name.startsWith(".")
+                ? "A name cannot start with a dot."
+                : !folder && name.startsWith("_")
+                  ? "A name here cannot start with _."
+                  : type === "folder" && name.endsWith(".texl")
+                    ? "A folder's name cannot end in .texl."
+                    : "";
+        return { name, problem };
+    }
+
+    /** Ask for a name in the tree. The navigation pane opens if it was closed. */
+    async _askName(request) {
+        this._navOpen = true;
+        await this.updateComplete;
+        return this._nav.askName(request);
+    }
+
+    newDocument(node) {
+        return this._createDocument(this._folderFor(node), "untitled", "Name of the new document", (title) => NEW_DOCUMENT(title));
+    }
+
+    /** Create a copy of a document, next to it, and open it. */
+    async duplicate(node) {
+        if (!node) return this._askForItem();
+        if (node.type === "folder") {
+            this._status = "Duplicate works on documents, not folders";
             return;
         }
+        if (!(await this._saveFirst(node))) return;
+        const name = documentName(node.path);
+        await this._createDocument(parentFolder(node.path), `${name} copy`, `Name of the copy of ${name}`, async () => (await readFile(node.path)).text);
+    }
+
+    /** Ask for a name in the tree, create the document with the text
+     * `text(name)` gives, and open it. */
+    async _createDocument(folder, value, label, text) {
+        let path;
+        const done = await this._askName({
+            folder,
+            value,
+            label,
+            submit: async (typed) => {
+                const { name, problem } = this._checkName(typed, folder, "file");
+                if (problem) return problem;
+                path = join(folder, `${name}.texl`);
+                try {
+                    await createFile(path, await text(name));
+                } catch (error) {
+                    return error.status === 409 ? `${name} already exists here.` : error.message;
+                }
+            },
+        });
+        if (!done) return;
         await this._loadTree();
-        this._go({ root: this._root, doc: path });
+        await this._go({ root: this._root, doc: path });
+    }
+
+    /** Create a folder in a chosen place, and make it the current item. */
+    async newFolder(node) {
+        const folder = this._folderFor(node);
+        let path;
+        const done = await this._askName({
+            folder,
+            value: "New folder",
+            label: "Name of the new folder",
+            icon: folderIcon,
+            submit: async (typed) => {
+                const { name, problem } = this._checkName(typed, folder, "folder");
+                if (problem) return problem;
+                path = join(folder, name);
+                try {
+                    await createFolder(path);
+                } catch (error) {
+                    return error.status === 409 ? `${name} already exists here.` : error.message;
+                }
+            },
+        });
+        if (!done) return;
+        await this._showInTree(path);
+        if (!this._showEmpty) this._status = `Created /${path}; empty folders are hidden`;
+    }
+
+    /** Rename a document or a folder, in its row of the tree. */
+    async rename(node) {
+        if (!node) return this._askForItem();
+        if (!(await this._saveFirst(node))) return;
+        const isFile = node.type === "file";
+        const folder = parentFolder(node.path);
+        const old = isFile ? documentName(node.path) : baseName(node.path);
+        let to;
+        const done = await this._askName({
+            folder,
+            replaces: node.path,
+            value: old,
+            label: `New name of ${old}`,
+            icon: isFile ? fileIcon : folderIcon,
+            submit: async (typed) => {
+                const { name, problem } = this._checkName(typed, folder, node.type);
+                if (problem) return problem;
+                if (name === old) return false;
+                const what = isFile ? "it" : "the documents in it";
+                if (!confirm(`Links from other documents to ${what} will stop working. Rename ${old} to ${name}?`)) return false;
+                to = join(folder, isFile ? `${name}.texl` : name);
+                try {
+                    await moveItem(node.path, to);
+                } catch (error) {
+                    return error.status === 409 ? `${name} already exists here.` : error.message;
+                }
+            },
+        });
+        if (done) await this._afterMove(node.path, to);
+    }
+
+    /** Open the Move to… dialog for a document or a folder. */
+    async moveTo(node) {
+        if (!node) return this._askForItem();
+        if (!(await this._saveFirst(node))) return;
+        try {
+            this._moving = { node, tree: await readTree(""), error: "" };
+        } catch (error) {
+            this._status = error.message;
+        }
+    }
+
+    async _onMoveChoose(e) {
+        const moving = this._moving;
+        if (!moving || moving.busy) return;
+        moving.busy = true;
+        const { node } = moving;
+        const to = join(e.detail.folder, baseName(node.path));
+        try {
+            await moveItem(node.path, to);
+        } catch (error) {
+            const message = error.status === 409 ? `${documentName(to)} already exists in that folder.` : error.message;
+            this._moving = { ...moving, busy: false, error: message };
+            return;
+        }
+        this._moving = null;
+        await this._afterMove(node.path, to);
+        this._status = `Moved to /${e.detail.folder}`;
+    }
+
+    /** Move a document to the trash, or a folder's documents and the folder if
+     * nothing else is left in it. */
+    async deleteItem(node) {
+        if (!node) return this._askForItem();
+        const isFile = node.type === "file";
+        const closes = !!this._doc && isIn(this._doc, node.path);
+        const name = isFile ? documentName(node.path) : baseName(node.path);
+        const question = isFile
+            ? `Delete ${name}? It goes to the .trash folder.`
+            : `Delete the folder ${name} and all the documents in it? They go to the .trash folder. Any other files stay in the folder.`;
+        const lost = closes && this._unsaved ? " Unsaved changes will be lost." : "";
+        if (!confirm(question + lost)) return;
+        let result;
+        try {
+            result = isFile ? await deleteFile(node.path) : await deleteFolder(node.path);
+        } catch (error) {
+            this._status = `Not deleted: ${error.message}`;
+            return;
+        }
+        if (closes) {
+            this._dirty = false;
+            const route = { root: this._root, doc: null };
+            history.replaceState(null, "", routeUrl(route));
+            await this._applyRoute(route);
+        }
+        await this._loadTree();
+        this._status = result && !result.removed ? `The folder ${name} stays: it holds other files` : `Deleted ${name}`;
+    }
+
+    /** Before an operation on an item that holds the open document: offer to save
+     * its unsaved changes. Returns whether to go on. */
+    async _saveFirst(node) {
+        if (!this._doc || !isIn(this._doc, node.path) || !this._unsaved) return true;
+        if (!confirm("The open document has unsaved changes. Save them first?")) return false;
+        await this.save();
+        return !this._unsaved;
+    }
+
+    /** After a move: follow the item with the open document and the root, whose
+     * old addresses are gone, and show it in the tree. */
+    async _afterMove(from, to) {
+        const follow = (path) => (isIn(path, from) ? to + path.slice(from.length) : path);
+        const route = { root: follow(this._root), doc: follow(this._doc) };
+        const sameRoot = route.root === this._root;
+        history.replaceState(null, "", routeUrl(route));
+        await this._applyRoute(route);
+        await this._showInTree(sameRoot ? to : null);
+    }
+
+    /** Read the tree again, then make the item at `path` the current one. */
+    async _showInTree(path) {
+        await this._loadTree();
+        await this.updateComplete;
+        if (path) this._nav?.setCurrent(path);
+    }
+
+    /** Copy a document's link, relative to the open document: what `texl.import`
+     * or a Markdown link there needs. */
+    async copyLink(node) {
+        if (!node) return this._askForItem();
+        if (node.type === "folder") {
+            this._status = "Copy link works on documents, not folders";
+            return;
+        }
+        const link = relativeLink(this._doc, node.path);
+        this._status = (await copyText(link)) ? `Link copied: ${link}` : `Could not copy the link: ${link}`;
+    }
+
+    /** Make a folder, or the folder of a document, the navigation root. */
+    openAsRoot(node) {
+        if (!node) return this._askForItem();
+        return this._go({ root: node.type === "folder" ? node.path : parentFolder(node.path), doc: this._doc });
+    }
+
+    refreshTree() {
+        return this._loadTree();
+    }
+
+    toggleEmptyFolders() {
+        this._showEmpty = !this._showEmpty;
+        try {
+            localStorage.setItem(SHOW_EMPTY_KEY, this._showEmpty);
+        } catch {}
+    }
+
+    _askForItem() {
+        this._status = "Choose an item in the navigation pane first";
     }
 
     toggleNav() {
@@ -451,8 +749,10 @@ export class StiloApp extends LitElement {
                 .root=${this._root}
                 .active=${this._doc}
                 .error=${this._treeError}
+                .showEmpty=${this._showEmpty}
                 @open-document=${(e) => this._go({ root: this._root, doc: e.detail.path })}
                 @navigate=${(e) => this._go({ root: e.detail.root, doc: this._doc })}
+                @tree-command=${(e) => this.runCommand(e.detail.id, e.detail.node)}
             ></nav-pane>
             <main @click=${this._onLinkClick}>${this._renderMain()}</main>
             <aside ?hidden=${!this._pane} @close-pane=${() => (this._pane = null)} @run-command=${(e) => this.runCommand(e.detail.id)}>
@@ -468,6 +768,15 @@ export class StiloApp extends LitElement {
                     ? html`<errors-pane .errors=${this._errors} .current=${this._currentError} @go-to=${this._onErrorGoTo}></errors-pane>`
                     : ""}
             </aside>
+            ${this._moving
+                ? html`<move-dialog
+                      .tree=${this._moving.tree}
+                      .node=${this._moving.node}
+                      .error=${this._moving.error}
+                      @choose=${this._onMoveChoose}
+                      @close=${() => (this._moving = null)}
+                  ></move-dialog>`
+                : ""}
         `;
     }
 }

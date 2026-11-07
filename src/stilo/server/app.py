@@ -8,7 +8,7 @@ from fastapi import FastAPI, Query, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
-from .storage import Storage, StorageError
+from .storage import BadRequest, Storage, StorageError
 
 TEXT = "text/plain; charset=utf-8"
 
@@ -46,6 +46,30 @@ def create_app(root: Path | str, web_dist: Path | str | None = None) -> FastAPI:
     async def update_file(path: str, request: Request):
         tag = storage.update(path, await request.body(), request.headers.get("if-match"))
         return Response(status_code=200, headers={"ETag": tag})
+
+    @app.delete("/_api/files/{path:path}", status_code=204)
+    async def delete_file(path: str):
+        storage.delete_file(path)
+        return Response(status_code=204)
+
+    @app.post("/_api/move/{path:path}")
+    async def move(path: str, request: Request):
+        try:
+            to = (await request.json())["to"]
+        except (ValueError, KeyError, TypeError):
+            raise BadRequest('expected a JSON body {"to": "<new path>"}') from None
+        if not isinstance(to, str):
+            raise BadRequest('expected a JSON body {"to": "<new path>"}')
+        return {"path": storage.move(path, to)}
+
+    @app.post("/_api/tree/{path:path}", status_code=201)
+    async def create_folder(path: str):
+        storage.create_folder(path)
+        return Response(status_code=201, headers={"Location": f"/_api/tree/{path}"})
+
+    @app.delete("/_api/tree/{path:path}")
+    async def delete_folder(path: str):
+        return storage.delete_folder(path)
 
     @app.get("/_api/tree/{path:path}")
     async def get_tree(path: str, depth: int | None = Query(None, ge=1)):

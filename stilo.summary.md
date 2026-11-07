@@ -20,11 +20,11 @@ to Word and Excel users, and renders them from the command line.
 
 | Part   | What                                                          |
 |--------|---------------------------------------------------------------|
-| Web app | The user interface (Lit web components, Vite): top bar, navigation pane with the folder's files, the editor, right pane with commands, cell comments and errors. Light and dark theme. |
+| Web app | The user interface (Lit web components, Vite): top bar, navigation pane with the folder's files and commands to manage them, the editor, right pane with commands, cell comments and errors. Light and dark theme. |
 | Editor | Inside the web app: `<texl-editor>`, a document as a stack of typed cells (text, Markdown, table and formula; formulas as `<% %>` tags), live rendering, cell comments, errors shown where they happen. Until 2026-10-26 the separate `texl-editor` package. |
 | Server | Python (FastAPI): serves one folder of documents and the web app, for one user. |
 | CLI    | The `stilo` command: `stilo render <file>` prints a rendered document (or writes it to a file), says how many errors it has and can explain them; `stilo serve [folder]` starts the server on a folder. |
-| Protocol | Plain HTTP between web app and server: GET a file, CREATE (POST), UPDATE (PUT, with an ETag so concurrent saves don't overwrite each other), QUERY a folder's tree. |
+| Protocol | Plain HTTP between web app and server: GET a file, CREATE (POST), UPDATE (PUT, with an ETag so concurrent saves don't overwrite each other), QUERY a folder's tree, create a folder, move or rename a document or folder, delete a document or folder. |
 | Documentation | Developer documentation only, as plain Markdown in `docs/`, read on GitHub: architecture, setup, server, CLI, web app, editor, the protocol, the editor component and its API. No site is built. Users read the OnLabs.org manual instead. |
 
 Web app, server and CLI ship as **one Python package**, `stilo`, with the
@@ -160,6 +160,19 @@ accept are not part of Stilo.
 - 2026-11-06: **new key to insert a formula** while editing a cell: Ctrl+E
   (Cmd+E on macOS) instead of Ctrl+Space, which switches the keyboard's input
   source on macOS.
+- 2026-11-07: **managing files and folders in the navigation pane**. A right
+  click or a `⋯` button opens a menu on a document, a folder or the pane; the
+  pane's header has buttons for a new document and a new folder, and the
+  commands are also in the commands pane. New document, New folder, Rename, Move
+  to, Duplicate (documents only), Copy link (relative to the open document),
+  Open as root, Delete and Refresh. F2 renames and Delete deletes the item in
+  focus. Names are typed in the tree, no longer in a browser dialog. Empty
+  folders show by default and can be hidden. Renaming or moving warns that links
+  to the item will stop working; if the open document is affected, Stilo offers
+  to save first and keeps it open at its new address. Delete moves documents to
+  a hidden `.trash` folder at the top of the served folder. Deleting a document
+  leaves its folder; deleting a folder removes its documents, and the folder too
+  unless other files remain in it.
 
 ## Known limitations
 
@@ -171,6 +184,8 @@ accept are not part of Stilo.
   the document; autocompletion of names must be redesigned.
 - The editor is not published as a package of its own: pages that embed it
   use it from a copy of the source code.
+- Files and folders: renaming or moving does not update links to the item;
+  documents are got back from `.trash` by hand, as there is no restore command.
 - Table cell: plain fields without formula highlighting.
 - Errors: a value inside a link's address or another HTML attribute counts but
   cannot be highlighted. The failing place is marked in the Errors pane, not

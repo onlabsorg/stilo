@@ -13,4 +13,11 @@ export const folderIcon = icon(svg`<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1
 export const fileIcon = icon(svg`<path d="M7 3h7l5 5v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" /><path d="M14 3v5h5" />`);
 export const chevronIcon = icon(svg`<path d="M9 6l6 6-6 6" />`);
 export const upIcon = icon(svg`<path d="M12 19V5M6 11l6-6 6 6" />`);
+export const moreIcon = icon(
+    svg`<circle cx="5" cy="12" r="1.5" fill="currentColor" /><circle cx="12" cy="12" r="1.5" fill="currentColor" /><circle cx="19" cy="12" r="1.5" fill="currentColor" />`,
+);
+export const newFileIcon = icon(svg`<path d="M7 3h7l5 5v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" /><path d="M14 3v5h5M12 11v6M9 14h6" />`);
+export const newFolderIcon = icon(
+    svg`<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><path d="M12 10.5v5M9.5 13h5" />`,
+);
 export const closeIcon = icon(svg`<path d="M6 6l12 12M18 6L6 18" />`);

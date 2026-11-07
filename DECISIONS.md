@@ -116,3 +116,22 @@ and returning one is throwing it. So what the reader sees as `[[Undefined]]` is
 exactly what gets reported. Scanning `data` for assigned values, and marking
 `undef.from` values as made on purpose, were considered and rejected. Blanks
 from unknown names are Texl's behaviour, not something a host should patch.
+
+## S8 — 2026-11-06 — Delete moves Texl files to a trash folder
+
+The Delete command of the navigation pane moves documents to a `.trash` folder
+at the server root; it does not erase them. Deleting a document leaves its
+folder, even if empty. Deleting a folder deletes the `.texl` files in it, at any
+depth, and removes the folder if nothing else is left in it; other files stay.
+The tree can show or hide empty folders, an empty folder being one with no
+`.texl` files in it, at the user's choice; they are shown by default. Renaming or
+moving a document does not update the links to it; for the MVP the user gets a
+warning. In the protocol, DELETE is its own operation, not a MOVE to `.trash`:
+what deleting means is up to the server. Folders cannot be duplicated in the MVP.
+*Reason:* Word and Excel users expect to get a deleted file back, and Stilo has
+no history of its own. The tree shows only folders and `.texl` files, so
+deleting anything else would remove files the user cannot see. Links are Swan
+code, which cannot be rewritten reliably. A git repository can ignore `.trash`.
+A folder document (a file in each folder, shown as the folder) was considered and
+dropped: a folder is just a folder. As a consequence, git does not keep empty
+folders.

@@ -9,10 +9,12 @@ from __future__ import annotations
 
 import hashlib
 import os
+import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 
 DOCUMENT_SUFFIX = ".texl"
+TRASH = ".trash"
 
 
 class StorageError(Exception):
@@ -107,7 +109,122 @@ class Storage:
             raise BadRequest(f"is a folder: {path!r}")
         return target
 
+    def _item(self, path: str) -> Path:
+        """The file-system path of an item to move or delete, validated as
+        `resolve` does. A symbolic link stays itself: the item is the link, not
+        what it points to."""
+        self.resolve(path)
+        relative = path.strip("/")
+        if not relative:
+            raise BadRequest("the root folder cannot be moved or deleted")
+        return self.root.joinpath(*relative.split("/"))
+
+    # -- move ----------------------------------------------------------------
+
+    def move(self, path: str, to: str) -> str:
+        """Move or rename a document or a folder; returns its new path."""
+        source = self._item(path)
+        target = self._item(to)
+        if not os.path.lexists(source):
+            raise NotFound(f"no such item: {path!r}")
+        if source.is_dir():
+            if target.suffix == DOCUMENT_SUFFIX:
+                raise BadRequest(f"a folder's name cannot end in {DOCUMENT_SUFFIX}: {to!r}")
+            if target.resolve().is_relative_to(source.resolve()) and target != source:
+                raise BadRequest(f"a folder cannot go inside itself: {to!r}")
+        elif source.suffix != DOCUMENT_SUFFIX or target.suffix != DOCUMENT_SUFFIX:
+            raise BadRequest(f"only {DOCUMENT_SUFFIX} files can be moved, to a {DOCUMENT_SUFFIX} name: {path!r} to {to!r}")
+        if target == source:
+            return self.relative(target)
+        # On a file system that ignores case, a new case of the name is the same item
+        if os.path.lexists(target) and not os.path.samefile(source, target):
+            raise Conflict(f"already exists: {to!r}")
+        self._make_folder(target.parent, to)
+        shutil.move(source, target)
+        return self.relative(target)
+
+    # -- delete --------------------------------------------------------------
+
+    def delete_file(self, path: str) -> None:
+        """Move a document to the trash. Its folder stays, even if left empty."""
+        source = self._item(path)
+        if not os.path.lexists(source):
+            raise NotFound(f"no such file: {path!r}")
+        if source.is_dir():
+            raise BadRequest(f"is a folder: {path!r}")
+        if source.suffix != DOCUMENT_SUFFIX:
+            raise BadRequest(f"only {DOCUMENT_SUFFIX} files can be deleted: {path!r}")
+        self._to_trash(source, self._new_trash())
+
+    def delete_folder(self, path: str) -> dict:
+        """Move every document in a folder to the trash, at any depth, and remove
+        the folders this leaves with nothing in them. Other files, hidden entries
+        and links to folders stay, and so do the folders that hold them."""
+        folder = self._item(path)
+        if not os.path.lexists(folder):
+            raise NotFound(f"no such folder: {path!r}")
+        if folder.is_symlink() or not folder.is_dir():
+            raise BadRequest(f"not a folder: {path!r}")
+        documents: list[Path] = []
+        folders: list[Path] = []
+        self._collect(folder, documents, folders)
+        trash = self._new_trash() if documents else None
+        for document in documents:
+            self._to_trash(document, trash)
+        for each in folders:  # the deepest first
+            try:
+                each.rmdir()
+            except OSError:
+                pass  # still holds something
+        return {"deleted": len(documents), "removed": not folder.exists()}
+
+    def _collect(self, folder: Path, documents: list[Path], folders: list[Path]) -> None:
+        """Add the documents under `folder`, and its folders with the deepest
+        first. What the tree does not list as a document or a folder is left."""
+        for entry in folder.iterdir():
+            if entry.name.startswith("."):
+                continue
+            if entry.is_dir():
+                if not entry.is_symlink():
+                    self._collect(entry, documents, folders)
+            elif entry.is_file() and entry.suffix == DOCUMENT_SUFFIX:
+                documents.append(entry)
+        folders.append(folder)
+
+    def _new_trash(self) -> Path:
+        """A new folder in the trash for one deletion, named after its time."""
+        while True:
+            name = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S-%f")
+            trash = self.root / TRASH / name
+            try:
+                trash.mkdir(parents=True)
+                return trash
+            except FileExistsError:
+                continue
+
+    def _to_trash(self, source: Path, trash: Path) -> None:
+        """Move an item into the trash folder, under its path from the root."""
+        target = trash / source.relative_to(self.root)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.move(source, target)
+
     # -- tree ----------------------------------------------------------------
+
+    def create_folder(self, path: str) -> None:
+        """Create a folder, and its missing parents."""
+        target = self._item(path)
+        if os.path.lexists(target):
+            raise Conflict(f"already exists: {path!r}")
+        if target.suffix == DOCUMENT_SUFFIX:
+            raise BadRequest(f"a folder's name cannot end in {DOCUMENT_SUFFIX}: {path!r}")
+        self._make_folder(target, path)
+
+    def _make_folder(self, folder: Path, path: str) -> None:
+        try:
+            folder.mkdir(parents=True, exist_ok=True)
+        except (FileExistsError, NotADirectoryError):
+            raise Conflict(f"a file is in the way: {path!r}") from None
+
 
     def tree(self, path: str, depth: int | None = None) -> dict:
         target = self.resolve(path)

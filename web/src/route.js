@@ -23,3 +23,16 @@ export function routeUrl({ root, doc }) {
     const base = "/" + (doc ? encode(doc) : "");
     return root ? `${base}?root=${encode(root)}` : base;
 }
+
+/**
+ * The link to the document at `path` from the document `from` (from the server
+ * root if `null`): relative, so it works under any server and in `stilo render`,
+ * and encoded, so it is a valid address in `texl.import` and in Markdown.
+ */
+export function relativeLink(from, path) {
+    const folder = (from ?? "").split("/").slice(0, -1);
+    const target = path.split("/");
+    let shared = 0;
+    while (shared < folder.length && shared < target.length - 1 && folder[shared] === target[shared]) shared++;
+    return [...folder.slice(shared).map(() => ".."), ...target.slice(shared).map(encodeURIComponent)].join("/");
+}

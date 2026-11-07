@@ -6,6 +6,35 @@ change the interfaces.
 
 ## Unreleased
 
+- **Commands on the navigation pane.** Right-click a document, a folder or the
+  empty area of the tree, or use the `⋯` button of a row or of the pane's header,
+  for a menu. The header also has buttons for New document and New folder, and
+  the commands are listed in the commands pane.
+  - **New document** now asks for the name in the tree instead of a browser
+    dialog, and creates the document in the folder you chose: the one you
+    right-clicked, or for the header buttons and Alt+N the folder of the item
+    you last used in the tree, instead of always the navigation root.
+  - **Duplicate** copies a document next to it and opens the copy. It works on
+    documents only.
+  - **Copy link** copies a document's link, relative to the open document, ready
+    for `texl.import` or a Markdown link.
+  - **Open as root** makes a folder the navigation root, as a double click does.
+  - **Refresh** reads the tree again.
+  - **Show empty folders** shows or hides folders with no documents in them. It
+    is on by default and remembered in the browser.
+  - **New folder** creates a folder in the place you chose, the same way.
+  - **Rename** (F2) changes a document's or folder's name in its row of the tree.
+    **Move to…** moves it to a folder you choose. Both warn that links to it will
+    stop working, as links are not updated. If it holds the open document, Stilo
+    offers to save unsaved changes first and keeps the document open at its new
+    address, with a fresh undo history.
+  - **Delete** (Delete, when the tree has the focus) asks first, then moves a
+    document to a `.trash` folder at the top of the served folder; its folder
+    stays, even if empty. Deleting a folder moves all its documents to the trash,
+    and removes the folder unless other files remain in it. A deleted open
+    document closes.
+- **Protocol:** new operations to create a folder, move or rename a document or
+  folder, and delete a document or folder (`docs/protocol.md`).
 - **Inserting a formula tag is now Ctrl+E** (Cmd+E on macOS), instead of
   Ctrl+Space, which switches the input source on macOS.
 - **Saving includes the cell being edited.** Ctrl+S (or Save in the commands

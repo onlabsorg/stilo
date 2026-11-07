@@ -6,7 +6,7 @@ built web app. FastAPI and uvicorn.*
 
 | Module                          | Role                                           |
 |---------------------------------|------------------------------------------------|
-| `stilo/server/storage.py`       | `Storage`: the folder on disk. Path validation, read, create, update, tree, ETags. No HTTP. |
+| `stilo/server/storage.py`       | `Storage`: the folder on disk. Path validation, read, create, update, move, delete, tree, ETags. No HTTP. |
 | `stilo/server/app.py`           | `create_app()`: the HTTP routes, mapped onto `Storage` |
 | `stilo/server/__init__.py`      | Exports `create_app` |
 
@@ -91,6 +91,46 @@ only folders and `.texl` files are listed, without hidden entries or
 reserved names at the root. `depth` limits the recursion. Raises
 `NotFound` and `BadRequest` as `read` does.
 
+### `create_folder`
+
+```python
+def create_folder(self, path: str) -> None
+```
+
+Creates a folder and its missing parents. Raises `Conflict` if the path exists
+or a file is in the way, and `BadRequest` for a name ending in `.texl` or the
+root.
+
+### `move`
+
+```python
+def move(self, path: str, to: str) -> str
+```
+
+Moves or renames a document or a folder and returns its new path, creating
+missing parents of `to`. A folder takes everything in it. Raises `Conflict` if
+`to` exists (move never overwrites), `NotFound` if the item does not, and
+`BadRequest` for anything else the protocol refuses. A symbolic link moves as
+the link, not what it points to.
+
+### `delete_file`, `delete_folder`
+
+```python
+def delete_file(self, path: str) -> None
+def delete_folder(self, path: str) -> dict
+```
+
+Nothing is erased. Each deletion gets its own folder in the trash,
+`.trash/<UTC time>/`, and items keep their path from the root inside it, so a
+user can find them and deleting twice loses nothing.
+
+`delete_file` moves one `.texl` file; its folder stays, even if left empty.
+`delete_folder` moves every `.texl` file at any depth, then removes the folders
+left with nothing in them, the deepest first, and returns `{"deleted": <count>,
+"removed": <whether the given folder is gone>}`. Other files, hidden entries and
+links to folders stay, and so do the folders holding them; links are not followed.
+A deletion with no documents makes no trash folder.
+
 ### `etag`
 
 ```python
@@ -138,6 +178,10 @@ The routes, in the order they match:
 | `/_api/files/{path}`               | GET, HEAD    | `Storage.read`; `ETag` and `Cache-Control: no-cache` |
 | `/_api/files/{path}`               | POST         | `Storage.create`; `201`, `ETag`, `Location` |
 | `/_api/files/{path}`               | PUT          | `Storage.update` with the `If-Match` header |
+| `/_api/files/{path}`               | DELETE       | `Storage.delete_file`; `204`             |
+| `/_api/move/{path}`                | POST         | `Storage.move`, with the JSON body `{"to": ...}` |
+| `/_api/tree/{path}`                | POST         | `Storage.create_folder`; `201`, `Location` |
+| `/_api/tree/{path}`                | DELETE       | `Storage.delete_folder`; `{deleted, removed}` |
 | `/_api/tree/{path}`                | GET          | `Storage.tree`, with `?depth=` (1 or more) |
 | `/_api/{path}`                     | any          | `404`: unknown endpoint                  |
 | `/_app/...`                        | GET          | The web app's static files (`web_dist`)  |

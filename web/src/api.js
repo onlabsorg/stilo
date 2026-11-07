@@ -70,3 +70,26 @@ export async function readTree(path, depth) {
     const response = await check(await fetch(`${API}/tree/${encode(path)}${query}`, { cache: "no-store" }));
     return response.json();
 }
+
+/** CREATE a folder, with its missing parents; fails with status 409 if the path exists. */
+export async function createFolder(path) {
+    await check(await fetch(`${API}/tree/${encode(path)}`, { method: "POST" }));
+}
+
+/** MOVE a document or a folder to the whole new path `to`; fails with status 409 if it exists. */
+export async function moveItem(path, to) {
+    const headers = { "Content-Type": "application/json" };
+    await check(await fetch(`${API}/move/${encode(path)}`, { method: "POST", body: JSON.stringify({ to }), headers }));
+}
+
+/** DELETE a document. Its folder stays. */
+export async function deleteFile(path) {
+    await check(await fetch(contentUrl(path), { method: "DELETE" }));
+}
+
+/** DELETE a folder's documents, and the folder if that leaves it with nothing:
+ * `{deleted, removed}`. */
+export async function deleteFolder(path) {
+    const response = await check(await fetch(`${API}/tree/${encode(path)}`, { method: "DELETE" }));
+    return response.json();
+}

@@ -47,7 +47,8 @@ desktop window around the web app) goes in as another subpackage of
 `stilo`, as a client of the server, with its dependencies as an extra.
 
 The **protocol** (`docs/protocol.md`, plain HTTP: GET, CREATE
-(POST), UPDATE (PUT with `If-Match`), QUERY tree) is the contract between
+(POST), UPDATE (PUT with `If-Match`), QUERY tree, CREATE folder, MOVE, DELETE)
+is the contract between
 web app and server. Change it there first, then in `src/stilo/server/` and
 `web/src/api.js`. Papiro is meant to speak the same protocol, so the web
 app must use only it, and a server in another language (e.g. Node.js) must
@@ -153,7 +154,7 @@ creates the GitHub release. Bump the version in `pyproject.toml`,
   style guide: `docs/STYLE.md`. `architecture.md`, `setup.md`,
   `server.md`, `cli.md`, `web-app.md`, `editor.md`, `editor-design.md`
   (editing model, open points), `texl-primer.md`, `protocol.md` (protocol
-  v0: URL space, the four interactions, errors, public document URLs, why
+  v0: URL space, the interactions, errors, public document URLs, why
   plain HTTP — also the contract), `component/` (embedding guide and
   editor API reference).
 - The **user manual** (getting started, the web editor, the `stilo`
@@ -166,7 +167,7 @@ creates the GitHub release. Bump the version in `pyproject.toml`,
 - `DECISIONS.md` — Stilo's decision log (S1, S2, …), at the root.
 - `src/stilo/server/storage.py` — `Storage`: path validation (no `..`,
   no hidden segments, no `_` names at the root, no escape through symlinks),
-  read / create / update / tree, ETags (sha256). Raises `StorageError`
+  read / create / update / move / delete (to `.trash`) / tree, ETags (sha256). Raises `StorageError`
   subclasses carrying the HTTP status.
 - `src/stilo/server/app.py` — `create_app(root, web_dist)`: the
   `/_api/` routes, `/_app/` static bundle, and `/<path>` (web app for
@@ -182,9 +183,11 @@ creates the GitHub release. Bump the version in `pyproject.toml`,
   commands (save, new, …), editor events.
 - `web/src/components/top-bar.js`, `nav-pane.js`, `commands-pane.js`,
   `comments-pane.js`, `errors-pane.js` — the parts of the layout. They fire events; the app
-  holds the state.
+  holds the state. `context-menu.js` — the menu `nav-pane.js` opens.
+  `move-dialog.js` — the Move to… dialog.
 - `web/src/commands.js` — the command list shown in the commands pane, with
-  shortcuts. Editor commands call the editor's `runCommand(name)`.
+  shortcuts, and the navigation pane's menus (`treeMenus`). Editor commands
+  call the editor's `runCommand(name)`; tree commands have ids `tree-*`.
 - `web/src/route.js` — browser URL ↔ `{root, doc}`. `web/src/api.js` —
   protocol client. `web/src/theme.js`,
   `theme.css` — light/dark theme (default dark), design tokens as CSS custom properties, also mapped onto

@@ -13,7 +13,8 @@ export const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
  * @property {string} label
  * @property {string} group
  * @property {string} [keys]  Shortcut as text, "Mod" is Ctrl or ⌘.
- * @property {(app: any) => void} [run]
+ * @property {(app: any, node?: object) => void} [run]  `node` is the tree node
+ *   the command was called on, from the navigation pane.
  * @property {(e: KeyboardEvent) => boolean} [match]  App shortcut matcher.
  */
 
@@ -22,6 +23,17 @@ const mod = (e) => (isMac ? e.metaKey : e.ctrlKey);
 /** A command of the editor, by its name there, which is also its id. */
 function editorCommand(id, label, keys, group = "Document") {
     return { id, label, keys, group, run: (app) => app.runEditorCommand(id) };
+}
+
+/** A command on an item of the navigation pane. Called from the commands pane,
+ * it acts on the app's `treeTarget`. */
+function treeCommand(id, label, keys, run) {
+    return { id, label, keys, group: "Navigation pane", run: (app, node) => run(app, node ?? app.treeTarget) };
+}
+
+/** A command of the navigation pane as a whole. */
+function paneCommand(id, label, run) {
+    return { id, label, group: "Navigation pane", run };
 }
 
 /** @type {Command[]} */
@@ -40,7 +52,7 @@ export const commands = [
         keys: "Alt+N",
         group: "File",
         match: (e) => e.altKey && !mod(e) && e.code === "KeyN",
-        run: (app) => app.newDocument(),
+        run: (app, node) => app.newDocument(node),
     },
     {
         id: "reload",
@@ -48,6 +60,22 @@ export const commands = [
         group: "File",
         run: (app) => app.reload(),
     },
+
+    {
+        id: "tree-new-folder",
+        label: "New folder…",
+        group: "Navigation pane",
+        run: (app, node) => app.newFolder(node),
+    },
+    treeCommand("tree-rename", "Rename", "F2", (app, node) => app.rename(node)),
+    treeCommand("tree-duplicate", "Duplicate", "", (app, node) => app.duplicate(node)),
+    treeCommand("tree-move", "Move to…", "", (app, node) => app.moveTo(node)),
+    treeCommand("tree-copy-link", "Copy link", "", (app, node) => app.copyLink(node)),
+    treeCommand("tree-open-root", "Open as root", "", (app, node) => app.openAsRoot(node)),
+    treeCommand("tree-delete", "Delete", "Delete", (app, node) => app.deleteItem(node)),
+    paneCommand("tree-refresh", "Refresh", (app) => app.refreshTree()),
+    paneCommand("tree-show-empty", "Show empty folders", (app) => app.toggleEmptyFolders()),
+
     {
         id: "toggle-nav",
         label: "Toggle navigation pane",
@@ -113,6 +141,16 @@ export const commands = [
     { id: "insert-tag", label: "Insert a formula tag", keys: "Mod+E", group: "While editing a cell" },
     { id: "insert-comment", label: "Insert a cell comment", keys: "Shift+F2", group: "While editing a cell" },
 ];
+
+/**
+ * The menus of the navigation pane, by what they open on: command ids, in
+ * order, and "-" for a separator.
+ */
+export const treeMenus = {
+    file: ["tree-rename", "tree-duplicate", "tree-move", "tree-copy-link", "-", "tree-delete"],
+    folder: ["new-document", "tree-new-folder", "-", "tree-open-root", "tree-rename", "tree-move", "-", "tree-delete"],
+    pane: ["new-document", "tree-new-folder", "-", "tree-refresh", "tree-show-empty"],
+};
 
 /** The app command whose shortcut matches a key event, if any. */
 export function matchCommand(e) {

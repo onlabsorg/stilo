@@ -32,8 +32,8 @@ the CLI.
 ```
 
 The [protocol](protocol.md) is the contract between the web app and the
-server: four interactions over plain HTTP (GET, CREATE, UPDATE, QUERY the
-tree). The rules that follow from it:
+server: a few interactions over plain HTTP (GET, CREATE, UPDATE, QUERY the
+tree, CREATE a folder, MOVE, DELETE). The rules that follow from it:
 
 - The web app talks to the server **only** through the protocol, in
   `web/src/api.js`. So another server that speaks the protocol, in another

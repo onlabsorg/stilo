@@ -1,6 +1,6 @@
 # Protocol v0 — documents over HTTP
 
-*The contract between the web app and the server, as of 2026-10-24. Plain
+*The contract between the web app and the server, as of 2026-11-07. Plain
 HTTP, close to how the web already serves files, so that `texl.import` can
 fetch documents by URL with no special client. Version 0: no accounts, no
 permissions, no versions; everything under the server root is readable and
@@ -13,8 +13,9 @@ reserved at the root; document folders and files cannot use them there.
 
 | Path                  | What                                             |
 |-----------------------|--------------------------------------------------|
-| `/_api/files/<path>`  | Document content: read, create, update           |
-| `/_api/tree/<path>`   | Folder structure, as JSON                        |
+| `/_api/files/<path>`  | Document content: read, create, update, delete   |
+| `/_api/tree/<path>`   | Folder structure, as JSON; create and delete folders |
+| `/_api/move/<path>`   | Move or rename a document or a folder            |
 | `/_app/...`           | The web app's static assets (built bundle)       |
 | `/<path>`             | Any other path: the document's **public URL** (GET, HEAD) |
 
@@ -113,6 +114,69 @@ and `.texl` files are listed; hidden entries are skipped. `depth` limits
 recursion (`depth=1`: direct children only; default: unlimited); a folder
 beyond the depth has no `children` key. `404` if the folder does not exist;
 `400` if the path is a file.
+
+### CREATE a folder
+
+```
+POST /_api/tree/projects/bridge
+→ 201 Created
+  Location: /_api/tree/projects/bridge
+```
+
+Missing parent folders are created. `409 Conflict` if the path already exists,
+as a folder or a file. A folder's name cannot end in `.texl` (`400`).
+
+### MOVE a document or a folder
+
+```
+POST /_api/move/projects/beam/check.texl
+  Content-Type: application/json
+  {"to": "projects/beam/bending-check.texl"}
+→ 200 OK
+  {"path": "projects/beam/bending-check.texl"}
+```
+
+Moving and renaming are one operation: `to` is the item's whole new path.
+Missing parent folders are created. A folder moves with everything in it, other
+files too, so that its documents keep what they link to. Links in other
+documents are not updated.
+
+`404` if the item does not exist. `409 Conflict` if `to` exists (move never
+overwrites). `400` if `to` is not a valid path, if a document's new name does not
+end in `.texl`, if a folder's does, if the item is a file other than a document,
+if a folder would go inside itself, or for the root. A move to the path the item
+already has changes nothing.
+
+### DELETE a document
+
+```
+DELETE /_api/files/projects/beam/check.texl
+→ 204 No Content
+```
+
+The document is gone from the tree and from its URL. Its folder stays, even if
+this leaves it empty. `404` if it does not exist; `400` if the path is a folder
+or a file other than a document.
+
+### DELETE a folder
+
+```
+DELETE /_api/tree/projects/beam
+→ 200 OK
+  {"deleted": 3, "removed": true}
+```
+
+Deletes every document in the folder, at any depth. Other files and hidden
+entries stay. Each folder left with nothing in it is removed, the given one
+included; one that still holds something stays. `deleted` is how many documents
+were deleted, `removed` whether the given folder is gone. `404` if the folder
+does not exist; `400` if the path is a file, a link or the root.
+
+**What deleting means is up to the server.** To a client the item is gone; the
+protocol has no way to list or restore what was deleted. Stilo's server moves
+documents to `.trash/<time of the deletion>/<their path>` under its root, so a
+user can get them back from the file system (S8). As a hidden folder, `.trash`
+cannot be reached through the protocol.
 
 ## Errors
 
