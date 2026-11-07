@@ -14,7 +14,7 @@
 
 [project]
 name = "stilo-cli"
-version = "0.1.0"
+version = "0.2.0"
 description = "Stilo: edit and render a folder of linked Texl documents"
 readme = "README.md"
 license = "MIT"

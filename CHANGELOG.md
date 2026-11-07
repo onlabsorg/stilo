@@ -6,6 +6,8 @@ change the interfaces.
 
 ## Unreleased
 
+## 0.2.0 — 2026-11-07
+
 - **Links to other files work.** An image, PDF or other file in the folder now
   opens from a relative link in a document. Before, a PDF link showed an empty
   Stilo, and an SVG image did not show.
