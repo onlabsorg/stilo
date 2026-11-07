@@ -1,6 +1,7 @@
 import { expect, fixture, html } from "@open-wc/testing";
 import { EditorView } from "@codemirror/view";
 import "../src/editor/index.js";
+import { parseDocument } from "../src/editor/document.js";
 
 const SOURCE = `<!--{ txt2 : text }-->
 <% L = 6, q = 12.5 %>Span: <% L %> m
@@ -1074,6 +1075,106 @@ Third line
             expect(editor.editing).to.be.true;
             expect(await editor.runCommand("discard")).to.be.true;
             expect(editor.editing).to.be.false;
+        });
+
+        describe("tags and cells", () => {
+            const m = (name, type = "text") => `<!--{ ${name} : ${type} }-->\n`;
+
+            /** Edits line `index`, sets its source and tries to commit. */
+            async function commit(editor, index, source) {
+                editor.select(index + 1);
+                await editor.runCommand("edit");
+                await editor.updateComplete;
+                const cell = cells(editor)[index];
+                await cell.updateComplete;
+                const view = EditorView.findFromDOM(cell.shadowRoot.querySelector(".cm-editor"));
+                view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: source } });
+                const done = await editor.runCommand("commit");
+                await editor.updateComplete;
+                await cell.updateComplete;
+                return { done, cell };
+            }
+
+            const LATER = `${m("abc2")}one\n${m("xyz3")}two\n${m("pim4")}<% 1 %>\n`;
+
+            it("refuses a <% left open above a later %>, and says why", async () => {
+                const editor = await editorWith(LATER);
+                const { done, cell } = await commit(editor, 0, "one <% L\n");
+                expect(done).to.be.false;
+                expect(cell.mode).to.equal("edit");
+                expect(cell.shadowRoot.querySelector(".input-error").textContent).to.contain("line 1").and.to.contain("line 2");
+                await editor.runCommand("discard");
+                expect(editor.value).to.equal(LATER);
+            });
+
+            it("refuses a %> that would close a <% in a cell above", async () => {
+                const source = `${m("abc2")}a <% b\n${m("xyz3")}two\n`;
+                const editor = await editorWith(source);
+                const { done, cell } = await commit(editor, 1, "<% 1 %>\n");
+                expect(done).to.be.false;
+                expect(cell.shadowRoot.querySelector(".input-error").textContent).to.contain("line 1").and.to.contain("line 2");
+                await editor.runCommand("discard");
+                expect(editor.value).to.equal(source);
+            });
+
+            it("accepts a lone <% with no %> below it", async () => {
+                const editor = await editorWith(`${m("abc2")}one\n${m("xyz3")}two\n`);
+                const { done } = await commit(editor, 0, "write <% to open\n");
+                expect(done).to.be.true;
+                expect(editor.value).to.contain("write <% to open");
+            });
+
+            it("keeps a marker line in a tag inside the cell", async () => {
+                const editor = await editorWith(`${m("abc2")}one\n`);
+                const source = `<% "a\n${m("xyz3")}b" %>`;
+                expect((await commit(editor, 0, source)).done).to.be.true;
+                expect(editor.value).to.equal(`${m("abc2")}${source}\n`);
+                expect(parseDocument(editor.value)).to.have.length(1);
+            });
+
+            it("splits a merged cell when its tag is closed, with one undo", async () => {
+                const merged = `${m("abc2")}Span: <% L\n${m("xyz3", "table")}\n${m("pim4")}Load: <% 5 %> kN\n${m("dan5")}End\n`;
+                const editor = await editorWith(merged);
+                expect(parseDocument(editor.value)).to.have.length(2);
+                const body = parseDocument(merged)[0].texl.replace("<% L\n", "<% 6 %>\n");
+                expect((await commit(editor, 0, body)).done).to.be.true;
+                const parsed = parseDocument(editor.value);
+                expect(parsed.map((cell) => cell.name)).to.deep.equal(["abc2", "xyz3", "pim4", "dan5"]);
+                expect(parsed[1].type).to.equal("table");
+                await editor.runCommand("undo");
+                expect(editor.value).to.equal(merged);
+            });
+
+            it("splits a cell when a marker line is typed in it", async () => {
+                const editor = await editorWith(`${m("abc2")}one\n`);
+                expect((await commit(editor, 0, `one\n${m("xyz3", "markdown")}two\n`)).done).to.be.true;
+                expect(parseDocument(editor.value).map((cell) => cell.type)).to.deep.equal(["text", "markdown"]);
+            });
+
+            it("renames a cell split off with a name in use", async () => {
+                const editor = await editorWith(`${m("abc2")}one\n${m("xyz3")}two\n`);
+                expect((await commit(editor, 0, `one\n${m("xyz3")}new\n`)).done).to.be.true;
+                const names = parseDocument(editor.value).map((cell) => cell.name);
+                expect(names).to.have.length(3);
+                expect(new Set(names).size).to.equal(3);
+                expect(names[0]).to.equal("abc2");
+                expect(names[2]).to.equal("xyz3");
+            });
+
+            it("refuses to move a <% above a %>, and says why", async () => {
+                const source = `${m("abc2")}<% 1 %>\n${m("xyz3")}a <% b\n`;
+                const editor = await editorWith(source);
+                editor.select(2);
+                expect(await editor.runCommand("move-up")).to.be.false;
+                expect(editor.value).to.equal(source);
+                await editor.updateComplete;
+                expect(editor.shadowRoot.querySelector(".notice").textContent).to.contain("line 1");
+            });
+
+            it("keeps a document unchanged when opened and read back", async () => {
+                const source = `${m("abc2")}a <% b\n${m("xyz3")}c %> d\n${m("pim4")}<% 1 %>\n`;
+                expect((await editorWith(source)).value).to.equal(source);
+            });
         });
 
         it("changes the type and edits with make-<type>, or shows why not", async () => {

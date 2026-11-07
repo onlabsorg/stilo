@@ -100,9 +100,14 @@ serializeDocument(cells);   // the same text
   so any plain Texl file opens in the editor.
 - `nameCells` gives every cell with a marker a unique random name (`bak7`);
   `nameConflicts` finds names shared by hand-edited cells.
+- A marker line inside a tag is part of the cell the tag opens in (`tagSpans`
+  finds the tags as Texl does), so a tag never spans cells. `spanningTag` finds
+  a change that would make one; `cellsFromSource` gives the cells a new source
+  becomes.
 - `cellComments` extracts the cell comments, `<!--[ ... ]-->`.
 - `splitRendering` cuts the rendering of a whole document into the outputs
-  of its cells, at the cells' marker lines.
+  of its cells, at the places of the cells' markers, which it works out from
+  the positions of the tags (`outputSpans`).
 
 The module is pure: no DOM, no Texl. It can run anywhere, e.g. on a server.
 → [Document functions](component/api.md#document-functions)
@@ -177,7 +182,7 @@ const engine = await this._engine;
 let outputs = [];
 try {
     const doc = await engine.render(this.url, serializeDocument(cells));
-    outputs = splitRendering(doc.text, cells);
+    outputs = splitRendering(doc, cells);
 } catch {
     // The URL cannot be resolved: the cells show no output
 }
@@ -192,8 +197,9 @@ if (generation === this._generation) this._outputs = outputs;
 - One **rendering** per pass, of the whole document as the document at
   `url`: what any other Texl host renders, imports included, with each cell
   seeing the names bound above it. `splitRendering` (`document.js`) cuts it
-  into the cells' outputs at their own marker lines, in order; the rules
-  (foreign markers, missing markers, line breaks) are in
+  into the cells' outputs at the places of their markers, worked out from the
+  tags' positions; the rules (markers in a tag's output, markers inside a
+  tag, line breaks) are in
   [Editor design](editor-design.md#rendering).
 - Passes are asynchronous (imports are promises). A generation counter
   discards a pass that a newer change overtook.
@@ -209,10 +215,10 @@ through `doc.tags` and collects the undefined values returned, directly or as
 items of a tuple. Each is assigned to a line by its tag's source position
 (`lineAtOffset`). Then:
 
-1. `markErrors` replaces the text of each value in the rendering with a mark of
-   private-use characters holding its index, before the rendering is split. It
-   has to happen here: only `doc.text` has the positions, and they are lost once
-   Markdown has run.
+1. `markErrors` takes a cell's span of the rendering (`outputSpans`) and replaces
+   the text of each value in it with a mark of private-use characters holding its
+   index. It has to happen here: only `doc.text` has the positions, and they are
+   lost once Markdown has run.
 2. The cell's `renderView` passes its HTML to `sanitizeOutput`, which sanitises
    it and then replaces the marks in text nodes with a highlighted `<span>`. A
    mark in an attribute becomes plain `[[Undefined]]`; Markdown percent-encodes
@@ -314,7 +320,11 @@ else). The type menu offers a type only if it accepts every selected
 cell's source, so a type change never converts content. On commit,
 `exitEdit` checks a changed source with `inputError(texl)`; a refused one
 is not committed, and the cell stays in edit mode with the message (the
-round-trip check: e.g. `%>` in a formula would split its tag). A cell whose
+round-trip check: e.g. `%>` in a formula would split its tag). The same goes
+for `commitError(texl)`, set by the editor, which refuses a source whose tag
+would run into a later cell; `_setCells` refuses the same of a paste or a move.
+A committed source with marker lines outside tags becomes those cells
+(`_onCellChange`). A cell whose
 source lacks its type's shape (edited by hand) is edited as text, and can
 be committed unchanged or once it has the shape.
 

@@ -6,6 +6,29 @@ change the interfaces.
 
 ## Unreleased
 
+- **A formula can no longer run across cells.** A `<%` left open used to close
+  at the first `%>` of a later cell, leaving the cells in between blank.
+  - **In the editor**, leaving a cell in that state is refused with a message
+    naming both lines; correct it, or press Escape to discard the changes.
+    The same goes for a `%>` that would close a `<%` higher up, and for a paste
+    or a move that would cause it. A lone `<%` with no `%>` below it stays plain
+    text.
+  - **In a file** already in that state, the cells down to the `%>` open as one
+    cell, and the file does not change. Close the formula and they become
+    separate cells again, with their types.
+  - **A marker line typed or pasted into a cell** now makes a new cell when you
+    leave the cell, instead of only when the document is opened again. A marker
+    line inside a formula, e.g. in a string, stays part of the formula.
+  - **File format:** a marker line inside a `<% %>` tag is not a marker.
+  - For pages embedding the editor: `tagSpans`, `spanningTag` and
+    `cellsFromSource` are new exports.
+- **Output no longer lands under the wrong cell** when an imported document or a
+  formula outputs text that looks like the marker of a later cell. The editor
+  now places each cell's output from the positions of the formulas, instead of
+  searching for the marker in the output.
+  For pages embedding the editor: `splitRendering` takes the rendering
+  (`splitRendering(doc, cells)`), which must be of `serializeDocument(cells)`,
+  and `outputSpans(doc, cells)` gives the same split as positions.
 - **Commands on the navigation pane.** Right-click a document, a folder or the
   empty area of the tree, or use the `⋯` button of a row or of the pane's header,
   for a menu. The header also has buttons for New document and New folder, and

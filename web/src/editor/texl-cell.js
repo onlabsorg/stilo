@@ -243,6 +243,12 @@ export class TexlCell extends LitElement {
         this.texl = "";
         this.output = "";
         this.errorMessages = [];
+        /**
+         * Set by the editor: why a new source cannot be committed given the
+         * rest of the document, or an empty string.
+         * @type {((texl: string) => string) | null}
+         */
+        this.commitError = null;
         this.mode = "render";
         this.selected = false;
         this._error = "";
@@ -282,14 +288,14 @@ export class TexlCell extends LitElement {
 
     /**
      * Leaves edit mode; reports the new source if `commit` and it changed.
-     * A changed source that `inputError` refuses is not committed: the cell
-     * stays in edit mode and shows the error.
+     * A changed source that `inputError` or `commitError` refuses is not
+     * committed: the cell stays in edit mode and shows the error.
      */
     exitEdit(commit = true) {
         if (this.mode !== "edit") return;
         if (commit) {
             const texl = this.toTexl();
-            const error = texl !== this.texl ? this.inputError(texl) : "";
+            const error = texl !== this.texl ? this.inputError(texl) || (this.commitError?.(texl) ?? "") : "";
             if (error) {
                 this._error = error;
                 return;

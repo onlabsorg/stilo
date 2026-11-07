@@ -3,7 +3,9 @@ import { html, unsafeStatic } from "lit/static-html.js";
 import {
     parseDocument,
     serializeDocument,
-    splitRendering,
+    outputSpans,
+    cellsFromSource,
+    spanningTag,
     cellComments,
     nameCells,
     nameConflicts,
@@ -15,6 +17,10 @@ import { TexlCell } from "./texl-cell.js";
 
 /** What an empty line below the document shows: an empty markdown cell. */
 const EMPTY_LINE = { type: "markdown", texl: "" };
+
+/** Says that a tag would run into a later cell (`spanningTag`). */
+const spanMessage = ({ opens, reaches }) =>
+    `The “<%” on line ${opens + 1} has no closing “%>”, so it would run into line ${reaches + 1}`;
 
 /** Whether a cell looks like an empty line: an empty markdown or text cell. */
 function isEmptyLine(cell) {
@@ -456,7 +462,7 @@ export class TexlEditor extends LitElement {
         }
         if (generation !== this._generation) return;
         const { errors, places } = doc ? findErrors(doc, cells) : { errors: [], places: [] };
-        this._outputs = doc ? splitRendering(markErrors(doc.text, places), cells) : [];
+        this._outputs = doc ? outputSpans(doc, cells).map((span) => markErrors(doc.text, places, span)) : [];
         this._errors = errors;
         this._errorPlaces = places;
         this._errorMessages = places.map(({ error }) => error.rootCause);
@@ -759,23 +765,30 @@ export class TexlEditor extends LitElement {
     /** Replaces the selected cells with the cells of `text`; false if it has none. */
     _paste(text) {
         const [first, last] = this._range();
-        let pasted = parseDocument(text);
-        if (pasted.length === 0) return false;
-        // Pasted cells whose names are in use (e.g. copied ones) get new names
+        const parsed = parseDocument(text);
+        if (parsed.length === 0) return false;
+        const pasted = this._withFreeNames(parsed, first, last);
+        if (!this._spliceCells(first, last - first + 1, pasted)) return;
+        this._select(first);
+        this._select(first + pasted.length - 1, true);
+    }
+
+    /**
+     * Gives new names to the cells whose names are in use (e.g. copied ones)
+     * outside lines `first` to `last`, which they will replace.
+     */
+    _withFreeNames(cells, first, last) {
         const taken = new Set(
             this._cells.filter((_, i) => i < first || i > last).map((cell) => cell.name?.toLowerCase()),
         );
-        pasted = nameCells(
-            pasted.map(({ name, ...cell }) => {
+        return nameCells(
+            cells.map(({ name, ...cell }) => {
                 if (!name || taken.has(name.toLowerCase())) return cell;
                 taken.add(name.toLowerCase());
                 return { ...cell, name };
             }),
             taken,
         );
-        this._spliceCells(first, last - first + 1, pasted);
-        this._select(first);
-        this._select(first + pasted.length - 1, true);
     }
 
     _deleteCells() {
@@ -802,7 +815,7 @@ export class TexlEditor extends LitElement {
             const cells = [...this._cells];
             while (cells.length <= last + Math.max(step, 0)) cells.push({ ...EMPTY_LINE });
             cells.splice(first + step, 0, ...cells.splice(first, last - first + 1));
-            this._setCells(cells);
+            if (!this._setCells(cells)) return false;
         }
         this._anchor += step;
         this._selected += step;
@@ -834,22 +847,53 @@ export class TexlEditor extends LitElement {
 
     _onCellChange(index, texl) {
         const cell = this._cells[index];
-        this._spliceCells(index, cell ? 1 : 0, [{ ...(cell ?? EMPTY_LINE), texl }]);
+        this._spliceCells(index, cell ? 1 : 0, this._cellsAfterEdit(index, texl));
+    }
+
+    /** The cells that line `index` becomes with a new source. */
+    _cellsAfterEdit(index, texl) {
+        const cell = this._cells[index] ?? EMPTY_LINE;
+        const [first, ...rest] = cellsFromSource(cell, texl);
+        if (rest.length === 0 && first.name === cell.name) return [first];
+        return this._withFreeNames([first, ...rest], index, index);
+    }
+
+    /**
+     * Why line `index` cannot take a new source: a tag left open would run
+     * into a later cell. An empty string if it can.
+     */
+    _commitError(index, texl) {
+        const cells = [...this._cells];
+        while (cells.length < index) cells.push({ ...EMPTY_LINE });
+        cells.splice(index, this._cells[index] ? 1 : 0, ...this._cellsAfterEdit(index, texl));
+        const span = spanningTag(cells);
+        return span ? `${spanMessage(span)}: correct it, or press Escape to discard the changes.` : "";
     }
 
     /**
      * Changes the cells as `Array.prototype.splice`. Empty cells fill the
      * lines between the document and `index`, if it is below the document.
+     * Returns whether the change was made (see `_setCells`).
      */
     _spliceCells(index, count, inserted = []) {
         const cells = [...this._cells];
         while (cells.length < index) cells.push({ ...EMPTY_LINE });
         cells.splice(index, count, ...inserted);
-        this._setCells(cells);
+        return this._setCells(cells);
     }
 
-    /** Replaces the cells, keeping the old ones for undo; renders and reports them. */
+    /**
+     * Replaces the cells, keeping the old ones for undo; renders and reports
+     * them. Refuses cells where a tag would run into a later cell, which would
+     * read differently when the document is opened again: it shows why, and
+     * returns false.
+     */
     _setCells(cells) {
+        const span = spanningTag(cells);
+        if (span) {
+            this._notice = { index: this._selected, text: `${spanMessage(span)}.` };
+            return false;
+        }
         this._undoStack = [...this._undoStack, this._state()].slice(-HISTORY_SIZE);
         this._redoStack = [];
         // Empty cells at the end look like the empty lines below: drop them
@@ -864,6 +908,7 @@ export class TexlEditor extends LitElement {
         this._select(this._selected, true);
         this.rendered = this._renderCells();
         this.dispatchEvent(new Event("change", { bubbles: true, composed: true }));
+        return true;
     }
 
     /**
@@ -1042,6 +1087,7 @@ export class TexlEditor extends LitElement {
                 .selected=${i >= first && i <= last}
                 @click=${(e) => this._onCellClick(i, e)}
                 @dblclick=${() => this._edit(i)}
+                .commitError=${(texl) => this._commitError(i, texl)}
                 @cell-change=${(e) => this._onCellChange(i, e.detail.texl)}
                 @cell-exit=${() => this._onCellExit()}
             ></${tag}>

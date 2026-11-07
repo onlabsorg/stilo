@@ -128,6 +128,25 @@ line, an HTML comment that the editor recognises:
 
 - Marker: `<!--{ name : type }-->` on its own line. The cell body is
   everything up to the next marker line.
+- **(decided 2026-11-07)** A marker line inside a tag is not a marker: to Texl
+  it is part of the tag, so a tag belongs to the cell it opens in and never
+  spans cells. Stilo finds tags by the engine's rule, from `<%` to the first
+  `%>`; a `<%` with no `%>` after it is text. A line that a tag touches at all
+  is not a marker either. So a `<%` left open in a file merges the cells down
+  to the first `%>`: the file is unchanged, the types of the merged cells do
+  not apply until the tag is closed, and the source shows where the problem
+  is. Before this, the marker still started a cell whose output went missing.
+- The cells on screen always read the same when the document is opened again:
+  - A change that would make a tag run into a later cell is refused, with a
+    message naming both lines: a commit stays in edit mode, as for an invalid
+    formula; a paste or a move does nothing and shows a notice. This covers a
+    `<%` left open above a `%>`, and a new `%>` below a lone `<%`. A lone `<%`
+    with no `%>` below it stays valid text.
+  - A commit whose source has marker lines outside tags becomes those cells,
+    in one undo step: this splits a merged cell once its tag is closed, and a
+    cell where a marker line was typed or pasted. A cell split off with a name
+    in use gets a new one. A source that starts with a marker takes that
+    marker's name and type.
 - The **name** identifies the cell, e.g. as a fragment identifier
   (`#bek4`): four lowercase letters and digits, compared without case. The
   editor gives one to every cell with a marker that has none (new cells,
@@ -161,20 +180,24 @@ the document URL and are fetched again on every rendering, so a changed
 library shows on the next one. The names of earlier cells are in scope,
 since Texl evaluates the document top to bottom in one scope.
 
-The rendering is then split into the cells' outputs at the cells' marker
-lines, which render to themselves (HTML comments without tags):
+The rendering is then split into the cells' outputs at the places of the
+cells' markers, which render to themselves (HTML comments without tags):
 
-- Only the cells' own markers count, matched in order: marker *i* is
-  searched after marker *i − 1*, at the start of a line. Other marker lines
-  in the output are content, e.g. those of an imported editor document
-  rendered with `<% lib.text %>`. Known limitation: an imported
-  rendering with a marker of the *same name* as a later cell of the
-  document splits wrongly (random names make this rare).
+- **(decided 2026-11-07)** The places come from the tags' positions, not from
+  a search of the text. Text outside tags renders to itself, so a marker's
+  place in the rendering is its place in the source plus the change in size
+  of the tags before it. Marker-like text in a tag's output is content,
+  whatever its name, e.g. that of an imported editor document rendered with
+  `texl.import(...) ~> (lib -> lib.text)`. Searching for the marker went wrong
+  when that output held the marker of a later cell. Options considered:
+  replacing the markers with random tags of the same length before rendering
+  (works, but the rendered source then differs from the document, which errors
+  had to undo, and short markers leave little room for randomness).
 - The leading cell without marker gets the text before the first marker.
-- A missing marker (a tag that opens in one cell and closes in a later one
-  swallows the markers in between): the text up to the next marker found
-  goes to the last cell whose marker was found; cells whose marker is
-  missing show no output. **(open)** An error hint on those cells.
+- A marker inside a tag cannot come from a file or the editor (see File
+  format). `outputSpans` still handles one, for pages that pass their own
+  cells: the text goes to the last cell whose marker is outside a tag, and the
+  swallowed cells show no output.
 - The line break that serialisation adds to a cell body without one is not
   part of the cell's output.
 - If the URL cannot be resolved, the cells show no output.
@@ -336,7 +359,8 @@ this section keeps the outline.
   decided with the table storage); O6 explicit "Convert to…" commands that
   transform the source (e.g. a list into a table), undoable but not
   lossless: later, per type, when a real case asks for it.
-  To check: whether a Markdown cell can create a stray cell marker line.
+  A cell cannot keep a stray marker line outside a tag: the commit splits it
+  (see File format).
 - **(open)** The cells use CodeMirror 6, with Swan highlighting. Still to
   do: autocompletion (see Rendering), and a look that suits
   non-programmers.

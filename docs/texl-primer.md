@@ -129,7 +129,7 @@ be resolved. `fetch` and `load` also reject when the document cannot be
 loaded, with an `Error` named `LoadError` that has `uri` and `reason`. The
 editor renders the whole document with one
 `engine.render(url, source)` per pass and splits the rendering at the
-markers.
+markers, whose places it works out from `doc.tags`.
 
 `doc.tags` lists every tag in source order, including those that render
 nothing, as `{start, end, out_start, out_end, value}`: its span in the source,

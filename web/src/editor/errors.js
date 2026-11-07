@@ -165,20 +165,22 @@ function locate(value, doc, sources) {
 }
 
 /**
- * Replaces the text of each place in a rendering with a mark holding its
- * index in `places`, for `sanitizeOutput` to find after Markdown has run.
+ * Replaces the text of each place in a span of a rendering with a mark holding
+ * its index in `places`, for `sanitizeOutput` to find after Markdown has run.
  * @param {string} text
  * @param {ErrorPlace[]} places - In order of the rendering.
+ * @param {{start: number, end: number}} span - The part of `text` to return.
  * @returns {string}
  */
-export function markErrors(text, places) {
+export function markErrors(text, places, span) {
     let marked = "";
-    let from = 0;
+    let from = span.start;
     places.forEach(({ start, end }, i) => {
+        if (start < span.start || end > span.end) return;
         marked += text.slice(from, start) + MARK_OPEN + i + MARK_CLOSE;
         from = end;
     });
-    return marked + text.slice(from);
+    return marked + text.slice(from, span.end);
 }
 
 /**

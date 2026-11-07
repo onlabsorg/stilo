@@ -457,7 +457,7 @@ to list comments, render a read-only preview or check a document, without
 showing an editor:
 
 ```js
-import { parseDocument, cellComments, splitRendering, createEngine } from "stilo-editor/index.js";
+import { parseDocument, serializeDocument, cellComments, splitRendering, createEngine } from "stilo-editor/index.js";
 
 const cells = parseDocument(text);
 
@@ -468,8 +468,8 @@ const comments = cells.flatMap((cell, i) =>
 
 // The rendered output of every cell, as the editor renders it
 const engine = await createEngine();
-const doc = await engine.render("docs/report.texl", text);   // the document's URL
-const outputs = splitRendering(doc.text, cells);
+const doc = await engine.render("docs/report.texl", serializeDocument(cells));   // the document's URL
+const outputs = splitRendering(doc, cells);
 ```
 
 `serializeDocument(cells)` turns cells back into text, so you can also

@@ -210,6 +210,35 @@ describe("errors", () => {
         });
     });
 
+    describe("output of a document that holds a later cell's marker", () => {
+        const source = `${marker("aaaa")}<% texl.import("./lib.texl") ~> (lib -> lib.text) %> A\n${marker("bbbb")}B <% 1 + "a" %>\n`;
+        const outputs = (editor) => cells(editor).slice(0, 2).map((cell) => cell.output);
+
+        it("stays under the cell of the tag", async () => {
+            serve({ "lib.texl": `${marker("bbbb")}LIB\n` });
+            const [first, second] = outputs(await editorWith(source));
+            expect(first).to.contain("LIB").and.to.contain(" A\n");
+            expect(second).to.not.contain("LIB");
+            expect(second).to.match(/^B /);
+        });
+
+        it("marks the errors of the cell they are in", async () => {
+            serve({ "lib.texl": `${marker("bbbb")}LIB\n` });
+            const editor = await editorWith(source);
+            const [first, second] = outputs(editor);
+            expect(first).to.not.match(/\uE000/);
+            expect(second).to.match(/\uE0000\uE001/);
+            expect(editor.errors[0].lines).to.deep.equal([2]);
+        });
+
+        it("marks an error in a tag that holds a marker line, in its cell", async () => {
+            const editor = await editorWith(`${marker("aaaa")}a <% 1 +\n${marker("bbbb")} 2 %> b\n${marker("cccc")}<% 1 + "a" %>\n`);
+            const [first, second] = cells(editor).slice(0, 2).map((cell) => cell.output);
+            expect(first).to.match(/^a \uE0000\uE001 b\n$/);
+            expect(second).to.match(/^\uE0001\uE001\n$/);
+        });
+    });
+
     describe("clicks", () => {
         const SOURCE = `${marker("aaaa")}fine\n${marker("bbbb")}<% 1 + "a" %> <% 2 + "b" %>\n`;
 

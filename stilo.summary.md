@@ -173,15 +173,23 @@ accept are not part of Stilo.
   a hidden `.trash` folder at the top of the served folder. Deleting a document
   leaves its folder; deleting a folder removes its documents, and the folder too
   unless other files remain in it.
+- 2026-11-07: **cells and formulas always agree**: each cell's output now
+  stays under its own cell, even when an imported document or a formula
+  outputs text that looks like another cell's marker. A formula can no longer
+  run across cells. Leaving a formula open above a later one, or a paste or
+  move that would cause this, is refused with a message naming both lines. A
+  file already in that state opens with those cells merged into one and is not
+  changed; closing the formula separates them again. A marker line typed in a
+  cell makes a new cell when you leave it. File format: a marker line inside a
+  formula is not a marker.
 
 ## Known limitations
 
 - No authentication: serve to localhost, or behind your own access control.
-- Editor: if an imported document's rendering contains a marker with the
-  same name as a later cell, the split into cells goes wrong (rare); a
-  formula tag spanning two cells hides the later cell's output; links in
-  rendered text to files other than documents resolve against the page, not
-  the document; autocompletion of names must be redesigned.
+- Editor: links in rendered text to files other than documents resolve
+  against the page, not the document; autocompletion of names must be
+  redesigned; plain text cannot hold a literal `<%` above a later formula, as
+  the formula's `%>` would close it (the editor refuses this, and says why).
 - The editor is not published as a package of its own: pages that embed it
   use it from a copy of the source code.
 - Files and folders: renaming or moving does not update links to the item;

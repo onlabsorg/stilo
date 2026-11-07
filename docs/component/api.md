@@ -92,11 +92,11 @@ offer them in its own menus and toolbars without faking key presses.
 | Name | Key | Does | `false` when |
 |------|-----|------|--------------|
 | `edit` | Enter, F2 | Edit the selected cell | the sheet has no lines |
-| `commit` | Mod+Enter, in edit mode | Commit the edit and leave edit mode | not editing, or the cell refuses the edit (`inputError`): it stays in edit mode and shows why |
+| `commit` | Mod+Enter, in edit mode | Commit the edit and leave edit mode. Marker lines outside tags in the new source make new cells | not editing, or the edit is refused (`inputError`, or a tag that would run into a later cell): the cell stays in edit mode and shows why |
 | `discard` | Escape, in edit mode | Discard the edit and leave edit mode | not editing |
 | `insert-below` | Alt+Enter, Insert | Insert an empty cell below the selection and select it | — |
 | `insert-above` | Alt+Shift+Enter | Insert an empty cell above the selection and select it | — |
-| `move-up`, `move-down` | Alt+↑ / ↓ | Move the selected cells one line | at the top or bottom of the sheet |
+| `move-up`, `move-down` | Alt+↑ / ↓ | Move the selected cells one line | at the top or bottom of the sheet, or a tag would run into a later cell (a notice says so) |
 | `delete` | Delete, Backspace | Delete the selected cells | — |
 | `copy` | Mod+C | Copy the selected cells to the system clipboard, as Texl with markers | the browser refuses the clipboard |
 | `cut` | Mod+X | Copy, then delete the selected cells | the browser refuses the clipboard |
@@ -153,7 +153,7 @@ editor.addEventListener("name-conflict", (e) => {
 After `value` is set and after every change, the editor renders the whole
 document as the document at `url`, exactly as any other Texl host renders
 it, and splits the rendering into the cells' outputs at their marker lines
-(see [`splitRendering`](#splitrenderingrendering-cells--string)). Each cell
+(see [`splitRendering`](#splitrenderingdoc-cells--string)). Each cell
 sees the names bound by the cells above it. Only the latest pass updates the
 cells; `rendered` is its promise, and it never rejects: if `url` cannot be
 resolved, the cells show no output. Errors in a cell never stop rendering:
@@ -243,7 +243,7 @@ Set by the editor; a cell reads them and does not change them.
 
 | Method                   | Description |
 |--------------------------|-------------|
-| `exitEdit(commit = true)` | Leaves edit mode. With `commit`, calls `toTexl()` and fires `cell-change` if the source changed; then fires `cell-exit`. A changed source that `inputError()` refuses is not committed: the cell stays in edit mode and shows the message below its widget. The editor calls it on Ctrl+Enter (commit) and Escape (discard); a cell may call it itself, e.g. from a "Done" button. |
+| `exitEdit(commit = true)` | Leaves edit mode. With `commit`, calls `toTexl()` and fires `cell-change` if the source changed; then fires `cell-exit`. A changed source that `inputError()` refuses, or `commitError` (a function the editor sets, for what depends on the rest of the document), is not committed: the cell stays in edit mode and shows the message below its widget. The editor calls it on Ctrl+Enter (commit) and Escape (discard); a cell may call it itself, e.g. from a "Done" button. |
 
 ### Events fired
 
@@ -381,7 +381,8 @@ on a server, in a preview, or to list comments).
 
 Splits a document into cells at marker lines `<!--{ name : type }-->`.
 Text before the first marker is a `text` cell with `marker: false`. Older
-markers `<!--% type %-->` are read too (without name).
+markers `<!--% type %-->` are read too (without name). A marker line inside a
+tag is not a marker, so a tag always belongs to the cell it opens in.
 
 ```js
 parseDocument("Intro\n<!--{ bek4 : markdown }-->\n# Title\n");
@@ -394,6 +395,25 @@ parseDocument("Intro\n<!--{ bek4 : markdown }-->\n# Title\n");
 Joins cells into a document; the inverse of `parseDocument`. The round trip
 is exact for documents in the current format. Every cell but the last ends
 with a line break.
+
+### `tagSpans(source) → {start, end}[]`
+
+The tags of a source, as Texl reads them: from `<%` to the first `%>`. A `<%`
+with no `%>` after it is text.
+
+### `spanningTag(cells) → {opens, reaches} | null`
+
+The first tag that would run from a cell into a later one, with the indices of
+the cell where it opens and of the first cell whose marker it swallows.
+`parseDocument` never gives such cells; changing them can. If you change cells
+in your own code, check them with this: the document would read differently
+when parsed again.
+
+### `cellsFromSource(cell, texl) → CellData[]`
+
+The cells that `cell` becomes with the source `texl`: itself, and one more for
+each marker line outside a tag. A source that starts with a marker takes that
+marker's name and type.
 
 ### `parseMarker(inner) → {type, name?}`
 
@@ -437,22 +457,30 @@ for (const [i, cell] of parseDocument(source).entries())
         console.log(`line ${i + 1}: ${comment}`);
 ```
 
-### `splitRendering(rendering, cells) → string[]`
+### `splitRendering(doc, cells) → string[]`
 
-Splits the rendering of a whole document, `serializeDocument(cells)`, into
-the outputs of its cells, at the cells' own marker lines, which rendering
-leaves as they are. Marker *i* is searched after marker *i − 1*, at the
-start of a line, so other marker lines (e.g. in the rendering of an
-imported document) are content. The leading cell without marker gets the
-text before the first marker. If a marker is missing (a tag that spans
-cells swallowed it), the text goes to the last cell whose marker was found
-and the cell gets `""`. The line break that `serializeDocument` adds to a
-cell is not part of its output.
+Splits a rendering into the outputs of its cells. `doc` is what
+`engine.render` returned for `serializeDocument(cells)`, which may differ from
+the file's text (e.g. line endings, or the older markers): render that, not
+the file. Only `doc.text` and `doc.tags` are read.
+
+The places of the markers come from the tags' positions, not from a search of
+the text, so whatever a tag outputs, marker lines included, stays content of
+the cell the tag is in. The leading cell without marker gets the text before
+the first marker. A marker inside a tag that spans cells is not in the
+rendering: its text goes to the last cell whose marker is, and the cell gets
+`""`. The line break that `serializeDocument` adds to a cell is not part of
+its output.
 
 ```js
 const doc = await engine.render("report.texl", serializeDocument(cells));
-const outputs = splitRendering(doc.text, cells);
+const outputs = splitRendering(doc, cells);
 ```
+
+### `outputSpans(doc, cells) → {start, end}[]`
+
+The same split as positions in `doc.text`, one span per cell. A cell with no
+output of its own has an empty span.
 
 ## Engine
 
@@ -467,11 +495,12 @@ its imports again. Use it to render documents outside the editor with the
 same module the editor loaded:
 
 ```js
-import { createEngine, parseDocument, splitRendering } from "stilo-editor/index.js";
+import { createEngine, parseDocument, serializeDocument, splitRendering } from "stilo-editor/index.js";
 
 const engine = await createEngine();
-const doc = await engine.render("docs/report.texl", source);   // imports resolve in docs/
-const outputs = splitRendering(doc.text, parseDocument(source));
+const cells = parseDocument(source);
+const doc = await engine.render("docs/report.texl", serializeDocument(cells));   // imports resolve in docs/
+const outputs = splitRendering(doc, cells);
 ```
 
 See the [Texl primer](../texl-primer.md#the-javascript-api-onlabsorgtexl) for

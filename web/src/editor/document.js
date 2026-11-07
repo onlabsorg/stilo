@@ -8,6 +8,9 @@
 // next marker line. Text before the first marker is a cell without marker
 // (type "text"), so a plain Texl file opens as a single text cell.
 //
+// A marker line inside a tag is not a marker: to Texl it is part of the tag,
+// so a tag always belongs to the cell it opens in.
+//
 // The name identifies the cell, e.g. as a fragment identifier: four
 // lowercase letters and digits, compared without case. The editor gives one
 // to every cell with a marker (`nameCells`). Names edited by hand may clash:
@@ -17,6 +20,9 @@
 
 const MARKER = /^<!--\{(.*?)\}-->[ \t]*$/;
 const OLD_MARKER = /^<!--%(.*?)%-->[ \t]*$/;
+
+const TAG_OPEN = "<%";
+const TAG_CLOSE = "%>";
 
 /**
  * A cell of a document.
@@ -105,6 +111,25 @@ export function nameConflicts(cells) {
 }
 
 /**
+ * The tags of a source, as Texl reads them: from `<%` to the first `%>`. A
+ * `<%` with no `%>` after it is text.
+ * @param {string} source
+ * @returns {{start: number, end: number}[]} In order of the source.
+ */
+export function tagSpans(source) {
+    const tags = [];
+    let start = source.indexOf(TAG_OPEN);
+    while (start >= 0) {
+        const close = source.indexOf(TAG_CLOSE, start + TAG_OPEN.length);
+        if (close < 0) break;
+        const end = close + TAG_CLOSE.length;
+        tags.push({ start, end });
+        start = source.indexOf(TAG_OPEN, end);
+    }
+    return tags;
+}
+
+/**
  * Splits a document into cells.
  * @param {string} source - The document text.
  * @returns {CellData[]}
@@ -117,8 +142,18 @@ export function parseDocument(source) {
         if (current) cells.push({ ...current, texl: body.join("") });
         body = [];
     };
+    const tags = tagSpans(source);
+    let next = 0; // The first tag not wholly before the line
+    let lineStart = 0;
     for (const line of source.split(/(?<=\n)/)) {
         const text = line.replace(/\r?\n$/, "");
+        const start = lineStart;
+        lineStart += line.length;
+        while (next < tags.length && tags[next].end <= start) next++;
+        if (next < tags.length && tags[next].start < start + text.length) {
+            body.push(line);
+            continue;
+        }
         const match = MARKER.exec(text);
         const old = !match && OLD_MARKER.exec(text);
         if (match || old) {
@@ -137,6 +172,43 @@ export function parseDocument(source) {
         flush();
     }
     return cells;
+}
+
+/**
+ * The cells a cell becomes with a new source: itself, and one more for each
+ * marker line in the source outside a tag. If the source starts with a marker,
+ * that marker replaces the cell's own.
+ * @param {CellData} cell
+ * @param {string} texl - The new source.
+ * @returns {CellData[]}
+ */
+export function cellsFromSource(cell, texl) {
+    const [first, ...rest] = parseDocument(texl);
+    if (!first) return [{ ...cell, texl }];
+    return first.marker === false ? [{ ...cell, texl: first.texl }, ...rest] : [first, ...rest];
+}
+
+/**
+ * The first tag that would run from a cell into a later one, swallowing its
+ * marker. `parseDocument` never gives such cells, but changing the cells can:
+ * a `<%` left open closes at the first `%>` of any cell below it.
+ * @param {CellData[]} cells
+ * @returns {{opens: number, reaches: number} | null} The indices of the cell
+ *   where the tag opens and of the first cell whose marker it swallows.
+ */
+export function spanningTag(cells) {
+    const tags = tagSpans(serializeDocument(cells));
+    let next = 0;
+    let start = 0;
+    for (let i = 0; i < cells.length; i++) {
+        const marker = cells[i].marker === false ? 0 : formatMarker(cells[i]).length;
+        while (next < tags.length && tags[next].end <= start) next++;
+        if (marker > 0 && next < tags.length && tags[next].start < start + marker) {
+            return { opens: cellAtOffset(cells, tags[next].start).index, reaches: i };
+        }
+        start += serializeCell(cells[i], i, cells).length;
+    }
+    return null;
 }
 
 /**
@@ -174,9 +246,13 @@ export function serializeDocument(cells) {
 
 /** The text of cell `i` in its document. */
 function serializeCell(cell, i, cells) {
-    let texl = cell.texl;
-    if (texl && i < cells.length - 1 && !texl.endsWith("\n")) texl += "\n";
+    const texl = addsLineBreak(cell, i, cells) ? cell.texl + "\n" : cell.texl;
     return cell.marker === false ? texl : formatMarker(cell) + "\n" + texl;
+}
+
+/** Whether serialising adds a line break to cell `i`, so the next marker starts a line. */
+function addsLineBreak(cell, i, cells) {
+    return Boolean(cell.texl) && i < cells.length - 1 && !cell.texl.endsWith("\n");
 }
 
 /**
@@ -217,56 +293,56 @@ function cellAtOffset(cells, offset) {
 }
 
 /**
- * The position of a marker line in a rendering, searching from `from`: the
- * marker at the start of a line and alone on it. Returns the start of the
- * line and the end of the line with its line break, or null.
- * @param {string} rendering
- * @param {string} marker
- * @param {number} from
- * @returns {{start: number, end: number} | null}
+ * Where the output of each cell is in the rendering of a whole document,
+ * `serializeDocument(cells)`.
+ *
+ * The positions come from the document's tags, not from a search of the
+ * text: the text outside tags renders to itself, so a marker's place in the
+ * rendering is its place in the source plus the change in size of the tags
+ * before it. Whatever a tag outputs, marker lines included, stays content of
+ * the cell the tag is in.
+ *
+ * `parseDocument` and the editor give no marker inside a tag. If `cells` has
+ * one anyway, it is not in the rendering: its text goes to the last cell whose
+ * marker is, and the cell gets an empty span. The line break that `serializeDocument`
+ * adds to a cell is not part of its output.
+ * @param {{text: string, tags: {start: number, end: number, out_start: number, out_end: number}[]}} doc
+ *   The rendering of `serializeDocument(cells)`.
+ * @param {CellData[]} cells
+ * @returns {{start: number, end: number}[]} One span of `doc.text` per cell.
  */
-function findMarkerLine(rendering, marker, from) {
-    for (let start = rendering.indexOf(marker, from); start >= 0; start = rendering.indexOf(marker, start + 1)) {
-        if (start > 0 && rendering[start - 1] !== "\n") continue;
-        const rest = /^[ \t]*(\r?\n|$)/.exec(rendering.slice(start + marker.length));
-        if (rest) return { start, end: start + marker.length + rest[0].length };
-    }
-    return null;
+export function outputSpans(doc, cells) {
+    const spans = cells.map(() => ({ start: 0, end: 0 }));
+    const { tags } = doc;
+    let owner = cells[0]?.marker === false ? 0 : -1; // The cell that gets the text being passed
+    let next = 0; // The first tag not wholly before the cell
+    let shift = 0; // How much those before it moved the text
+    let source = 0; // Where the cell starts in the source
+    cells.forEach((cell, i) => {
+        const start = source;
+        source += serializeCell(cell, i, cells).length;
+        if (cell.marker === false) return;
+        const marker = formatMarker(cell).length;
+        while (next < tags.length && tags[next].end <= start) {
+            const tag = tags[next++];
+            shift += tag.out_end - tag.out_start - (tag.end - tag.start);
+        }
+        if (next < tags.length && tags[next].start < start + marker) return; // Inside a tag
+        if (owner >= 0) spans[owner].end = start + shift - (addsLineBreak(cells[i - 1], i - 1, cells) ? 1 : 0);
+        owner = i;
+        spans[i].start = start + shift + marker + 1;
+    });
+    if (owner >= 0) spans[owner].end = doc.text.length;
+    return spans;
 }
 
 /**
- * Splits the rendering of a whole document (`serializeDocument(cells)`)
- * into the outputs of its cells, at the cells' own marker lines, which
- * rendering leaves as they are.
- *
- * Only the expected markers count, in order: marker i is searched after
- * marker i - 1, so other marker lines in the rendering (e.g. of an imported
- * document) are content. A marker can go missing when a tag opens in one
- * cell and closes in a later one: the text up to the next marker found then
- * goes to the last cell whose marker was found, and the cells whose marker
- * is missing get an empty output. The line break that `serializeDocument`
- * adds to a cell is not part of its output.
- * @param {string} rendering
+ * Splits the rendering of a whole document into the outputs of its cells
+ * (see `outputSpans`).
+ * @param {{text: string, tags: object[]}} doc - The rendering of `serializeDocument(cells)`.
  * @param {CellData[]} cells
  * @returns {string[]}
  */
-export function splitRendering(rendering, cells) {
-    const outputs = cells.map(() => "");
-    // The cell that gets the text from `pos` on; text before the first marker has none unless the first cell has no marker
-    let owner = cells[0]?.marker === false ? 0 : -1;
-    let pos = 0;
-    cells.forEach((cell, i) => {
-        if (cell.marker === false) return;
-        const line = findMarkerLine(rendering, formatMarker(cell), pos);
-        if (!line) return;
-        if (owner >= 0) outputs[owner] += rendering.slice(pos, line.start);
-        owner = i;
-        pos = line.end;
-    });
-    if (owner >= 0) outputs[owner] += rendering.slice(pos);
-    return outputs.map((output, i) => {
-        const texl = cells[i].texl;
-        const added = texl && i < cells.length - 1 && !texl.endsWith("\n");
-        return added && output.endsWith("\n") ? output.slice(0, -1) : output;
-    });
+export function splitRendering(doc, cells) {
+    return outputSpans(doc, cells).map(({ start, end }) => doc.text.slice(start, end));
 }
