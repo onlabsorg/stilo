@@ -148,3 +148,39 @@ and small to diff, since a release is a commit. Markdown keeps a type change fro
 converting anything, and one parser cannot disagree with itself; that is why
 TipTap and `prosemirror-markdown` (markdown-it) were not used. HTML as the source
 would allow all of Word's formatting, at the cost of files people cannot review.
+
+## S10 — 2026-11-08 — Projects, a home folder `~`, and the Texl library in `lib/`
+A **project** is a folder with a manifest, `project.texl`: a Texl document
+whose text is notes and whose tags bind configuration values, for now
+`project_name` and `stilo_version` (the version that created it, not a
+requirement). The folder of the nearest `project.texl` at or above a document
+is its **home**. In an import URL, a path segment `~` stands for the home: the
+URL resolves as usual, then each `~` segment, left to right, becomes the home
+of the folder before it. A library under `lib/` is just a folder of Texl files;
+a library with its own `project.texl` is its own home. Without a manifest the
+home is the highest folder reachable: the served folder for the server, the
+user's home directory for the CLI (the filesystem root for a document outside
+it). Folders named `~` are hidden and refused, like hidden names. `..` after
+`~` cancels it (`~/../x.texl` is a plain relative path). The server resolves
+`~` for every client (a protocol rule); the CLI does it in a `file` loader.
+The server only checks that a manifest exists; it never renders it.
+More than 16 `~` segments are refused: Texl tells an import cycle by its
+URLs, and those of a cycle through `~` grow at every turn.
+`stilo init` creates `project.texl` and `lib/`, and copies the library
+Stilo bundles into `lib/stilo/`; it refuses to run where `project.texl`
+exists and never overwrites `lib/stilo/`. There is no package manager:
+libraries are copied or cloned by hand, and versions and clashes are the
+project's business. A missing library is an ordinary failed import
+(`Undefined`), and the editor works without a project. Stilo's library is
+written in `texl-lib/` (a third source folder beside `src/` and `web/`),
+copied into the package at build time, and published on its own. Its first
+function, `stilo.dataframe`, is what the coming `data` cell writes; that cell
+replaces the dropped `spreadsheet` cell.
+*Reason:* the self-contained unit is the project, not the document: a document
+already depends on others in its folder, as a module depends on its library. A
+project that holds its libraries keeps working when external URLs change or
+vanish, which a versioned web URL cannot promise for libraries we do not
+publish. Copying folders by hand is enough until a package manager is needed.
+This replaces the design agreed earlier the same day: importing the library by
+a versioned GitHub URL that Stilo mapped to its bundled copy.
+*Not settled:* the editor's import cell and the "add-in" view of libraries.

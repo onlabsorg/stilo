@@ -68,6 +68,7 @@ three parts in it:
 | `cli/`          | The `stilo` command                               |
 | `server/`       | The server; it never imports the CLI (checked by `tests/test_layout.py`) |
 | `web/`          | The built web app, written by `npm run build` in `web/` (git-ignored) |
+| `texl-lib/`     | Only in the wheel: the Texl library, copied from `texl-lib/` at the root |
 
 The web app's source stays in `web/`, a Node project of its own; only its
 build goes into the package. A checkout and an installed package thus have
@@ -75,6 +76,9 @@ the same layout, and the CLI finds the web app in the same place in both.
 Build the web app first: the package includes `src/stilo/web` when it is
 there, and leaves it out silently when it is not (so that `uv run` works
 without a web build). The release workflow checks that the wheel has it.
+The Texl library in `texl-lib/` needs no build: the wheel takes it as it
+is, and in a checkout the CLI reads it at the root
+([Projects](projects.md#the-stilo-library-texl-lib)).
 
 ```sh
 cd web && npm ci && npm run build && cd ..

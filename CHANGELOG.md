@@ -6,6 +6,15 @@ change the interfaces.
 
 ## Unreleased
 
+- **Projects and libraries.** `stilo init` makes a folder a project: it writes
+  `project.texl` (the project's name and the Stilo version that created it) and
+  copies the Stilo library into `lib/stilo/`. In an import, `~` stands for the
+  project's home folder, the nearest one with a `project.texl`, so
+  `texl.import "~/lib/stilo/stilo.texl"` works from any document of the project,
+  in the editor and in `stilo render`. Without a `project.texl`, `~` is the
+  served folder in the editor and your home directory on the command line.
+  Folders named `~` are hidden in the editor and cannot be created there.
+  The Stilo library holds only a placeholder function for now.
 - **Texl 0.7**, in the browser and on the command line (`pytexl` and
   `@onlabsorg/texl` 0.7.0). A namespace with a `__text__` function now renders
   as the text it returns.

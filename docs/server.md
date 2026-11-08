@@ -42,7 +42,22 @@ the path is malformed or not allowed:
 
 - a segment that is empty, `.` or `..`, or starts with `.` (hidden);
 - a first segment that starts with `_` (reserved for `/_api` and `/_app`);
-- a path that leads out of the root, also through a symbolic link.
+- a path that leads out of the root, also through a symbolic link;
+- a segment `~`, which stands for the project home and is never a name.
+
+### `expand_home`
+
+```python
+def expand_home(self, path: str) -> str
+```
+
+Returns `path` with each `~` segment, from the left, replaced by the
+project home of the folder before it: the nearest folder holding a
+`project.texl`, or the root (protocol: [URL space](protocol.md#url-space)).
+Raises `BadRequest` for malformed segments and for more than 16 `~`
+segments. Only `read` and `is_other_file` call it: a write never expands
+`~`. The rule itself is in `home.py` (`expand_home`, `home_of`), shared
+with the CLI, which imports it from there.
 
 ### `read`
 
@@ -50,8 +65,8 @@ the path is malformed or not allowed:
 def read(self, path: str) -> tuple[bytes, str]
 ```
 
-Returns the content of a file and its ETag. Any regular file can be read,
-not only `.texl` files. Raises `NotFound` if there is no such file, and
+Returns the content of a file and its ETag, after `expand_home`. Any
+regular file can be read, not only `.texl` files. Raises `NotFound` if there is no such file, and
 `BadRequest` if the path is a folder.
 
 ### `create`
@@ -87,8 +102,8 @@ def tree(self, path: str, depth: int | None = None) -> dict
 Returns the folder at `path` as a nested dictionary, the JSON body of the
 protocol's QUERY: folders with `children`, files with `size` and
 `modified`. Children are folders first, then files, each sorted by name;
-only folders and `.texl` files are listed, without hidden entries or
-reserved names at the root. `depth` limits the recursion. Raises
+only folders and `.texl` files are listed, without hidden entries, folders
+named `~`, or reserved names at the root. `depth` limits the recursion. Raises
 `NotFound` and `BadRequest` as `read` does.
 
 ### `create_folder`
@@ -194,8 +209,11 @@ The routes, in the order they match:
 
 `tests/server/test_api.py` tests the app through FastAPI's `TestClient`,
 on a temporary folder: every interaction of the protocol, the errors, path
-validation, and content negotiation on public addresses. A change to the
-protocol starts with a test there.
+validation, and content negotiation on public addresses.
+`tests/server/test_home.py` covers the project home: nearest manifest,
+fallback to the root, several `~`, libraries with and without their own
+manifest, cycles, and `~` refused as a name. A change to the protocol starts
+with a test there.
 
 ```sh
 uv run pytest tests/server

@@ -23,7 +23,8 @@ to Word and Excel users, and renders them from the command line.
 | Web app | The user interface (Lit web components, Vite): top bar, navigation pane with the folder's files and commands to manage them, the editor, right pane with commands, cell comments and errors. Light and dark theme. |
 | Editor | Inside the web app: `<texl-editor>`, a document as a stack of typed cells (rich text, the default; text, Markdown, table and formula; formulas as `<% %>` tags; LaTeX equations in Markdown and tables), live rendering, cell comments, errors shown where they happen. Until 2026-10-26 the separate `texl-editor` package. |
 | Server | Python (FastAPI): serves one folder of documents and the web app, for one user. |
-| CLI    | The `stilo` command: `stilo render <file>` prints a rendered document (or writes it to a file), says how many errors it has and can explain them; `stilo serve [folder]` starts the server on a folder. |
+| CLI    | The `stilo` command: `stilo init [folder]` makes a folder a project, with the Stilo library in it; `stilo render <file>` prints a rendered document (or writes it to a file), says how many errors it has and can explain them; `stilo serve [folder]` starts the server on a folder. |
+| Stilo library | A folder of Texl documents (`texl-lib/`) that `stilo init` copies into each project, for documents to import. For now it holds only a placeholder function. |
 | Protocol | Plain HTTP between web app and server: GET a file, CREATE (POST), UPDATE (PUT, with an ETag so concurrent saves don't overwrite each other), QUERY a folder's tree, create a folder, move or rename a document or folder, delete a document or folder. |
 | Documentation | Developer documentation only, as plain Markdown in `docs/`, read on GitHub: architecture, setup, server, CLI, web app, editor, the protocol, the editor component and its API. No site is built. Users read the OnLabs.org manual instead. |
 
@@ -41,6 +42,13 @@ tab. Imports with relative paths resolve from the document's own folder, the
 same in the browser and on the command line, and are fetched again at every
 rendering. Relative links in text shown from an imported document resolve from
 the document showing it.
+
+A **project** is a folder with a `project.texl` file (the project's name and
+the Stilo version that created it). Its libraries live in its `lib/` folder,
+so the project works as a whole wherever it is copied. In an import, `~`
+stands for the project's folder, so `~/lib/stilo/stilo.texl` works from any
+document of the project, in the browser and on the command line. There is no
+package manager: libraries are copied or cloned in by hand.
 
 Single-user by design: no accounts or permissions. Revisions, release and
 accept are not part of Stilo.
@@ -220,6 +228,14 @@ accept are not part of Stilo.
   A formula that gives a namespace with a `__text__` function now shows the
   text that function returns, so a value can be shown as a label and still be
   used as data.
+- 2026-11-08: **projects and libraries**: `stilo init` makes a folder a
+  project: it writes `project.texl` and copies the Stilo library into
+  `lib/stilo/`. In an import, `~` stands for the nearest folder with a
+  `project.texl` (a library with its own `project.texl` is its own project);
+  without one, it is the served folder in the browser and the user's home
+  folder on the command line. Folders named `~` are hidden in the navigation
+  pane and cannot be created there. The Stilo library holds a placeholder
+  function only. The package and its automatic checks include the library.
 
 ## Known limitations
 
@@ -243,6 +259,10 @@ accept are not part of Stilo.
   Firefox and Linux WebKit; not on Safari on a Mac.
 - Equations: in a table, a `|` inside an equation ends the table cell (write
   `\vert`). Only the editor typesets them: other outputs show the LaTeX as text.
+- Projects: other Texl programs do not understand `~` in imports. A document
+  that imports itself through `~` is stopped after 16 levels instead of at
+  once, and a library imported through `~` from several folders is loaded
+  once per folder.
 - Errors: a value inside a link's address or another HTML attribute counts but
   cannot be highlighted. The failing place is marked in the Errors pane, not
   in the source while editing.

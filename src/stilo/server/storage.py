@@ -13,6 +13,8 @@ import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 
+from .home import HOME, HomeCycle, expand_home, has_home
+
 DOCUMENT_SUFFIX = ".texl"
 TRASH = ".trash"
 
@@ -50,13 +52,32 @@ class Storage:
 
     # -- paths ---------------------------------------------------------------
 
-    def resolve(self, path: str) -> Path:
-        """The absolute file-system path of `path`, refusing paths that are
-        malformed, hidden, reserved or outside the root."""
+    @staticmethod
+    def _segments(path: str) -> list[str]:
         segments = path.strip("/").split("/") if path.strip("/") else []
         for segment in segments:
             if segment in ("", ".", "..") or segment.startswith("."):
                 raise BadRequest(f"invalid path: {path!r}")
+        return segments
+
+    def expand_home(self, path: str) -> str:
+        """`path` with its `~` segments replaced by the project home they
+        stand for (home.py); the search never leaves the root. Only reads
+        expand `~`: as a name it is refused."""
+        if not has_home(path):
+            return path
+        try:
+            target = expand_home(self.root, self._segments(path), lambda folder: self.root)
+        except HomeCycle as e:
+            raise BadRequest(f"{e}: {path!r}") from None
+        return target.relative_to(self.root).as_posix() if target != self.root else ""
+
+    def resolve(self, path: str) -> Path:
+        """The absolute file-system path of `path`, refusing paths that are
+        malformed, hidden, reserved or outside the root."""
+        segments = self._segments(path)
+        if HOME in segments:
+            raise BadRequest(f"{HOME} stands for the project home and cannot be a name: {path!r}")
         if segments and segments[0].startswith("_"):
             raise BadRequest(f"reserved path: {path!r}")
         target = self.root.joinpath(*segments).resolve()
@@ -70,7 +91,7 @@ class Storage:
     # -- files ---------------------------------------------------------------
 
     def read(self, path: str) -> tuple[bytes, str]:
-        target = self.resolve(path)
+        target = self.resolve(self.expand_home(path))
         if target.is_dir():
             raise BadRequest(f"not a file: {path!r}")
         if not target.is_file():
@@ -82,7 +103,7 @@ class Storage:
         """Whether `path` is an existing file that is not a Texl document. A
         path the protocol refuses is not one."""
         try:
-            target = self.resolve(path)
+            target = self.resolve(self.expand_home(path))
         except BadRequest:
             return False
         return target.is_file() and target.suffix != DOCUMENT_SUFFIX
@@ -191,7 +212,7 @@ class Storage:
         """Add the documents under `folder`, and its folders with the deepest
         first. What the tree does not list as a document or a folder is left."""
         for entry in folder.iterdir():
-            if entry.name.startswith("."):
+            if self._hidden(entry.name):
                 continue
             if entry.is_dir():
                 if not entry.is_symlink():
@@ -235,6 +256,12 @@ class Storage:
             raise Conflict(f"a file is in the way: {path!r}") from None
 
 
+    @staticmethod
+    def _hidden(name: str) -> bool:
+        """Entries the protocol never shows: hidden ones, and `~`, which in a
+        path stands for the project home."""
+        return name.startswith(".") or name == HOME
+
     def tree(self, path: str, depth: int | None = None) -> dict:
         target = self.resolve(path)
         if target.is_file():
@@ -250,7 +277,7 @@ class Storage:
             return node
         folders, files = [], []
         for entry in sorted(folder.iterdir(), key=lambda e: e.name):
-            if entry.name.startswith(".") or (folder == self.root and entry.name.startswith("_")):
+            if self._hidden(entry.name) or (folder == self.root and entry.name.startswith("_")):
                 continue
             if not entry.resolve().is_relative_to(self.root):
                 continue

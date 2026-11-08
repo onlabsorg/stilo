@@ -7,6 +7,7 @@ documentation is in the OnLabs.org user manual.*
 |-------------------------|---------------------------------------------------|
 | `stilo/cli/__init__.py` | `main()`: builds the argument parser from `COMMANDS` and runs the chosen command. The `stilo` script and `python -m stilo` (`stilo/__main__.py`) both call it. |
 | `stilo/cli/commands.py` | The subcommands, as `Command` entries in `COMMANDS` |
+| `stilo/cli/project.py`  | Projects: `create_engine()` (the engine every command renders with, `~` resolved), `TEXL_LIB`, the text of a new `project.texl` |
 
 ## `Command`
 
@@ -27,6 +28,7 @@ function that runs it with the parsed arguments and returns the exit status.
 
 ```python
 COMMANDS = [
+    Command("init", "make a folder a Stilo project, with the Stilo library", init_arguments, init),
     Command("render", "render a Texl document", render_arguments, render),
     Command("serve", "serve a folder of Texl documents with the web app", serve_arguments, serve),
 ]
@@ -68,8 +70,9 @@ it.
 def render(args) -> int
 ```
 
-Renders `args.file` with a new `pytexl.Engine`, loading it by its `file:`
-URI so that relative imports resolve from its folder, and writes the
+Renders `args.file` with the engine of `create_engine()`, loading it by its
+`file:` URI so that relative imports resolve from its folder and `~` from
+its project home ([Projects](projects.md)), and writes the
 rendering to standard output or to `args.output`. Returns 1 if the document
 cannot be loaded (`pytexl.LoadError`; the message says why) or the output
 cannot be written.
@@ -108,6 +111,31 @@ value with no `pos`, such as one from `undef.from`, points at the tag that
 returned it. `cause` is walked with `is not None`, since an undefined value is
 falsy in Python.
 
+## `init`
+
+```python
+def init(args) -> int
+```
+
+Makes `args.folder` (default: the current folder, created if missing) a
+project: writes `project.texl`, binding `project_name` (`--name`, default
+the folder's name) and `stilo_version` (the installed package's version),
+creates `lib/`, and copies `TEXL_LIB` into `lib/stilo/`. Returns 1 if
+`project.texl` already exists. An existing `lib/stilo/` is left as it is.
+See [Projects and the Stilo library](projects.md).
+
+## `create_engine`
+
+```python
+def create_engine() -> pytexl.Engine
+```
+
+In `project.py`: a `pytexl.Engine` whose loader for `file:` URLs and plain
+paths resolves `~` segments before reading (`resolve_file`), with the rule
+of the server's `home.py`. Its top, the highest folder the search for a
+home may reach, is the user's home directory, or the file-system root for
+a document outside it. A command that renders creates its engine here.
+
 ## `serve`
 
 ```python
@@ -126,6 +154,8 @@ looks for the web app itself: the CLI hands it over to `create_app()`.
 
 `tests/cli/test_render.py` runs `main()` on the sample documents in
 `examples/`: rendering with imports, writing to a file, and a missing file.
+`tests/cli/test_project.py` covers `stilo init` and `~` in `render`, with
+`Path.home()` moved into a temporary folder.
 `tests/cli/test_errors.py` covers the report of undefined values, on documents
 it writes to a temporary folder.
 

@@ -6,6 +6,7 @@ the order `stilo --help` shows them; a plugin system can later add its own.
 """
 
 import asyncio
+import shutil
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -17,6 +18,7 @@ import uvicorn
 from stilo.server import create_app
 
 from .errors import count_returned, find_errors, format_report, numbered_text
+from .project import LIB, LIBRARY_NAME, MANIFEST, TEXL_LIB, create_engine, manifest
 
 # The built web app, `stilo/web`: written there by `npm run build` in a
 # checkout, shipped there in the package
@@ -46,7 +48,7 @@ def render(args) -> int:
     """Renders a document to standard output or a file, like `texl`."""
     path = args.file.resolve()
     try:
-        doc = asyncio.run(pytexl.Engine().load(path.as_uri()))
+        doc = asyncio.run(create_engine().load(path.as_uri()))
     except pytexl.LoadError as e:
         print(f"stilo: {args.file}: could not be loaded: {e.reason}", file=sys.stderr)
         return 1
@@ -96,7 +98,39 @@ def serve(args) -> int:
     return 0
 
 
+def init_arguments(parser):
+    parser.add_argument("folder", type=Path, nargs="?", default=Path("."),
+                        help="folder of the project, created if missing (default: the current folder)")
+    parser.add_argument("--name", help="project name (default: the folder's name)")
+
+
+def init(args) -> int:
+    """Makes a folder a Stilo project: writes project.texl, creates lib/ and
+    copies the bundled library into lib/stilo/, never over an existing one."""
+    folder = args.folder.resolve()
+    if (folder / MANIFEST).exists():
+        print(f"stilo: {args.folder}: already a project ({MANIFEST} exists)", file=sys.stderr)
+        return 1
+    library = folder / LIB / LIBRARY_NAME
+    try:
+        folder.mkdir(parents=True, exist_ok=True)
+        with open(folder / MANIFEST, "x", encoding="utf-8") as file:
+            file.write(manifest(args.name or folder.name))
+        (folder / LIB).mkdir(exist_ok=True)
+        kept = library.exists()
+        if not kept:
+            shutil.copytree(TEXL_LIB, library)
+    except OSError as e:
+        print(f"stilo: {args.folder}: {e}", file=sys.stderr)
+        return 1
+    print(f"Stilo: {folder} is a project: {MANIFEST}, {LIB}/")
+    if kept:
+        print(f"Stilo: {LIB}/{LIBRARY_NAME}/ already exists: left as it is")
+    return 0
+
+
 COMMANDS = [
+    Command("init", "make a folder a Stilo project, with the Stilo library", init_arguments, init),
     Command("render", "render a Texl document", render_arguments, render),
     Command("serve", "serve a folder of Texl documents with the web app", serve_arguments, serve),
 ]

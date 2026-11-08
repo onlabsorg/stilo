@@ -17,7 +17,9 @@ Stilo is one repository with three parts, kept strictly apart:
 The server and the CLI are one Python package, `stilo`, and the only
 published one; the web app is built into it, as `src/stilo/web/` (see
 [Development setup](setup.md#the-package-stilo)). The server never imports
-the CLI.
+the CLI. A third source folder, `texl-lib/`, is not code but Texl: the
+library `stilo init` copies into projects, shipped in the package as
+`stilo/texl-lib` ([Projects](projects.md)).
 
 ```text
         browser                                  your computer or server
@@ -66,7 +68,10 @@ When a user opens `http://127.0.0.1:8000/projects/beam/beam-check.texl`:
    into the cells' outputs.
 4. An import, `texl.import("../../library/steel.texl")`, is fetched by Texl
    from the public address `/library/steel.texl`, without `text/html`, so the
-   server returns the file.
+   server returns the file. An import from the project's libraries,
+   `texl.import("~/lib/stilo/stilo.texl")`, is fetched as
+   `/projects/beam/~/lib/stilo/stilo.texl`, and the server answers with the
+   file under the project home ([Projects](projects.md)).
 5. Ctrl+S commits the cell being edited and sends the text back with
    `PUT /_api/files/...` and the ETag of the last read, so a file changed
    meanwhile is not overwritten.
@@ -102,6 +107,8 @@ system can be added without restructuring:
 - [Development setup](setup.md): build, run and test everything.
 - [The server](server.md): `Storage` and `create_app()`.
 - [The CLI](cli.md): `Command` and `COMMANDS`.
+- [Projects and the Stilo library](projects.md): `project.texl`, `~`,
+  `lib/`.
 - [The web app](web-app.md): the shell around the editor.
 - [The editor](editor.md): `<texl-editor>`, cells, rendering;
   [Editor design](editor-design.md): the editing model and its open points.
