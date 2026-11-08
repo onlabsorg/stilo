@@ -216,6 +216,10 @@ accept are not part of Stilo.
 - 2026-11-07: **a click on another line commits the cell being edited**, in every
   cell type, as in Excel; a cell that refuses its edit stays open and says why. A
   double click on another line could lose the edit; it no longer does.
+- 2026-11-08: **moved to Texl 0.7**, in the browser and on the command line.
+  A formula that gives a namespace with a `__text__` function now shows the
+  text that function returns, so a value can be shown as a label and still be
+  used as data.
 
 ## Known limitations
 

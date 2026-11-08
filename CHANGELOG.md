@@ -6,6 +6,9 @@ change the interfaces.
 
 ## Unreleased
 
+- **Texl 0.7**, in the browser and on the command line (`pytexl` and
+  `@onlabsorg/texl` 0.7.0). A namespace with a `__text__` function now renders
+  as the text it returns.
 - **Rich text cells, as in Word, and the default for new cells.** Bold is bold and
   a title is a title while you edit, with a toolbar and Word's keys: Ctrl+B, I, U,
   Ctrl+K for a link, Ctrl+Alt+1 to 3 for headings, Tab to indent a list, `# ` or `- `

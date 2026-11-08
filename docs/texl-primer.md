@@ -1,7 +1,7 @@
 # Texl primer for editor work
 
-*What you need to know about Texl to work on the editor, as of Texl 0.6
-(`@onlabsorg/texl` on npm), 2026-11-05. For the language in
+*What you need to know about Texl to work on the editor, as of Texl 0.7
+(`@onlabsorg/texl` on npm), 2026-11-08. For the language in
 depth, see the developer docs of <https://github.com/onlabsorg/texl>
 (`docs/language.md`). The results shown below were checked
 against the real engine.*
@@ -38,7 +38,7 @@ your order of 3 items has shipped.
 | `Nothing`          | nothing at all                  |
 | tuple              | items separated by `, `         |
 | list               | `[[List of N]]`                 |
-| namespace          | `[[Namespace of N]]`            |
+| namespace          | `[[Namespace of N]]`, or what its `__text__` gives |
 | function           | `[[Func]]`                      |
 | undefined value    | `[[Undefined]]`                 |
 | promise            | its value, once it resolves     |
@@ -163,7 +163,7 @@ autocompletion ("intellisense"); see the open point in
 | other array → `List`                      | `List` → array                  |
 | Promise / thenable → `Promise`            | `Promise` → Promise             |
 | function → `Func`                         | `Namespace` → plain object      |
-| other object → `Namespace`                | `Func` → `undefined`            |
+| other object → `Namespace`                | `Func` → function               |
 | `TexlUndefined` → the original `Undefined` | `Undefined` → `TexlUndefined`  |
 
 `Tuple`, exported by the package, is a subclass of `Array` that adds nothing,
@@ -172,13 +172,23 @@ they are built: tuple items are spread into the list and `null` or `undefined`
 items are dropped, so later items move down. `normalize` (exported) gives a
 JavaScript value this form.
 
-A JavaScript function becomes a Swan function of **one** argument; a Swan
-call with several arguments passes them as one `Tuple` (`add: ([a, b]) => a +
-b`). If it throws, the result is an undefined value of type `HostError`, with
+A JavaScript function called from Swan receives the items of the argument as
+separate arguments: Swan `add(2, 3)` calls `(a, b) => a + b` with `2` and `3`,
+`f()` with none. Passed back to the host, it is the same function. If it throws, the result is an undefined value of type `HostError`, with
 the text of the error in `error`; an `async` function gives a promise, and the
 tag waits for it. Host functions are how the editor (and
 later the platform) can offer cell helpers, such as a table renderer, to
 documents.
+
+A Swan function (one a document defines, or a built-in) reaches JavaScript as
+a plain function: `doc.data.f(4)` calls Swan `f` with `4`, `f(a, b)` with the
+tuple `(a, b)`. It never throws (a failure returns a `TexlUndefined`), and
+passed back to the engine it is the original Swan function. `isSwanFunction`
+(exported) tells it from the host's own functions.
+
+A namespace with a `__text__` function member renders as the text that
+function returns when applied to the namespace: `{n: 2, __text__: c -> "card "
++ text.from(c.n)}` renders as `card 2`, and stays usable as data.
 
 A `TexlUndefined` is a frozen object describing the error: `type`,
 `description` (in plain words), `pos` and `uri` (where it is; `null` when
