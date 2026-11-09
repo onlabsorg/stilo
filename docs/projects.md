@@ -14,16 +14,16 @@ its `lib/` folder, so the folder works as a whole, wherever it is copied.
 beam/
 ├─ project.texl          the manifest: this folder is the home
 ├─ lib/
-│  └─ stilo/stilo.texl   a library: a folder of Texl files
+│  └─ stilo/index.texl   a library: a folder of Texl files
 └─ docs/checks/
-   └─ beam-check.texl    imports "~/lib/stilo/stilo.texl"
+   └─ beam-check.texl    imports "~/lib/stilo/index.texl"
 ```
 
 The **home** of a folder is the nearest folder at or above it that holds a
 `project.texl`. In an import, a path segment `~` stands for the home:
 
 ```texl
-<% texl.import "~/lib/stilo/stilo.texl" ~> (lib -> bind "stilo" lib.data.stilo) %>
+<% texl.import "~/lib/stilo/index.texl" ~> (lib -> bind "stilo" lib.data.stilo) %>
 ```
 
 The same line works in every document of the project, at any depth.
@@ -31,7 +31,7 @@ The same line works in every document of the project, at any depth.
 ## How `~` resolves
 
 Texl gives `~` no meaning: it resolves the import as a relative path, so
-`docs/checks/beam-check.texl` asks for `docs/checks/~/lib/stilo/stilo.texl`.
+`docs/checks/beam-check.texl` asks for `docs/checks/~/lib/stilo/index.texl`.
 The host then replaces each `~` segment, from the left, with the home of
 the folder before it. One rule, in one module,
 `src/stilo/server/home.py`, used in two places:
@@ -104,14 +104,28 @@ where a `project.texl` exists and never overwrites `lib/stilo/`.
 ## The Stilo library, `texl-lib/`
 
 `texl-lib/` at the repository root is the source of the library `stilo
-init` copies. Its main document, `stilo.texl`, binds one name, `stilo`, a
-namespace of Swan functions. For now it is a placeholder (`stilo.greet`);
-the first real function, `stilo.dataframe`, comes with the data cell.
+init` copies. Its main document, `index.texl`, binds one name, `stilo`, a
+namespace of Swan functions, gathered from one document per function in the
+same folder, imported by a relative path:
+
+| Function           | Document         | What it does                         |
+|--------------------|------------------|--------------------------------------|
+| `stilo.dataframe`  | `dataframe.texl` | A table of data: column names and rows, shown as a Markdown table (the `data` cell writes it) |
+
+Each document's text is the function's documentation, readable on GitHub.
+A document of the library must not quote an import tag of the library (or
+any tag it does not mean to run): tags run everywhere in a Texl document,
+code blocks included.
 
 The wheel ships the folder as `stilo/texl-lib` (`force-include` in
 `pyproject.toml`); in a checkout the CLI reads `texl-lib/` where it is.
 Both paths end in one constant, `TEXL_LIB` (`src/stilo/cli/project.py`).
 
-To add a function: add it to the namespace in `stilo.texl` and describe it
-in the document's text, which is the library's documentation. Test it in
-`tests/cli/test_project.py` through a document that imports the library.
+To add a function: write it in a new document of `texl-lib/`, describe it
+in that document's text, and add it to the namespace `index.texl` binds.
+Avoid unbounded recursion: Texl has no depth limit yet, and a runaway
+recursion crashes the engine instead of giving an undefined value. Test it
+with cases in a JSON file under `tests/texl_lib/` (see
+`dataframe-cases.json`), which both engines run: `tests/texl_lib/` with
+`pytexl`, `web/test/texl-lib.test.js` in the browser. Each case renders as a
+document of `texl-lib/` after the import of `index.texl`.

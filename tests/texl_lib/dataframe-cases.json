@@ -1,0 +1,60 @@
+{
+  "import": "<% texl.import \"index.texl\" ~> (lib -> bind \"stilo\" lib.data.stilo) %>",
+  "cases": [
+    {
+      "name": "a table, with a computed value, an empty value and a number column aligned right",
+      "source": "<% Fx_k = 100 %><% stilo.dataframe {columns: [\"case\", \"Fx (kN)\", \"Fy (kN)\"], rows: [[\"ULS-1\", 120, 35], [\"ULS-2\", 1.35 * Fx_k, \"\"]]} %>",
+      "text": "| case | Fx (kN) | Fy (kN) |\n|---|---:|---:|\n| ULS-1 | 120 | 35 |\n| ULS-2 | 135 |  |"
+    },
+    {
+      "name": "a labelled dataframe is bound and shown in place",
+      "source": "<% df: stilo.dataframe {columns: [\"a\"], rows: [[1], [2]]} %>\nsum: <% df.row 0 0 + df.row 1 0 %>",
+      "text": "| a |\n|---:|\n| 1 |\n| 2 |\nsum: 3"
+    },
+    {
+      "name": "short rows are padded and extra values dropped",
+      "source": "<% stilo.dataframe {columns: [\"a\", \"b\", \"c\"], rows: [[\"x\"], [\"y\", 1, 2, 3]]} %>",
+      "text": "| a | b | c |\n|---|---:|---:|\n| x |  |  |\n| y | 1 | 2 |"
+    },
+    {
+      "name": "a | is escaped and a line break becomes a space",
+      "source": "<% stilo.dataframe {columns: [\"a|b\"], rows: [[\"one|two\"], [\"three\nfour\"]]} %>",
+      "text": "| a\\|b |\n|---|\n| one\\|two |\n| three four |"
+    },
+    {
+      "name": "an undefined value shows in its cell and keeps the column aligned right",
+      "source": "<% stilo.dataframe {columns: [\"name\", \"x\"], rows: [[\"p\", 1 + \"a\"], [\"q\", 2]]} %>",
+      "text": "| name | x |\n|---|---:|\n| p | [[Undefined]] |\n| q | 2 |"
+    },
+    {
+      "name": "a single column with an undefined value",
+      "source": "<% stilo.dataframe {columns: [\"x\"], rows: [[1 + \"a\"], [2]]} %>",
+      "text": "| x |\n|---:|\n| [[Undefined]] |\n| 2 |"
+    },
+    {
+      "name": "other values as Texl writes them",
+      "source": "<% stilo.dataframe {columns: [\"v\"], rows: [[TRUE], [[1, 2]], [{a: 1}], [-0.5]]} %>",
+      "text": "| v |\n|---|\n| TRUE |\n| [[List of 2]] |\n| [[Namespace of 1]] |\n| -0.5 |"
+    },
+    {
+      "name": "no rows: the header only",
+      "source": "<% stilo.dataframe {columns: [\"a\", \"b\"], rows: []} %>",
+      "text": "| a | b |\n|---|---|"
+    },
+    {
+      "name": "no columns: no table",
+      "source": "[<% stilo.dataframe {columns: [], rows: [[1]]} %>]",
+      "text": "[]"
+    },
+    {
+      "name": "the members",
+      "source": "<% df = stilo.dataframe {columns: [\"case\", \"Fx\"], rows: [[\"A\", 1], [\"B\"]]} %><% list.size df.columns %> <% df.columns 1 %> <% list.size df.rows %> <% df.row 1 0 %> [<% df.row 1 1 %>] [<% type (df.row 5) %>] <% df.column \"Fx\" 0 %> <% list.size (df.column \"Fx\") %> <% (undef.inspect (df.column \"nope\")).description %>",
+      "text": "2 Fx 2 B [] [] 1 2 Custom undefined value: \"no such column\""
+    },
+    {
+      "name": "bad input gives an undefined value that says why",
+      "source": "<% (undef.inspect (stilo.dataframe 3)).description %>\n<% (undef.inspect (stilo.dataframe {columns: \"a\", rows: []})).description %>\n<% (undef.inspect (stilo.dataframe {columns: [\"a\"]})).description %>\n<% (undef.inspect (stilo.dataframe {columns: [\"a\"], rows: [1]})).description %>",
+      "text": "Custom undefined value: \"not a namespace\"\nCustom undefined value: \"columns: not a list\"\nCustom undefined value: \"rows: not a list\"\nCustom undefined value: \"a row is not a list\""
+    }
+  ]
+}

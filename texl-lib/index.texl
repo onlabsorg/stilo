@@ -1,0 +1,16 @@
+# The Stilo library
+
+Functions for Stilo documents, written in Swan. `stilo init` copies this
+folder into a project's `lib/stilo/`. This document binds one name, `stilo`,
+a namespace of the library's functions. A document of the project imports
+`~/lib/stilo/index.texl` and binds `lib.data.stilo` as `stilo`; the Stilo
+editor inserts that import when it is needed (the full tag is in Stilo's
+`docs/projects.md`: it cannot be quoted here, where it would run).
+
+Each function lives in its own document of this folder, which describes it:
+
+- `stilo.dataframe` — a table of data (`dataframe.texl`).
+
+<% texl.import "dataframe.texl" ~> (m -> bind "stilo" {
+    dataframe: m.data.dataframe
+}) %>

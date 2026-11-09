@@ -6,15 +6,34 @@ change the interfaces.
 
 ## Unreleased
 
+- **Data table cell** (key `d`, or "Data table" in the type menu): a table of
+  values that other cells can compute with. Give it a name (optional), the
+  column names, and a value in each field, written as a formula: `120`,
+  `"ULS-1"`, `1.35 * Fx_k` (text needs its quotes; an empty field is
+  empty). Outside editing it shows the computed table. A value that is not
+  a valid formula is outlined as you type, and the cell cannot be committed
+  until it is corrected. Rows and columns can be inserted and deleted
+  anywhere. With the name `loads`, other cells read the data as
+  `loads.column "Fx (kN)"` or `loads.row 0`. When the first data table is
+  written, the editor adds a line at the top of the document that imports
+  the Stilo library from the project (`~/lib/stilo/index.texl`); a document
+  outside a project shows `[[Undefined]]` there until the library is found.
+- **`stilo.dataframe`, the first function of the Stilo library.** After
+  `texl.import "~/lib/stilo/index.texl"` (binding `lib.data.stilo` as
+  `stilo`), `df: stilo.dataframe {columns: [...], rows: [[...], ...]}` makes a
+  table of data and shows it as a table in place: column names are free text,
+  `""` is an empty cell, short rows are padded, a column of numbers is aligned
+  right, and a bad value shows as `[[Undefined]]` in its own cell.
+  `df.column "name"`, `df.row 0`, `df.columns` and `df.rows` read it. The
+  library's main document is now `index.texl` (it was `stilo.texl`).
 - **Projects and libraries.** `stilo init` makes a folder a project: it writes
   `project.texl` (the project's name and the Stilo version that created it) and
   copies the Stilo library into `lib/stilo/`. In an import, `~` stands for the
   project's home folder, the nearest one with a `project.texl`, so
-  `texl.import "~/lib/stilo/stilo.texl"` works from any document of the project,
+  `texl.import "~/lib/stilo/index.texl"` works from any document of the project,
   in the editor and in `stilo render`. Without a `project.texl`, `~` is the
   served folder in the editor and your home directory on the command line.
   Folders named `~` are hidden in the editor and cannot be created there.
-  The Stilo library holds only a placeholder function for now.
 - **Texl 0.8**, in the browser and on the command line (`pytexl` and
   `@onlabsorg/texl` 0.8.0). An imported document is identified by its final
   URL, after HTTP redirects.

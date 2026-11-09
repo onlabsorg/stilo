@@ -84,6 +84,7 @@ shown, and any structure they have, is up to the platform.
 | `markdown`  | `text` with Markdown: highlighted in the editor, turned into HTML for display | Boilerplate |
 | `table`     | A grid where each table cell's Texl source is edited in its own field; shown as the rendered table | Ready for the MVP (2026-10-31): a Markdown pipe table (O5) edited as a grid of fields |
 | `formula`   | One tag, edited as its expression without the `<% %>`, shown as its output | First version |
+| `data`      | "Data table": a table of values (`stilo.dataframe`), edited as a name and a grid of Swan expressions, shown as the table the library renders | First version (2026-11-09); replaces the dropped `spreadsheet` idea |
 | `chart`     | Shows a chart; edits as a table of values    | Planned       |
 | `figure`    | A parametric figure                          | Idea          |
 | `ai`        | A prompt from which AI writes the cell's Texl | Idea         |
@@ -341,7 +342,7 @@ this section keeps the outline.
 - Typing on a selected cell does not start editing it, unlike Excel, until
   it is clear how that would work for other cell types (e.g. tables).
   The exception is the type keys (2026-10-31): `=` (formula), `t` (text),
-  `m` (Markdown) and `T` (table) change the selected line to that type and
+  `m` (Markdown), `T` (table) and `d` (data table, 2026-11-09) change the selected line to that type and
   edit it, as `=` starts a formula in Excel. On a line of that type
   already, the key edits it, as Enter does; if the type does not accept
   the line's source, nothing changes and the line shows the reason the
@@ -408,6 +409,38 @@ this section keeps the outline.
   is labelled in its expression. So no renderer helper functions are
   needed. Syntax highlighting in table cells is a nice to have, after the
   MVP.
+- Data tables (first version, 2026-11-09; S10, S12): the `data` cell
+  stores one formula, `<% loads: stilo.dataframe {columns: [...], rows:
+  [[...], ...]} %>`, written one row per line, and shows the Markdown
+  table that the Stilo library's `stilo.dataframe` renders through its
+  `__text__` hook. In edit mode: an optional name (a Swan name; without it
+  the cell writes no label, shows the table, and cannot be referred to),
+  and a grid (shared with `table`: `GridCell`) whose header row holds the
+  column names as plain text and whose other fields each hold one value
+  as a Swan expression: `120`, `"ULS-1"`, `1.35 * Fx_k`. An empty field is
+  `""`. No `=`: every field is an expression, so text needs its quotes.
+  Rows and columns can be inserted and deleted anywhere: the values do
+  not refer to each other (no A1 references), which is what made the
+  `spreadsheet` idea messy. Why row by row: Swan enumerates namespace
+  members sorted (column order would be lost), lists drop `()` (an empty
+  value would shift the values after it), and headers must be free text.
+  **Checking values:** a syntax error inside a Swan list drops the item
+  silently (and the rest of the row with it), so each value is checked as
+  it is typed: by its text (no `%>`, no comma outside brackets: write a
+  tuple as `(a, b)`) and by the browser's Texl engine, in an empty
+  context, as the member of a throwaway namespace beside another member
+  (`nspace.size {x__: (value), y__: 1}` must be 2). A wrong field is
+  outlined, with the reason as its tooltip, and the cell refuses to commit
+  until it is corrected (a commit waits for checks still running). A value
+  that is merely undefined, such as `1 + "a"`, passes and shows as
+  `[[Undefined]]` in its table cell; such values are not listed in the
+  errors pane (S7: they are not returned by the tag). A column name
+  cannot contain `"` or `%>` (Swan texts have no escapes); nor can a text
+  value. A source of another shape (edited by hand: comments inside the
+  tag, other members) is edited as text. **The import:** when a data
+  table is first written with content and no cell mentions
+  `~/lib/stilo/index.texl`, the editor adds a formula cell with the import
+  at the top (S12).
 - **Shape rule** for changing type (decided 2026-10-30, O2 + O3 below). A
   structured type accepts only sources of a certain shape: `table` a
   Markdown pipe table, `formula` one tag; `text` and `markdown` accept any

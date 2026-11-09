@@ -1,0 +1,113 @@
+# `dataframe` — a table of data
+
+`dataframe` makes a table of data from its column names and its rows, the way
+a Stilo `data` cell writes it:
+
+```
+df: stilo.dataframe {
+    columns: ["case", "Fx (kN)", "Fy (kN)"],
+    rows: [
+        ["ULS-1", 120, 35],
+        ["ULS-2", 140, ""]
+    ]
+}
+```
+
+(between the tag delimiters, in a document that imported the library; see
+`index.texl`). Labelled like this, the tag binds `df` and shows the table in
+place.
+
+- `columns` is a list of column names. They are texts, so any heading works,
+  with spaces, units or symbols.
+- `rows` is a list of rows, each a list of values, one per column. Any value
+  can be computed: `["ULS-3", 1.35 * Fx_k, ""]`. An empty table cell is `""`
+  (an empty value, `()`, would vanish from the list and shift the values after
+  it). A row shorter than `columns` is padded with `""`; values beyond the
+  last column are dropped.
+
+A dataframe is a namespace:
+
+- `df.columns` — the column names, a list.
+- `df.rows` — the rows, a list of lists, each exactly as long as `columns`.
+- `df.row i` — row `i`, counting from 0; nothing if there is no such row.
+- `df.column name` — the values of the first column called `name`, a list;
+  an undefined value if there is none.
+- As text, it is a Markdown table: a header row with the column names, then
+  one line per row. An empty value shows as an empty table cell, an undefined
+  value as `[[Undefined]]` (it does not spoil the rest of the table), and
+  other values as Texl writes them. A `|` in a value is escaped and a line
+  break becomes a space, so the table stays whole. A column whose values are
+  all numbers (empty and undefined ones aside) is aligned right.
+
+Bad input (no namespace, `columns` or `rows` not a list, a row that is not a
+list) gives an undefined value that says what is wrong, in a few words (Texl
+shows a custom message of up to 24 characters in full).
+
+The functions below are plain Swan. They use no recursion except `indices`,
+whose depth is the number of columns.
+
+<%
+# A line break, for splitting and joining text.
+NL = "
+",
+
+# The numbers 0 .. n - 1, as a list.
+indices = n -> (n > 0) ? [list.enum (indices (n - 1)), n - 1] ; [],
+
+# How many items of `values` (a list) satisfy `test`.
+count = (test, values) -> list.size [(list.enum values) => (v -> test v ? 1)],
+
+# A value as the text of a table cell: on one line, `|` escaped, and an
+# undefined value (or a text conversion that fails) as `[[Undefined]]`.
+cell_text = v -> (
+    s = text.join "\|" (text.split "|" (text.join " " (text.split NL (text.from v)))),
+    (type s == "Text") ? s ; "[[Undefined]]"
+),
+
+# `row` cut or padded with "" to `n` values.
+fit = (n, row) -> list.head n [list.enum row, (list.enum (indices n)) => (i -> "")],
+
+# The values of column `i` of `rows` (rows already fitted), as a list.
+column_at = (rows, i) -> [(list.enum rows) => (r -> r i)],
+
+# Whether a column's values are all numbers, empty and undefined ones aside,
+# with at least one.
+numeric = values -> (
+    numbers = count ((v -> type v == "Numb"), values),
+    others = count ((v -> (type v != "Numb") & (type v != "Undefined") & (v != "")), values),
+    (numbers > 0) & (others == 0)
+),
+
+# One line of the Markdown table.
+table_line = cells -> "| " + text.join " | " ((list.enum cells) => cell_text) + " |",
+
+# A dataframe as a Markdown table; the `__text__` hook of every dataframe.
+table = df -> (list.size df.columns == 0) ? "" ; (
+    rule = (list.enum (indices (list.size df.columns))) => (i -> numeric (column_at (df.rows, i)) ? "---:" ; "---"),
+    text.join NL (table_line df.columns, "|" + text.join "|" rule + "|", (list.enum df.rows) => table_line)
+),
+
+# The dataframe of checked `columns` and `rows`.
+make = (columns, rows) -> (
+    n = list.size columns,
+    fitted = [(list.enum rows) => (r -> fit (n, r))],
+    {
+        columns: columns,
+        rows: fitted,
+        row: i -> fitted i,
+        column: name -> (
+            i = list.find name columns,
+            (i < 0) ? undef.from "no such column" ; column_at (fitted, i)
+        ),
+        __text__: table
+    }
+),
+
+dataframe = spec ->
+    (type spec != "Namespace") ? undef.from "not a namespace" ; (
+    (type spec.columns != "List") ? undef.from "columns: not a list" ; (
+    (type spec.rows != "List") ? undef.from "rows: not a list" ; (
+    (count ((r -> type r != "List"), spec.rows) > 0) ? undef.from "a row is not a list" ;
+    make (spec.columns, spec.rows)
+)))
+%>

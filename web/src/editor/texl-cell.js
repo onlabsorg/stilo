@@ -52,6 +52,15 @@ export class TexlCell extends LitElement {
     static needs = "";
 
     /**
+     * A document the type's cells import, or null: `{url, source}`, the
+     * imported path and the tag that imports it. When a cell of the type is
+     * first written with content and no cell's source mentions `url`, the
+     * editor adds a formula cell with `source` at the top of the document.
+     * @type {{url: string, source: string} | null}
+     */
+    static requires = null;
+
+    /**
      * Whether the type can edit and show `source`. The base accepts any
      * source; a type that needs a shape overrides it.
      * @param {string} source

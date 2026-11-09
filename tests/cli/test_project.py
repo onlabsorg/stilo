@@ -7,7 +7,7 @@ import pytest
 from stilo.cli import main
 from stilo.cli.project import TEXL_LIB, resolve_file
 
-IMPORT = '<% texl.import "~/lib/stilo/stilo.texl" ~> (lib -> bind "stilo" lib.data.stilo) %>'
+IMPORT = '<% texl.import "~/lib/stilo/index.texl" ~> (lib -> bind "stilo" lib.data.stilo) %>'
 
 
 @pytest.fixture
@@ -20,7 +20,8 @@ def home(tmp_path, monkeypatch):
 
 
 def test_bundled_library_exists():
-    assert (TEXL_LIB / "stilo.texl").is_file()
+    assert (TEXL_LIB / "index.texl").is_file()
+    assert (TEXL_LIB / "dataframe.texl").is_file()
 
 
 def test_init(home, capsys):
@@ -29,7 +30,8 @@ def test_init(home, capsys):
     manifest = (project / "project.texl").read_text()
     assert 'project_name = "beam"' in manifest
     assert "stilo_version" in manifest
-    assert (project / "lib" / "stilo" / "stilo.texl").read_text() == (TEXL_LIB / "stilo.texl").read_text()
+    for name in ("index.texl", "dataframe.texl"):
+        assert (project / "lib" / "stilo" / name).read_text() == (TEXL_LIB / name).read_text()
 
 
 def test_init_name_cannot_break_the_manifest(home, capsys):
@@ -47,9 +49,9 @@ def test_init_refuses_an_existing_project(home, capsys):
 
 def test_init_keeps_an_existing_library(home, capsys):
     (home / "lib" / "stilo").mkdir(parents=True)
-    (home / "lib" / "stilo" / "stilo.texl").write_text("my copy")
+    (home / "lib" / "stilo" / "index.texl").write_text("my copy")
     assert main(["init", str(home)]) == 0
-    assert (home / "lib" / "stilo" / "stilo.texl").read_text() == "my copy"
+    assert (home / "lib" / "stilo" / "index.texl").read_text() == "my copy"
     assert "left as it is" in capsys.readouterr().out
 
 
@@ -57,13 +59,13 @@ def test_render_imports_the_library(home, capsys):
     main(["init", str(home / "p")])
     doc = home / "p" / "docs" / "deep" / "a.texl"
     doc.parent.mkdir(parents=True)
-    doc.write_text(IMPORT + '\n<% stilo.greet "world" %>\n')
+    doc.write_text(IMPORT + '\n<% stilo.dataframe {columns: ["a"], rows: [[42]]} %>\n')
     assert main(["render", "--strict", str(doc)]) == 0
-    assert "Hello, world!" in capsys.readouterr().out
+    assert "| 42 |" in capsys.readouterr().out
 
 
 def test_render_without_library_is_an_undefined_value(home, capsys):
-    (home / "a.texl").write_text(IMPORT + '\n<% stilo.greet "world" %>\n')
+    (home / "a.texl").write_text(IMPORT + '\n<% stilo.dataframe {columns: ["a"], rows: [[42]]} %>\n')
     assert main(["render", "--strict", str(home / "a.texl")]) == 1
 
 
@@ -89,7 +91,7 @@ def test_nearest_manifest_and_several_homes(home):
 
 def test_a_library_importing_itself_through_home_ends(home, capsys):
     main(["init", str(home / "p")])
-    (home / "p" / "lib" / "stilo" / "stilo.texl").write_text(IMPORT + "\n<% stilo = {} %>\n")
+    (home / "p" / "lib" / "stilo" / "index.texl").write_text(IMPORT + "\n<% stilo = {} %>\n")
     (home / "p" / "a.texl").write_text(IMPORT + "\ndone\n")
     assert main(["render", str(home / "p" / "a.texl")]) == 0
     assert "done" in capsys.readouterr().out

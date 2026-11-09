@@ -10,6 +10,7 @@ import {
     cellComments,
     nameCells,
     nameConflicts,
+    isBlank,
 } from "./document.js";
 import { cellTagName, cellClass, cellTypes } from "./registry.js";
 import { createEngine } from "./engine.js";
@@ -86,7 +87,7 @@ function isMod(e) {
  * - Shift+F2 reports the comments of the selected line, as a click on its
  *   comment icon does (below), also when it has none;
  * - a type's key (`TexlCell.key`: "t" text, "m" Markdown, "T" table, "="
- *   formula) changes the selected line to that type and edits it; on a
+ *   formula, "d" data table) changes the selected line to that type and edits it; on a
  *   line that has the type already it edits it, as Enter does. If the type
  *   does not accept the line's source, nothing changes and the line shows
  *   why, as the menu does. Several selected lines: it acts on the last
@@ -918,6 +919,8 @@ export class TexlEditor extends LitElement {
             this._notice = { index: this._selected, text: `${spanMessage(span)}.` };
             return false;
         }
+        let added;
+        [cells, added] = this._withImports(cells);
         this._undoStack = [...this._undoStack, this._state()].slice(-HISTORY_SIZE);
         this._redoStack = [];
         // Empty cells at the end look like the empty lines below: drop them
@@ -928,11 +931,36 @@ export class TexlEditor extends LitElement {
             cells.map(({ marker, ...cell }, i) => (i === 0 && marker === false ? { ...cell, marker } : cell)),
         );
         this._checkNames();
+        // Lines added at the top move the selection down with its cells
+        this._anchor += added;
+        this._selected += added;
+        if (this._editing >= 0) this._editing += added;
         this._anchor = Math.min(this._anchor, this._rowCount() - 1);
         this._select(this._selected, true);
         this.rendered = this._renderCells();
         this.dispatchEvent(new Event("change", { bubbles: true, composed: true }));
         return true;
+    }
+
+    /**
+     * Adds at the top of `cells` the imports their types require
+     * (`TexlCell.requires`): for a type of which this change writes a cell
+     * with content (more such cells than before), when no cell's source
+     * mentions the imported path. Returns the cells and the number of lines
+     * added.
+     * @returns {[object[], number]}
+     */
+    _withImports(cells) {
+        let added = 0;
+        const written = (list, type) => list.filter((cell) => cell.type === type && !isBlank(cell.texl)).length;
+        for (const type of new Set(cells.map((cell) => cell.type))) {
+            const requires = cellClass(type)?.requires;
+            if (!requires || written(cells, type) <= written(this._cells, type)) continue;
+            if (cells.some((cell) => cell.texl.includes(requires.url))) continue;
+            cells = [{ type: "formula", texl: requires.source + "\n" }, ...cells];
+            added++;
+        }
+        return [cells, added];
     }
 
     /**

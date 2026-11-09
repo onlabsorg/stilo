@@ -21,10 +21,10 @@ to Word and Excel users, and renders them from the command line.
 | Part   | What                                                          |
 |--------|---------------------------------------------------------------|
 | Web app | The user interface (Lit web components, Vite): top bar, navigation pane with the folder's files and commands to manage them, the editor, right pane with commands, cell comments and errors. Light and dark theme. |
-| Editor | Inside the web app: `<texl-editor>`, a document as a stack of typed cells (rich text, the default; text, Markdown, table and formula; formulas as `<% %>` tags; LaTeX equations in Markdown and tables), live rendering, cell comments, errors shown where they happen. Until 2026-10-26 the separate `texl-editor` package. |
+| Editor | Inside the web app: `<texl-editor>`, a document as a stack of typed cells (rich text, the default; text, Markdown, table, formula and data table; formulas as `<% %>` tags; LaTeX equations in Markdown and tables), live rendering, cell comments, errors shown where they happen. Until 2026-10-26 the separate `texl-editor` package. |
 | Server | Python (FastAPI): serves one folder of documents and the web app, for one user. |
 | CLI    | The `stilo` command: `stilo init [folder]` makes a folder a project, with the Stilo library in it; `stilo render <file>` prints a rendered document (or writes it to a file), says how many errors it has and can explain them; `stilo serve [folder]` starts the server on a folder. |
-| Stilo library | A folder of Texl documents (`texl-lib/`) that `stilo init` copies into each project, for documents to import. For now it holds only a placeholder function. |
+| Stilo library | A folder of Texl documents (`texl-lib/`) that `stilo init` copies into each project, for documents to import. Its first function, `stilo.dataframe`, makes a table of data; it is what the data table cell writes. Tested on both Texl engines, the browser's and Python's, with the same cases. |
 | Protocol | Plain HTTP between web app and server: GET a file, CREATE (POST), UPDATE (PUT, with an ETag so concurrent saves don't overwrite each other), QUERY a folder's tree, create a folder, move or rename a document or folder, delete a document or folder. |
 | Documentation | Developer documentation only, as plain Markdown in `docs/`, read on GitHub: architecture, setup, server, CLI, web app, editor, the protocol, the editor component and its API. No site is built. Users read the OnLabs.org manual instead. |
 
@@ -46,7 +46,7 @@ the document showing it.
 A **project** is a folder with a `project.texl` file (the project's name and
 the Stilo version that created it). Its libraries live in its `lib/` folder,
 so the project works as a whole wherever it is copied. In an import, `~`
-stands for the project's folder, so `~/lib/stilo/stilo.texl` works from any
+stands for the project's folder, so `~/lib/stilo/index.texl` works from any
 document of the project, in the browser and on the command line. There is no
 package manager: libraries are copied or cloned in by hand.
 
@@ -242,6 +242,24 @@ accept are not part of Stilo.
   `~` is thus one document, at its own place: imported from several folders,
   it is loaded once; its own imports resolve from its folder; and a library
   that imports itself through `~` is stopped at once.
+- 2026-11-09: **data table cell and the first library function**. A new
+  cell type, Data table (key `d`), holds a table of values that other cells
+  can compute with: an optional name, column names in plain text, and in
+  each field a value written as a formula (`120`, `"ULS-1"`, `1.35 * Fx`;
+  text needs quotes, an empty field is empty). Outside editing it shows the
+  computed table, numbers aligned right and a bad value as `[[Undefined]]`
+  in its own cell. A value that is not a valid formula is outlined while
+  typing, and the cell cannot be committed until it is corrected. Rows and
+  columns can be inserted and deleted anywhere; the values do not refer to
+  each other. With a name such as `loads`, other cells read the data as
+  `loads.column "Fx (kN)"` or `loads.row 0`. File format: the cell stores
+  one formula calling `stilo.dataframe` from the Stilo library, one row per
+  line, so the document renders with `stilo render` too. When the first data
+  table is written, the editor adds a line at the top that imports the
+  library from the project (`~/lib/stilo/index.texl`). The library's main
+  document is now `index.texl`, and the placeholder function is gone. The
+  beam example is now a project, with the library and a table of load
+  combinations. The table and data table cells share their grid editing.
 
 ## Known limitations
 
@@ -257,6 +275,10 @@ accept are not part of Stilo.
 - Files and folders: renaming or moving does not update links to the item;
   documents are got back from `.trash` by hand, as there is no restore command.
 - Table cell: plain fields without formula highlighting.
+- Data table cell: a value or column name cannot contain `"` or `%>`; a
+  wrong value inside a table is shown but not listed in the Errors pane; the
+  line that imports the library shows as an empty formula line; outside a
+  project the table shows `[[Undefined]]`.
 - Rich text cell: no colours, fonts or alignment; repeated empty paragraphs
   collapse; images are shown and kept but cannot be inserted; a comment can be
   added but not edited; a new or changed formula shows its expression, not its

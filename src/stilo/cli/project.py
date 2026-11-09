@@ -75,7 +75,7 @@ def manifest(name: str) -> str:
     return f"""# {name}
 
 This folder is a Stilo project. This file marks its home folder: in an
-import, `~` stands for it, as in `~/lib/stilo/stilo.texl`. The values below
+import, `~` stands for it, as in `~/lib/stilo/index.texl`. The values below
 configure the project.
 
 <% project_name = "{name}" %>

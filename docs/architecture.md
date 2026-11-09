@@ -69,9 +69,9 @@ When a user opens `http://127.0.0.1:8000/projects/beam/beam-check.texl`:
 4. An import, `texl.import("../../library/steel.texl")`, is fetched by Texl
    from the public address `/library/steel.texl`, without `text/html`, so the
    server returns the file. An import from the project's libraries,
-   `texl.import("~/lib/stilo/stilo.texl")`, is fetched as
-   `/projects/beam/~/lib/stilo/stilo.texl`, and the server redirects it to
-   the file under the project home, `/projects/beam/lib/stilo/stilo.texl`,
+   `texl.import("~/lib/stilo/index.texl")`, is fetched as
+   `/projects/beam/~/lib/stilo/index.texl`, and the server redirects it to
+   the file under the project home, `/projects/beam/lib/stilo/index.texl`,
    which Texl takes as the library's URL ([Projects](projects.md)).
 5. Ctrl+S commits the cell being edited and sends the text back with
    `PUT /_api/files/...` and the ETag of the last read, so a file changed

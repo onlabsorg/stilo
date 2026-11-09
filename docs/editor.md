@@ -42,7 +42,9 @@ exactly the text that is saved.
 | `web/src/editor/cells/markdown-cell.js`  | `MarkdownCell`: `TextCell` with Markdown highlighting and Markdown output, equations included | text-cell, swan, marked, DOMPurify | [`MarkdownCell`](component/api.md#markdowncell) |
 | `web/src/editor/cells/rich-cell.js`      | `RichCell`: WYSIWYG editing of Markdown with ProseMirror; toolbar, formula chips, the field under a chip |
 | `web/src/editor/rich/`                   | `schema.js` (what it can hold), `markdown.js` (source ↔ document, `acceptsRich`), `commands.js` (keys, typing shortcuts) |
-| `web/src/editor/cells/table-cell.js`     | `TableCell`: a Markdown pipe table edited as a grid; `parseTable`, `serializeTable` | markdown-cell, swan | [`TableCell`](component/api.md#tablecell) |
+| `web/src/editor/cells/grid-cell.js`      | `GridCell`: base of the cells edited as a grid of fields (not a type): grid, buttons, Tab and arrow keys | markdown-cell | — |
+| `web/src/editor/cells/table-cell.js`     | `TableCell`: a Markdown pipe table edited as a grid; `parseTable`, `serializeTable` | grid-cell, swan | [`TableCell`](component/api.md#tablecell) |
+| `web/src/editor/cells/data-cell.js`      | `DataCell`: a `stilo.dataframe` formula edited as a name and a grid of Swan values; `parseData`, `serializeData`, `entryError`, `STILO_IMPORT` | grid-cell, formula-cell, engine | [`DataCell`](component/api.md#datacell) |
 | `web/src/editor/cells/formula-cell.js`   | `FormulaCell`: one tag, edited without its delimiters; `parseFormula`, `serializeFormula` | text-cell, swan | [`FormulaCell`](component/api.md#formulacell) |
 | `web/src/editor/math.js`                 | Equations in Markdown: finds `$...$` and `$$...$$`, typesets them, declares the fonts in the document | KaTeX, errors |
 | `web/src/editor/registry.js`             | Maps cell types to custom element tags | — | [Cell registry](component/api.md#cell-registry) |
@@ -283,7 +285,9 @@ LitElement
   └─ TexlCell                 modes, lined-paper layout, commit protocol, renderView
        ├─ TextCell            CodeMirror editor, Swan highlighting   (type "text")
        │    ├─ MarkdownCell   Markdown highlighting and output       (type "markdown")
-       │    │    └─ TableCell a Markdown table edited as a grid       (type "table")
+       │    │    └─ GridCell  a grid of fields (not a type)
+       │    │         ├─ TableCell a Markdown table               (type "table")
+       │    │         └─ DataCell  a stilo.dataframe              (type "data")
        │    └─ FormulaCell    one tag, edited as its expression      (type "formula")
        └─ your cells          e.g. QuantityCell (type "quantity")
 ```
@@ -328,6 +332,13 @@ is not committed, and the cell stays in edit mode with the message (the
 round-trip check: e.g. `%>` in a formula would split its tag). The same goes
 for `commitError(texl)`, set by the editor, which refuses a source whose tag
 would run into a later cell; `_setCells` refuses the same of a paste or a move.
+
+**Imports a type needs.** A type whose cells call a library sets the
+static `requires` to `{url, source}`: `DataCell` requires the Stilo
+library. In `_setCells`, when a change writes more non-empty cells of such
+a type than there were and no cell's source mentions `url`, the editor adds
+a `formula` cell with `source` at the top (`_withImports`); the selection
+moves down with its cells, and one undo takes back both.
 A committed source with marker lines outside tags becomes those cells
 (`_onCellChange`). A cell whose
 source lacks its type's shape (edited by hand) is edited as text, and can

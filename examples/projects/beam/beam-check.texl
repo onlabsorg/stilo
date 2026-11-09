@@ -1,3 +1,5 @@
+<!--{ imp6 : formula }-->
+<% texl.import "~/lib/stilo/index.texl" ~> (lib -> bind "stilo" lib.data.stilo) %>
 <!--{ bek4 : markdown }-->
 # Beam check
 
@@ -37,6 +39,22 @@ M_{Ed} = \frac{q_d L^2}{8} = <% math.round (MEd * 10) / 10 %>\ \text{kNm}
 $$
 
 <!--[ Marco: partial factors from EN 1990, table A1.2(B). ]-->
+<!--{ cmb3 : markdown }-->
+## Load combinations
+
+The load per metre in each combination of EN 1990:
+<!--{ cmb8 : data }-->
+<% combinations: stilo.dataframe {
+    columns: ["Combination", "γG", "γQ", "q (kN/m)"],
+    rows: [
+        ["ULS, fundamental", 1.35, 1.5, math.round ((1.35 * (gk + gs) + 1.5 * qk) * 100) / 100],
+        ["SLS, characteristic", 1, 1, math.round ((gk + gs + qk) * 100) / 100],
+        ["SLS, quasi-permanent", 1, 0.3, math.round ((gk + gs + 0.3 * qk) * 100) / 100]
+    ]
+} %>
+<!--{ cmb5 : markdown }-->
+The largest is <% math.max (list.enum (combinations.column "q (kN/m)")) %> kN/m,
+the fundamental combination, used for the bending check below.
 <!--{ siz5 : markdown }-->
 ## Bending check
 

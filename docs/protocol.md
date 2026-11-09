@@ -38,9 +38,9 @@ redirect to the real path, `307 Temporary Redirect` (the query kept,
 ```
 project.texl in /projects/beam/
 
-GET /projects/beam/docs/~/lib/stilo/stilo.texl
+GET /projects/beam/docs/~/lib/stilo/index.texl
 → 307 Temporary Redirect
-  Location: /projects/beam/lib/stilo/stilo.texl
+  Location: /projects/beam/lib/stilo/index.texl
 GET /projects/beam/docs/~/lib/a/~/lib/b/b.texl
   → /projects/beam/lib/a/ has no project.texl: /projects/beam/lib/b/b.texl
 ```

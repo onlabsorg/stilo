@@ -113,7 +113,7 @@ Rules:
 for rendering, managed with `uv`. All commands at the root.
 
 ```bash
-uv sync && uv run pytest              # tests/: server/, cli/, test_layout.py
+uv sync && uv run pytest              # tests/: server/, cli/, texl_lib/, test_layout.py
 uv run stilo serve examples           # http://127.0.0.1:8000
 uv run stilo render examples/projects/beam/beam-check.texl
 uv run stilo init path/to/project     # project.texl, lib/stilo/
@@ -193,8 +193,11 @@ creates the GitHub release. Bump the version in `pyproject.toml`,
 - `src/stilo/cli/project.py` — `create_engine()` (the one place an engine
   is made; its file loader resolves `~`, top: `$HOME` or `/`), `TEXL_LIB`,
   the text of a new `project.texl`.
-- `texl-lib/` — the Stilo Texl library (`stilo.texl` binds `stilo`; a
-  placeholder until `stilo.dataframe`). Its text must not quote its own
+- `texl-lib/` — the Stilo Texl library: `index.texl` binds `stilo`,
+  gathering one document per function (`dataframe.texl`:
+  `stilo.dataframe`). Tested by the cases in
+  `tests/texl_lib/dataframe-cases.json`, run on both engines
+  (`tests/texl_lib/`, `web/test/texl-lib.test.js`). Its text must not quote its own
   import tag: tags run even in code blocks.
 - `src/stilo/cli/commands.py` — the subcommands (`init`, `render`, `serve`) as
   `Command` entries in `COMMANDS`; `main()` in `src/stilo/cli/__init__.py`
@@ -232,12 +235,18 @@ creates the GitHub release. Bump the version in `pyproject.toml`,
     commit protocol (`cell-change` with `{texl}`, then `cell-exit`).
   - `cells/` — built-in cell types (`rich`, the default: WYSIWYG, its source
     the same Markdown as `markdown`; `text`, `markdown`, `table`: a Markdown
-    pipe table edited as a grid, `formula`: one tag edited without its delimiters);
+    pipe table edited as a grid, `formula`: one tag edited without its delimiters,
+    `data`: a `stilo.dataframe` formula edited as a name and a grid of Swan
+    values, each checked by the engine; `grid-cell.js`, the grid both
+    `table` and `data` extend);
     formulas are `<% %>` tags inside them. A type that needs a shape
     overrides the static `accepts(source)` (white space and comments
     never count against it): the type menu offers only accepting types,
     and a cell refuses to commit a changed source its type rejects
-    (`inputError`), so a type change never converts content.
+    (`inputError`), so a type change never converts content. A type
+    whose cells need a library sets `requires` (`{url, source}`): the
+    editor adds the import at the top when such a cell is first written
+    (`_withImports`; S12).
   - `rich/` — the `rich` cell's `schema.js` (what it can hold), `markdown.js`
     (source ↔ ProseMirror document, read with `marked`; `acceptsRich` refuses
     what would not survive) and `commands.js` (keys and typing shortcuts).

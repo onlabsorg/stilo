@@ -204,3 +204,30 @@ header, because HTTP clients (the browser's `fetch`, `load_http`) already
 report the URL after redirects, so every Texl host, and Papiro, gets it
 without knowing Stilo. Temporary, because the home depends on manifests that
 can change.
+
+## S12 — 2026-11-09 — The data cell, and the editor adds the imports a cell type needs
+The `data` cell ("Data table", key `d`) stores one formula,
+`<% name: stilo.dataframe {columns: [...], rows: [[...], ...]} %>`, row by
+row, with the column names as texts and each value as a Swan expression
+(an empty one is `""`); the name is optional. It is edited as a name and a
+grid, and shown as the table that `stilo.dataframe` (the Stilo library,
+S10) gives as its text. Its values do not refer to each other. A value that
+would break the row is refused on commit, checked by the browser's Texl
+engine. A cell type may declare a document its cells import
+(`TexlCell.requires`); when a cell of that type is first written with
+content and no cell mentions the imported path, the editor adds a visible
+formula cell with the import at the top of the document. For the data cell
+that is `~/lib/stilo/index.texl`, always the whole library. Undefined values
+inside the table show as `[[Undefined]]` and are not listed as errors (S7
+unchanged).
+*Reason:* a data set cell is more general than an imitation of an Excel
+sheet (analysis, reports, charts), and Swan already does what Excel
+formulas do; without references between values, rows and columns can move
+freely. The source is row by row because Swan enumerates namespace members
+sorted and drops `()` from lists, and headers must be free text. A
+syntax error inside a list drops the item silently, so the editor must
+refuse it. The import is a plain cell so the document still renders in
+`stilo render` and any Texl host, which a hidden import would not allow; it
+is added once, so a user who removes it is not overruled at every edit.
+This settles the import cell that S10 left open; the "add-in" view of
+libraries stays open.

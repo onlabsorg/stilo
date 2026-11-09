@@ -686,9 +686,9 @@ Third line
             await editor.updateComplete;
             expect(cells(editor)[1].selected).to.be.true;
             const labels = items(editor).map((li) => li.querySelector(".label").textContent);
-            expect(labels).to.deep.equal(["Rich text", "Text", "Markdown", "Table", "Formula"]);
+            expect(labels).to.deep.equal(["Rich text", "Text", "Markdown", "Table", "Formula", "Data table"]);
             const checked = items(editor).map((li) => li.getAttribute("aria-checked"));
-            expect(checked).to.deep.equal(["false", "false", "true", "false", "false"]);
+            expect(checked).to.deep.equal(["false", "false", "true", "false", "false", "false"]);
 
             typeButton(editor, 1).click();
             await editor.updateComplete;
@@ -779,7 +779,7 @@ Third line
             await editor.updateComplete;
             // The text cell is neither a table nor a formula; the markdown one is a formula
             const disabled = items(editor).map((li) => li.getAttribute("aria-disabled"));
-            expect(disabled).to.deep.equal(["false", "false", "false", "true", "true"]);
+            expect(disabled).to.deep.equal(["false", "false", "false", "true", "true", "true"]);
             expect(items(editor)[3].title).to.equal("Needs a table");
             expect(items(editor)[4].querySelector(".reason").textContent).to.equal("Needs a single formula");
             items(editor)[4].click();
@@ -867,7 +867,7 @@ Third line
             const editor = await editorWith(SOURCE);
             typeButton(editor, 0).click();
             await editor.updateComplete;
-            expect(items(editor).map((li) => li.querySelector(".key")?.textContent)).to.deep.equal(["r", "t", "m", "T", "="]);
+            expect(items(editor).map((li) => li.querySelector(".key")?.textContent)).to.deep.equal(["r", "t", "m", "T", "=", "d"]);
         });
 
         it("changes a cell that is one tag to a formula, and an empty one to a table", async () => {

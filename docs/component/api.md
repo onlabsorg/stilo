@@ -11,7 +11,8 @@ API is young and will change before 1.0. The examples import the editor as
 - [`<texl-editor>`](#texl-editor) — the editor element
 - [`TexlCell`](#texlcell) — base class of all cells
 - [`RichCell`](#richcell), [`TextCell`](#textcell), [`MarkdownCell`](#markdowncell),
-  [`TableCell`](#tablecell) and [`FormulaCell`](#formulacell) — built-in cells
+  [`TableCell`](#tablecell), [`FormulaCell`](#formulacell) and
+  [`DataCell`](#datacell) — built-in cells
 - [Cell registry](#cell-registry) — `registerCell`, `cellTagName`,
   `cellClass`, `cellTypes`
 - [Document functions](#document-functions) — parse, serialise, names,
@@ -211,6 +212,7 @@ type; see [Writing a cell type](guide.md#7-write-your-own-cell-type).
 | `icon`   | Lit `html` template | A 24×24 SVG drawn with strokes (`fill: none; stroke: currentColor` are set by the editor). Shown in the left margin and the type menu. |
 | `key`    | `string`        | The key that changes the selected line to this type and edits it (`"="` for `formula`); empty for none. Not inherited: read as an own property. Shown in the type menu. |
 | `needs`  | `string`        | What the type needs of a source, e.g. `"a table"`; empty if it accepts any. Shown as "Needs …" in the type menu and in the commit error. |
+| `requires` | `{url, source}` or `null` | A document the type's cells import: `url`, the imported path, and `source`, the tag that imports it. When a cell of the type is first written with content and no cell's source mentions `url`, the editor adds a formula cell with `source` at the top of the document. `null` by default. |
 | `accepts(source)` | static method → `boolean` | Whether the type can edit and show `source`. The base accepts any source; a type that needs a shape overrides it. White space and HTML comments around the content must not make it return false. The type menu offers the type only for cells whose source it accepts. |
 | `styles` | Lit `css`       | The cell's styles: lined-paper layout, selected and edit looks. Extend it as `[TexlCell.styles, css`...`]`. |
 
@@ -337,6 +339,24 @@ which are kept. An expression containing `%>` is not committed.
 `parseFormula(source)` returns `{before, body, after}` (`body` is the text
 between the delimiters, or null without a tag), or null;
 `serializeFormula(formula)` writes it back.
+
+## `DataCell`
+
+Type `data`, label "Data table", key `d`. Extends `GridCell` (a
+`MarkdownCell`, as `TableCell`). A source that is one tag,
+`<% loads: stilo.dataframe {columns: ["case", "Fx (kN)"], rows: [["ULS-1",
+120], ...]} %>` (the name and its colon are optional), edited as a name
+field and a grid: column names as plain text, each value as a Swan
+expression (an empty field is `""`); shown as its output, the Markdown
+table of the Stilo library's `stilo.dataframe`. Values that would break
+the row are marked as they are typed, and the cell does not commit while
+one is marked. `accepts` such a tag or a blank source (a new table), with
+white space and comments around the tag. `requires` the Stilo library:
+`STILO_IMPORT`, the tag that imports `STILO_LIBRARY`
+(`~/lib/stilo/index.texl`). `parseData(source)` returns `{before, after,
+name, columns, rows}` (entries as Swan source), or null;
+`serializeData(data)` writes it back, one row per line;
+`entryError(text)` resolves to why a value cannot be an entry, or `""`.
 
 ## Cell registry
 
