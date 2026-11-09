@@ -1,0 +1,79 @@
+<!--{ ce00 : formula | hidden }-->
+<% texl.import "~/lib/tutorial/index.texl" ~> (lib -> bind "tutorial" lib.data) %>
+<!--{ ce01 : rich }-->
+# 2. Cells
+
+A document is a stack of cells, one per line, as the rows of a spreadsheet.
+A cell can hold one sentence or a whole page: its line grows to fit it. You
+move between lines and edit them with the keyboard, as in Excel. About five
+minutes.
+<!--{ ce02 : markdown }-->
+## Select and edit
+
+| Keys | What they do |
+|------|--------------|
+| ↑, ↓, or a click | Select the line above or below, or the one you click |
+| Enter, F2, or a double click | Edit the selected line |
+| Ctrl+Enter | Keep your changes and leave the line |
+| Escape | Throw your changes away and leave the line |
+
+A click on another line keeps your changes too, as in Excel. While you edit,
+**Enter** starts a new line of text inside the same cell.
+
+Try it: edit this line, add a word at the end, and press **Ctrl+Enter**.
+<!--{ ce03 : rich }-->
+## Move lines
+
+The three lines below are in the wrong order. Put them in order:
+
+1. Select the line *First* and press **Alt+↑** until it is above *Third*.
+2. Select *Second* and move it with **Alt+↑** or **Alt+↓** until it sits
+   between *First* and *Third*.
+
+Each of the three lines holds a hidden step that records its place, so the
+check after them sees the order.
+<!--{ ce04 : markdown }-->
+**Third**<% order = (order ; "") + "3" %>
+<!--{ ce05 : markdown }-->
+**First**<% order = (order ; "") + "1" %>
+<!--{ ce06 : markdown }-->
+**Second**<% order = (order ; "") + "2" %>
+<!--{ ce07 : formula }-->
+<% tutorial.check (order == "123") %>
+<!--{ ce08 : markdown }-->
+## Insert, delete, undo
+
+| Keys | What they do |
+|------|--------------|
+| Alt+Enter | Insert an empty line below |
+| Alt+Shift+Enter | Insert an empty line above |
+| Delete, Backspace | Delete the selected lines |
+| Shift+↑, Shift+↓, Shift+click | Select several lines |
+| Ctrl+C, Ctrl+X, Ctrl+V | Copy, cut and paste lines |
+| Ctrl+Z, Ctrl+Shift+Z | Undo and redo |
+
+Try it: select this line, press **Alt+Enter**, press **Enter**, write a
+sentence and press **Ctrl+Enter**. Then press **Ctrl+Z** to undo it.
+
+Now delete the line below that says *Delete me*: select it and press
+**Delete**.
+<!--{ ce09 : markdown }-->
+**Delete me.**<% delete_me = TRUE %>
+<!--{ ce10 : formula }-->
+<% tutorial.check (delete_me != TRUE) %>
+<!--{ ce11 : rich }-->
+## Write on an empty line
+
+The numbered lines below the end of a document are empty. Select one, press
+**Enter**, write something and press **Ctrl+Enter**: it becomes part of the
+document, on that line. Try it below the last line of this lesson.
+
+## Save
+
+Press **Ctrl+S** to save. If you try to leave a document with unsaved
+changes, the browser asks you first. Save now, so that the
+[index](index.texl) counts your checks.
+
+More in the manual: [Lines and cells](https://www.onlabs.org/manual/editor/lines.html).
+<!--{ ce12 : rich }-->
+Next: [3. Rich text](03-rich-text.texl) · Back to the [index](index.texl)

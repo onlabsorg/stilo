@@ -1,0 +1,75 @@
+<!--{ fo00 : formula | hidden }-->
+<% texl.import "~/lib/tutorial/index.texl" ~> (lib -> bind "tutorial" lib.data) %>
+<!--{ fo01 : rich }-->
+# 4. Formulas
+
+A formula computes a value inside the text, as a cell formula does in Excel.
+When the numbers change, the text follows. About six minutes.
+<!--{ fo02 : rich }-->
+## A formula in a line
+
+1. Select the empty line just below this one and press **Enter**.
+2. Type `Area: `, then press **Ctrl+E**: a small field opens for the formula.
+3. Type `3 * 4` and press **Enter**. The formula shows as a small grey box,
+   a *chip*.
+4. Press **Ctrl+Enter**. The line shows *Area: 12*.
+
+Point at a chip to see its formula; click it to change it.
+<!--{ fo03 : rich }-->
+
+<!--{ fo04 : markdown }-->
+## Names
+
+A formula can give a value a name, and later formulas can use it. This line
+gives two names, <% tutorial.tag "width = 3.5, length = 4" %>, and shows
+them: a room is <% width = 3.5, length = 4 %>**<% width %> m** wide and
+**<% length %> m** long.
+
+A formula that only gives a name shows nothing. A name is known on its own
+line and on every line below it, as in a calculation on paper.
+
+**Your turn.** On the empty line just above the check below, write a formula
+that names the area of the room: press **Enter**, then **Ctrl+E**, type
+`area = width * length`, press **Enter** and then **Ctrl+Enter**. The line
+shows a small ƒ, as the formula only gives a name.
+<!--{ fo05 : rich }-->
+
+<!--{ fo06 : formula }-->
+<% tutorial.check (area == 14) %>
+<!--{ fo07 : markdown }-->
+Once the check shows ✓ Done, this line shows the area: **<% area ; "…" %> m²**.
+Change `length = 4` to `length = 5` in the line *Names* above, and watch
+the area follow; then put it back.
+<!--{ fo08 : markdown }-->
+## A line that is only a formula
+
+A line that holds one formula and nothing else can be a **Formula cell**.
+Select the line and press **=**, as you start a formula in a spreadsheet,
+and type the formula without its brackets.
+
+**Your turn.** Select the empty line just above the check below, press
+**=**, type `perimeter = 2 * (width + length)` and press **Ctrl+Enter**.
+<!--{ fo09 : rich }-->
+
+<!--{ fo10 : formula }-->
+<% tutorial.check (perimeter == 15) %>
+<!--{ fo11 : markdown }-->
+## Numbers, text and choices
+
+| Formula | Result |
+|---------|--------|
+| `7 + 3 * 2` | <% 7 + 3 * 2 %> |
+| `(7 + 3) * 2` | <% (7 + 3) * 2 %> |
+| `2 ^ 3` | <% 2 ^ 3 %> |
+| `math.sqrt 16` | <% math.sqrt 16 %> |
+| `math.round (2.567 * 100) / 100` | <% math.round (2.567 * 100) / 100 %> |
+| `"IPE " + "300"` | <% "IPE " + "300" %> |
+| `width > 3 ? "wide" ; "narrow"` | <% width > 3 ? "wide" ; "narrow" %> |
+
+Text goes between double quotes. `condition ? a ; b` gives `a` if the
+condition is true and `b` otherwise. A name that is misspelled, or used
+before it is given, shows nothing: if a value is missing, check the name.
+
+More in the manual: [Formulas](https://www.onlabs.org/manual/editor/formulas.html).
+<!--{ fo12 : rich }-->
+Next: [5. Cell types](05-cell-types.texl) · Back to the [index](index.texl)

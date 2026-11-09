@@ -6,6 +6,18 @@ change the interfaces.
 
 ## Unreleased
 
+- **`stilo tutor`**: a guided tutorial for new users, in the web app.
+  Twelve short lessons (30–45 minutes) teach the editor and the `stilo`
+  command by doing, from the first edit to your own project, and two
+  advanced lessons follow; many exercises check themselves and show
+  "✓ Done", and the index shows your progress. The first run copies the
+  tutorial into your user data folder (`--dir PATH` for another one) and
+  makes it a project; later runs open your copy as you left it. `stilo tutor
+  --reset` starts again from a fresh copy, moving the old one aside, never
+  deleting it; when the copy was made by an older Stilo, `stilo tutor` says
+  so and proposes `--reset`. Other options: `--port`, `--no-browser`.
+  New dependency: `platformdirs`.
+
 ## 0.3.0 — 2026-11-09
 
 - **Hidden cells**, as hidden rows in Excel. "Hide the selected cells" in the

@@ -247,3 +247,48 @@ computes. Hidden rows are what Excel users know. The option lives in the
 marker, which other Texl hosts read as a comment, so the file still renders
 anywhere; and a bar after the type leaves room for further options.
 
+
+## S14 — 2026-11-09 — `stilo tutor`: a tutorial of Texl documents, in a working copy
+Stilo ships a guided tutorial for new users, served in the web app by
+`stilo tutor`. It teaches by doing; the OnLabs.org manual stays the
+reference, and lessons link to it instead of repeating it.
+
+- **Source:** `tutorial/` at the root of the repository, shipped in the
+  wheel as `stilo/tutorial` (like `texl-lib/`, S10): `index.texl`, numbered
+  lessons (`01-welcome.texl`, …), and the files they link to or import (an
+  image, a PDF, a library). About ten short lessons make the core path
+  (30–45 minutes in all), web app and CLI; optional advanced lessons follow.
+- **Working copy:** the user never edits the source. `stilo tutor` copies
+  it into a working folder (default: the user data folder,
+  `platformdirs.user_data_path("stilo")/tutorial`; `--dir PATH` for
+  another) and makes it a project with the same code as `stilo init`, so
+  `~` imports and data tables work. An existing copy is reused, so progress
+  is kept. `stilo tutor --reset` moves the old copy aside, next to it,
+  never deleting it; there is no reset in the web app for now. If the copy's
+  `stilo_version` (in `project.texl`) is older than the installed Stilo,
+  `stilo tutor` says so and proposes `--reset`; it never overwrites on its
+  own. Then it serves the copy like `stilo serve` and opens the browser at
+  `index.texl` (`--port`, `--no-browser`).
+- **Exercises check themselves with Texl:** where Texl can see the result
+  (a name, a value, a data table, an import), a check cell shows "✓ Done" or
+  "○ Not yet", computed by a small tutorial library in the copy
+  (`lib/tutorial/`). `index.texl` imports the lessons and counts the checks
+  their tags returned, so progress needs no extra state. Steps Texl cannot
+  see (hiding a cell, using a pane, formatting) are "try it" steps.
+- **CI:** every lesson renders with `stilo render --strict` in a fresh copy;
+  a lesson that teaches errors declares how many it expects
+  (`expected_errors`), and the test checks that number. Each lesson's
+  solutions are applied in a test, which checks that every check turns to
+  "✓ Done". Copy, reset, the version check and serving the index are
+  tested too.
+- **Kept current:** a user-visible change updates the matching lesson, in
+  the same commit, as with the summary (`CLAUDE.md`, `/commit-changes`).
+
+*Reason:* a new user learns faster by doing than by reading, and Stilo's own
+documents are the best place to do it: the tutorial is itself an example of
+what Stilo makes. A copy keeps the shipped lessons intact and makes the
+user's progress theirs; moving an old copy aside and never overwriting
+protects work done in it. Checks written in Texl need no new machinery in
+the app or the server, render in `stilo render`, and keep the tutorial a
+folder of plain Texl files. Testing the lessons in CI, with their solutions,
+keeps them true as the app changes.

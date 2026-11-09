@@ -1,0 +1,123 @@
+{
+  "_about": "What a user does in each lesson of tutorial/, as edits to a fresh copy: `replace` swaps text of the lesson (each old text occurs once), `replace_in` the same in other files, `files` writes new files, `run` then runs stilo commands in the copy. `expected_errors` is the number of errors left (default 0). tests/tutorial/test_lessons.py applies them and checks that every check of the lesson shows ✓ Done.",
+  "01-welcome.texl": {
+    "replace": [
+      [
+        "<% student: \"Your name\" %>",
+        "<% student: \"Ada\" %>"
+      ]
+    ]
+  },
+  "02-cells.texl": {
+    "replace": [
+      [
+        "<!--{ ce04 : markdown }-->\n**Third**<% order = (order ; \"\") + \"3\" %>\n<!--{ ce05 : markdown }-->\n**First**<% order = (order ; \"\") + \"1\" %>\n<!--{ ce06 : markdown }-->\n**Second**<% order = (order ; \"\") + \"2\" %>\n",
+        "<!--{ ce05 : markdown }-->\n**First**<% order = (order ; \"\") + \"1\" %>\n<!--{ ce06 : markdown }-->\n**Second**<% order = (order ; \"\") + \"2\" %>\n<!--{ ce04 : markdown }-->\n**Third**<% order = (order ; \"\") + \"3\" %>\n"
+      ],
+      [
+        "<!--{ ce09 : markdown }-->\n**Delete me.**<% delete_me = TRUE %>\n",
+        ""
+      ]
+    ]
+  },
+  "04-formulas.texl": {
+    "replace": [
+      [
+        "<!--{ fo05 : rich }-->\n\n",
+        "<!--{ fo05 : rich }-->\nArea: <% area = width * length %>\n"
+      ],
+      [
+        "<!--{ fo09 : rich }-->\n\n",
+        "<!--{ fo09 : formula }-->\n<% perimeter = 2 * (width + length) %>\n"
+      ]
+    ]
+  },
+  "06-tables-and-equations.texl": {
+    "replace": [
+      [
+        "<!--{ te04 : rich }-->\n\n",
+        "<!--{ te04 : table }-->\n| Quantity | Value |\n|---|---:|\n| Moment | <% M: q * L ^ 2 / 8 %> kNm |\n"
+      ]
+    ]
+  },
+  "07-data-tables.texl": {
+    "replace": [
+      [
+        "<!--{ da06 : rich }-->\n\n",
+        "<!--{ da06 : data }-->\n<% loads: stilo.dataframe {columns: [\"Case\", \"Fx (kN)\"], rows: [[\"ULS-1\", 120], [\"ULS-2\", 1.35 * 100], [\"SLS\", 90]]} %>\n"
+      ],
+      [
+        "<!--{ da10 : rich }-->\n\n",
+        "<!--{ da10 : formula }-->\n<% max_fx = math.max (list.enum (loads.column \"Fx (kN)\")) %>\n"
+      ]
+    ]
+  },
+  "08-linking.texl": {
+    "replace": [
+      [
+        "<!--{ li04 : rich }-->\n\n",
+        "<!--{ li04 : formula }-->\n<% texl.import \"~/lib/steel/sections.texl\" ~> (lib -> bind \"steel\" lib.data) %>\n"
+      ]
+    ]
+  },
+  "09-errors.texl": {
+    "replace": [
+      [
+        "q = \"12.5\"",
+        "q = 12.5"
+      ]
+    ],
+    "expected_errors": 0
+  },
+  "10-organising.texl": {
+    "files": {
+      "practice/notes.texl": "<!--{ no01 : rich }-->\nNotes on the beam.\n<!--[ Ada: to check with the client. ]-->\n<!--{ no02 : rich | hidden }-->\nA hidden line.\n"
+    }
+  },
+  "11-command-line.texl": {
+    "replace_in": {
+      "files/report.texl": [
+        [
+          "length = \"4\"",
+          "length = 4"
+        ]
+      ]
+    },
+    "run": [
+      [
+        "render",
+        "--strict",
+        "files/report.texl",
+        "-o",
+        "files/report.md"
+      ]
+    ]
+  },
+  "13-formula-language.texl": {
+    "replace": [
+      [
+        "<!--{ sw04 : rich }-->\n\n",
+        "<!--{ sw04 : formula }-->\n<% moment = (q, L) -> q * L ^ 2 / 8 %>\n"
+      ],
+      [
+        "<!--{ sw07 : rich }-->\n\n",
+        "<!--{ sw07 : formula }-->\n<% verdict = u -> u <= 1 ? \"OK\" ; \"not OK\" %>\n"
+      ],
+      [
+        "<!--{ sw10 : rich }-->\n\n",
+        "<!--{ sw10 : formula }-->\n<% moments = [(list.enum spans) => (L -> moment (10, L))] %>\n"
+      ]
+    ]
+  },
+  "14-libraries.texl": {
+    "files": {
+      "lib/beams/index.texl": "<!--{ bf01 : rich }-->\nBeam formulas\n<!--{ bf02 : formula }-->\n<% moment = (q, L) -> q * L ^ 2 / 8 %>\n"
+    },
+    "replace": [
+      [
+        "<!--{ lb04 : rich }-->\n\n",
+        "<!--{ lb04 : formula }-->\n<% texl.import \"~/lib/beams/index.texl\" ~> (lib -> bind \"beams\" lib.data) %>\n"
+      ]
+    ]
+  }
+}

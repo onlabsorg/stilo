@@ -1,0 +1,73 @@
+<!--{ we00 : formula | hidden }-->
+<% texl.import "~/lib/tutorial/index.texl" ~> (lib -> bind "tutorial" lib.data) %>
+<!--{ we01 : rich }-->
+# 1. Welcome
+
+Welcome to Stilo. This tutorial teaches you by doing: each lesson asks you to
+try something on its own lines, and many lessons check your work and show
+**✓ Done** when it is right. Twelve short lessons, 30 to 45 minutes in all,
+take you from your first edit to your own project.
+
+The [OnLabs.org manual](https://www.onlabs.org/manual/) is the reference:
+the lessons link to it instead of repeating it.
+<!--{ we02 : rich }-->
+## What Stilo is
+
+Stilo edits documents that compute, like a mix of Word and Excel. A document
+is a stack of lines, as the rows of a spreadsheet, and each line holds text,
+a table or a formula. Formulas compute values from the lines above, and from
+other documents. A document is a plain text file in a folder, so it can be
+copied, sent, compared and kept like any other file.
+<!--{ we03 : markdown }-->
+## The window
+
+| Part | What it shows |
+|------|---------------|
+| Top bar | The name of the open document, with a dot (•) while it has unsaved changes. The buttons on the right open the errors, the comments and the commands (⋮). |
+| Navigation pane | The documents of the folder, on the left. Click one to open it. |
+| The sheet | The open document, as numbered lines. Each line is a *cell*. |
+| Right pane | The commands, the comments of a line, or the errors of the document. |
+
+Try it:
+
+- Press **F1**: the commands pane opens on the right, with every command and
+  its keys. Press **F1** again to close it.
+- Press **Ctrl+B** to hide the navigation pane, and again to show it.
+- Press **Alt+T** to switch between the dark and the light theme.
+
+On a Mac, use **⌘** where the lessons say **Ctrl**, and **⌥** (Option) for
+**Alt**.
+<!--{ we04 : rich }-->
+## Your first edit
+
+1. Click the line below that says *My name is Your name*.
+2. Press **Enter**: you see the text the line is written with. The part
+   between the brackets is a formula; lesson 4 explains formulas.
+3. Replace `Your name` with your name. Keep the double quotes around it.
+4. Press **Ctrl+Enter** to keep the change. (**Escape** would throw it away.)
+5. Press **Ctrl+S** to save. The dot (•) after the document's name in the
+   top bar goes away.
+
+The line after yours checks your work: it shows ✓ Done when you have
+written your name.
+<!--{ we05 : markdown }-->
+My name is **<% student: "Your name" %>**.
+<!--{ we06 : formula }-->
+<% tutorial.check ((student != "Your name") & (text.size (text.trim student) > 0)) %>
+<!--{ we07 : markdown }-->
+## Your copy of the tutorial
+
+These lessons are *your* copy of the tutorial, made by `stilo tutor` in this
+folder of your computer:
+
+<% texl.import "~/project.texl" ~> (project -> "`" + project.data.tutorial_folder + "`") %>
+
+Change them as you like: the next time you run `stilo tutor`, they open as
+you left them. **Save** your changes (Ctrl+S): the [index](index.texl) counts
+the checks of the saved lessons.
+
+To start again from fresh lessons, stop Stilo with **Ctrl+C** in the
+terminal where it runs, then run `stilo tutor --reset`. Your old copy is
+moved aside, next to the new one, and never deleted.
+<!--{ we08 : rich }-->
+Next: [2. Cells](02-cells.texl) · Back to the [index](index.texl)

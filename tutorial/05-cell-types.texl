@@ -1,0 +1,55 @@
+<!--{ ty00 : formula | hidden }-->
+<% texl.import "~/lib/tutorial/index.texl" ~> (lib -> bind "tutorial" lib.data) %>
+<!--{ ty01 : rich }-->
+# 5. Cell types
+
+Every line has a **type**, which decides how it is edited and shown. The
+icon in the left margin, before the line number, shows it. This lesson has
+no checks: try each step and look at the result. About three minutes.
+<!--{ ty02 : markdown }-->
+## The types
+
+| Type | Key | Shows |
+|------|-----|-------|
+| Rich text | **r** | Formatted text, edited as in Word (lesson 3). New lines are rich text. |
+| Markdown | **m** | The same formatted text, written with Markdown characters, such as `**bold**`. |
+| Text | **t** | The text without Markdown formatting: `**bold**` stays as it is written. |
+| Formula | **=** | The result of one formula, edited without its brackets (lesson 4). |
+| Table | **Shift+T** | A table, edited as a grid (lesson 6). |
+| Data table | **d** | A table of values that other lines compute with (lesson 7). |
+<!--{ ty03 : rich }-->
+## Change the type
+
+Changing the type never changes the text of the line: only the way it is
+edited and shown. Try it on the next line, which is written as
+`This word is **bold**.`
+
+1. Select it and press **t**: it becomes Text, and the stars show. Press
+   **Escape** to leave it.
+2. Press **m**: it becomes Markdown, and the word is bold again. **Escape**.
+3. Press **r**: rich text, as you wrote in lesson 3. **Escape**.
+<!--{ ty04 : markdown }-->
+This word is **bold**.
+<!--{ ty05 : rich }-->
+A type's key changes the type and starts editing, so you can write at once.
+
+## The type menu
+
+To change several lines at once, or to see the types, select the lines and
+press **Ctrl+/**, or click the icon in the left margin. A small menu opens,
+with the current type checked and each type's key. Pick a type with the
+mouse, or with **↑**, **↓** and **Enter**; **Escape** closes the menu.
+
+## Only the types that fit
+
+Because the text never changes, a line can only take a type that fits it: a
+Formula cell needs one formula, a Table needs a table. In the menu the other
+types are greyed out, with the reason. Try it: select the line above with
+the bold word and press **=**. The line stays as it is, and a message says
+why.
+
+**Ctrl+Z** undoes a change of type.
+
+More in the manual: [Cell types](https://www.onlabs.org/manual/editor/cell-types.html).
+<!--{ ty06 : rich }-->
+Next: [6. Tables and equations](06-tables-and-equations.texl) · Back to the [index](index.texl)

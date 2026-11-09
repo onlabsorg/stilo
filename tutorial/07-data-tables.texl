@@ -1,0 +1,81 @@
+<!--{ da00 : formula | hidden }-->
+<% texl.import "~/lib/tutorial/index.texl" ~> (lib -> bind "tutorial" lib.data) %>
+<!--{ da01 : formula | hidden }-->
+<% texl.import "~/lib/stilo/index.texl" ~> (lib -> bind "stilo" lib.data.stilo) %>
+<!--{ da02 : rich }-->
+# 7. Data tables
+
+A **data table** holds values that other lines compute with, as a range of
+cells does in a spreadsheet: a list of load cases, of sections, of prices.
+About six minutes.
+
+Here is one, named `sections`:
+<!--{ da03 : data }-->
+<% sections: stilo.dataframe {
+    columns: ["Section", "h (mm)", "Mass (kg/m)"],
+    rows: [
+        ["IPE 240", 240, 30.7],
+        ["IPE 300", 300, 42.2],
+        ["IPE 330", 330, 49.1]
+    ]
+} %>
+<!--{ da04 : markdown }-->
+The lines below use it by its name. The heaviest section weighs
+**<% math.max (list.enum (sections.column "Mass (kg/m)")) %> kg/m**, and the
+first row is <% list.enum (sections.row 0) %>.
+
+| You write | You get |
+|-----------|---------|
+| `sections.column "Mass (kg/m)"` | the values of a column, as a list |
+| `sections.row 0` | a row, as a list; rows count from 0 |
+| `sections.columns` | the column names, as a list |
+| `sections.rows` | all the rows, as a list of lists |
+
+`list.enum` turns a list into separate values, which `math.max` compares.
+
+Press **Enter** on the table to edit it: a **Name**, the column names in the
+first row, and one value in every other field. A value is written as a
+formula without its brackets: a number, `120`; a text, in double quotes,
+`"ULS-1"`; or a calculation, `1.35 * 100`. Press **Escape** to leave it.
+<!--{ da05 : markdown }-->
+## Your turn
+
+1. Select the empty line just above the first check below and press **d**:
+   a new data table.
+2. In **Name**, write `loads`.
+3. Write the column names `Case` and `Fx (kN)` in the first row.
+4. Fill in three rows, with **Tab** to go to the next field (Tab in the last
+   field adds a row): `"ULS-1"` and `120`, `"ULS-2"` and `1.35 * 100`,
+   `"SLS"` and `90`. A text without its quotes is outlined in red: add them.
+5. Press **Ctrl+Enter**.
+<!--{ da06 : rich }-->
+
+<!--{ da07 : formula }-->
+<% tutorial.check (list.find "Fx (kN)" loads.columns >= 0) %>
+<!--{ da08 : formula }-->
+<% tutorial.check (list.size loads.rows >= 3) %>
+<!--{ da09 : markdown }-->
+Now compute with your table. Select the empty line just above the next check,
+press **=**, and write
+`max_fx = math.max (list.enum (loads.column "Fx (kN)"))`.
+<!--{ da10 : rich }-->
+
+<!--{ da11 : formula }-->
+<% tutorial.check ((type max_fx == "Numb") & (max_fx == math.max (list.enum (loads.column "Fx (kN)")))) %>
+<!--{ da12 : markdown }-->
+The largest horizontal load is **<% max_fx ; "…" %> kN**.
+<!--{ da13 : rich }-->
+## The Stilo library
+
+A data table needs the **Stilo library**, a document of functions that comes
+with Stilo. When you write the first data table of a document, the editor adds
+a hidden line at the top that imports it. This lesson has that line already.
+To see it, open the commands (**F1**) and choose **Show or hide the hidden
+cells**; choose it again to hide it.
+
+The library is found in the *project* the document belongs to. This tutorial
+is a project; lesson 12 shows how to make your own folder one.
+
+More in the manual: [Data table cells](https://www.onlabs.org/manual/editor/cell-types.html#data-table-cells).
+<!--{ da14 : rich }-->
+Next: [8. Linking](08-linking.texl) · Back to the [index](index.texl)

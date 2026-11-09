@@ -69,6 +69,13 @@ plain `git commit`) are not covered yet; this skill covers them too.
    the coordination folder's `SUBPROJECTS.md`), no decisions. English,
    Markdown wrapped at about 80 characters.
 
+   **The tutorial.** If the changes are visible to users (editor features,
+   keys, panes, cell types, `stilo` options, file format), check that the
+   lesson in `tutorial/` that teaches them is updated in the same commit
+   (and its solution in `tests/tutorial/solutions.json` if a check
+   changed). If it is not, stop and tell the user which lesson needs to
+   follow, before committing.
+
    If nothing in the summary needs to change, commit without it. Those
    changes then stay uncovered, and the next run reads them again; that is
    harmless.

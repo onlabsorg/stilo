@@ -6,23 +6,17 @@ the order `stilo --help` shows them; a plugin system can later add its own.
 """
 
 import asyncio
-import shutil
 import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
 import pytexl
-import uvicorn
-
-from stilo.server import create_app
 
 from .errors import count_returned, find_errors, format_report, numbered_text
-from .project import LIB, LIBRARY_NAME, MANIFEST, TEXL_LIB, create_engine, manifest
-
-# The built web app, `stilo/web`: written there by `npm run build` in a
-# checkout, shipped there in the package
-WEB_DIST = Path(__file__).resolve().parents[1] / "web"
+from .project import LIB, LIBRARY_NAME, MANIFEST, create_engine, make_project
+from .tutor import tutor, tutor_arguments
+from .web import WEB_DIST, run_server
 
 
 @dataclass
@@ -94,7 +88,7 @@ def serve(args) -> int:
         print(f"stilo: {args.folder}: not a folder", file=sys.stderr)
         return 1
     print(f"Stilo: serving {args.folder.resolve()} at http://{args.host}:{args.port}/")
-    uvicorn.run(create_app(args.folder, args.web), host=args.host, port=args.port)
+    run_server(args.folder, args.host, args.port, args.web)
     return 0
 
 
@@ -111,15 +105,8 @@ def init(args) -> int:
     if (folder / MANIFEST).exists():
         print(f"stilo: {args.folder}: already a project ({MANIFEST} exists)", file=sys.stderr)
         return 1
-    library = folder / LIB / LIBRARY_NAME
     try:
-        folder.mkdir(parents=True, exist_ok=True)
-        with open(folder / MANIFEST, "x", encoding="utf-8") as file:
-            file.write(manifest(args.name or folder.name))
-        (folder / LIB).mkdir(exist_ok=True)
-        kept = library.exists()
-        if not kept:
-            shutil.copytree(TEXL_LIB, library)
+        kept = make_project(folder, args.name or folder.name)
     except OSError as e:
         print(f"stilo: {args.folder}: {e}", file=sys.stderr)
         return 1
@@ -133,4 +120,5 @@ COMMANDS = [
     Command("init", "make a folder a Stilo project, with the Stilo library", init_arguments, init),
     Command("render", "render a Texl document", render_arguments, render),
     Command("serve", "serve a folder of Texl documents with the web app", serve_arguments, serve),
+    Command("tutor", "learn Stilo: open the tutorial in the web app", tutor_arguments, tutor),
 ]

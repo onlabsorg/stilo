@@ -1,0 +1,77 @@
+<!--{ sw00 : formula | hidden }-->
+<% texl.import "~/lib/tutorial/index.texl" ~> (lib -> bind "tutorial" lib.data) %>
+<!--{ sw01 : rich }-->
+# 13. The formula language
+
+*Advanced.* Formulas are written in **Swan**, the language of Texl, the
+format of Stilo's documents. Swan has lists, namespaces and functions,
+enough to write a whole calculation. This lesson shows the three you need
+most. About eight minutes.
+<!--{ sw02 : markdown }-->
+## Lists and namespaces
+
+A **list** holds values in order, between square brackets; a **namespace**
+holds named values, between braces:
+
+- `spans = [4, 5, 6]` is a list: `spans 0` is its first item, <% spans = [4, 5, 6] %><% spans 0 %>,
+  and `list.size spans` is <% list.size spans %>.
+- `beam = {span: 6, load: 12.5}` is a namespace: `beam.span` is
+  <% beam = {span: 6, load: 12.5} %><% beam.span %>.
+
+The steel library of lesson 8 is a namespace of namespaces, and a data table
+(lesson 7) is a namespace with the members `columns`, `rows`, `column` and
+`row`.
+<!--{ sw03 : markdown }-->
+## Functions
+
+A **function** turns values into a value. It is written with an arrow: its
+parameters on the left, the result on the right. Then you call it with its
+values after its name, as you call `math.sqrt 16`:
+
+<% tutorial.tag "area = (b, h) -> b * h" %> gives `area (3, 4)`, which is
+<% area = (b, h) -> b * h %><% area (3, 4) %>.
+
+**Your turn.** On the empty line just above the check below, press **=**
+and write a function `moment` of a load `q` and a span `L`:
+`moment = (q, L) -> q * L ^ 2 / 8`.
+<!--{ sw04 : rich }-->
+
+<!--{ sw05 : formula }-->
+<% tutorial.check (moment (10, 4) == 20) %>
+<!--{ sw06 : markdown }-->
+## Conditions
+
+`condition ? a ; b` gives `a` if the condition is true, and `b` otherwise
+(lesson 4). In a function, it decides for any value you give it.
+
+**Your turn.** On the empty line just above the check below, write a
+function `verdict` that gives the text `"OK"` for a utilisation `u` up to 1,
+and `"not OK"` above it: `verdict = u -> u <= 1 ? "OK" ; "not OK"`.
+<!--{ sw07 : rich }-->
+
+<!--{ sw08 : formula }-->
+<% tutorial.check ((verdict 0.8 == "OK") & (verdict 1.2 == "not OK")) %>
+<!--{ sw09 : markdown }-->
+## A function for every item
+
+`=>` applies a function to each of several values. With `list.enum`, which
+turns a list into separate values, and square brackets around the result, it
+makes a new list from an old one.
+
+**Your turn.** On the empty line just above the check below, write
+`moments = [(list.enum spans) => (L -> moment (10, L))]`: the moments of a
+load of 10 kN/m on each span of `spans`.
+<!--{ sw10 : rich }-->
+
+<!--{ sw11 : formula }-->
+<% tutorial.check (moments == [20, 31.25, 45]) %>
+<!--{ sw12 : markdown }-->
+The moments are <% list.enum moments ; "…" %> kNm.
+
+The manual describes the whole language, with every function it has:
+[The Swan language](https://www.onlabs.org/manual/swan/index.html),
+[Functions](https://www.onlabs.org/manual/swan/functions.html),
+[Lists, text and namespaces](https://www.onlabs.org/manual/swan/collections.html)
+and the [built-in library](https://www.onlabs.org/manual/swan/builtins/index.html).
+<!--{ sw13 : rich }-->
+Next: [14. Your own libraries](14-libraries.texl) · Back to the [index](index.texl)

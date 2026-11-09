@@ -23,8 +23,9 @@ to Word and Excel users, and renders them from the command line.
 | Web app | The user interface (Lit web components, Vite): top bar, navigation pane with the folder's files and commands to manage them, the editor, right pane with commands, cell comments and errors. Light and dark theme. |
 | Editor | Inside the web app: `<texl-editor>`, a document as a stack of typed cells (rich text, the default; text, Markdown, table, formula and data table; formulas as `<% %>` tags; LaTeX equations in Markdown and tables), live rendering, cell comments, errors shown where they happen. Until 2026-10-26 the separate `texl-editor` package. |
 | Server | Python (FastAPI): serves one folder of documents and the web app, for one user. |
-| CLI    | The `stilo` command: `stilo init [folder]` makes a folder a project, with the Stilo library in it; `stilo render <file>` prints a rendered document (or writes it to a file), says how many errors it has and can explain them; `stilo serve [folder]` starts the server on a folder. |
+| CLI    | The `stilo` command: `stilo init [folder]` makes a folder a project, with the Stilo library in it; `stilo render <file>` prints a rendered document (or writes it to a file), says how many errors it has and can explain them; `stilo serve [folder]` starts the server on a folder; `stilo tutor` opens the tutorial. |
 | Stilo library | A folder of Texl documents (`texl-lib/`) that `stilo init` copies into each project, for documents to import. Its first function, `stilo.dataframe`, makes a table of data; it is what the data table cell writes. Tested on both Texl engines, the browser's and Python's, with the same cases. |
+| Tutorial | A guided tutorial for new users (`tutorial/`), Texl documents shipped in the package and served by `stilo tutor` in the web app: twelve short lessons (30–45 minutes) on the editor and the command line, from the first edit to one's own project, and two advanced ones. Many exercises check themselves and show "✓ Done"; an index shows the progress. The lessons link to the OnLabs.org manual instead of repeating it. Tested automatically, exercises included. |
 | Protocol | Plain HTTP between web app and server: GET a file, CREATE (POST), UPDATE (PUT, with an ETag so concurrent saves don't overwrite each other), QUERY a folder's tree, create a folder, move or rename a document or folder, delete a document or folder. |
 | Documentation | Developer documentation only, as plain Markdown in `docs/`, read on GitHub: architecture, setup, server, CLI, web app, editor, the protocol, the editor component and its API. No site is built. Users read the OnLabs.org manual instead. |
 
@@ -270,6 +271,16 @@ accept are not part of Stilo.
   imports the Stilo library for a data table is now added hidden.
 - 2026-11-09: **0.3.0 released**: tagged `v0.3.0` and published on PyPI as
   `stilo-cli`, with all the changes since 0.2.0 listed above.
+- 2026-11-09: **tutorial**: `stilo tutor` copies the tutorial into the user's
+  data folder (or another, with `--dir`), makes the copy a project, serves it
+  and opens its index in the browser. Later runs reopen the copy as it was
+  left; `--reset` starts from a fresh copy and moves the old one aside, never
+  deleting it; a copy made by an older Stilo is reported, with `--reset`
+  proposed, and never overwritten. Each exercise that Texl can see checks
+  itself; the others are steps to try. Every lesson, and every exercise with
+  its solution, is checked by the automatic tests, and a change visible to
+  users must now update its lesson in the same commit. New dependency:
+  `platformdirs`. Not yet released.
 
 ## Known limitations
 
@@ -297,6 +308,8 @@ accept are not part of Stilo.
   Firefox and Linux WebKit; not on Safari on a Mac.
 - Equations: in a table, a `|` inside an equation ends the table cell (write
   `\vert`). Only the editor typesets them: other outputs show the LaTeX as text.
+- Tutorial: the index counts only saved lessons; changed lessons reach an
+  existing copy only after `stilo tutor --reset`; no reset from the web app.
 - Projects: other Texl programs do not understand `~` in imports.
 - Errors: a value inside a link's address or another HTML attribute counts but
   cannot be highlighted. The failing place is marked in the Errors pane, not

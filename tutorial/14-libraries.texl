@@ -1,0 +1,57 @@
+<!--{ lb00 : formula | hidden }-->
+<% texl.import "~/lib/tutorial/index.texl" ~> (lib -> bind "tutorial" lib.data) %>
+<!--{ lb01 : rich }-->
+# 14. Your own libraries
+
+*Advanced.* A library is a document that gives names to values and
+functions for other documents to use: material properties, load factors,
+the checks of a design code. You write it once, and every document of the
+project imports it. About six minutes.
+<!--{ lb02 : rich }-->
+## Write a library
+
+1. In the navigation pane, right-click the folder `lib` and choose
+   **New folder…**. Name it `beams`.
+2. Right-click `beams` and choose **New document…**. Name it `index`.
+3. In the new document, write a title line, *Beam formulas*. Then press
+   **Alt+Enter** for a line below, press **=**, and write the function of
+   lesson 13: `moment = (q, L) -> q * L ^ 2 / 8`.
+4. Save with **Ctrl+S**, and come back here with the browser's back button.
+<!--{ lb03 : markdown }-->
+## Use it
+
+**Your turn.** On the empty line just above the check below, press **=** and
+write the import of your library:
+
+`texl.import "~/lib/beams/index.texl" ~> (lib -> bind "beams" lib.data)`
+<!--{ lb04 : rich }-->
+
+<!--{ lb05 : formula }-->
+<% tutorial.check (beams.moment (10, 4) == 20) %>
+<!--{ lb06 : markdown }-->
+With your library, a load of 12.5 kN/m on a span of 6 m gives a moment of
+**<% beams.moment (12.5, 6) ; "…" %> kNm**.
+<!--{ lb07 : rich }-->
+## How libraries work
+
+- An imported document is computed on its own: it does not see the names of
+  the document that imports it. So it gives the same values to everybody.
+- `bind "beams" lib.data` gives all the names of the library one name in
+  your document, so they never clash with yours: `beams.moment`.
+- The library is read again every time your document is computed. Change
+  it, save, and every document that imports it follows.
+- In a project, keep libraries in `lib`, one folder each, and import them
+  with `~`. To give a library to a colleague, give them its folder: they
+  copy it into their project's `lib`.
+- An address can also be a full web address, `https://…`, of a document on
+  another server that allows it.
+
+More in the manual: [Documents and imports](https://www.onlabs.org/manual/templates/documents.html)
+and [Projects and libraries](https://www.onlabs.org/manual/editor/projects.html).
+<!--{ lb08 : rich }-->
+## The end
+
+That is the whole tutorial. The [index](index.texl) shows your checks, and
+the [OnLabs.org manual](https://www.onlabs.org/manual/) has everything else.
+
+Back to the [index](index.texl)

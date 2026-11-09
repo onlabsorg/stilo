@@ -29,14 +29,15 @@ A monorepo with three parts, kept strictly modular:
 - **Server** (`src/stilo/server/`, module `stilo.server`) — Python, serves
   the documents of one folder over HTTP, and the built web app.
 - **CLI** (`src/stilo/cli/`, module `stilo.cli`) — the `stilo` command:
-  `init` a project, `render` a document, `serve` a folder. It is the only
-  Texl command line (D19).
+  `init` a project, `render` a document, `serve` a folder, `tutor` (the
+  tutorial). It is the only Texl command line (D19).
 
 Beside them, `texl-lib/` (root) is the **Stilo Texl library**: Texl
 documents, not code, that `stilo init` copies into a project's
 `lib/stilo/`; shipped in the wheel as `stilo/texl-lib` (hatch
 `force-include`), read in place in a checkout (`TEXL_LIB` in
-`src/stilo/cli/project.py`). **Projects** (S10, `docs/projects.md`): a
+`src/stilo/cli/project.py`); `tutorial/` (root, S14) is shipped and read the
+same way. **Projects** (S10, `docs/projects.md`): a
 folder with `project.texl` is a project, its *home*; in an import path a
 `~` segment stands for the home of the folder before it, resolved left to
 right, by the server on reads (a protocol rule: a `307` redirect to the real
@@ -113,10 +114,11 @@ Rules:
 for rendering, managed with `uv`. All commands at the root.
 
 ```bash
-uv sync && uv run pytest              # tests/: server/, cli/, texl_lib/, test_layout.py
+uv sync && uv run pytest              # tests/: server/, cli/, texl_lib/, tutorial/, test_layout.py
 uv run stilo serve examples           # http://127.0.0.1:8000
 uv run stilo render examples/projects/beam/beam-check.texl
 uv run stilo init path/to/project     # project.texl, lib/stilo/
+uv run stilo tutor --dir /tmp/t       # copies tutorial/ there, serves it
 uv build                              # after npm run build: dist/stilo_cli-*.whl
 ```
 
@@ -199,7 +201,17 @@ creates the GitHub release. Bump the version in `pyproject.toml`,
   `tests/texl_lib/dataframe-cases.json`, run on both engines
   (`tests/texl_lib/`, `web/test/texl-lib.test.js`). Its text must not quote its own
   import tag: tags run even in code blocks.
-- `src/stilo/cli/commands.py` — the subcommands (`init`, `render`, `serve`) as
+- `tutorial/` — the tutorial (S14, `docs/tutorial.md`): `index.texl`,
+  lessons `NN-name.texl`, `files/`, `lib/tutorial/` (the checks:
+  `tutorial.check`, `.progress`, `.tag`) and `lib/steel/`. Shipped in the
+  wheel as `stilo/tutorial`; `stilo tutor` (`src/stilo/cli/tutor.py`)
+  copies it into a working folder made a project with `make_project`, the
+  code of `stilo init`, reuses an existing copy, and moves it aside on
+  `--reset`. Tested in `tests/tutorial/` (every document renders strictly
+  or with its `expected_errors`; `solutions.json` turns every check to ✓
+  Done) and `web/test/tutorial.test.js` (every cell fits its type).
+- `src/stilo/cli/web.py` — `WEB_DIST`, `run_server` (serve and tutor).
+- `src/stilo/cli/commands.py` — the subcommands (`init`, `render`, `serve`, `tutor`) as
   `Command` entries in `COMMANDS`; `main()` in `src/stilo/cli/__init__.py`
   builds the parser from them (the `stilo` script, `python -m stilo`).
 - `src/stilo/cli/errors.py` — finds the undefined values a document returned
@@ -304,6 +316,11 @@ valid Texl document that renders without the editor (`stilo render`,
   editor API changes, update the matching pages in `docs/`, update this
   file, and add a line to `CHANGELOG.md`. Status changes go into
   `stilo.summary.md` (see above).
+- **Keep the tutorial current** (S14): a user-visible change (a key, a
+  command, a pane, a cell type, a `stilo` option) updates the lesson in
+  `tutorial/` that teaches it, in the same commit, and its solution in
+  `tests/tutorial/solutions.json` if a check changes
+  (`docs/tutorial.md`).
 - **Decisions** (OnLabs D22): a decision about Stilo's design, technology
   or architecture goes in `DECISIONS.md` as a new entry (`S<n>`, date,
   decision, reason); never rewrite old entries, supersede them. Detailed

@@ -1,0 +1,59 @@
+<!--{ te00 : formula | hidden }-->
+<% texl.import "~/lib/tutorial/index.texl" ~> (lib -> bind "tutorial" lib.data) %>
+<!--{ te01 : rich }-->
+# 6. Tables and equations
+
+Tables and equations are the two things a calculation report needs besides
+text. About five minutes.
+<!--{ te02 : markdown }-->
+A beam of span <% L = 6, q = 12.5 %>**L = <% L %> m** carries a uniform load
+**q = <% q %> kN/m**. This line names both values, `L` and `q`, for the
+lines below.
+<!--{ te03 : markdown }-->
+## Tables
+
+A Table line is edited as a grid of fields, as in Word:
+
+| Keys and buttons | What they do |
+|------------------|--------------|
+| Tab, Shift+Tab | Go to the next or previous field; Tab in the last field adds a row |
+| ↑, ↓ | Go to the field above or below |
+| **+ Row**, **+ Column** | Insert a row below, or a column to the right |
+| **− Row**, **− Column** | Delete the current row or column |
+| Align buttons | Align the current column left, centre or right |
+
+A field can hold formulas, between their brackets. To use a value elsewhere,
+name it where you compute it: <% tutorial.tag "M: q * L ^ 2 / 8" %> gives the
+value the name `M` *and* shows it.
+
+**Your turn.** Select the empty line just above the check below and press
+**Shift+T**: a new table. Write `Quantity` and `Value` in the header. In the
+row below, write `Moment`, then press **Tab** and, in the second field, press
+**Ctrl+E** and write `M: q * L ^ 2 / 8` between the brackets, then ` kNm`
+after them. Align the second column to the right and press **Ctrl+Enter**.
+<!--{ te04 : rich }-->
+
+<!--{ te05 : formula }-->
+<% tutorial.check (M == 56.25) %>
+<!--{ te06 : markdown }-->
+## Equations
+
+Equations are written in **LaTeX**, the notation of scientific papers,
+between dollar signs: `$...$` inside a sentence, `$$...$$` on lines of their
+own. A formula inside an equation shows its value:
+
+$$
+M = \frac{q L^2}{8} = <% q * L ^ 2 / 8 %>\ \text{kNm}
+$$
+
+Press **Enter** on the equation above to see how it is written, and
+**Escape** to leave it.
+
+Try it: on an empty line at the end of this lesson, in rich text, type
+`$\sigma = M / W$` or click **∑** in the toolbar. The equation is set as
+you type; click it to change it.
+
+More in the manual: [Table cells](https://www.onlabs.org/manual/editor/cell-types.html#table-cells)
+and [Equations](https://www.onlabs.org/manual/editor/writing.html#equations).
+<!--{ te07 : rich }-->
+Next: [7. Data tables](07-data-tables.texl) · Back to the [index](index.texl)

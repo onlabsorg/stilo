@@ -1,0 +1,17 @@
+# Steel sections
+
+A small library for the tutorial: a steel grade and four hot-rolled IPE
+sections. Other documents import it with `texl.import` (lesson 8). Section
+moduli W in mm³, masses in kg/m, heights h in mm.
+
+<%
+grade = {name: "S355", fy: 355},   # yield strength in N/mm²
+
+IPE = {
+    IPE240: {name: "IPE 240", h: 240, W: 324000, mass: 30.7},
+    IPE270: {name: "IPE 270", h: 270, W: 429000, mass: 36.1},
+    IPE300: {name: "IPE 300", h: 300, W: 557000, mass: 42.2},
+    IPE330: {name: "IPE 330", h: 330, W: 713000, mass: 49.1}
+}
+%>
+Grade <% grade.name %>: f<sub>y</sub> = <% grade.fy %> N/mm².

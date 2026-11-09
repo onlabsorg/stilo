@@ -14,6 +14,8 @@ from the repository's [README](../README.md).
 - [Development setup](setup.md): build, run, test and release.
 - [The server](server.md): `Storage` and `create_app()`.
 - [The CLI](cli.md): `Command` and `COMMANDS`.
+- [The tutorial](tutorial.md): `tutorial/`, the lessons `stilo tutor`
+  serves, how they check exercises and how they are tested.
 - [Projects and the Stilo library](projects.md): `project.texl`, the home
   `~`, `lib/`, `stilo init`, and `texl-lib/`.
 - [The web app](web-app.md): the shell around the editor.

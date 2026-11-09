@@ -1,0 +1,56 @@
+<!--{ er00 : formula | hidden }-->
+<% texl.import "~/lib/tutorial/index.texl" ~> (lib -> bind "tutorial" lib.data) %>
+<!--{ er01 : formula | hidden }-->
+<%
+# For the tutorial's tests: the errors this lesson has on purpose, before
+# the exercise is done.
+expected_errors = 2
+%>
+<!--{ er02 : rich }-->
+# 9. Errors
+
+A formula that cannot be computed shows **[[Undefined]]**, highlighted, and
+the rest of the document still works. This lesson has two such errors on
+purpose. You find them and fix them. About four minutes.
+<!--{ er03 : markdown }-->
+A beam of span <% L = 6, q = "12.5" %>**L = <% L %> m** carries a load of
+**q = <% q %> kN/m**.
+<!--{ er04 : markdown }-->
+The midspan moment is **<% moment: q * L ^ 2 / 8 %> kNm**, and the
+utilisation of the section is **<% u: moment / 80 %>**.
+<!--{ er05 : rich }-->
+## Find them
+
+The editor shows you where each error is:
+
+- The value is **highlighted** in its line. Point at it to read the reason.
+- The **right margin** shows a warning icon, with the number of errors on
+  that line.
+- The **warning button** in the top bar shows the total of the document.
+
+Click the warning button: the **Errors** pane opens on the right and lists
+each error, with what went wrong, the formula, and the line. Under
+**Caused by** it lists the earlier errors that led to this one: the last one
+is the origin. Fix that one, and the others follow.
+<!--{ er06 : rich }-->
+## Fix them
+
+The origin is the load: `"12.5"` is written between double quotes, so it is
+a text, and a text cannot be multiplied. Edit the line with the span and the
+load, remove the quotes around `12.5`, and press **Ctrl+Enter**. Both errors
+go away.
+<!--{ er07 : formula }-->
+<% tutorial.check (moment == 56.25) %>
+<!--{ er08 : markdown }-->
+## A misspelled name is not an error
+
+A name that is misspelled, or used before it is given, shows nothing at all:
+here is <% Moment %> a misspelled `Moment`, between "is" and "a". It is not
+listed as an error, so when a value is missing, check its name.
+
+Only a value that a formula *shows* is an error: a value that is only given
+a name, or that sits inside a list, is not counted until a formula shows it.
+
+More in the manual: [Errors](https://www.onlabs.org/manual/editor/errors.html).
+<!--{ er09 : rich }-->
+Next: [10. Organising](10-organising.texl) · Back to the [index](index.texl)

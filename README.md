@@ -21,9 +21,13 @@ Requires Python 3.11 or later. Install the `stilo` command from PyPI, with
 
 ```bash
 uv tool install stilo-cli    # or: pip install stilo-cli
+stilo tutor                  # the tutorial, in your browser
 stilo serve my-folder        # http://127.0.0.1:8000
 stilo render my-folder/report.texl
 ```
+
+`stilo tutor` opens a guided tutorial of short lessons, in your own copy:
+the best way to start.
 
 To try the sample documents, or to work on Stilo itself, use a checkout
 (Node.js 22+ builds the web app):

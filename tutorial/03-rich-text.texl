@@ -1,0 +1,57 @@
+<!--{ ri00 : formula | hidden }-->
+<% texl.import "~/lib/tutorial/index.texl" ~> (lib -> bind "tutorial" lib.data) %>
+<!--{ ri01 : rich }-->
+# 3. Rich text
+
+New lines are **rich text**: you write and format text as in Word, and bold
+is bold while you type. This lesson has no checks: Stilo cannot see
+formatting, so you try each step and look at the result. About four minutes.
+<!--{ ri02 : markdown }-->
+## The toolbar
+
+Select a line and press **Enter**: a toolbar appears above it.
+
+| Toolbar | What it does |
+|---------|--------------|
+| Style menu | Normal text, Heading 1 to 3, or Code |
+| **B**, *I*, U, S | Bold, italic, underline, strikethrough |
+| x<sub>2</sub>, x<sup>2</sup> | Subscript and superscript, as in f<sub>ck</sub> or m<sup>2</sup> |
+| Lists and quote | A bulleted list, a numbered list, an indented quote |
+| Link | A link on the selected text |
+| ƒ, ∑ | A formula (lesson 4), an equation (lesson 6) |
+
+Word's keys work too: **Ctrl+B**, **Ctrl+I**, **Ctrl+U** for bold, italic
+and underline, **Ctrl+Alt+1** to **3** for headings (**Ctrl+Alt+0** for
+normal text), **Ctrl+K** for a link, and **Tab** or **Shift+Tab** to indent
+a list item.
+<!--{ ri03 : rich }-->
+## Try it
+
+Select the empty line just below this one, press **Enter**, and:
+
+1. Type `# ` (a hash and a space) and then *My notes*: the line becomes a
+   heading. Press **Enter** for a new paragraph.
+2. Type `- ` (a dash and a space) and two items, pressing **Enter** after
+   the first: a bulleted list.
+3. Select a word and press **Ctrl+B** to make it bold.
+4. Select another word, press **Ctrl+K**, type `https://www.onlabs.org`
+   and press **Enter**: a link.
+5. Press **Ctrl+Enter** to keep it all.
+<!--{ ri04 : rich }-->
+
+<!--{ ri05 : rich }-->
+## Markdown underneath
+
+A rich text line is saved as **Markdown**, a simple way to write formatting
+with ordinary characters: `**bold**`, `# Heading`, `- item`. Select the line
+you just wrote and press **m**: you see and edit its Markdown. Press **r** to
+go back to rich text; the text does not change. Lesson 5 tells more about the
+types of lines.
+
+Rich text has no colours, fonts or alignment, as a report written to a
+standard needs none. Images show but cannot be inserted in rich text: write
+them in Markdown (lesson 8).
+
+More in the manual: [Writing text](https://www.onlabs.org/manual/editor/writing.html).
+<!--{ ri06 : rich }-->
+Next: [4. Formulas](04-formulas.texl) · Back to the [index](index.texl)

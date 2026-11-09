@@ -1,0 +1,82 @@
+<!--{ or00 : formula | hidden }-->
+<% texl.import "~/lib/tutorial/index.texl" ~> (lib -> bind "tutorial" lib.data) %>
+<!--{ or01 : rich }-->
+# 10. Organising
+
+Comments for your colleagues, hidden lines for the machinery, the text of a
+document, and its files and folders. About six minutes.
+<!--{ or02 : rich }-->
+## Comments
+
+A comment is a note on a line. It is stored in the document, inside the line
+it is about, and moves with it. The right margin shows how many comments a
+line has: the next line has one. Click the number to read it in the comments
+pane; **Alt+C** shows or hides the pane.
+
+To write a comment, edit a line and press **Shift+F2**. In rich text a small
+field opens: type your note and press **Enter**, then **Ctrl+Enter**. Start a
+comment with your name, so that others know who wrote it.
+<!--{ or03 : markdown }-->
+The span and the loads come from the client's brief.
+<!--[ Ada: rev. B of the brief, received on 2026-11-02. ]-->
+<!--{ or04 : rich }-->
+## Hidden lines
+
+Lines can be hidden, as rows in Excel: a line with intermediate steps, or one
+the reader does not need. A hidden line stays in the document and still
+computes. Select lines, open the commands (**F1**) and choose **Hide the
+selected cells**. The line numbers skip hidden lines, and a double rule shows
+where they are. **Unhide the cells in the selection** brings them back:
+select the lines above and below the double rule first.
+
+Every lesson has a hidden line at its top, which imports the small library
+that checks your exercises. **Show or hide the hidden cells** shows it,
+greyed out.
+
+## The text of a document
+
+**Alt+U** shows the text the document is saved as, read-only. Every line of
+the sheet starts there with a marker, which holds the line's name and type,
+and its comments are written inside it. Press **Alt+U** again to go back. The text is all there is: a document
+is a plain text file, which any text editor can open.
+<!--{ or05 : rich }-->
+## Files and folders
+
+The navigation pane shows the documents of the folder. Right-click a
+document, a folder or the empty area of the pane for its commands.
+
+**Your turn.**
+
+1. Right-click the empty area below the documents in the navigation pane
+   and choose **New folder…**. Name it `practice`.
+2. Right-click the folder `practice` and choose **New document…** (or press
+   **Alt+N**). Name it `notes`: the new document opens.
+3. In `notes`, write two lines. Add a comment to the first one.
+4. Hide the second one.
+5. Save with **Ctrl+S**, and come back here with the browser's back button.
+<!--{ or06 : formula }-->
+<% texl.import "practice/notes.texl" ~> (notes -> tutorial.check (type notes.source == "Text")) %>
+<!--{ or07 : formula }-->
+<% texl.import "practice/notes.texl" ~> (notes -> tutorial.check ((type notes.source == "Text") ? (text.find ("<!-" + "-[") notes.source >= 0))) %>
+<!--{ or08 : formula }-->
+<% texl.import "practice/notes.texl" ~> (notes -> tutorial.check ((type notes.source == "Text") ? (text.find "| hidden" notes.source >= 0))) %>
+<!--{ or09 : markdown }-->
+The checks read `practice/notes.texl`: they show ✓ Done once the document
+exists, has a comment, and has a hidden line.
+
+| Command | What it does |
+|---------|--------------|
+| **Rename** (F2) | Changes the name of a document or folder |
+| **Move to…** | Moves it to another folder |
+| **Duplicate** | Copies a document next to it, under a new name |
+| **Copy link** | Copies its address, for a link or an import (lesson 8) |
+| **Delete** | Moves it to a hidden `.trash` folder: nothing is erased |
+
+Links do not follow: after a rename or a move, links and imports in other
+documents that point to the old name stop working, and Stilo warns you.
+
+More in the manual: [Comments](https://www.onlabs.org/manual/editor/comments.html),
+[Hide lines](https://www.onlabs.org/manual/editor/lines.html#hide-lines) and
+[Files and folders](https://www.onlabs.org/manual/editor/files.html).
+<!--{ or10 : rich }-->
+Next: [11. The command line](11-command-line.texl) · Back to the [index](index.texl)

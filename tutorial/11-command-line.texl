@@ -1,0 +1,81 @@
+<!--{ cl00 : formula | hidden }-->
+<% texl.import "~/lib/tutorial/index.texl" ~> (lib -> bind "tutorial" lib.data) %>
+<!--{ cl01 : rich }-->
+# 11. The command line
+
+Stilo is also a command, `stilo`, which you have already used to start this
+tutorial. It renders documents without the browser: for a script, a report
+to print, or a check that a document has no errors. Here you use it on the
+lessons you have just edited. About five minutes.
+<!--{ cl02 : markdown }-->
+## Go to your copy
+
+Leave the terminal where the tutorial runs as it is, and open a second one.
+Your copy of the tutorial is in this folder:
+
+<% texl.import "~/project.texl" ~> (project -> "`" + project.data.tutorial_folder + "`") %>
+
+Go there with `cd` followed by the folder, in double quotes:
+`cd "…"`. Type `stilo --help` to see the commands, and
+`stilo render --help` for the options of one.
+<!--{ cl03 : rich }-->
+## Render a document
+
+`stilo render` prints a document with every formula replaced by its value.
+Try it on the formulas lesson, with your answers in it:
+
+```
+stilo render 04-formulas.texl
+```
+
+The lines start with their markers, which stay in the output: they are
+comments, which do not show when the output is read as Markdown or HTML. To
+write the output to a file, add `-o` and a file name, as
+`-o formulas.md`.
+<!--{ cl04 : rich }-->
+## Errors on the command line
+
+The document [report](files/report.texl), in the folder `files`, has an
+error. Render it:
+
+```
+stilo render files/report.texl
+```
+
+The floor area shows `[[Undefined]]`, and a last line says how many
+undefined values there are. Add `--debug` to learn why: the output numbers
+each error, and the report under it says where it was made (file, line and
+column), what went wrong, and what caused it.
+
+```
+stilo render files/report.texl --debug
+```
+
+With `--strict`, the command fails (exit status 1) when the document has an
+error, so a script can stop before it publishes a broken document. The output
+is still written.
+<!--{ cl05 : rich }-->
+**Your turn.**
+
+1. Open the [report](files/report.texl) in the browser, fix its error (the
+   length is a text: remove its quotes) and save with **Ctrl+S**.
+2. Render it again, strictly, into a Markdown file next to it:
+
+```
+stilo render --strict files/report.texl -o files/report.md
+```
+
+The check below reads `files/report.md` and shows ✓ Done when it exists
+and has no undefined value.
+<!--{ cl06 : formula }-->
+<% texl.import "files/report.md" ~> (report -> tutorial.check ((type report.source == "Text") ? (text.find "[[Undefined" report.source < 0))) %>
+<!--{ cl07 : rich }-->
+The command line works on the files of the folder, the same files that the
+browser edits: a document saved in the browser is ready for `stilo render`,
+and a document changed by another program shows in the browser when you open
+it again.
+
+More in the manual: [The stilo command](https://www.onlabs.org/manual/cli/index.html)
+and [stilo render](https://www.onlabs.org/manual/cli/render.html).
+<!--{ cl08 : rich }-->
+Next: [12. Your first project](12-your-first-project.texl) · Back to the [index](index.texl)

@@ -1,0 +1,62 @@
+<!--{ in00 : formula | hidden }-->
+<% texl.import "~/lib/tutorial/index.texl" ~> (lib -> bind "tutorial" lib.data) %>
+<!--{ in01 : text | hidden }-->
+<%
+# The lessons, imported to count their checks. One import per tag: a tag
+# waits for the promise it returns, and the rows below use these names.
+%><% texl.import "01-welcome.texl" ~> (d -> bind "l01" d) %>
+<% texl.import "02-cells.texl" ~> (d -> bind "l02" d) %>
+<% texl.import "03-rich-text.texl" ~> (d -> bind "l03" d) %>
+<% texl.import "04-formulas.texl" ~> (d -> bind "l04" d) %>
+<% texl.import "05-cell-types.texl" ~> (d -> bind "l05" d) %>
+<% texl.import "06-tables-and-equations.texl" ~> (d -> bind "l06" d) %>
+<% texl.import "07-data-tables.texl" ~> (d -> bind "l07" d) %>
+<% texl.import "08-linking.texl" ~> (d -> bind "l08" d) %>
+<% texl.import "09-errors.texl" ~> (d -> bind "l09" d) %>
+<% texl.import "10-organising.texl" ~> (d -> bind "l10" d) %>
+<% texl.import "11-command-line.texl" ~> (d -> bind "l11" d) %>
+<% texl.import "12-your-first-project.texl" ~> (d -> bind "l12" d) %>
+<% texl.import "13-formula-language.texl" ~> (d -> bind "l13" d) %>
+<% texl.import "14-libraries.texl" ~> (d -> bind "l14" d) %>
+<!--{ in02 : markdown }-->
+# Learn Stilo
+
+<% student = l01.data.student, ((type student == "Text") & (student != "Your name")) ? "Welcome back, " + student + "!" ; "Welcome!" %>
+This tutorial teaches Stilo by doing, in short lessons. Start with the first
+one, and follow the *Next* link at the end of each. Many lessons check your
+exercises and show **✓ Done**; the table counts them, from the lessons you
+have saved.
+<!--{ in03 : table }-->
+| #  | Lesson | Covers | Checks |
+|----|--------|--------|-------:|
+| 1  | [Welcome](01-welcome.texl) | The window, your first edit, your copy of the tutorial | <% tutorial.progress l01 %> |
+| 2  | [Cells](02-cells.texl) | Select, edit, move, insert, delete, undo, save | <% tutorial.progress l02 %> |
+| 3  | [Rich text](03-rich-text.texl) | Formatting, headings, lists, links | <% tutorial.progress l03 %> |
+| 4  | [Formulas](04-formulas.texl) | Formulas in text, names, Formula cells | <% tutorial.progress l04 %> |
+| 5  | [Cell types](05-cell-types.texl) | Rich text, Markdown, Text; the type keys and menu | <% tutorial.progress l05 %> |
+| 6  | [Tables and equations](06-tables-and-equations.texl) | Tables as grids, alignment, LaTeX equations | <% tutorial.progress l06 %> |
+| 7  | [Data tables](07-data-tables.texl) | Tables of values to compute with | <% tutorial.progress l07 %> |
+| 8  | [Linking](08-linking.texl) | Importing documents, `~`, links to files and images | <% tutorial.progress l08 %> |
+| 9  | [Errors](09-errors.texl) | Finding and fixing errors, the Errors pane | <% tutorial.progress l09 %> |
+| 10 | [Organising](10-organising.texl) | Comments, hidden lines, the text, files and folders | <% tutorial.progress l10 %> |
+| 11 | [The command line](11-command-line.texl) | `stilo render` on your own edits, `--debug`, `--strict` | <% tutorial.progress l11 %> |
+| 12 | [Your first project](12-your-first-project.texl) | `stilo init` and `stilo serve` on your own folder | <% tutorial.progress l12 %> |
+<!--{ in04 : markdown }-->
+## Advanced lessons
+
+For when you want more, after the lessons above.
+<!--{ in05 : table }-->
+| #  | Lesson | Covers | Checks |
+|----|--------|--------|-------:|
+| 13 | [The formula language](13-formula-language.texl) | Lists, namespaces, functions, conditions | <% tutorial.progress l13 %> |
+| 14 | [Your own libraries](14-libraries.texl) | Writing a library and importing it | <% tutorial.progress l14 %> |
+<!--{ in06 : rich }-->
+## About this tutorial
+
+These documents are your own copy of the tutorial, made by `stilo tutor`:
+change them as you like, and they open as you left them next time. To start
+again from fresh lessons, stop Stilo with **Ctrl+C** in its terminal and run
+`stilo tutor --reset`; your old copy is moved aside, never deleted.
+
+The [OnLabs.org manual](https://www.onlabs.org/manual/) is the reference for
+everything in Stilo; the lessons link to its pages.

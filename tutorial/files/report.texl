@@ -1,0 +1,15 @@
+<!--{ rp00 : formula | hidden }-->
+<%
+# For the tutorial's tests: the errors this document has on purpose, before
+# the exercise of lesson 11 is done.
+expected_errors = 1
+%>
+<!--{ rp01 : markdown }-->
+# Floor report
+
+A sample document for lesson 11 of the tutorial, with one error on purpose.
+<!--{ rp02 : markdown }-->
+The room is <% width = 3.5, length = "4" %><% width %> m wide and
+<% length %> m long.
+<!--{ rp03 : markdown }-->
+Its floor area is <% width * length %> m².

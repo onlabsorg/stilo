@@ -1,0 +1,64 @@
+<!--{ li00 : formula | hidden }-->
+<% texl.import "~/lib/tutorial/index.texl" ~> (lib -> bind "tutorial" lib.data) %>
+<!--{ li01 : rich }-->
+# 8. Linking
+
+A document can use the values of another one: a library of materials, the
+loads from a colleague's calculation, the rates of a price list. When the
+other document changes, yours follows. A document can also link to other
+documents, images and files. About five minutes.
+<!--{ li02 : markdown }-->
+## Import a document
+
+This tutorial has a small library of steel sections,
+[sections](lib/steel/sections.texl), in the folder `lib/steel`. Open it,
+look at how it gives its values names, and come back with the browser's back
+button.
+
+A formula imports a document with `texl.import`, and gives all the names of
+that document one name of its own with `bind`.
+<!--{ li03 : markdown }-->
+**Your turn.** Select the empty line just above the check below, press **=**
+for a Formula cell, and write:
+
+`texl.import "~/lib/steel/sections.texl" ~> (lib -> bind "steel" lib.data)`
+
+then press **Ctrl+Enter**. This reads the library and names its values
+`steel`: its section IPE 300 is then `steel.IPE.IPE300`. In a project, as
+this tutorial is, `~` stands for the project folder, so the same address
+works from any folder of it.
+<!--{ li04 : rich }-->
+
+<!--{ li05 : formula }-->
+<% tutorial.check (steel.IPE.IPE300.mass == 42.2) %>
+<!--{ li06 : markdown }-->
+Then this line uses the library: an **<% steel.IPE.IPE300.name ; "IPE 300" %>** weighs
+**<% steel.IPE.IPE300.mass ; "…" %> kg/m**, in steel <% steel.grade.name ; "…" %>.
+
+Now open the library again, change the mass of the IPE 300 to `42.5`, save
+with **Ctrl+S**, and come back: this line shows the new mass. Put it back to
+`42.2` afterwards.
+
+An address can also be relative to the document, as `lib/steel/sections.texl`
+from here, or `../steel/sections.texl` from a document in another folder of
+`lib`. In the navigation pane, right-click a document and choose
+**Copy link** to get its address from the open document.
+<!--{ li07 : markdown }-->
+## Links to read
+
+A Markdown link, `[text](address)`, does not import anything: a click opens
+what it points to. A link to a document opens it in the editor, like this one
+to the [index](index.texl). A link to another file opens it in a new tab,
+like this [drawing of the beam](files/beam-drawing.pdf), a PDF.
+
+An image is written as a link with `!` in front, as
+`![A beam](files/beam.svg)`:
+
+![A simply supported beam under a uniform load](files/beam.svg)
+
+Try it: on an empty line at the end of this lesson, press **m** for
+Markdown and write a link to `files/beam-drawing.pdf`.
+
+More in the manual: [Linking documents](https://www.onlabs.org/manual/editor/linking.html).
+<!--{ li08 : rich }-->
+Next: [9. Errors](09-errors.texl) · Back to the [index](index.texl)

@@ -1,0 +1,72 @@
+<!--{ pr00 : formula | hidden }-->
+<% texl.import "~/lib/tutorial/index.texl" ~> (lib -> bind "tutorial" lib.data) %>
+<!--{ pr01 : rich }-->
+# 12. Your first project
+
+The last lesson of the core path: a folder of your own, for your own
+documents. This lesson has no checks, since your project is outside the
+tutorial. About five minutes.
+<!--{ pr02 : rich }-->
+## Make a project
+
+A **project** is a folder of documents that belong together, such as the
+calculations for one structure, with the libraries they use. Everything it
+needs is inside its folder, so it works as a whole wherever you copy it: to
+a colleague, to a server, into a backup.
+
+In the second terminal, make one, for example in a folder `first-project`
+of your home folder:
+
+```
+cd ~
+stilo init first-project
+```
+
+`stilo init` creates the folder if needed, writes `project.texl`, which marks
+it as a project, and copies the Stilo library into `lib/stilo`, which data
+tables need (lesson 7). On Windows, write the folder as you usually do, as
+`stilo init C:\Users\you\first-project`.
+<!--{ pr03 : rich }-->
+## Serve it
+
+`stilo serve` opens a folder in the editor, as `stilo tutor` opens this
+tutorial. The tutorial already uses the port 8000, so give your project
+another one:
+
+```
+stilo serve first-project --port 8001
+```
+
+Open `http://127.0.0.1:8001/` in your browser, press **Alt+N** for a new
+document, and write. Everything from the lessons works there. Press **Ctrl+C**
+in the terminal to stop it.
+
+Next time, stop the tutorial first and run `stilo serve first-project`,
+which uses the port 8000.
+<!--{ pr04 : rich }-->
+## Libraries
+
+In an import, `~` stands for the project folder, so every document of the
+project imports the Stilo library as `~/lib/stilo/index.texl`, however deep
+in its folders it is. Your own libraries go in `lib` too: copy the folder
+`lib/steel` of this tutorial into your project, and every document of it
+can import `~/lib/steel/sections.texl`, as in lesson 8.
+
+## Serving to others
+
+`stilo serve` has no accounts and no passwords: anybody who can reach it can
+change every document of the folder. By default it accepts connections from
+your own computer only. Keep it that way, unless you put your own access
+control in front of it.
+
+More in the manual: [Projects and libraries](https://www.onlabs.org/manual/editor/projects.html),
+[stilo init](https://www.onlabs.org/manual/cli/init.html) and
+[stilo serve](https://www.onlabs.org/manual/cli/serve.html).
+<!--{ pr05 : rich }-->
+## Well done
+
+You have finished the core path. The [index](index.texl) shows your checks.
+Two advanced lessons follow, for when you want more: the language of the
+formulas, and your own libraries.
+
+Next: [13. The formula language](13-formula-language.texl) · Back to the [index](index.texl)

@@ -122,7 +122,8 @@ project: writes `project.texl`, binding `project_name` (`--name`, default
 the folder's name) and `stilo_version` (the installed package's version),
 creates `lib/`, and copies `TEXL_LIB` into `lib/stilo/`. Returns 1 if
 `project.texl` already exists. An existing `lib/stilo/` is left as it is.
-See [Projects and the Stilo library](projects.md).
+The work is done by `make_project(folder, name)` in `project.py`, which
+`stilo tutor` shares. See [Projects and the Stilo library](projects.md).
 
 ## `create_engine`
 
@@ -145,12 +146,41 @@ def serve(args) -> int
 ```
 
 Runs `create_app(args.folder, args.web)` from the server with uvicorn on
-`args.host` and `args.port`. Returns 1 if `args.folder` is not a folder.
+`args.host` and `args.port`, through `run_server` (`web.py`, shared with
+`tutor`). Returns 1 if `args.folder` is not a folder.
 
 The default for `--web` is `WEB_DIST`, the folder `stilo/web` of the
 package: the build of the web app, in a checkout as in an installed package
 (see [Development setup](setup.md#the-package-stilo)). The server never
 looks for the web app itself: the CLI hands it over to `create_app()`.
+
+## `tutor`
+
+```python
+def tutor(args) -> int
+```
+
+In `tutor.py` (DECISIONS.md S14). The tutorial's source is `tutorial/` at
+the root of the checkout, shipped in the wheel as `stilo/tutorial`
+(`TUTORIAL`, found as `TEXL_LIB` is). `prepare(folder, reset)` makes sure
+the working folder (`--dir`, default `default_folder()`:
+`platformdirs.user_data_path("stilo")/tutorial`) holds a copy:
+
+- missing or empty: `create_copy` copies `TUTORIAL`, runs `make_project`
+  (as `stilo init`, name "Stilo tutorial") and appends
+  `tutorial_folder = "<path>"` to `project.texl`. That value marks a copy
+  (`is_copy`), and lesson 1 and 11 show it;
+- a copy: reused. If its `stilo_version` is older than the installed one
+  (`is_older`, numeric parts only), a message proposes `--reset`;
+- anything else (a non-empty folder that is not a copy, a file): refused,
+  status 1, also with `--reset`.
+
+With `--reset`, an existing copy is first renamed `<name>-old-<date-time>`
+next to it (`move_aside`); nothing is deleted. Then `run_server` serves the
+folder on 127.0.0.1:`--port` and, unless `--no-browser`, opens
+`index.texl` in the browser once the server has started.
+
+How the lessons are written and tested: [The tutorial](tutorial.md).
 
 ## Tests
 
@@ -159,7 +189,9 @@ looks for the web app itself: the CLI hands it over to `create_app()`.
 `tests/cli/test_project.py` covers `stilo init` and `~` in `render`, with
 `Path.home()` moved into a temporary folder.
 `tests/cli/test_errors.py` covers the report of undefined values, on documents
-it writes to a temporary folder.
+it writes to a temporary folder. `tests/cli/test_tutor.py` covers `stilo
+tutor`: copy, reuse, reset, refusals, the version check (with `run_server`
+replaced), and the real command serving the index in a subprocess.
 
 ```sh
 uv run pytest tests/cli

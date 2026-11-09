@@ -1,0 +1,36 @@
+# The tutorial library
+
+The functions the lessons use to check your exercises and count your
+progress. A lesson imports this document, on a hidden line at its top, and
+binds its names as `tutorial`.
+
+- `tutorial.check ok` shows "✓ Done" if `ok` is true, and "○ Not yet"
+  otherwise, also when `ok` cannot be computed yet.
+- `tutorial.progress lesson` counts the checks of an imported lesson: how
+  many show "✓ Done", out of how many.
+- `tutorial.tag code` writes a formula as an example, between its brackets,
+  without running it.
+
+<%
+DONE = "✓ Done",
+NOT_YET = "○ Not yet",
+
+check = ok -> ok ? DONE ; NOT_YET,
+
+# How many tags of an imported document showed `value`.
+count = (value, doc) -> list.size [(list.enum doc.tags) => (t -> (t.value == value) ? 1)],
+
+progress = doc -> (
+    done = count (DONE, doc),
+    total = done + count (NOT_YET, doc),
+    (total == 0) ? "try it" ;
+    (done == total) ? "✓ " + text.from done + " of " + text.from total ;
+    text.from done + " of " + text.from total
+),
+
+# The brackets of a formula cannot be written as text in a document: they
+# would start one. These produce them.
+OPEN = "<" + "%",
+CLOSE = "%" + ">",
+tag = code -> "`" + OPEN + " " + code + " " + CLOSE + "`"
+%>

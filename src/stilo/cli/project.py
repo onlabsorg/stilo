@@ -1,5 +1,5 @@
 """Projects in the CLI (DECISIONS.md S10): the engine that resolves `~` in
-file paths, and what `stilo init` writes.
+file paths, and what `stilo init` (and `stilo tutor`, S14) writes.
 
 The rule itself is in `stilo.server.home`, shared with the server.
 """
@@ -7,6 +7,7 @@ The rule itself is in `stilo.server.home`, shared with the server.
 from __future__ import annotations
 
 import re
+import shutil
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
@@ -24,6 +25,22 @@ TEXL_LIB = _INSTALLED_LIB if _INSTALLED_LIB.is_dir() else PACKAGE.parents[1] / "
 
 LIB = "lib"
 LIBRARY_NAME = "stilo"
+
+
+def make_project(folder: Path, name: str) -> bool:
+    """Makes `folder` a project: creates it if missing, writes `project.texl`
+    (never over an existing one: `FileExistsError`), creates `lib/` and
+    copies the bundled library into `lib/stilo/`. Returns whether a
+    `lib/stilo/` was already there, which is then left as it is."""
+    library = folder / LIB / LIBRARY_NAME
+    folder.mkdir(parents=True, exist_ok=True)
+    with open(folder / MANIFEST, "x", encoding="utf-8") as file:
+        file.write(manifest(name))
+    (folder / LIB).mkdir(exist_ok=True)
+    kept = library.exists()
+    if not kept:
+        shutil.copytree(TEXL_LIB, library)
+    return kept
 
 
 def stilo_version() -> str:
@@ -68,10 +85,15 @@ def create_engine() -> pytexl.Engine:
     return engine
 
 
+def swan_text(value: str) -> str:
+    """`value` made safe for a Swan text literal in a tag: Swan strings have
+    no escapes, so it loses any `"` and `%>`."""
+    return re.sub(r'"|%>', "", value).strip()
+
+
 def manifest(name: str) -> str:
-    """The text of a new `project.texl`. Swan strings have no escapes, so
-    the name loses any `"` and `%>`."""
-    name = re.sub(r'"|%>', "", name).strip() or "project"
+    """The text of a new `project.texl`."""
+    name = swan_text(name) or "project"
     return f"""# {name}
 
 This folder is a Stilo project. This file marks its home folder: in an
