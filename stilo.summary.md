@@ -268,6 +268,8 @@ accept are not part of Stilo.
   the errors or comments pane shows them. File format: the cell's marker ends
   with `| hidden`; other Texl programs read it as a comment. The line that
   imports the Stilo library for a data table is now added hidden.
+- 2026-11-09: **0.3.0 released**: tagged `v0.3.0` and published on PyPI as
+  `stilo-cli`, with all the changes since 0.2.0 listed above.
 
 ## Known limitations
 
