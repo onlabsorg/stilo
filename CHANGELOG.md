@@ -6,6 +6,8 @@ change the interfaces.
 
 ## Unreleased
 
+## 0.3.0 — 2026-11-09
+
 - **Hidden cells**, as hidden rows in Excel. "Hide the selected cells" in the
   commands pane hides lines: they stay in the document and still compute, but
   are out of sight; the line numbers skip them and a double rule shows where
