@@ -1,4 +1,4 @@
-<!--{ imp6 : formula }-->
+<!--{ imp6 : formula | hidden }-->
 <% texl.import "~/lib/stilo/index.texl" ~> (lib -> bind "stilo" lib.data.stilo) %>
 <!--{ bek4 : markdown }-->
 # Beam check

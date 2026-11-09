@@ -68,6 +68,7 @@ count). It owns the document: set it with `value`, read it back from `value`.
 | `rendered`| —          | `Promise<void>`  | resolved | The current rendering pass. Await it after setting `value` (or after a change) to read the rendered outputs. Read-only by convention. |
 | `errors`  | —          | `DocumentError[]` | `[]`   | The errors of the document, as of the last rendering (see [Errors](#errors)). Read-only. |
 | `editing` | —          | `boolean`        | `false` | Whether a cell is in edit mode. Its edit is not in `value` until committed (the `commit` command). Read-only. |
+| `showHidden` | —       | `boolean`        | `false` | Whether hidden cells (`| hidden` in their marker) are shown, greyed out, instead of out of sight. A view setting, not saved; the `show-hidden` command toggles it. Read-only. |
 
 The element sets `tabindex="0"` on itself if it has none, so it can take
 focus; call `editor.focus()` to give it the keyboard.
@@ -81,7 +82,7 @@ selected line in view.
 | Method | Returns | Description |
 |--------|---------|-------------|
 | `runCommand(name)` | `Promise<boolean>` | Runs an editor command by name: the same action as its key (see [Commands](#commands)). Resolves to `true` if the command ran, `false` if it does not apply now. Rejects for an unknown name. |
-| `select(line, extend = false)` | — | Selects line `line` (from 1), as a click on it does, and scrolls it into view; with `extend`, selects the lines from the anchor to it, as Shift+click does. The line is kept within the sheet. Closes the type menu; does not leave edit mode or take the focus. Fires `selection-change` if the line changed. |
+| `select(line, extend = false)` | — | Selects line `line` (from 1), as a click on it does, and scrolls it into view; with `extend`, selects the lines from the anchor to it, as Shift+click does. The line is kept within the sheet. Closes the type menu; does not leave edit mode or take the focus. Fires `selection-change` if the line changed. A hidden line is selected too, and the hidden cells are shown (`showHidden`). |
 | `commands` (getter) | `string[]` | The names `runCommand` takes, including `make-<type>` for every registered cell type. |
 
 ### Commands
@@ -103,6 +104,9 @@ offer them in its own menus and toolbars without faking key presses.
 | `paste` | Mod+V | Replace the selected cells with the clipboard's | the browser refuses the clipboard |
 | `undo`, `redo` | Mod+Z; Mod+Shift+Z, Mod+Y | Undo or redo the last change to the cells | nothing to undo or redo |
 | `cell-type` | Mod+/ | Open the type menu on the selected line, or close it | — |
+| `hide` | — | Hide the selected cells (`| hidden` in their markers); the selection moves to the next line in sight | no selected cell to hide (lines below the document are left out) |
+| `unhide` | — | Unhide the hidden cells inside the selection: select the lines around them | no hidden cell in the selection |
+| `show-hidden` | — | Show the hidden cells, greyed out, or put them out of sight again | — |
 | `comments` | Shift+F2 | Fire `comments-click` for the selected line | — |
 | `errors` | — | Fire `error-click` for the selected line, with its first error | — |
 | `make-<type>` | the type's `key`, if any | Change the selected line to `<type>` and edit it, as the type keys do | the type refuses the line's source: the line shows why ("Needs a table") |

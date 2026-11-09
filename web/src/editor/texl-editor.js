@@ -124,6 +124,13 @@ function isMod(e) {
  * 1) and the error (`error`). The errors of the document are in `errors`;
  * `errors-change` is fired after every rendering, with the same list in
  * `detail.errors`. Showing them is up to the page.
+ * A cell whose marker says `| hidden` is out of sight, as a hidden row in
+ * Excel: it keeps its line number and still renders, the numbers skip it,
+ * and a double rule above the next line shows where it is. The arrow keys
+ * skip it. The commands `hide` and `unhide` hide the selected cells and
+ * unhide the hidden ones inside the selection; `show-hidden` shows them,
+ * greyed out, or not (`showHidden`, not saved). Selecting a hidden line
+ * with `select` shows them.
  * When another line is selected, the editor fires `selection-change`, whose
  * `detail` has the selected line number (`line`, from 1).
  *
@@ -157,6 +164,7 @@ export class TexlEditor extends LitElement {
         _menu: { state: true },
         _menuItem: { state: true },
         _notice: { state: true },
+        _showHidden: { state: true },
     };
 
     static styles = css`
@@ -179,6 +187,18 @@ export class TexlEditor extends LitElement {
             box-sizing: border-box;
             min-width: 0;
             border-bottom: 1px solid var(--texl-line, #e4e6ea);
+        }
+        /* Hidden lines are out of sight, as hidden rows in Excel: a double
+           rule above the next line shows where they are */
+        .sheet > .hidden {
+            /* Over the margins' own display */
+            display: none !important;
+        }
+        .after-hidden {
+            border-top: 3px double var(--texl-line-number, #c4c8cf);
+        }
+        .shown-hidden {
+            opacity: 0.5;
         }
         /* The type icon on the left, the line number on the right */
         .margin.left {
@@ -398,6 +418,8 @@ export class TexlEditor extends LitElement {
         this._notice = null;
         /** Whether the last press was in the cell being edited. */
         this._pressedInEdit = false;
+        /** Whether hidden cells are shown (greyed out): a view setting, not saved. */
+        this._showHidden = false;
         /** Closes the menu on a press outside it and its icon. */
         this._onPointerDown = (e) => {
             this._notice = null;
@@ -496,7 +518,7 @@ export class TexlEditor extends LitElement {
         const step = { ArrowUp: -1, ArrowDown: 1 }[e.key];
         let command;
         if (step && e.altKey && !hasModifier(e, "altKey")) command = step < 0 ? "move-up" : "move-down";
-        else if (step && !hasModifier(e, "shiftKey")) this._select(this._selected + step, e.shiftKey);
+        else if (step && !hasModifier(e, "shiftKey")) this._select(this._visibleLine(this._selected, step), e.shiftKey);
         else if (e.key === "F2" && e.shiftKey && !hasModifier(e, "shiftKey")) command = "comments";
         else if (e.key === "Enter" && e.altKey && !hasModifier(e, "altKey", "shiftKey"))
             command = e.shiftKey ? "insert-above" : "insert-below";
@@ -560,6 +582,13 @@ export class TexlEditor extends LitElement {
         this._notice = null;
         this._closeMenu();
         this._select(line - 1, extend);
+        // A hidden line is shown to be selected (e.g. from the errors pane)
+        if (this._isHidden(this._selected)) this._showHidden = true;
+    }
+
+    /** Whether hidden cells are shown, greyed out (`show-hidden` toggles it). */
+    get showHidden() {
+        return this._showHidden;
     }
 
     /**
@@ -586,6 +615,12 @@ export class TexlEditor extends LitElement {
             undo: () => this._undo("undo"),
             redo: () => this._undo("redo"),
             "cell-type": () => this._openMenu(this._selected),
+            hide: () => this._hideCells(true),
+            unhide: () => this._hideCells(false),
+            "show-hidden": () => {
+                this._showHidden = !this._showHidden;
+                if (this._isHidden(this._selected)) this._selectVisible();
+            },
             comments: () =>
                 this._onCommentsClick(this._selected, cellComments((this._cells[this._selected] ?? EMPTY_LINE).texl)),
             errors: () => this._onErrorClick(this._selected, this._errorPlaces.find(({ line }) => line === this._selected + 1)),
@@ -831,6 +866,45 @@ export class TexlEditor extends LitElement {
         this._select(index);
     }
 
+    /** Whether line `index` is out of sight: its cell is hidden and hidden cells are not shown. */
+    _isHidden(index) {
+        return !this._showHidden && Boolean(this._cells[index]?.hidden);
+    }
+
+    /** The first line from `from` in the direction of `step` that is in sight, or `from` if none. */
+    _visibleLine(from, step) {
+        for (let i = from + step; i >= 0 && i < this._rowCount(); i += step) if (!this._isHidden(i)) return i;
+        return from;
+    }
+
+    /** Selects the line in sight nearest below the selection, or above it if none. */
+    _selectVisible() {
+        const [first, last] = this._range();
+        const below = this._visibleLine(last, 1);
+        this._select(below !== last ? below : this._visibleLine(first, -1));
+    }
+
+    /**
+     * Hides (`hidden` true) or unhides the selected cells: a flag in their
+     * markers. Unhiding a selection reveals the hidden cells inside it, as in
+     * Excel: select the lines around them. Lines below the document are left
+     * out. False if nothing changes.
+     */
+    _hideCells(hidden) {
+        const [first, last] = this._range();
+        const cells = [...this._cells];
+        let changed = false;
+        for (let i = first; i <= Math.min(last, cells.length - 1); i++) {
+            if (Boolean(cells[i].hidden) === hidden) continue;
+            // A hidden cell needs a marker to say so
+            const { marker, hidden: _, ...cell } = cells[i];
+            cells[i] = hidden ? { ...cell, hidden } : marker === false ? { ...cell, marker } : cell;
+            changed = true;
+        }
+        if (!changed || !this._setCells(cells)) return false;
+        if (this._isHidden(this._selected)) this._selectVisible();
+    }
+
     /** Moves the selected cells one line up (`step` -1) or down (1). */
     _moveCells(step) {
         const [first, last] = this._range();
@@ -928,7 +1002,7 @@ export class TexlEditor extends LitElement {
         // Only the first cell may go without marker; the others need one
         // and every cell with a marker needs a name
         this._cells = nameCells(
-            cells.map(({ marker, ...cell }, i) => (i === 0 && marker === false ? { ...cell, marker } : cell)),
+            cells.map(({ marker, ...cell }, i) => (i === 0 && marker === false && !cell.hidden ? { ...cell, marker } : cell)),
         );
         this._checkNames();
         // Lines added at the top move the selection down with its cells
@@ -957,7 +1031,7 @@ export class TexlEditor extends LitElement {
             const requires = cellClass(type)?.requires;
             if (!requires || written(cells, type) <= written(this._cells, type)) continue;
             if (cells.some((cell) => cell.texl.includes(requires.url))) continue;
-            cells = [{ type: "formula", texl: requires.source + "\n" }, ...cells];
+            cells = [{ type: "formula", texl: requires.source + "\n", hidden: true }, ...cells];
             added++;
         }
         return [cells, added];
@@ -1123,8 +1197,18 @@ export class TexlEditor extends LitElement {
         const rows = Array.from({ length: this._rowCount() }, (_, i) => {
             const cell = this._cells[i] ?? EMPTY_LINE;
             const tag = unsafeStatic(cellTagName(cell.type));
-            const classes = [i >= first && i <= last ? "selected" : "", i >= this._cells.length ? "empty" : ""].join(" ");
-            return html`<div class="margin left ${classes}" part="left-margin" @click=${(e) => this._select(i, e.shiftKey)}>
+            const rowClasses = [
+                this._isHidden(i) ? "hidden" : "",
+                cell.hidden && this._showHidden ? "shown-hidden" : "",
+                i > 0 && this._isHidden(i - 1) && !this._isHidden(i) ? "after-hidden" : "",
+            ].join(" ");
+            const classes = [i >= first && i <= last ? "selected" : "", i >= this._cells.length ? "empty" : "", rowClasses].join(" ");
+            return html`<div
+                    class="margin left ${classes}"
+                    part="left-margin"
+                    title=${rowClasses.includes("after-hidden") ? "Hidden lines above: select the lines around them and unhide them" : ""}
+                    @click=${(e) => this._select(i, e.shiftKey)}
+                >
                     ${this._renderTypeButton(i, cell.type)}<span class="line-number">${i + 1}</span>
                     ${this._notice?.index === i
                         ? html`<div class="notice" role="alert">${this._notice.text}</div>`
@@ -1132,6 +1216,7 @@ export class TexlEditor extends LitElement {
                 </div>
                 <${tag}
                 data-index=${i}
+                class=${rowClasses}
                 .texl=${cell.texl}
                 .output=${this._outputs[i] ?? ""}
                 .tagOutputs=${this._tagOutputs?.[i] ?? NO_TAG_OUTPUTS}
@@ -1144,7 +1229,7 @@ export class TexlEditor extends LitElement {
                 @cell-change=${(e) => this._onCellChange(i, e.detail.texl)}
                 @cell-exit=${() => this._onCellExit()}
             ></${tag}>
-                <div class="margin right" part="right-margin">
+                <div class="margin right ${rowClasses}" part="right-margin">
                     ${this._renderErrorCount(i)}${this._renderCommentCount(i, cellComments(cell.texl))}
                 </div>`;
         });

@@ -231,3 +231,19 @@ refuse it. The import is a plain cell so the document still renders in
 is added once, so a user who removes it is not overruled at every edit.
 This settles the import cell that S10 left open; the "add-in" view of
 libraries stays open.
+
+## S13 — 2026-11-09 — Hidden cells
+A cell marker may carry options after the type, each after a bar; the first
+is `hidden`: `<!--{ name : type | hidden }-->`. A hidden cell is out of
+sight in the editor, as a hidden row in Excel: it keeps its line number and
+still renders in its place, the line numbers skip it, and a double rule
+shows where hidden lines are. Hide, Unhide (the hidden cells inside the
+selection) and "Show hidden" (a view setting, not saved) are commands. The
+import of the Stilo library that the editor adds for a data table (S12) is
+added hidden. Unknown options are kept as written.
+*Reason:* some cells are machinery a reader does not need to see, such as
+an import; hiding them keeps the document readable without changing what it
+computes. Hidden rows are what Excel users know. The option lives in the
+marker, which other Texl hosts read as a comment, so the file still renders
+anywhere; and a bar after the type leaves room for further options.
+

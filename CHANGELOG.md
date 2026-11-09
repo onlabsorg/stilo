@@ -6,6 +6,16 @@ change the interfaces.
 
 ## Unreleased
 
+- **Hidden cells**, as hidden rows in Excel. "Hide the selected cells" in the
+  commands pane hides lines: they stay in the document and still compute, but
+  are out of sight; the line numbers skip them and a double rule shows where
+  they are. To bring them back, select the lines around them and choose
+  "Unhide the cells in the selection", or show them all, greyed out, with
+  "Show or hide the hidden cells". The arrow keys skip hidden lines; going to
+  a hidden line from the errors or comments pane shows the hidden cells. File
+  format: a hidden cell's marker ends with `| hidden`, as in
+  `<!--{ bek4 : formula | hidden }-->`. The line that imports the Stilo
+  library for a data table is now added hidden.
 - **Data table cell** (key `d`, or "Data table" in the type menu): a table of
   values that other cells can compute with. Give it a name (optional), the
   column names, and a value in each field, written as a formula: `120`,

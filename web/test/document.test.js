@@ -31,6 +31,31 @@ describe("parseMarker", () => {
     });
 });
 
+describe("marker options", () => {
+    it("reads hidden, and keeps other options", () => {
+        expect(parseMarker(" dkl6 : formula | hidden ")).to.deep.equal({ name: "dkl6", type: "formula", hidden: true });
+        expect(parseMarker(" dkl6 : table | wide | hidden ")).to.deep.equal({
+            name: "dkl6",
+            type: "table",
+            hidden: true,
+            options: ["wide"],
+        });
+    });
+
+    it("writes them back", () => {
+        expect(formatMarker({ name: "dkl6", type: "formula", hidden: true })).to.equal("<!--{ dkl6 : formula | hidden }-->");
+        expect(formatMarker({ type: "table", options: ["wide"] })).to.equal("<!--{ table | wide }-->");
+    });
+
+    it("round-trips a document with a hidden cell", () => {
+        const source = "<!--{ imp1 : formula | hidden }-->\n<% x = 1 %>\n<!--{ txt2 : text }-->\nx = <% x %>\n";
+        const cells = parseDocument(source);
+        expect(cells[0].hidden).to.be.true;
+        expect(cells[1].hidden).to.be.undefined;
+        expect(serializeDocument(cells)).to.equal(source);
+    });
+});
+
 describe("formatMarker", () => {
     it("writes the name and the type", () => {
         expect(formatMarker({ name: "dkl6", type: "markdown" })).to.equal("<!--{ dkl6 : markdown }-->");

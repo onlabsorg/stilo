@@ -216,6 +216,21 @@ line, an HTML comment that the editor recognises:
   in Markdown/HTML output, visible in other output formats.
 - Older markers, `<!--% type %-->` (or `<!--% name | type %-->`), open
   too: they are saved in the new form with a new name.
+- **Marker options** follow the type, each after a bar:
+  `<!--{ bek4 : formula | hidden }-->`. `hidden` is the first (2026-11-09,
+  S13); options the editor does not know are kept as written.
+- **Hidden cells** (2026-11-09, S13), as hidden rows in Excel: a hidden
+  cell is out of sight, but keeps its line number and still renders in
+  its place, so its names work below it. The line numbers skip it (1, 3,
+  4) and a double rule above the next line shows where hidden lines are.
+  Commands (in the commands pane, no keys: Excel's Ctrl+9 switches browser
+  tabs): Hide hides the selected cells; Unhide reveals the hidden cells
+  inside the selection, so the user selects the lines around them; "Show
+  hidden" switches them into sight, greyed out, a view setting that is not
+  saved. The arrow keys skip hidden lines; selecting one from outside (the
+  errors pane, a comment) shows the hidden cells. Hiding a first cell
+  without marker gives it one. The import of the Stilo library that the
+  editor adds for a data table is hidden.
 - **(open)** More marker options (e.g. `<!--{ bek4 : table | header=1 }-->`).
 
 ## Rendering
@@ -439,8 +454,8 @@ this section keeps the outline.
   value. A source of another shape (edited by hand: comments inside the
   tag, other members) is edited as text. **The import:** when a data
   table is first written with content and no cell mentions
-  `~/lib/stilo/index.texl`, the editor adds a formula cell with the import
-  at the top (S12).
+  `~/lib/stilo/index.texl`, the editor adds a hidden formula cell with the
+  import at the top (S12, S13).
 - **Shape rule** for changing type (decided 2026-10-30, O2 + O3 below). A
   structured type accepts only sources of a certain shape: `table` a
   Markdown pipe table, `formula` one tag; `text` and `markdown` accept any

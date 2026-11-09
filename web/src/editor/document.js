@@ -4,6 +4,9 @@
 //
 //     <!--{ name : type }-->
 //
+// optionally with options after a bar: `<!--{ name : type | hidden }-->`
+// hides the cell in the editor (it still renders, in its place).
+//
 // followed by the cell body: the Texl source the cell produced, up to the
 // next marker line. Text before the first marker is a cell without marker
 // (type "text"), so a plain Texl file opens as a single text cell.
@@ -31,28 +34,40 @@ const TAG_CLOSE = "%>";
  * @property {string} texl - The Texl source of the cell body.
  * @property {string} [name] - The cell name, e.g. "bak7".
  * @property {boolean} [marker] - False for the leading cell without marker.
+ * @property {boolean} [hidden] - True if the editor hides the cell
+ *   (`| hidden` in the marker). Its source still renders.
+ * @property {string[]} [options] - Other options of the marker, kept as
+ *   written.
  */
 
 /**
  * Parses the text of a marker (between `<!--{` and `}-->`): a name and a
- * type, separated by a colon. A marker without colon has only the type.
+ * type, separated by a colon, then options, each after a bar. A marker
+ * without colon has only the type. The option `hidden` sets `hidden`; other
+ * options are kept in `options`.
  * @param {string} inner
- * @returns {{type: string, name?: string}}
+ * @returns {{type: string, name?: string, hidden?: boolean, options?: string[]}}
  */
 export function parseMarker(inner) {
-    const colon = inner.indexOf(":");
-    const type = inner.slice(colon + 1).trim() || "text";
-    const name = colon >= 0 ? inner.slice(0, colon).trim() : "";
-    return name ? { name, type } : { type };
+    const [main, ...words] = inner.split("|").map((part) => part.trim());
+    const colon = main.indexOf(":");
+    const type = main.slice(colon + 1).trim() || "text";
+    const name = colon >= 0 ? main.slice(0, colon).trim() : "";
+    const marker = name ? { name, type } : { type };
+    const options = words.filter((word) => word && word !== "hidden");
+    if (words.includes("hidden")) marker.hidden = true;
+    if (options.length > 0) marker.options = options;
+    return marker;
 }
 
 /**
  * Formats a cell marker line.
- * @param {{type: string, name?: string}} cell
+ * @param {{type: string, name?: string, hidden?: boolean, options?: string[]}} cell
  * @returns {string}
  */
-export function formatMarker({ name, type }) {
-    return name ? `<!--{ ${name} : ${type} }-->` : `<!--{ ${type} }-->`;
+export function formatMarker({ name, type, hidden, options = [] }) {
+    const words = [...(hidden ? ["hidden"] : []), ...options].map((word) => ` | ${word}`).join("");
+    return name ? `<!--{ ${name} : ${type}${words} }-->` : `<!--{ ${type}${words} }-->`;
 }
 
 /** The letters of a name: consonants and vowels, without the l (like a 1). */

@@ -1461,4 +1461,80 @@ after
         expect(cells(editor)[0].output).to.equal("");
         expect(anon(editor.value)).to.equal("<!--{ text }-->\nA\n");
     });
+
+    describe("hidden cells", () => {
+        const DOC = `<!--{ aaa2 : text }-->
+<% a = 1 %>A
+<!--{ bbb2 : text | hidden }-->
+<% b = a + 1 %>B
+<!--{ ccc2 : text }-->
+C <% b %>
+`;
+        const key = (editor, init) => editor.dispatchEvent(new KeyboardEvent("keydown", { cancelable: true, ...init }));
+        const lineNumbers = (editor) =>
+            [...editor.shadowRoot.querySelectorAll(".margin.left:not(.hidden) .line-number")].slice(0, 3).map((n) => n.textContent);
+
+        it("are out of sight, keep their line number, and still render", async () => {
+            const editor = await editorWith(DOC);
+            expect(lineNumbers(editor)).to.deep.equal(["1", "3", "4"]);
+            // The whole row is out of sight: margins and cell
+            const row = [...editor.shadowRoot.querySelector(".sheet").children].slice(3, 6);
+            expect(row.map((part) => getComputedStyle(part).display)).to.deep.equal(["none", "none", "none"]);
+            expect(cells(editor)[2].classList.contains("after-hidden")).to.be.true;
+            expect(cells(editor)[2].output).to.equal("C 2\n");
+        });
+
+        it("are skipped by the arrow keys", async () => {
+            const editor = await editorWith(DOC);
+            key(editor, { key: "ArrowDown" });
+            await editor.updateComplete;
+            expect(cells(editor)[2].selected).to.be.true;
+            key(editor, { key: "ArrowUp" });
+            await editor.updateComplete;
+            expect(cells(editor)[0].selected).to.be.true;
+        });
+
+        it("are hidden and unhidden by commands, with undo", async () => {
+            const editor = await editorWith(DOC);
+            editor.select(1);
+            await editor.runCommand("hide");
+            await editor.updateComplete;
+            expect(editor.value).to.contain("<!--{ aaa2 : text | hidden }-->");
+            // The selection moves to the next line in sight
+            expect(cells(editor)[2].selected).to.be.true;
+            // Unhide the lines inside a selection: select around them
+            editor.select(3);
+            await editor.runCommand("unhide");
+            expect(await editor.runCommand("unhide")).to.be.false;
+            editor.select(1);
+            editor.select(3, true);
+            await editor.runCommand("unhide");
+            expect(editor.value).to.not.contain("hidden");
+            await editor.runCommand("undo");
+            await editor.runCommand("undo");
+            expect(editor.value).to.equal(DOC);
+        });
+
+        it("gives a marker to a first cell without one when hidden", async () => {
+            const editor = await editorWith("Intro\n");
+            await editor.runCommand("hide");
+            expect(editor.value).to.match(/^<!--\{ \w+ : text \| hidden \}-->\nIntro\n$/);
+        });
+
+        it("are shown greyed out on request, and when selected from outside", async () => {
+            const editor = await editorWith(DOC);
+            await editor.runCommand("show-hidden");
+            await editor.updateComplete;
+            expect(editor.showHidden).to.be.true;
+            expect(cells(editor)[1].classList.contains("shown-hidden")).to.be.true;
+            expect(lineNumbers(editor)).to.deep.equal(["1", "2", "3"]);
+            await editor.runCommand("show-hidden");
+            await editor.updateComplete;
+            expect(editor.showHidden).to.be.false;
+            editor.select(2);
+            await editor.updateComplete;
+            expect(editor.showHidden).to.be.true;
+            expect(cells(editor)[1].selected).to.be.true;
+        });
+    });
 });

@@ -260,6 +260,14 @@ accept are not part of Stilo.
   document is now `index.texl`, and the placeholder function is gone. The
   beam example is now a project, with the library and a table of load
   combinations. The table and data table cells share their grid editing.
+- 2026-11-09: **hidden cells**, as hidden rows in Excel: commands hide the
+  selected cells, unhide the hidden ones inside a selection, and show them
+  all greyed out (a view setting, not saved). A hidden cell still computes in
+  its place and keeps its line number; the numbers skip it and a double rule
+  shows where it is. The arrow keys skip hidden lines, and going to one from
+  the errors or comments pane shows them. File format: the cell's marker ends
+  with `| hidden`; other Texl programs read it as a comment. The line that
+  imports the Stilo library for a data table is now added hidden.
 
 ## Known limitations
 
@@ -276,9 +284,9 @@ accept are not part of Stilo.
   documents are got back from `.trash` by hand, as there is no restore command.
 - Table cell: plain fields without formula highlighting.
 - Data table cell: a value or column name cannot contain `"` or `%>`; a
-  wrong value inside a table is shown but not listed in the Errors pane; the
-  line that imports the library shows as an empty formula line; outside a
-  project the table shows `[[Undefined]]`.
+  wrong value inside a table is shown but not listed in the Errors pane;
+  outside a project the table shows `[[Undefined]]`.
+- Hidden cells: no keys for hiding and unhiding, only commands.
 - Rich text cell: no colours, fonts or alignment; repeated empty paragraphs
   collapse; images are shown and kept but cannot be inserted; a comment can be
   added but not edited; a new or changed formula shows its expression, not its

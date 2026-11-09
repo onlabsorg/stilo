@@ -230,7 +230,7 @@ describe("data cell in the editor", () => {
         cell.exitEdit(true);
         await editor.updateComplete;
         expect(editor.value.startsWith("<!--{ ")).to.be.true;
-        expect(editor.value).to.contain(" : formula }-->\n" + STILO_IMPORT + "\n");
+        expect(editor.value).to.contain(" : formula | hidden }-->\n" + STILO_IMPORT + "\n");
         expect(editor.value).to.contain("Intro\n");
         expect(editor.value.indexOf(STILO_IMPORT)).to.be.below(editor.value.indexOf("stilo.dataframe"));
         // The selection stays on the data table, now one line down
