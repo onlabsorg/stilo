@@ -1,7 +1,7 @@
 # Texl primer for editor work
 
-*What you need to know about Texl to work on the editor, as of Texl 0.7
-(`@onlabsorg/texl` on npm), 2026-11-08. For the language in
+*What you need to know about Texl to work on the editor, as of Texl 0.8
+(`@onlabsorg/texl` on npm), 2026-11-09. For the language in
 depth, see the developer docs of <https://github.com/onlabsorg/texl>
 (`docs/language.md`). The results shown below were checked
 against the real engine.*
@@ -102,6 +102,10 @@ You ordered <% fmt.plural (3, "book") %>.
 - Within one rendering, each document is fetched and rendered **once**;
   the next rendering fetches it again, so changes to imported documents
   show (the browser HTTP cache still applies).
+- A document is the one at its **final URL**: the URL after HTTP
+  redirects (or the one a custom loader returns, as `{url, source}`). It
+  is the document's `uri` and the base of its relative imports, and imports
+  of URLs with the same final URL share one document.
 - An imported document is **isolated**: it sees the engine globals, not
   the importer's names. A document importing itself (directly or through
   others) gets `Undefined` for that import.
@@ -117,7 +121,7 @@ import init, { TexlEngine } from "@onlabsorg/texl";
 await init();                                   // load the wasm module, once
 const engine = new TexlEngine(globals, baseUrl); // both optional
 const doc = await engine.render("docs/report.texl", source); // {uri, source, data, text, tags}
-await engine.fetch("report.texl");              // the source only
+await engine.fetch("report.texl");              // {url, source}: final URL and source
 await engine.load("report.texl");               // fetch + render
 engine.set("today", "2026-10-18");              // global for all templates
 ```

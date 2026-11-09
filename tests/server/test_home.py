@@ -99,3 +99,25 @@ def test_a_cycle_through_home_ends(client):
     assert client.get("/" + path).status_code == 400
     path = "proj/docs/" + "~/lib/plain/" * 16 + "plain.texl"
     assert client.get("/" + path).text == "plain"
+
+
+def test_a_read_through_home_redirects_to_the_real_path(client):
+    response = client.get("/proj/docs/sub/~/lib/x.texl?v=1", follow_redirects=False)
+    assert response.status_code == 307
+    assert response.headers["location"] == "/proj/lib/x.texl?v=1"
+    response = client.get("/_api/files/proj/docs/~/lib/own/~/lib/x.texl", follow_redirects=False)
+    assert response.status_code == 307
+    assert response.headers["location"] == "/_api/files/proj/lib/own/lib/x.texl"
+
+
+def test_the_redirect_is_percent_encoded(root, client):
+    (root / "proj" / "lib" / "my lib.texl").write_text("spaced")
+    response = client.get("/proj/docs/~/lib/my%20lib.texl", follow_redirects=False)
+    assert response.headers["location"] == "/proj/lib/my%20lib.texl"
+    assert client.get("/proj/docs/~/lib/my%20lib.texl").text == "spaced"
+
+
+def test_a_browser_page_through_home_redirects_too(client):
+    response = client.get("/proj/docs/~/lib/x.texl", headers={"Accept": "text/html"},
+                          follow_redirects=False)
+    assert response.headers["location"] == "/proj/lib/x.texl"

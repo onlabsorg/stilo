@@ -38,8 +38,14 @@ the folder before it. One rule, in one module,
 
 | Where      | How                                                        | Top |
 |------------|------------------------------------------------------------|-----|
-| Server     | `Storage.expand_home`, on every read ([protocol](protocol.md#url-space)); so the web app's editor needs nothing of its own | the served folder |
-| CLI        | the file loader of `create_engine()` ([CLI](cli.md#create_engine)) | the user's home directory; the file-system root outside it |
+| Server     | `Storage.expand_home`: a read with `~` is redirected to the real path ([protocol](protocol.md#url-space)); so the web app's editor needs nothing of its own | the served folder |
+| CLI        | the file loader of `create_engine()`, which gives the real file as the final URL ([CLI](cli.md#create_engine)) | the user's home directory; the file-system root outside it |
+
+Both give Texl the real path as the document's **final URL** (Texl 0.8): the
+server by a redirect, the CLI from its loader. A library is thus the
+document at its real path, wherever it was imported from: its `uri` and
+the base of its relative imports are its real path, and within one
+rendering, imports of it by different paths share one document.
 
 The **top** is where the search stops, and the home when no `project.texl`
 is found. So without a manifest the two can disagree: in the web `~/lib` is
@@ -48,17 +54,19 @@ the served folder's `lib/`, on the command line `$HOME/lib`. Run
 
 Rules worth knowing:
 
-- **Several `~`.** A library's URL keeps its `~`
-  (`.../~/lib/a/a.texl`), so a library importing `~/lib/b/b.texl` asks for
-  `.../~/lib/a/~/lib/b/b.texl`. The second `~` resolves from `lib/a/`:
-  to the library's own home if it has a `project.texl`, else to the
-  project's. A library meant to import its sibling libraries has no
-  manifest; one that brings its own `lib/` has one.
-- **Cycles.** Texl tells an import cycle by its URLs, and those of a cycle
-  through `~` grow at every turn. A path with more than 16 `~` segments is
-  refused, so such a cycle ends in a failed import instead of running
-  forever. This is why the library's own text must not quote its import
-  tag: a tag runs wherever it is, even in a Markdown code block.
+- **A library's own `~`.** A library at `lib/a/a.texl` that imports
+  `~/lib/b/b.texl` asks for `lib/a/~/lib/b/b.texl`, so its `~` resolves
+  from `lib/a/`: to the library's own home if it has a `project.texl`,
+  else to the project's. A library meant to import its sibling libraries
+  has no manifest; one that brings its own `lib/` has one. A path may hold
+  several `~` (a client that does not follow redirects asks for them);
+  they resolve from the left.
+- **Cycles.** A library importing itself through `~` asks again for its
+  own real path, so Texl sees an import cycle and the import is undefined
+  (`import.cycle`). This is why the library's own text must not quote its
+  import tag: a tag runs wherever it is, even in a Markdown code block.
+  More than 16 `~` segments in one path are refused, a safeguard for
+  clients that do not follow redirects.
 - **`~/..`** cancels the `~`: URL resolution removes both, so
   `~/../x.texl` is a plain relative path.
 - **A folder named `~`** is hidden by the server and cannot be created

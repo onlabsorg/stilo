@@ -39,9 +39,11 @@ documents, not code, that `stilo init` copies into a project's
 `src/stilo/cli/project.py`). **Projects** (S10, `docs/projects.md`): a
 folder with `project.texl` is a project, its *home*; in an import path a
 `~` segment stands for the home of the folder before it, resolved left to
-right, by the server on reads (a protocol rule) and by the CLI's file
-loader, with one shared rule in `src/stilo/server/home.py`. More than 16
-`~` segments are refused (a cycle through `~` never repeats a URL).
+right, by the server on reads (a protocol rule: a `307` redirect to the real
+path) and by the CLI's file loader (which returns the real file as the final
+URL), with one shared rule in `src/stilo/server/home.py`. The real path is
+thus the document's identity for Texl (final URLs, Texl 0.8; S11). More
+than 16 `~` segments are refused, a safeguard.
 
 **One package, one Python project.** `pyproject.toml` at the root is the
 only Python project and builds the only published package, `stilo`

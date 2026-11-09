@@ -55,8 +55,9 @@ Returns `path` with each `~` segment, from the left, replaced by the
 project home of the folder before it: the nearest folder holding a
 `project.texl`, or the root (protocol: [URL space](protocol.md#url-space)).
 Raises `BadRequest` for malformed segments and for more than 16 `~`
-segments. Only `read` and `is_other_file` call it: a write never expands
-`~`. The rule itself is in `home.py` (`expand_home`, `home_of`), shared
+segments. The app calls it to redirect a read with `~` to the real path
+(`home_redirect` in `app.py`); `read` and `is_other_file` call it too, for
+other callers of `Storage`. A write never expands `~`. The rule itself is in `home.py` (`expand_home`, `home_of`), shared
 with the CLI, which imports it from there.
 
 ### `read`
@@ -190,7 +191,7 @@ The routes, in the order they match:
 
 | Route                              | Methods      | Does                                     |
 |------------------------------------|--------------|------------------------------------------|
-| `/_api/files/{path}`               | GET, HEAD    | `Storage.read`; `ETag` and `Cache-Control: no-cache` |
+| `/_api/files/{path}`               | GET, HEAD    | `Storage.read`; `ETag` and `Cache-Control: no-cache`. A path with `~`: `307` to the real path (`home_redirect`) |
 | `/_api/files/{path}`               | POST         | `Storage.create`; `201`, `ETag`, `Location` |
 | `/_api/files/{path}`               | PUT          | `Storage.update` with the `If-Match` header |
 | `/_api/files/{path}`               | DELETE       | `Storage.delete_file`; `204`             |
@@ -200,7 +201,7 @@ The routes, in the order they match:
 | `/_api/tree/{path}`                | GET          | `Storage.tree`, with `?depth=` (1 or more) |
 | `/_api/{path}`                     | any          | `404`: unknown endpoint                  |
 | `/_app/...`                        | GET          | The web app's static files (`web_dist`)  |
-| `/{path}`                          | GET, HEAD    | The public address. A file that is not a document: itself, for every client, with its real type and the safety headers of the protocol (`other_file_response`). Otherwise the web app for a browser (`Accept` includes `text/html`), the file for anything else. `Vary: Accept` |
+| `/{path}`                          | GET, HEAD    | The public address. A path with `~`: `307` to the real path, for every client (`home_redirect`). A file that is not a document: itself, for every client, with its real type and the safety headers of the protocol (`other_file_response`). Otherwise the web app for a browser (`Accept` includes `text/html`), the file for anything else. `Vary: Accept` |
 
 `create_app()` is the server's extension point: new endpoints go under
 `/_api/`, added here, without changing the existing ones.

@@ -14,9 +14,12 @@ library loaded as `.../~/lib/a/a.texl` that imports `~/lib/b/b.texl` asks
 for `.../~/lib/a/~/lib/b/b.texl`, whose second `~` is the home of `lib/a`
 (the library's own, if it has a manifest, else the project's).
 
-Texl tells an import cycle by its URLs, and the URLs of a cycle through `~`
-differ at every turn (`a/~/lib/x/~/lib/x/...`): it would never end. So a
-path with more than `MAX_HOMES` `~` segments is refused, as a cycle.
+Hosts give Texl the real path as the document's final URL (Texl 0.8): the
+server redirects, the CLI's loader returns it. So a library is the document
+at its real path, and a library importing itself through `~` asks again for
+that path, an import cycle Texl ends. A path with more than `MAX_HOMES` `~`
+segments is still refused, a safeguard for clients that keep the `~` URL
+(`a/~/lib/x/~/lib/x/...` would grow at every turn).
 
 Used by the server (`storage.py`) and by the CLI's file loader, so that
 both resolve the same way. It reads the file system only to look for

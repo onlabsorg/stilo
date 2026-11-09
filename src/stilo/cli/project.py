@@ -49,9 +49,15 @@ def resolve_file(uri: str) -> Path:
     return expand_home(Path(path.anchor), path.parts[1:], top_of)
 
 
-async def load_project_file(uri: str) -> str:
-    """pytexl's file loader, with `~` resolved."""
-    return await load_file(resolve_file(uri).as_uri())
+async def load_project_file(uri: str) -> str | tuple[str, str]:
+    """pytexl's file loader, with `~` resolved. A path with `~` gives the
+    real file as the document's final URL (Texl 0.8): its identity, so
+    imports of one library by different paths share it, and a cycle
+    through `~` ends."""
+    if not has_home(file_path(uri)):
+        return await load_file(uri)
+    final_url = resolve_file(uri).as_uri()
+    return final_url, await load_file(final_url)
 
 
 def create_engine() -> pytexl.Engine:

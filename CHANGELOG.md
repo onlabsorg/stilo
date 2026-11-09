@@ -15,6 +15,16 @@ change the interfaces.
   served folder in the editor and your home directory on the command line.
   Folders named `~` are hidden in the editor and cannot be created there.
   The Stilo library holds only a placeholder function for now.
+- **Texl 0.8**, in the browser and on the command line (`pytexl` and
+  `@onlabsorg/texl` 0.8.0). An imported document is identified by its final
+  URL, after HTTP redirects.
+- **`~` gives the real path.** The server answers a read whose path has `~`
+  with a redirect (`307`) to the real path, and `stilo render` treats the
+  file the same way. A library imported through `~` is now the document at
+  its real path: imports of it by different paths share one copy, its
+  relative imports resolve from its own folder, and a library importing
+  itself through `~` gets an undefined value at once instead of after 16
+  rounds.
 - **Texl 0.7**, in the browser and on the command line (`pytexl` and
   `@onlabsorg/texl` 0.7.0). A namespace with a `__text__` function now renders
   as the text it returns.

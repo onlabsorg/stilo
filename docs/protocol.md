@@ -31,13 +31,16 @@ file or folder can be created or moved under that name, and a folder named
 a *project*. The *home* of a folder is the nearest folder at or above it
 that holds one; without one, the server root. In the path of a read (`GET`
 and `HEAD`, public URL or `/_api/files/`), each `~` segment, from the left,
-stands for the home of the folder before it:
+stands for the home of the folder before it, and the server answers with a
+redirect to the real path, `307 Temporary Redirect` (the query kept,
+`Cache-Control: no-cache`):
 
 ```
 project.texl in /projects/beam/
 
 GET /projects/beam/docs/~/lib/stilo/stilo.texl
-  → the file /projects/beam/lib/stilo/stilo.texl
+→ 307 Temporary Redirect
+  Location: /projects/beam/lib/stilo/stilo.texl
 GET /projects/beam/docs/~/lib/a/~/lib/b/b.texl
   → /projects/beam/lib/a/ has no project.texl: /projects/beam/lib/b/b.texl
 ```
@@ -45,15 +48,22 @@ GET /projects/beam/docs/~/lib/a/~/lib/b/b.texl
 This is how a document imports from its project's libraries wherever it is
 in the project: Texl gives `~` no meaning, so `texl.import "~/lib/x.texl"`
 in `/projects/beam/docs/a.texl` asks for `/projects/beam/docs/~/lib/x.texl`,
-and the server answers with `/projects/beam/lib/x.texl`. A library imported
-that way that imports `~/...` itself asks for a path with a second `~`,
-which resolves from the library's folder: to the library's own home if it
-has a `project.texl`, else to the project's. The search for a home never
-leaves the server root, and the server never reads the manifest, it only
-checks that it exists. Paths with more than 16 `~` segments get `400`:
-Texl tells an import cycle by its URLs, and those of a cycle through `~`
-grow at every turn. A `..` right after `~` cancels it, as URL resolution
-removes both (`~/../x.texl` is a plain relative path).
+and the server redirects it to `/projects/beam/lib/x.texl`. A redirect, not
+the file itself, because Texl takes a document's identity from the URL it
+was finally fetched from (its *final URL*, Texl 0.8): the library is the
+document at its real path, its relative imports resolve from there, imports
+of it by different paths share one document, and a library importing itself
+through `~` is an import cycle. A library importing `~/...` itself, from its
+real path, asks for a path with one `~`, which resolves from the library's
+folder: to the library's own home if it has a `project.texl`, else to the
+project's. The search for a home never leaves the server root, and the
+server never reads the manifest, it only checks that it exists; nor does
+it check that the target exists before redirecting (the target answers
+`404`). The redirect is temporary because the home depends on manifests
+that can change. Paths with more than 16 `~` segments get `400`, a
+safeguard for clients that do not follow redirects. A `..` right after `~`
+cancels it, as URL resolution removes both (`~/../x.texl` is a plain
+relative path).
 
 A document's **public URL** is `/<path>`, one URL for people and for
 Texl, by content negotiation on `Accept`:
@@ -115,8 +125,8 @@ GET /_api/files/projects/beam/beam-check.texl
 
 Any regular file under the root can be read (Texl documents import other
 files too). `404` if it does not exist, `400` if the path is a folder. `HEAD`
-answers the same, without the body. `~` segments resolve to the project home
-first (see [URL space](#url-space)).
+answers the same, without the body. A path with `~` segments is redirected
+to the real path first (see [URL space](#url-space)).
 
 ### CREATE a new file
 

@@ -93,3 +93,14 @@ def test_a_library_importing_itself_through_home_ends(home, capsys):
     (home / "p" / "a.texl").write_text(IMPORT + "\ndone\n")
     assert main(["render", str(home / "p" / "a.texl")]) == 0
     assert "done" in capsys.readouterr().out
+
+
+def test_a_document_through_home_is_the_real_file(home, capsys):
+    (home / "p" / "lib").mkdir(parents=True)
+    (home / "p" / "project.texl").write_text("")
+    (home / "p" / "lib" / "x.texl").write_text("x")
+    doc = home / "p" / "docs" / "a.texl"
+    doc.parent.mkdir()
+    doc.write_text('<% texl.import "~/lib/x.texl" ~> (d -> d.uri) %>\n')
+    assert main(["render", str(doc)]) == 0
+    assert (home / "p" / "lib" / "x.texl").as_uri() in capsys.readouterr().out

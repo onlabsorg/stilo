@@ -236,6 +236,12 @@ accept are not part of Stilo.
   folder on the command line. Folders named `~` are hidden in the navigation
   pane and cannot be created there. The Stilo library holds a placeholder
   function only. The package and its automatic checks include the library.
+- 2026-11-09: **moved to Texl 0.8**, in the browser and on the command line.
+  A path with `~` now leads to the real file: the server sends a redirect to
+  it, and `stilo render` reads it the same way. A library imported through
+  `~` is thus one document, at its own place: imported from several folders,
+  it is loaded once; its own imports resolve from its folder; and a library
+  that imports itself through `~` is stopped at once.
 
 ## Known limitations
 
@@ -259,10 +265,7 @@ accept are not part of Stilo.
   Firefox and Linux WebKit; not on Safari on a Mac.
 - Equations: in a table, a `|` inside an equation ends the table cell (write
   `\vert`). Only the editor typesets them: other outputs show the LaTeX as text.
-- Projects: other Texl programs do not understand `~` in imports. A document
-  that imports itself through `~` is stopped after 16 levels instead of at
-  once, and a library imported through `~` from several folders is loaded
-  once per folder.
+- Projects: other Texl programs do not understand `~` in imports.
 - Errors: a value inside a link's address or another HTML attribute counts but
   cannot be highlighted. The failing place is marked in the Errors pane, not
   in the source while editing.

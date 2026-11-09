@@ -132,9 +132,11 @@ def create_engine() -> pytexl.Engine
 
 In `project.py`: a `pytexl.Engine` whose loader for `file:` URLs and plain
 paths resolves `~` segments before reading (`resolve_file`), with the rule
-of the server's `home.py`. Its top, the highest folder the search for a
-home may reach, is the user's home directory, or the file-system root for
-a document outside it. A command that renders creates its engine here.
+of the server's `home.py`, and for a path with `~` returns the real file as
+the document's final URL, `(final_url, source)`, as the server's redirect
+does ([Projects](projects.md#how--resolves)). Its top, the highest folder
+the search for a home may reach, is the user's home directory, or the
+file-system root for a document outside it. A command that renders creates its engine here.
 
 ## `serve`
 

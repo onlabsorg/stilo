@@ -184,3 +184,23 @@ publish. Copying folders by hand is enough until a package manager is needed.
 This replaces the design agreed earlier the same day: importing the library by
 a versioned GitHub URL that Stilo mapped to its bundled copy.
 *Not settled:* the editor's import cell and the "add-in" view of libraries.
+
+## S11 — 2026-11-09 — `~` resolves to the real path, the document's final URL
+A path with `~` gives Texl the real path as the document's *final URL*
+(Texl 0.8, texl decision T18): the server answers a read (`GET`, `HEAD`,
+public URL or `/_api/files/`) whose path has `~` with `307 Temporary
+Redirect` to the real path, and the CLI's file loader returns
+`(final_url, source)` with the real file. This supersedes, in S10, the server
+answering a `~` path with the file itself; the rule of S10 for finding the
+home is unchanged. The limit of 16 `~` segments stays, as a safeguard for
+clients that do not follow redirects.
+*Reason:* Texl identifies a document by its URL. With the file served in
+place, a library was a different document at every path that led to it:
+two paths rendered it twice, its relative imports resolved from the alias,
+and a library importing itself through `~` asked for a longer URL at every
+turn, ending only at the limit. With the real path as final URL, a library is
+one document, and such a cycle is an ordinary import cycle. A redirect, not a
+header, because HTTP clients (the browser's `fetch`, `load_http`) already
+report the URL after redirects, so every Texl host, and Papiro, gets it
+without knowing Stilo. Temporary, because the home depends on manifests that
+can change.

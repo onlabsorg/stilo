@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import mimetypes
 from pathlib import Path
+from urllib.parse import quote
 
 from fastapi import FastAPI, Query, Request
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 
+from .home import has_home
 from .storage import BadRequest, Storage, StorageError
 
 TEXT = "text/plain; charset=utf-8"
@@ -50,8 +52,23 @@ def create_app(root: Path | str, web_dist: Path | str | None = None) -> FastAPI:
     async def storage_error(request: Request, error: StorageError):
         return JSONResponse({"error": str(error)}, status_code=error.status)
 
+    def home_redirect(prefix: str, path: str, request: Request) -> Response | None:
+        """A read whose path has `~` segments is redirected to the real path
+        (docs/protocol.md): the document is the one at the URL a redirect
+        leads to, its identity for Texl (final URLs, Texl 0.8), so imports of
+        one library by different paths share it, and a cycle through `~`
+        ends. Temporary, since the home depends on manifests that can change."""
+        if not has_home(path):
+            return None
+        url = prefix + quote(storage.expand_home(path), safe="/")
+        if request.url.query:
+            url += "?" + request.url.query
+        return RedirectResponse(url, status_code=307, headers=NO_CACHE)
+
     @app.api_route("/_api/files/{path:path}", methods=["GET", "HEAD"])
-    async def get_file(path: str):
+    async def get_file(path: str, request: Request):
+        if redirect := home_redirect("/_api/files/", path, request):
+            return redirect
         content, tag = storage.read(path)
         return Response(content, media_type=TEXT, headers={"ETag": tag, **NO_CACHE})
 
@@ -109,6 +126,8 @@ def create_app(root: Path | str, web_dist: Path | str | None = None) -> FastAPI:
     # root from ?root=); any other client (texl.import) gets the file itself.
     @app.api_route("/{path:path}", methods=["GET", "HEAD"], include_in_schema=False)
     async def page(path: str, request: Request):
+        if redirect := home_redirect("/", path, request):
+            return redirect
         vary = {"Vary": "Accept"}
         if storage.is_other_file(path):
             return other_file_response(path, *storage.read(path))

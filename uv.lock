@@ -336,18 +336,18 @@ wheels = [
 
 [[package]]
 name = "pytexl"
-version = "0.7.0"
+version = "0.8.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/11/7a/c74c0e38e4a54b63809552c0f02659951b4801229f071ff235792ae7eb99/pytexl-0.7.0.tar.gz", hash = "sha256:f2df12efe59d8eafb24bbac2dc9f83bed728381cc7fa5f08536d529e0625aabe", size = 165428 }
+sdist = { url = "https://files.pythonhosted.org/packages/4a/bf/8ebab4feddef66e3b5f5a6c8eb0fcf94d20f7d03730a83ea171ad7bffa4b/pytexl-0.8.0.tar.gz", hash = "sha256:50454be03a7b97a51641754616963a010798677e27cd056c8a98d721b2cd6e92", size = 171015 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ab/c3/2ffbb8a05c8b47571eb17e45475ad984149eeee0e3d5f271686f8d1ee395/pytexl-0.7.0-cp310-abi3-macosx_10_12_x86_64.whl", hash = "sha256:adb60cec5a203c80980d523dc4162aebb47488fa55cab54fd07f48021495f285", size = 715376 },
-    { url = "https://files.pythonhosted.org/packages/cd/5d/9dbc173e72b483424ed594772574a7f9ec8cdc1873cdd1f59a01467cc3ae/pytexl-0.7.0-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:b517aa52e85b51e50d95ab4fdf0846406d297df117b30a685149874dfcc10bca", size = 700096 },
-    { url = "https://files.pythonhosted.org/packages/68/7d/435b57eab24ce20ede923e9119f33a7e6e4014bff073127845aadd8d367c/pytexl-0.7.0-cp310-abi3-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:aaa162efb5d08a49bcb0ae2a2bc9070b320a5fbd0f9847256043a00c43e75063", size = 759615 },
-    { url = "https://files.pythonhosted.org/packages/94/58/73068c2a9283f4a71d230aed7c2d4e83fd2139af52ce30795caa64379756/pytexl-0.7.0-cp310-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:597691688f6f91cb5c1e031696441b147b53231a7c502223a642b3e9ce1a4e74", size = 778537 },
-    { url = "https://files.pythonhosted.org/packages/cf/2f/d035deed6d465386cb4fd1a9ac718ae1a65667a880dab46535666643a021/pytexl-0.7.0-cp310-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:8f04a5ccf74f615aaa2fde6b0d3ed83e501e1f454e3b218a2b806a839394db48", size = 937348 },
-    { url = "https://files.pythonhosted.org/packages/0e/30/f4fbdabbb1e7ae5963375d5c2edaf9da347b594a57c3fade1bb132660cc5/pytexl-0.7.0-cp310-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:82ecc65d1fed592e6abdb7c0f457066fd95c8aadcc73c41f391a3cbd550e4424", size = 988343 },
-    { url = "https://files.pythonhosted.org/packages/be/fd/7cd2d67eaf3a58f1c58fabdf36aead47bfb1b8ae11b150c8478d8960a08b/pytexl-0.7.0-cp310-abi3-win_amd64.whl", hash = "sha256:2fc995297ccdd47784e1cac27b354cd68d7f88d25b93552629d441e46b8d068e", size = 640769 },
-    { url = "https://files.pythonhosted.org/packages/52/24/651ab4b03aa32c9c9587ff4b363e477721d7e46122aa8e655acd334a96d8/pytexl-0.7.0-cp310-abi3-win_arm64.whl", hash = "sha256:5f359170631d2ce7753fb6d30811de08eab3332fcb82c6caf4359d75f4dc2427", size = 602159 },
+    { url = "https://files.pythonhosted.org/packages/fc/2e/5e552773f55fa9fd0990fedcd676459d91195936e9374835fddede90716f/pytexl-0.8.0-cp310-abi3-macosx_10_12_x86_64.whl", hash = "sha256:48a9fdb24b78f6ae9b1ef13b217ec1b03f31d1ec6abe58d47fecec0d6a91c1ff", size = 725737 },
+    { url = "https://files.pythonhosted.org/packages/83/ac/5ac1e24c7f7f4726bc050625664e2aafa3d0c414d980bf8a6ab532ec302c/pytexl-0.8.0-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:7c16e756cba287258400c5b58dbcf7dd94e6ba7dbbf0988bd0582604102e2e18", size = 707750 },
+    { url = "https://files.pythonhosted.org/packages/83/00/c2c6474dfd484d61f2ec657854dbb409d60efb1cb746309e3842123660b2/pytexl-0.8.0-cp310-abi3-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:8a09066a9d2817676476ae148931d97d9573e65740ecf2929577ea75cbe5b168", size = 767449 },
+    { url = "https://files.pythonhosted.org/packages/87/04/c911f17e7c58a710574626911b8d8e58e8bd43e8fcb1ccb0efbda43b5cb2/pytexl-0.8.0-cp310-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:15e654eae13c9cc9e9600f4a731b52ec34e220317f9436afec9941857f6a5976", size = 786687 },
+    { url = "https://files.pythonhosted.org/packages/3e/a7/566ae718cf92affedc8540d6ea96346b0c572f858bce83b0fe97fecc6d5c/pytexl-0.8.0-cp310-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:183f2f100d0b772f7562c4c4572de34c89604090ba1231e939d7f9fbd31369ed", size = 945256 },
+    { url = "https://files.pythonhosted.org/packages/8a/18/6995676a65646aaa31a929ed8f904c61a615e8f2da78749d73b74cb4e945/pytexl-0.8.0-cp310-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:9882bc23d9610ee84a2990207f6664e8b986b8af681bbbb953e88f92930a6c4e", size = 997549 },
+    { url = "https://files.pythonhosted.org/packages/63/9e/99994cee3b6d5cb0ecdf8fc29784d3656f1787e0d49d1eba9d4dc136d984/pytexl-0.8.0-cp310-abi3-win_amd64.whl", hash = "sha256:149559e68f642a107eafcbd20be38de04e1925e488fbe105953d1425af188f11", size = 652624 },
+    { url = "https://files.pythonhosted.org/packages/99/09/4676af14555cdf29da3c3bf36a8c5a0010e4bc5d90c25decf95a15bfdc2e/pytexl-0.8.0-cp310-abi3-win_arm64.whl", hash = "sha256:56831cf6158a5325c52a01d387a1fee5471ec119cebb1e01ba2105705e967427", size = 611608 },
 ]
 
 [[package]]
@@ -382,7 +382,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "fastapi", specifier = ">=0.115" },
-    { name = "pytexl", specifier = ">=0.7.0" },
+    { name = "pytexl", specifier = ">=0.8.0" },
     { name = "uvicorn", specifier = ">=0.30" },
 ]
 
