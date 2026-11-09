@@ -294,6 +294,15 @@ accept are not part of Stilo.
   right after a table in a Markdown line shows below the table,
   left-aligned. Plain HTML, no new syntax; lesson 6 of the tutorial shows
   it. Not yet released.
+- 2026-11-09: **the beam example reads as an engineering report**: a short
+  design report (introduction, scope of work, basis of design, method
+  statement, results, conclusions, recommendations) that links to two
+  detail documents of the same project, a basis of design and a
+  calculation note, and takes its figures from them; its conclusions and
+  recommendations are computed, so they follow any change in the data. It
+  shows how linked documents replace a long report. The automatic tests now
+  check that every example renders without errors and opens in the editor
+  as written.
 
 ## Known limitations
 

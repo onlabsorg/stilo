@@ -1,74 +1,127 @@
 <!--{ imp6 : formula | hidden }-->
 <% texl.import "~/lib/stilo/index.texl" ~> (lib -> bind "stilo" lib.data.stilo) %>
 <!--{ bek4 : markdown }-->
-# Beam check
+# Mezzanine floor beam — design report
 
-A simply supported steel beam under a uniform load. The section properties
-come from the library [steel.texl](../../library/steel.texl).
-<% texl.import("../../library/steel.texl") ~> (lib -> bind "steel" lib.data) %>
-<!--{ lod2 : markdown }-->
-## Input
+<% texl.import "basis-of-design.texl" ~> (d -> bind "bod" d.data) %>
+<% texl.import "analysis.texl" ~> (d -> bind "calc" d.data) %>
+| Document | Revision | Date | Prepared | Checked |
+|---|---|---|---|---|
+| MZ-001 | B | 2026-11-09 | Anna | Marco |
+<!--{ int1 : rich }-->
+## 1 Introduction
 
-<%
-L = 6,                       # span in m
-gk = 4.0,                    # permanent load in kN/m
-qk = 8.5,                    # variable load in kN/m
-section = steel.IPE.IPE300
-%>
-- Span: <% L %> m
-- Section: <% section.name %>, steel <% steel.grade.name %>
-- Loads: g<sub>k</sub> = <% gk %> kN/m, q<sub>k</sub> = <% qk %> kN/m
-<!--[ Anna: span and loads from the client's brief, rev. B. ]-->
-<!--{ saf7 : markdown }-->
-## Design load
+A public gallery is to be added at first floor level of an existing hall: a
+steel mezzanine floor carried by simply supported beams. This report
+presents the design of these beams. It is short on purpose: it summarises
+the design and links to the documents that hold the details, from which it
+takes its figures:
 
-<%
-gs = section.mass * 9.81 / 1000,   # self-weight in kN/m
-qd = 1.35 * (gk + gs) + 1.5 * qk,
-MEd = qd * L ^ 2 / 8
-%>
-The self-weight is $g_s = <% math.round (gs * 100) / 100 %>\ \text{kN/m}$, so
-the design load and the midspan moment are:
+- [Basis of design](basis-of-design.texl) (MZ-002): codes, structure,
+  materials, loads, load combinations and acceptance criteria.
+- [Calculation note](analysis.texl) (MZ-003): method, checks of the proposed
+  section and of the alternatives.
 
-$$
-q_d = 1.35\,(g_k + g_s) + 1.5\,q_k = <% math.round (qd * 100) / 100 %>\ \text{kN/m}
-$$
+A change in one of them updates this report.
+<!--{ scp1 : rich }-->
+## 2 Scope of work
 
-$$
-M_{Ed} = \frac{q_d L^2}{8} = <% math.round (MEd * 10) / 10 %>\ \text{kNm}
-$$
+In scope:
 
-<!--[ Marco: partial factors from EN 1990, table A1.2(B). ]-->
-<!--{ cmb3 : markdown }-->
-## Load combinations
+- the strength and the deflection of the floor beams, for the loads of the
+  basis of design;
+- the choice of the lightest adequate IPE section.
 
-The load per metre in each combination of EN 1990:
-<!--{ cmb8 : data }-->
-<% combinations: stilo.dataframe {
-    columns: ["Combination", "γG", "γQ", "q (kN/m)"],
-    rows: [
-        ["ULS, fundamental", 1.35, 1.5, math.round ((1.35 * (gk + gs) + 1.5 * qk) * 100) / 100],
-        ["SLS, characteristic", 1, 1, math.round ((gk + gs + qk) * 100) / 100],
-        ["SLS, quasi-permanent", 1, 0.3, math.round ((gk + gs + 0.3 * qk) * 100) / 100]
-    ]
-} %>
-<!--{ cmb5 : markdown }-->
-The largest is <% math.max (list.enum (combinations.column "q (kN/m)")) %> kN/m,
-the fundamental combination, used for the bending check below.
-<!--{ siz5 : markdown }-->
-## Bending check
+Out of scope: the deck, the connections, the columns and the foundations,
+the fire resistance and the dynamic response of the floor. These are
+addressed in the recommendations.
+<!--{ bod1 : markdown }-->
+## 3 Basis of design
 
-<%
-sigma = MEd * 1000000 / section.W,
-fyd = steel.grade.fy / steel.gammaM0,
-u = sigma / fyd
-%>
-| Quantity | Value |
+The design follows the Eurocodes: EN 1990, EN 1991-1-1 and EN 1993-1-1, with
+their recommended values. The key data, from the
+[basis of design](basis-of-design.texl):
+
+| Item | Value |
 |---|---|
-| Bending stress $\sigma = M_{Ed} / W$ | <% math.round sigma %> N/mm² |
-| Design strength $f_{yd} = f_y / \gamma_{M0}$ | <% math.round fyd %> N/mm² |
-| Utilisation $u = \sigma / f_{yd}$ | <% math.round (u * 100) %> % |
+| Structure | <% bod.beams %> simply supported beams, span <% bod.L %> m, spacing <% bod.spacing %> m |
+| Steel | <% bod.steel.grade.name %>, f<sub>y</sub> = <% bod.fy %> N/mm² |
+| Permanent load | g<sub>k</sub> = <% bod.gk %> kN/m, plus the self-weight of the beam |
+| Variable load | q<sub>k</sub> = <% bod.qk %> kN/m, category C3 |
+| ULS partial factors | γ<sub>G</sub> = <% bod.gammaG %>, γ<sub>Q</sub> = <% bod.gammaQ %> |
+| Deflection limits | L / <% bod.deflection_total %> total, L / <% bod.deflection_variable %> under variable load |
+<caption>Table 1: Key design data.</caption>
+<!--{ mth1 : markdown }-->
+## 4 Method statement
 
-The <% section.name %> is <% u <= 1 ? "**adequate**" ; "**not adequate**" %>.
-<!--[ Marco: fine for the report. ]-->
+1. The loads and the combinations of the basis of design are applied to a
+   simply supported beam with a uniform load.
+2. The bending moment, the shear force and the deflection follow from the
+   closed-form solutions of beam theory, by linear elastic analysis.
+3. The proposed <% bod.section.name %> is checked for bending and shear
+   (EN 1993-1-1, 6.2) and for deflection against the limits of the basis of
+   design. The deck restrains the top flange, so lateral-torsional buckling
+   does not govern.
+4. The same checks are repeated for the IPE sections of the steel library,
+   to find the lightest adequate one.
+
+The equations and the intermediate results are in the
+[calculation note](analysis.texl), sections 1 and 2.
+<!--{ res1 : markdown }-->
+## 5 Analysis results
+
+<% p = calc.r %>
+The proposed <% p.section.name %> carries a design load of
+<% calc.fix (p.qd, 1) %> kN/m, with a midspan moment of
+<% calc.fix (p.MEd, 1) %> kNm. Its checks:
+
+| Check | Effect | Limit | Utilisation |
+|---|---:|---:|---:|
+| Bending | <% math.round p.sigma %> N/mm² | <% math.round p.fyd %> N/mm² | <% calc.pct p.u_M %> % |
+| Shear | <% calc.fix (p.VEd, 1) %> kN | <% calc.fix (p.VRd, 1) %> kN | <% calc.pct p.u_V %> % |
+| Total deflection | <% calc.fix (p.d, 1) %> mm | <% calc.fix (p.d_lim, 1) %> mm | <% calc.pct p.u_d %> % |
+| Deflection, variable load | <% calc.fix (p.dq, 1) %> mm | <% calc.fix (p.dq_lim, 1) %> mm | <% calc.pct p.u_dq %> % |
+<caption>Table 2: Checks of the proposed section.</caption>
+<!--{ res2 : markdown }-->
+The alternative sections, each with its largest utilisation:
+
+<% stilo.dataframe {
+    columns: ["Section", "Mass (kg/m)", "Utilisation (%)", "Governing check", "Result"],
+    rows: [(list.enum calc.results) => (a -> [
+        a.section.name, a.section.mass, calc.pct a.u, a.governing,
+        (a.ok ? "adequate" ; "not adequate")
+    ])]
+} %>
+<caption>Table 3: Alternative sections; details in the calculation note, table 3.</caption>
 <!--[ Anna: try an IPE 270 too. ]-->
+<!--[ Marco: done, see table 3. ]-->
+<!--{ con1 : markdown }-->
+## 6 Conclusions
+
+<% best = calc.lightest %>
+- The proposed <% p.section.name %> is
+  <% p.ok ? "**adequate**" ; "**not adequate**" %>. Its governing check is the
+  <% p.governing %>, at <% calc.pct p.u %> % of the limit.
+- <% (math.max (p.u_d, p.u_dq) > math.max (p.u_M, p.u_V))
+    ? "Stiffness, not strength, governs the design" ; "Strength governs the design" %>:
+  bending is at <% calc.pct p.u_M %> %, shear at <% calc.pct p.u_V %> %, the total
+  deflection at <% calc.pct p.u_d %> % of the limit.
+- The lightest adequate section is the <% best.section.name %>, at
+  <% calc.pct best.u %> % (<% best.governing %>).
+<!--{ rec1 : markdown }-->
+## 7 Recommendations
+
+<%
+saving = (p.section.mass - best.section.mass) * bod.L * bod.beams   # kg of steel
+%>
+1. <% (best.section.name == p.section.name)
+    ? "Keep the " + p.section.name + "."
+    ; "Adopt the " + best.section.name + " instead of the " + p.section.name + ": it saves " + text.from (math.round saving) + " kg of steel over the " + text.from bod.beams + " beams." %>
+2. Confirm the partial factors and the imposed load against the National
+   Annex and the client's brief before issue.
+3. Design the end plate connections for the end shear of
+   <% calc.fix (best.VEd, 1) %> kN.
+4. Check the floor for vibrations: the gallery is open to the public, and a
+   lighter beam makes the floor livelier.
+5. Define the fire resistance required and the protection of the beams.
+<!--[ Marco: fine for the report. ]-->

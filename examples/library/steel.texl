@@ -1,16 +1,19 @@
 # Steel sections
 
 Steel grade and hot-rolled IPE sections, imported by other documents with
-`texl.import`. Section moduli in mm³, masses in kg/m.
+`texl.import`. Heights in mm, elastic section moduli `W` in mm³, second
+moments of area `I` in mm⁴, shear areas `Av` in mm², masses in kg/m.
 <%
 grade = {name: "S355", fy: 355},   # yield strength in N/mm²
+E = 210000,                        # modulus of elasticity in N/mm²
 gammaM0 = 1.0,                     # partial factor for resistance
 
 IPE = {
-    IPE240: {name: "IPE 240", h: 240, W: 324000, mass: 30.7},
-    IPE270: {name: "IPE 270", h: 270, W: 429000, mass: 36.1},
-    IPE300: {name: "IPE 300", h: 300, W: 557000, mass: 42.2},
-    IPE330: {name: "IPE 330", h: 330, W: 713000, mass: 49.1}
+    IPE240: {name: "IPE 240", h: 240, W: 324000, I: 38920000, Av: 1914, mass: 30.7},
+    IPE270: {name: "IPE 270", h: 270, W: 429000, I: 57900000, Av: 2214, mass: 36.1},
+    IPE300: {name: "IPE 300", h: 300, W: 557000, I: 83560000, Av: 2568, mass: 42.2},
+    IPE330: {name: "IPE 330", h: 330, W: 713000, I: 117700000, Av: 3081, mass: 49.1}
 }
 %>
-Grade <% grade.name %>: f<sub>y</sub> = <% grade.fy %> N/mm², γ<sub>M0</sub> = <% gammaM0 %>.
+Grade <% grade.name %>: f<sub>y</sub> = <% grade.fy %> N/mm², E = <% E %> N/mm²,
+γ<sub>M0</sub> = <% gammaM0 %>.

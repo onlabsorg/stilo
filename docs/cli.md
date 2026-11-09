@@ -185,7 +185,8 @@ How the lessons are written and tested: [The tutorial](tutorial.md).
 ## Tests
 
 `tests/cli/test_render.py` runs `main()` on the sample documents in
-`examples/`: rendering with imports, writing to a file, and a missing file.
+`examples/`: rendering with imports, writing to a file, a missing file, and
+every example rendered with `--strict`.
 `tests/cli/test_project.py` covers `stilo init` and `~` in `render`, with
 `Path.home()` moved into a temporary folder.
 `tests/cli/test_errors.py` covers the report of undefined values, on documents

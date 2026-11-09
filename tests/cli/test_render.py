@@ -23,3 +23,11 @@ def test_render_missing_file(capsys):
     err = capsys.readouterr().err
     assert "could not be loaded" in err
     assert "FileNotFoundError" in err  # says why
+
+
+def test_render_examples_without_errors(capsys):
+    """Every example document renders, and its imports resolve, with no
+    undefined value."""
+    for path in sorted(EXAMPLES.rglob("*.texl")):
+        assert main(["render", "--strict", str(path)]) == 0, path
+    assert "<%" not in capsys.readouterr().out

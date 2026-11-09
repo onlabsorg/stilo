@@ -6,6 +6,12 @@ change the interfaces.
 
 ## Unreleased
 
+- **The beam example is an engineering report**: `beam-check.texl` reads
+  as a short design report (introduction, scope of work, basis of design,
+  method statement, analysis results, conclusions and recommendations)
+  that links to and takes its figures from two detail documents of the
+  same project, `basis-of-design.texl` and `analysis.texl`. The steel
+  library gains E, second moments of area and shear areas.
 - **New document typography**: text, headings and table headers in
   Atkinson Hyperlegible Next, a wide, very legible sans in the spirit of
   Verdana; paragraphs and list items justified; tables full width with a

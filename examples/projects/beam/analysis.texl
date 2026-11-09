@@ -1,0 +1,150 @@
+<!--{ an00 : formula | hidden }-->
+<% texl.import "~/lib/stilo/index.texl" ~> (lib -> bind "stilo" lib.data.stilo) %>
+<!--{ an01 : markdown }-->
+# Calculation note
+
+Mezzanine floor beam — document MZ-003, revision B. The checks of the
+[design report](beam-check.texl), with the design data of the
+[basis of design](basis-of-design.texl).
+<% texl.import "basis-of-design.texl" ~> (d -> bind "bod" d.data) %>
+<!--{ an02 : formula | hidden }-->
+<%
+# Rounds x to n decimals.
+fix = (x, n) -> math.round (x * 10 ^ n) / 10 ^ n,
+
+# A ratio as a whole percentage.
+pct = x -> math.round (x * 100),
+
+# The checks of one section, with the data of the basis of design. Loads in
+# kN/m (= N/mm), lengths in mm for the stresses and deflections.
+check = s -> (
+    L = bod.L * 1000,
+    gs = s.mass * 9.81 / 1000,
+    g = bod.gk + gs,
+    q = bod.qk,
+    qd = bod.gammaG * g + bod.gammaQ * q,
+    MEd = qd * bod.L ^ 2 / 8,
+    VEd = qd * bod.L / 2,
+    sigma = MEd * 10 ^ 6 / s.W,
+    fyd = bod.fy / bod.gammaM0,
+    VRd = s.Av * bod.fy / ((math.sqrt 3) * bod.gammaM0) / 1000,
+    d = 5 * (g + q) * L ^ 4 / (384 * bod.E * s.I),
+    dq = 5 * q * L ^ 4 / (384 * bod.E * s.I),
+    d_lim = L / bod.deflection_total,
+    dq_lim = L / bod.deflection_variable,
+    u_M = sigma / fyd,
+    u_V = VEd / VRd,
+    u_d = d / d_lim,
+    u_dq = dq / dq_lim,
+    u = math.max (u_M, u_V, u_d, u_dq),
+    governing = (u == u_M) ? "bending" ; ((u == u_V) ? "shear" ;
+        ((u == u_d) ? "total deflection" ; "deflection under variable load")),
+    {
+        section: s, gs: gs, g: g, q: q, qd: qd, MEd: MEd, VEd: VEd,
+        sigma: sigma, fyd: fyd, VRd: VRd, d: d, dq: dq,
+        d_lim: d_lim, dq_lim: dq_lim,
+        u_M: u_M, u_V: u_V, u_d: u_d, u_dq: u_dq, u: u,
+        governing: governing, ok: u <= 1
+    }
+)
+%>
+<!--{ an03 : markdown }-->
+## 1 Method
+
+The beam is simply supported and carries a uniform load, so the midspan
+moment, the end shear and the midspan deflection are
+
+$$
+M_{Ed} = \frac{q_d L^2}{8}, \qquad V_{Ed} = \frac{q_d L}{2}, \qquad
+\delta = \frac{5\,q\,L^4}{384\,E\,I}
+$$
+
+The bending check is elastic, $\sigma = M_{Ed} / W \le f_y / \gamma_{M0}$,
+which is conservative for an IPE section. The shear resistance is
+$V_{Rd} = A_v f_y / (\sqrt{3}\,\gamma_{M0})$ (EN 1993-1-1, 6.2.6). The
+deck restrains the compression flange, so lateral-torsional buckling is
+not checked (basis of design, section 2). The self-weight of the beam is
+added to the permanent load.
+<!--{ an04 : markdown }-->
+## 2 Proposed section
+
+<% r = check bod.section %>
+The <% r.section.name %> weighs <% r.section.mass %> kg/m, a self-weight
+$g_s = <% fix (r.gs, 2) %>\ \text{kN/m}$. The line loads on the beam in each
+combination are:
+<!--{ an05 : markdown }-->
+<% combinations = stilo.dataframe {
+    columns: ["Combination", "γG", "γQ", "q (kN/m)"],
+    rows: [(list.enum bod.combinations.rows) => (c -> [c 0, c 1, c 2, fix (c 1 * r.g + c 2 * r.q, 2)])]
+} %>
+<% combinations %>
+<caption>Table 1: Line loads on the <% r.section.name %>, self-weight included.</caption>
+<!--{ an06 : markdown }-->
+### 2.1 Strength
+
+$$
+q_d = \gamma_G\,(g_k + g_s) + \gamma_Q\,q_k = <% fix (r.qd, 2) %>\ \text{kN/m}
+$$
+
+$$
+M_{Ed} = <% fix (r.MEd, 1) %>\ \text{kNm}, \qquad
+\sigma = \frac{M_{Ed}}{W} = <% math.round r.sigma %>\ \text{N/mm}^2, \qquad
+f_{yd} = \frac{f_y}{\gamma_{M0}} = <% math.round r.fyd %>\ \text{N/mm}^2
+$$
+
+$$
+V_{Ed} = <% fix (r.VEd, 1) %>\ \text{kN}, \qquad
+V_{Rd} = \frac{A_v f_y}{\sqrt{3}\,\gamma_{M0}} = <% fix (r.VRd, 1) %>\ \text{kN}
+$$
+<!--{ an07 : markdown }-->
+### 2.2 Deflection
+
+Under the characteristic combination, the total deflection and the
+deflection under the variable load alone are
+
+$$
+\delta = <% fix (r.d, 1) %>\ \text{mm} \le \frac{L}{<% bod.deflection_total %>} = <% fix (r.d_lim, 1) %>\ \text{mm},
+\qquad
+\delta_q = <% fix (r.dq, 1) %>\ \text{mm} \le \frac{L}{<% bod.deflection_variable %>} = <% fix (r.dq_lim, 1) %>\ \text{mm}
+$$
+<!--{ an08 : markdown }-->
+### 2.3 Summary
+
+| Check | Effect | Limit | Utilisation |
+|---|---:|---:|---:|
+| Bending | <% math.round r.sigma %> N/mm² | <% math.round r.fyd %> N/mm² | <% pct r.u_M %> % |
+| Shear | <% fix (r.VEd, 1) %> kN | <% fix (r.VRd, 1) %> kN | <% pct r.u_V %> % |
+| Total deflection | <% fix (r.d, 1) %> mm | <% fix (r.d_lim, 1) %> mm | <% pct r.u_d %> % |
+| Deflection, variable load | <% fix (r.dq, 1) %> mm | <% fix (r.dq_lim, 1) %> mm | <% pct r.u_dq %> % |
+<caption>Table 2: Checks of the <% r.section.name %>.</caption>
+
+The <% r.section.name %> is <% r.ok ? "**adequate**" ; "**not adequate**" %>:
+the governing check is <% r.governing %>, at <% pct r.u %> %.
+<!--[ Marco: fine for the report. ]-->
+<!--{ an09 : markdown }-->
+## 3 Alternative sections
+
+The same checks for the IPE sections of the steel library, lightest first.
+
+<%
+results = [(list.enum [
+    bod.steel.IPE.IPE240, bod.steel.IPE.IPE270,
+    bod.steel.IPE.IPE300, bod.steel.IPE.IPE330
+]) => check],
+alternatives = stilo.dataframe {
+    columns: ["Section", "Mass (kg/m)", "Bending (%)", "Shear (%)", "δ (%)", "δq (%)", "Result"],
+    rows: [(list.enum results) => (a -> [
+        a.section.name, a.section.mass, pct a.u_M, pct a.u_V, pct a.u_d, pct a.u_dq,
+        (a.ok ? "adequate" ; "not adequate")
+    ])]
+},
+lightest = [(list.enum results) => (a -> a.ok ? a)] 0
+%>
+<% alternatives %>
+<caption>Table 3: Utilisation of the IPE sections, by check; δ is the total deflection,
+δq the deflection under variable load.</caption>
+
+The lightest adequate section is the <% lightest.section.name %>, governed by
+<% lightest.governing %> at <% pct lightest.u %> %.
+<!--[ Anna: try an IPE 270 too. ]-->
+<!--[ Marco: done, see table 3. ]-->

@@ -268,11 +268,11 @@ describe("rich text: the example documents", () => {
         });
     }
 
-    it("accepts the Markdown cells of the beam example, except one with a table", async () => {
+    it("accepts the Markdown cells of the beam example, except those with a table or a caption", async () => {
         const cells = await cellsOf("/examples/projects/beam/beam-check.texl");
         const markdown = cells.filter(({ type }) => type === "markdown");
         const refused = markdown.filter(({ texl }) => !acceptsRich(texl));
         expect(markdown.length).to.be.greaterThan(2);
-        expect(refused.filter(({ texl }) => !texl.includes("|---|"))).to.deep.equal([]);
+        expect(refused.filter(({ texl }) => !texl.includes("|---|") && !texl.includes("<caption>"))).to.deep.equal([]);
     });
 });

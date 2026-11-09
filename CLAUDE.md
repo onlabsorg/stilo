@@ -274,8 +274,12 @@ creates the GitHub release. Bump the version in `pyproject.toml`,
     (`tagSpans`, `spanningTag`, `cellsFromSource`), cell names, comments, `outputSpans`, `splitRendering`. `swan.js` — Swan highlighting. `engine.js`
     — loads the wasm module once, creates engines.
 - `web/test/` — the editor's browser tests.
-- `examples/` — sample documents: `library/steel.texl`,
-  `projects/beam/beam-check.texl` (imports it), `sample.texl`.
+- `examples/` — sample documents: `library/steel.texl`, `sample.texl`,
+  and the project `projects/beam/`: `beam-check.texl`, a short design
+  report that links to and imports `basis-of-design.texl` (design data,
+  imports the steel library) and `analysis.texl` (the checks). Every
+  example renders with `stilo render --strict` (`tests/cli/test_render.py`)
+  and its cells fit their types (`web/test/examples.test.js`).
 
 ## File format
 

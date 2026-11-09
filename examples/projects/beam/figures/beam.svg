@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 150" width="360" height="150" font-family="sans-serif" font-size="13">
+  <title>A simply supported beam under a uniform load</title>
+  <rect width="360" height="150" fill="#ffffff"/>
+  <g stroke="#2b6cb0" stroke-width="1.5" fill="none">
+    <path d="M40 30 H320"/>
+    <path d="M60 30 V58 M95 30 V58 M130 30 V58 M165 30 V58 M200 30 V58 M235 30 V58 M270 30 V58 M300 30 V58"/>
+  </g>
+  <g fill="#2b6cb0">
+    <path d="M56 52 L60 60 L64 52 Z M91 52 L95 60 L99 52 Z M126 52 L130 60 L134 52 Z M161 52 L165 60 L169 52 Z M196 52 L200 60 L204 52 Z M231 52 L235 60 L239 52 Z M266 52 L270 60 L274 52 Z M296 52 L300 60 L304 52 Z"/>
+  </g>
+  <rect x="40" y="62" width="280" height="12" fill="#4a5568"/>
+  <path d="M50 74 L40 92 H60 Z" fill="none" stroke="#1a202c" stroke-width="1.5"/>
+  <path d="M310 74 L300 92 H320 Z" fill="none" stroke="#1a202c" stroke-width="1.5"/>
+  <circle cx="310" cy="96" r="3" fill="none" stroke="#1a202c" stroke-width="1.5"/>
+  <path d="M50 112 H310 M50 106 V118 M310 106 V118" stroke="#1a202c" stroke-width="1"/>
+  <text x="180" y="132" text-anchor="middle" fill="#1a202c">L = 6 m</text>
+  <text x="180" y="22" text-anchor="middle" fill="#2b6cb0">g + q (uniform)</text>
+</svg>

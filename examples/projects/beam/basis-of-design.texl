@@ -1,0 +1,116 @@
+<!--{ bd00 : formula | hidden }-->
+<% texl.import "~/lib/stilo/index.texl" ~> (lib -> bind "stilo" lib.data.stilo) %>
+<!--{ bd01 : markdown }-->
+# Basis of design
+
+Mezzanine floor beam — document MZ-002, revision B. The design data of the
+[design report](beam-check.texl): codes, structure, materials, loads,
+combinations and acceptance criteria. The
+[calculation note](analysis.texl) imports them from here.
+<% texl.import("../../library/steel.texl") ~> (lib -> bind "steel" lib.data) %>
+<!--{ bd02 : rich }-->
+## 1 Codes and standards
+
+- EN 1990: Basis of structural design.
+- EN 1991-1-1: Actions on structures — densities, self-weight, imposed loads
+  for buildings.
+- EN 1993-1-1: Design of steel structures — general rules and rules for
+  buildings.
+
+The recommended values of the Eurocodes are used. Consequence class CC2,
+design working life 50 years.
+<!--[ Marco: confirm the partial factors against the National Annex before issue. ]-->
+<!--{ bd03 : markdown }-->
+## 2 Structure
+
+![A simply supported beam under a uniform load](figures/beam.svg)
+
+<%
+L = 6,                          # span in m
+spacing = 2,                    # beam spacing in m
+beams = 12,                     # number of beams of the gallery
+section = steel.IPE.IPE300      # section proposed by the preliminary design
+%>
+The <% beams %> beams carry a gallery floor of composite steel deck and
+screed. Each beam spans L = <% L %> m between two columns and carries a strip
+of floor <% spacing %> m wide. It is simply supported: the end plate connections
+transfer shear only. The deck is fixed to the top flange at every rib, so the
+compression flange is restrained laterally and lateral-torsional buckling
+does not occur. The preliminary design proposes an <% section.name %>.
+<!--[ Anna: span and spacing from the client's brief, rev. B. ]-->
+<!--{ bd04 : markdown }-->
+## 3 Materials
+
+<%
+fy = steel.grade.fy,
+E = steel.E,
+gammaM0 = steel.gammaM0
+%>
+| Property | Symbol | Value |
+|---|---|---:|
+| Steel grade | | <% steel.grade.name %> |
+| Yield strength | $f_y$ | <% fy %> N/mm² |
+| Modulus of elasticity | $E$ | <% E %> N/mm² |
+| Partial factor for resistance | $\gamma_{M0}$ | <% gammaM0 %> |
+<caption>Table 1: Steel properties, from the steel library.</caption>
+<!--{ bd05 : markdown }-->
+## 4 Loads
+
+Characteristic loads on the floor (EN 1991-1-1). The gallery is open to the
+public, category C3, areas without obstacles for moving people. The
+self-weight of the beam is added in the calculation, for each section
+checked.
+<!--{ bd06 : data }-->
+<% loads: stilo.dataframe {
+    columns: ["Load", "Type", "Area load (kN/m²)", "Line load (kN/m)"],
+    rows: [
+        ["Composite deck and screed", "permanent", 1.6, 1.6 * spacing],
+        ["Finishes, ceiling, services", "permanent", 0.5, 0.5 * spacing],
+        ["Imposed, category C3", "variable", 5, 5 * spacing]
+    ]
+} %>
+<!--{ bd07 : markdown }-->
+<%
+line = loads.column "Line load (kN/m)",
+gk = line 0 + line 1,      # permanent line load in kN/m, without self-weight
+qk = line 2                # variable line load in kN/m
+%>
+On one beam: permanent load g<sub>k</sub> = <% gk %> kN/m and variable load
+q<sub>k</sub> = <% qk %> kN/m.
+<!--[ Anna: loads from the client's brief, rev. B. ]-->
+<!--{ bd08 : markdown }-->
+## 5 Load combinations
+
+Partial factors of EN 1990, Annex A1, table A1.2(B), equation 6.10, for the
+ultimate limit state (ULS); the characteristic combination, equation 6.14b,
+for the serviceability limit state (SLS).
+<!--{ bd09 : data }-->
+<% combinations: stilo.dataframe {
+    columns: ["Combination", "γG", "γQ"],
+    rows: [
+        ["ULS, fundamental", 1.35, 1.5],
+        ["SLS, characteristic", 1, 1]
+    ]
+} %>
+<!--{ bd10 : markdown }-->
+<%
+gammaG = (combinations.row 0) 1,
+gammaQ = (combinations.row 0) 2
+%>
+The strength checks use γ<sub>G</sub> = <% gammaG %> and
+γ<sub>Q</sub> = <% gammaQ %>; the deflection checks use the characteristic
+loads.
+<!--[ Marco: partial factors from EN 1990, table A1.2(B). ]-->
+<!--{ bd11 : markdown }-->
+## 6 Acceptance criteria
+
+<%
+deflection_total = 250,      # limit of the total deflection: L / 250
+deflection_variable = 300    # limit of the deflection under variable load: L / 300
+%>
+| Check | Criterion |
+|---|---|
+| Bending, shear (ULS) | utilisation ≤ 1.0 |
+| Total deflection (SLS) | δ ≤ L / <% deflection_total %> |
+| Deflection under variable load (SLS) | δ<sub>q</sub> ≤ L / <% deflection_variable %> |
+<caption>Table 2: Acceptance criteria.</caption>
