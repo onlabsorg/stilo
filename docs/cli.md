@@ -149,6 +149,11 @@ Runs `create_app(args.folder, args.web)` from the server with uvicorn on
 `args.host` and `args.port`, through `run_server` (`web.py`, shared with
 `tutor`). Returns 1 if `args.folder` is not a folder.
 
+Ctrl+C stops the server. uvicorn shuts down cleanly, then re-raises the
+interrupt for its caller (asyncio raises it out of a `CancelledError`);
+`run_server` catches it and prints a goodbye instead of a traceback, and
+the command returns 0.
+
 The default for `--web` is `WEB_DIST`, the folder `stilo/web` of the
 package: the build of the web app, in a checkout as in an installed package
 (see [Development setup](setup.md#the-package-stilo)). The server never
@@ -193,6 +198,7 @@ every example rendered with `--strict`.
 it writes to a temporary folder. `tests/cli/test_tutor.py` covers `stilo
 tutor`: copy, reuse, reset, refusals, the version check (with `run_server`
 replaced), and the real command serving the index in a subprocess.
+`tests/cli/test_web.py` covers Ctrl+C in `run_server`.
 
 ```sh
 uv run pytest tests/cli

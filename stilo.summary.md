@@ -320,6 +320,9 @@ accept are not part of Stilo.
   Nothing changes for users. The Stilo library's data tables now use Texl's
   new text templates to write their table, which shows exactly as before.
   Not yet released.
+- 2026-11-09: **Ctrl+C stops `stilo serve` and `stilo tutor` cleanly**, with
+  a goodbye message instead of an error report; `stilo serve` says at start
+  how to stop it. Not yet released.
 
 ## Known limitations
 

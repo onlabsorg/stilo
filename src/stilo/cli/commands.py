@@ -87,7 +87,8 @@ def serve(args) -> int:
     if not args.folder.is_dir():
         print(f"stilo: {args.folder}: not a folder", file=sys.stderr)
         return 1
-    print(f"Stilo: serving {args.folder.resolve()} at http://{args.host}:{args.port}/")
+    print(f"Stilo: serving {args.folder.resolve()} at http://{args.host}:{args.port}/ "
+          "(press Ctrl+C here to stop)")
     run_server(args.folder, args.host, args.port, args.web)
     return 0
 

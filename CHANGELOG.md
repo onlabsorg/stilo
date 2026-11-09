@@ -6,6 +6,9 @@ change the interfaces.
 
 ## Unreleased
 
+- **Ctrl+C stops `stilo serve` and `stilo tutor` cleanly**, with a goodbye
+  message instead of an error traceback. `stilo serve` now says how to stop
+  it when it starts.
 - **Texl 0.9**: Stilo now requires `pytexl` 0.9 and `@onlabsorg/texl` 0.9,
   which add the Swan built-in `text.template`. The `stilo` library's
   dataframe uses it to write its Markdown table; the table is unchanged.
