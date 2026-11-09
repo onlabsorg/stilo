@@ -316,6 +316,10 @@ accept are not part of Stilo.
   `.trash`, and the folder is always gone; the question says how many
   documents and other files go with it. Lessons 1, 8 and 10 of the tutorial
   teach it. Not yet released.
+- 2026-11-09: **moved to Texl 0.9**, in the browser and on the command line.
+  Nothing changes for users. The Stilo library's data tables now use Texl's
+  new text templates to write their table, which shows exactly as before.
+  Not yet released.
 
 ## Known limitations
 

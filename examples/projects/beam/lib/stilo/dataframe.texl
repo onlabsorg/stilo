@@ -57,12 +57,12 @@ indices = n -> (n > 0) ? [list.enum (indices (n - 1)), n - 1] ; [],
 # How many items of `values` (a list) satisfy `test`.
 count = (test, values) -> list.size [(list.enum values) => (v -> test v ? 1)],
 
-# A value as the text of a table cell: on one line, `|` escaped, and an
-# undefined value (or a text conversion that fails) as `[[Undefined]]`.
-cell_text = v -> (
-    s = text.join "\|" (text.split "|" (text.join " " (text.split NL (text.from v)))),
-    (type s == "Text") ? s ; "[[Undefined]]"
-),
+# A value as a tag shows it; never fails: an undefined value, or one that
+# cannot be converted, is `[[Undefined]]`.
+shown = text.template "{v}",
+
+# A value as the text of a table cell: as shown, on one line, `|` escaped.
+cell_text = v -> text.join "\|" (text.split "|" (text.join " " (text.split NL (shown {v: v})))),
 
 # `row` cut or padded with "" to `n` values.
 fit = (n, row) -> list.head n [list.enum row, (list.enum (indices n)) => (i -> "")],
@@ -78,13 +78,17 @@ numeric = values -> (
     (numbers > 0) & (others == 0)
 ),
 
-# One line of the Markdown table.
-table_line = cells -> "| " + text.join " | " ((list.enum cells) => cell_text) + " |",
+# The two kinds of line of a Markdown table.
+row_line = text.template "| {cells} |",
+rule_line = text.template "|{marks}|",
+
+# One row of the Markdown table: the header or a row of values.
+table_line = values -> row_line {cells: text.join " | " ((list.enum values) => cell_text)},
 
 # A dataframe as a Markdown table; the `__text__` hook of every dataframe.
 table = df -> (list.size df.columns == 0) ? "" ; (
-    rule = (list.enum (indices (list.size df.columns))) => (i -> numeric (column_at (df.rows, i)) ? "---:" ; "---"),
-    text.join NL (table_line df.columns, "|" + text.join "|" rule + "|", (list.enum df.rows) => table_line)
+    marks = (list.enum (indices (list.size df.columns))) => (i -> numeric (column_at (df.rows, i)) ? "---:" ; "---"),
+    text.join NL (table_line df.columns, rule_line {marks: text.join "|" marks}, (list.enum df.rows) => table_line)
 ),
 
 # The dataframe of checked `columns` and `rows`.

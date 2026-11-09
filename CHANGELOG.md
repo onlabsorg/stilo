@@ -6,6 +6,9 @@ change the interfaces.
 
 ## Unreleased
 
+- **Texl 0.9**: Stilo now requires `pytexl` 0.9 and `@onlabsorg/texl` 0.9,
+  which add the Swan built-in `text.template`. The `stilo` library's
+  dataframe uses it to write its Markdown table; the table is unchanged.
 - **The navigation pane shows every file**: images, PDFs, data files and
   any other file appear in the tree beside the documents, greyed out, and
   so do folders that hold only such files. Clicking one opens it in a new
