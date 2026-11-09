@@ -109,8 +109,11 @@ class Storage:
         return target.is_file() and target.suffix != DOCUMENT_SUFFIX
 
     def create(self, path: str, content: bytes) -> str:
-        target = self._writable(path)
-        target.parent.mkdir(parents=True, exist_ok=True)
+        """Create a file, a document or any other, and its missing folders."""
+        target = self._item(path)
+        if target.is_dir():
+            raise Conflict(f"already exists, as a folder: {path!r}")
+        self._make_folder(target.parent, path)
         try:
             with open(target, "xb") as file:
                 file.write(content)
@@ -119,7 +122,11 @@ class Storage:
         return etag(content)
 
     def update(self, path: str, content: bytes, if_match: str | None = None) -> str:
-        target = self._writable(path)
+        target = self.resolve(path)
+        if target.suffix != DOCUMENT_SUFFIX:
+            raise BadRequest(f"only {DOCUMENT_SUFFIX} files can be updated: {path!r}")
+        if target.is_dir():
+            raise BadRequest(f"is a folder: {path!r}")
         if not target.is_file():
             raise NotFound(f"no such file: {path!r}")
         if if_match is not None and if_match != etag(target.read_bytes()):
@@ -131,28 +138,21 @@ class Storage:
         os.replace(temp, target)
         return etag(content)
 
-    def _writable(self, path: str) -> Path:
-        target = self.resolve(path)
-        if target.suffix != DOCUMENT_SUFFIX:
-            raise BadRequest(f"only {DOCUMENT_SUFFIX} files can be written: {path!r}")
-        if target.is_dir():
-            raise BadRequest(f"is a folder: {path!r}")
-        return target
-
     def _item(self, path: str) -> Path:
-        """The file-system path of an item to move or delete, validated as
+        """The file-system path of an item to create, move or delete, validated as
         `resolve` does. A symbolic link stays itself: the item is the link, not
         what it points to."""
         self.resolve(path)
         relative = path.strip("/")
         if not relative:
-            raise BadRequest("the root folder cannot be moved or deleted")
+            raise BadRequest("not allowed on the root folder")
         return self.root.joinpath(*relative.split("/"))
 
     # -- move ----------------------------------------------------------------
 
     def move(self, path: str, to: str) -> str:
-        """Move or rename a document or a folder; returns its new path."""
+        """Move or rename a file or a folder; returns its new path. A document
+        stays a document and another file stays another file."""
         source = self._item(path)
         target = self._item(to)
         if not os.path.lexists(source):
@@ -162,8 +162,8 @@ class Storage:
                 raise BadRequest(f"a folder's name cannot end in {DOCUMENT_SUFFIX}: {to!r}")
             if target.resolve().is_relative_to(source.resolve()) and target != source:
                 raise BadRequest(f"a folder cannot go inside itself: {to!r}")
-        elif source.suffix != DOCUMENT_SUFFIX or target.suffix != DOCUMENT_SUFFIX:
-            raise BadRequest(f"only {DOCUMENT_SUFFIX} files can be moved, to a {DOCUMENT_SUFFIX} name: {path!r} to {to!r}")
+        elif (source.suffix == DOCUMENT_SUFFIX) != (target.suffix == DOCUMENT_SUFFIX):
+            raise BadRequest(f"a file cannot gain or lose the {DOCUMENT_SUFFIX} extension: {path!r} to {to!r}")
         if target == source:
             return self.relative(target)
         # On a file system that ignores case, a new case of the name is the same item
@@ -176,50 +176,39 @@ class Storage:
     # -- delete --------------------------------------------------------------
 
     def delete_file(self, path: str) -> None:
-        """Move a document to the trash. Its folder stays, even if left empty."""
+        """Move a file to the trash. Its folder stays, even if left empty."""
         source = self._item(path)
         if not os.path.lexists(source):
             raise NotFound(f"no such file: {path!r}")
         if source.is_dir():
             raise BadRequest(f"is a folder: {path!r}")
-        if source.suffix != DOCUMENT_SUFFIX:
-            raise BadRequest(f"only {DOCUMENT_SUFFIX} files can be deleted: {path!r}")
         self._to_trash(source, self._new_trash())
 
     def delete_folder(self, path: str) -> dict:
-        """Move every document in a folder to the trash, at any depth, and remove
-        the folders this leaves with nothing in them. Other files, hidden entries
-        and links to folders stay, and so do the folders that hold them."""
+        """Move a folder to the trash with everything in it: documents, other
+        files and hidden entries; links go as links. `deleted` is the number of
+        files in it, at any depth. A folder with no files at all is removed."""
         folder = self._item(path)
         if not os.path.lexists(folder):
             raise NotFound(f"no such folder: {path!r}")
         if folder.is_symlink() or not folder.is_dir():
             raise BadRequest(f"not a folder: {path!r}")
-        documents: list[Path] = []
-        folders: list[Path] = []
-        self._collect(folder, documents, folders)
-        trash = self._new_trash() if documents else None
-        for document in documents:
-            self._to_trash(document, trash)
-        for each in folders:  # the deepest first
-            try:
-                each.rmdir()
-            except OSError:
-                pass  # still holds something
-        return {"deleted": len(documents), "removed": not folder.exists()}
+        count = self._count_files(folder)
+        if count:
+            self._to_trash(folder, self._new_trash())
+        else:
+            shutil.rmtree(folder)
+        return {"deleted": count}
 
-    def _collect(self, folder: Path, documents: list[Path], folders: list[Path]) -> None:
-        """Add the documents under `folder`, and its folders with the deepest
-        first. What the tree does not list as a document or a folder is left."""
-        for entry in folder.iterdir():
-            if self._hidden(entry.name):
-                continue
-            if entry.is_dir():
-                if not entry.is_symlink():
-                    self._collect(entry, documents, folders)
-            elif entry.is_file() and entry.suffix == DOCUMENT_SUFFIX:
-                documents.append(entry)
-        folders.append(folder)
+    @staticmethod
+    def _count_files(folder: Path) -> int:
+        """The files under `folder`, at any depth, hidden ones and links
+        included; a link to a folder counts as a file and is not followed."""
+        count = 0
+        for here, dirs, files in os.walk(folder):
+            links = [d for d in dirs if (Path(here) / d).is_symlink()]
+            count += len(files) + len(links)
+        return count
 
     def _new_trash(self) -> Path:
         """A new folder in the trash for one deletion, named after its time."""
@@ -283,7 +272,7 @@ class Storage:
                 continue
             if entry.is_dir():
                 folders.append(self._folder(entry, None if depth is None else depth - 1))
-            elif entry.is_file() and entry.suffix == DOCUMENT_SUFFIX:
+            elif entry.is_file():
                 stat = entry.stat()
                 modified = datetime.fromtimestamp(stat.st_mtime, timezone.utc)
                 files.append({"name": entry.name, "path": self.relative(entry), "type": "file",

@@ -11,7 +11,7 @@ DOC = "<!--{ bek4 : markdown }-->\n# Title\n"
 def root(tmp_path):
     (tmp_path / "projects" / "beam").mkdir(parents=True)
     (tmp_path / "projects" / "beam" / "check.texl").write_text(DOC)
-    (tmp_path / "projects" / "beam" / "notes.txt").write_text("not listed")
+    (tmp_path / "projects" / "beam" / "notes.txt").write_text("notes")
     (tmp_path / "projects" / ".hidden").mkdir()
     (tmp_path / "library").mkdir()
     (tmp_path / "library" / "steel.texl").write_text("steel")
@@ -35,7 +35,7 @@ def test_get_file(client):
 
 
 def test_get_any_file(client):
-    assert client.get("/_api/files/projects/beam/notes.txt").text == "not listed"
+    assert client.get("/_api/files/projects/beam/notes.txt").text == "notes"
 
 
 def test_get_missing(client):
@@ -81,8 +81,25 @@ def test_create_existing_conflicts(client, root):
     assert (root / "projects" / "beam" / "check.texl").read_text() == DOC
 
 
-def test_create_only_texl(client):
-    assert client.post("/_api/files/projects/evil.py", content="x").status_code == 400
+def test_create_any_file(client, root):
+    data = bytes(range(256))
+    response = client.post("/_api/files/projects/photo.png", content=data)
+    assert response.status_code == 201
+    assert (root / "projects" / "photo.png").read_bytes() == data
+
+
+@pytest.mark.parametrize("path", ["projects", "projects/beam"])
+def test_create_refuses_a_folder(client, path):
+    assert client.post(f"/_api/files/{path}", content="x").status_code == 409
+
+
+@pytest.mark.parametrize("path", ["", ".hidden.png", "_app/x.png", "a/~/x.png"])
+def test_create_refuses_bad_paths(client, path):
+    assert client.post(f"/_api/files/{path}", content="x").status_code == 400
+
+
+def test_create_refuses_a_file_in_the_way(client):
+    assert client.post("/_api/files/library/steel.texl/x.png", content="x").status_code == 409
 
 
 # -- UPDATE --------------------------------------------------------------------
@@ -107,6 +124,12 @@ def test_update_without_etag(client, root):
     assert client.put("/_api/files/projects/beam/check.texl", content="new").status_code == 200
 
 
+def test_update_only_documents(client, root):
+    response = client.put("/_api/files/projects/beam/notes.txt", content="new")
+    assert response.status_code == 400
+    assert (root / "projects" / "beam" / "notes.txt").read_text() == "notes"
+
+
 def test_update_missing(client, root):
     assert client.put("/_api/files/projects/nope.texl", content="x").status_code == 404
     assert not (root / "projects" / "nope.texl").exists()
@@ -120,9 +143,9 @@ def test_tree_root(client):
     assert [c["name"] for c in tree["children"]] == ["library", "projects"]
     beam = tree["children"][1]["children"][0]
     assert beam["path"] == "projects/beam"
-    # Only .texl files; hidden folders skipped.
-    assert [c["name"] for c in beam["children"]] == ["check.texl"]
-    assert beam["children"][0]["type"] == "file"
+    # Every file; hidden folders skipped.
+    assert [c["name"] for c in beam["children"]] == ["check.texl", "notes.txt"]
+    assert [c["type"] for c in beam["children"]] == ["file", "file"]
 
 
 def test_tree_subfolder_and_depth(client):
@@ -283,6 +306,11 @@ def test_move_document_makes_parents(client, root):
     assert (root / "new" / "place" / "steel.texl").is_file()
 
 
+def test_rename_other_file(client, root):
+    assert move(client, "projects/beam/notes.txt", "library/notes.md").status_code == 200
+    assert (root / "library" / "notes.md").read_text() == "notes"
+
+
 def test_move_folder_takes_everything(client, root):
     assert move(client, "projects/beam", "library/beam").status_code == 200
     assert (root / "library" / "beam" / "check.texl").is_file()
@@ -314,7 +342,7 @@ def test_move_missing(client):
 @pytest.mark.parametrize("path, to", [
     ("projects", "projects/beam/inner"),            # inside itself
     ("library/steel.texl", "library/steel.txt"),    # no longer a document
-    ("projects/beam/notes.txt", "library/n.texl"),  # not a document
+    ("projects/beam/notes.txt", "library/n.texl"),  # becomes a document
     ("library", "library.texl"),                    # a folder named as a document
     ("library/steel.texl", ".trash/steel.texl"),    # hidden
     ("library/steel.texl", "_app/steel.texl"),      # reserved
@@ -371,47 +399,42 @@ def test_delete_document_missing(client):
     assert client.delete("/_api/files/library/none.texl").status_code == 404
 
 
-@pytest.mark.parametrize("path", ["library", "projects/beam/notes.txt", "", ".trash/x.texl"])
+def test_delete_other_file(client, root):
+    assert client.delete("/_api/files/projects/beam/notes.txt").status_code == 204
+    assert trashed(root) == ["projects/beam/notes.txt"]
+
+
+@pytest.mark.parametrize("path", ["library", "", ".trash/x.texl"])
 def test_delete_document_refuses(client, path):
     assert client.delete(f"/_api/files/{path}").status_code == 400
 
 
-def test_delete_folder_removes_it_when_nothing_is_left(client, root):
-    (root / "library" / "sub" / "empty").mkdir(parents=True)
-    (root / "library" / "sub" / "deep.texl").write_text("deep")
-    response = client.delete("/_api/tree/library")
-    assert response.status_code == 200
-    assert response.json() == {"deleted": 2, "removed": True}
-    assert not (root / "library").exists()
-    assert trashed(root) == ["library/steel.texl", "library/sub/deep.texl"]
-
-
-def test_delete_folder_keeps_other_files(client, root):
-    response = client.delete("/_api/tree/projects/beam")
-    assert response.json() == {"deleted": 1, "removed": False}
-    assert (root / "projects" / "beam" / "notes.txt").is_file()
-    assert not (root / "projects" / "beam" / "check.texl").exists()
-
-
-def test_delete_folder_removes_only_the_subfolders_left_empty(client, root):
+def test_delete_folder_takes_everything(client, root):
+    (root / "projects" / "beam" / "sub" / "empty").mkdir(parents=True)
+    (root / "projects" / "beam" / "sub" / "deep.texl").write_text("deep")
+    (root / "projects" / "beam" / ".gitkeep").write_text("")
     response = client.delete("/_api/tree/projects")
-    assert response.json() == {"deleted": 1, "removed": False}
-    assert (root / "projects" / "beam" / "notes.txt").is_file()
-    assert (root / "projects" / ".hidden").is_dir()
+    assert response.status_code == 200
+    assert response.json() == {"deleted": 4}
+    assert not (root / "projects").exists()
+    assert trashed(root) == ["projects/beam/.gitkeep", "projects/beam/check.texl",
+                             "projects/beam/notes.txt", "projects/beam/sub/deep.texl"]
 
 
-def test_delete_folder_without_documents_makes_no_trash(client, root):
-    (root / "empty").mkdir()
-    assert client.delete("/_api/tree/empty").json() == {"deleted": 0, "removed": True}
+def test_delete_folder_without_files_makes_no_trash(client, root):
+    (root / "empty" / "inner").mkdir(parents=True)
+    assert client.delete("/_api/tree/empty").json() == {"deleted": 0}
+    assert not (root / "empty").exists()
     assert not (root / ".trash").exists()
 
 
 def test_delete_folder_does_not_follow_links(client, root):
     (root / "links").mkdir()
     (root / "links" / "to-library").symlink_to(root / "library")
-    assert client.delete("/_api/tree/links").json() == {"deleted": 0, "removed": False}
-    assert (root / "library" / "steel.texl").is_file()
     assert client.delete("/_api/tree/links/to-library").status_code == 400
+    assert client.delete("/_api/tree/links").json() == {"deleted": 1}
+    assert not (root / "links").exists()
+    assert (root / "library" / "steel.texl").is_file()
 
 
 def test_delete_folder_missing(client):

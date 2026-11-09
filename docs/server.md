@@ -76,9 +76,10 @@ regular file can be read, not only `.texl` files. Raises `NotFound` if there is 
 def create(self, path: str, content: bytes) -> str
 ```
 
-Creates a new `.texl` file, with its missing parent folders, and returns its
-ETag. Raises `Conflict` if the file exists (create never overwrites), and
-`BadRequest` for a path that is not a `.texl` file.
+Creates a new file of any kind, a document or another file (an upload), with
+its missing parent folders, and returns its ETag. Raises `Conflict` if the
+path exists (create never overwrites) or a file is in the way of a parent,
+and `BadRequest` for a path the protocol refuses or the root.
 
 ### `update`
 
@@ -103,8 +104,8 @@ def tree(self, path: str, depth: int | None = None) -> dict
 Returns the folder at `path` as a nested dictionary, the JSON body of the
 protocol's QUERY: folders with `children`, files with `size` and
 `modified`. Children are folders first, then files, each sorted by name;
-only folders and `.texl` files are listed, without hidden entries, folders
-named `~`, or reserved names at the root. `depth` limits the recursion. Raises
+every file is listed, without hidden entries, folders named `~`, or
+reserved names at the root. `depth` limits the recursion. Raises
 `NotFound` and `BadRequest` as `read` does.
 
 ### `create_folder`
@@ -123,8 +124,9 @@ root.
 def move(self, path: str, to: str) -> str
 ```
 
-Moves or renames a document or a folder and returns its new path, creating
-missing parents of `to`. A folder takes everything in it. Raises `Conflict` if
+Moves or renames a file or a folder and returns its new path, creating
+missing parents of `to`. A folder takes everything in it. A file keeps its
+kind: a document's new name ends in `.texl`, another file's does not. Raises `Conflict` if
 `to` exists (move never overwrites), `NotFound` if the item does not, and
 `BadRequest` for anything else the protocol refuses. A symbolic link moves as
 the link, not what it points to.
@@ -140,12 +142,11 @@ Nothing is erased. Each deletion gets its own folder in the trash,
 `.trash/<UTC time>/`, and items keep their path from the root inside it, so a
 user can find them and deleting twice loses nothing.
 
-`delete_file` moves one `.texl` file; its folder stays, even if left empty.
-`delete_folder` moves every `.texl` file at any depth, then removes the folders
-left with nothing in them, the deepest first, and returns `{"deleted": <count>,
-"removed": <whether the given folder is gone>}`. Other files, hidden entries and
-links to folders stay, and so do the folders holding them; links are not followed.
-A deletion with no documents makes no trash folder.
+`delete_file` moves one file, a document or any other; its folder stays, even
+if left empty. `delete_folder` moves the whole folder, with documents, other
+files, hidden entries and links (as links, not followed), and returns
+`{"deleted": <number of files in it>}`. A folder with no files at all, at any
+depth, is removed and makes no trash folder (S15).
 
 ### `etag`
 

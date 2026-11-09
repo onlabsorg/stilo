@@ -1,6 +1,6 @@
 # Protocol v0 — documents over HTTP
 
-*The contract between the web app and the server, as of 2026-11-07. Plain
+*The contract between the web app and the server, as of 2026-11-09. Plain
 HTTP, close to how the web already serves files, so that `texl.import` can
 fetch documents by URL with no special client. Version 0: no accounts, no
 permissions, no versions; everything under the server root is readable and
@@ -14,9 +14,9 @@ root; document folders and files cannot use them there.
 
 | Path                  | What                                             |
 |-----------------------|--------------------------------------------------|
-| `/_api/files/<path>`  | Document content: read, create, update, delete   |
+| `/_api/files/<path>`  | File content: read, create, delete; update for documents |
 | `/_api/tree/<path>`   | Folder structure, as JSON; create and delete folders |
-| `/_api/move/<path>`   | Move or rename a document or a folder            |
+| `/_api/move/<path>`   | Move or rename a file or a folder                |
 | `/_app/...`           | The web app's static assets (built bundle)       |
 | `/<path>`             | Any other path: the **public URL** of a document or other file (GET, HEAD) |
 
@@ -139,9 +139,11 @@ POST /_api/files/projects/beam/new-check.texl
   ETag: "<sha256>"
 ```
 
-Missing parent folders are created. `409 Conflict` if the file already
-exists (create never overwrites). Only `.texl` files can be written (`400`
-otherwise).
+Any file can be created, a document or another file (an image, a PDF: the
+web app's Upload sends its bytes as they are). Missing parent folders are
+created. `409 Conflict` if the file already exists (create never
+overwrites), as a file or a folder, or if a file is in the way of a parent
+folder. `400` for a path the protocol refuses, and for the root.
 
 ### UPDATE an existing file
 
@@ -155,7 +157,7 @@ PUT /_api/files/projects/beam/beam-check.texl
 ```
 
 The body replaces the whole file. `404` if the file does not exist (update
-never creates). Only `.texl` files can be written (`400` otherwise, whether or
+never creates). Only `.texl` files can be updated (`400` otherwise, whether or
 not the file exists). With `If-Match`, the server refuses the write with
 `412 Precondition Failed` if the file changed since the client read it, so
 two people saving the same document do not silently overwrite each other.
@@ -180,8 +182,9 @@ GET /_api/tree/projects?depth=2
 ```
 
 `/_api/tree/` (empty path) is the root, whose `name` and `path` are `""`.
-Children are folders first, then files, each sorted by name. Only folders
-and `.texl` files are listed; hidden entries are skipped. `depth` limits
+Children are folders first, then files, each sorted by name. Every file is
+listed, documents and other files alike (a client tells them apart by the
+`.texl` extension); hidden entries are skipped. `depth` limits
 recursion (`depth=1`: direct children only; default: unlimited); a folder
 beyond the depth has no `children` key. `404` if the folder does not exist;
 `400` if the path is a file.
@@ -197,7 +200,7 @@ POST /_api/tree/projects/bridge
 Missing parent folders are created. `409 Conflict` if the path already exists,
 as a folder or a file. A folder's name cannot end in `.texl` (`400`).
 
-### MOVE a document or a folder
+### MOVE a file or a folder
 
 ```
 POST /_api/move/projects/beam/check.texl
@@ -214,39 +217,40 @@ documents are not updated.
 
 `404` if the item does not exist. `409 Conflict` if `to` exists (move never
 overwrites). `400` if `to` is not a valid path, if a document's new name does not
-end in `.texl`, if a folder's does, if the item is a file other than a document,
-if a folder would go inside itself, or for the root. A move to the path the item
+end in `.texl`, if another file's does (a file never becomes or stops being a
+document), if a folder's does, if a folder would go inside itself, or for the
+root. A move to the path the item
 already has changes nothing.
 
-### DELETE a document
+### DELETE a file
 
 ```
 DELETE /_api/files/projects/beam/check.texl
 → 204 No Content
 ```
 
-The document is gone from the tree and from its URL. Its folder stays, even if
-this leaves it empty. `404` if it does not exist; `400` if the path is a folder
-or a file other than a document.
+The file, a document or any other, is gone from the tree and from its URL. Its
+folder stays, even if this leaves it empty. `404` if it does not exist; `400`
+if the path is a folder.
 
 ### DELETE a folder
 
 ```
 DELETE /_api/tree/projects/beam
 → 200 OK
-  {"deleted": 3, "removed": true}
+  {"deleted": 3}
 ```
 
-Deletes every document in the folder, at any depth. Other files and hidden
-entries stay. Each folder left with nothing in it is removed, the given one
-included; one that still holds something stays. `deleted` is how many documents
-were deleted, `removed` whether the given folder is gone. `404` if the folder
-does not exist; `400` if the path is a file, a link or the root.
+Deletes the folder with everything in it: documents, other files, hidden
+entries and subfolders; a link inside goes as a link, what it points to stays.
+`deleted` is how many files were in it, at any depth. `404` if the folder does
+not exist; `400` if the path is a file, a link or the root.
 
 **What deleting means is up to the server.** To a client the item is gone; the
 protocol has no way to list or restore what was deleted. Stilo's server moves
-documents to `.trash/<time of the deletion>/<their path>` under its root, so a
-user can get them back from the file system (S8). As a hidden folder, `.trash`
+the file or folder to `.trash/<time of the deletion>/<its path>` under its root
+(a folder with no files at all is simply removed), so a
+user can get it back from the file system (S8, S15). As a hidden folder, `.trash`
 cannot be reached through the protocol.
 
 ## Errors

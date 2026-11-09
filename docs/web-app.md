@@ -11,7 +11,7 @@ its own page: [The editor](editor.md).*
 | `src/main.js`                  | Entry point: loads the theme CSS, the editor and the app |
 | `src/components/stilo-app.js`  | `StiloApp`, `<stilo-app>`: the shell. Layout, state, routing, commands, editor events |
 | `src/components/top-bar.js`    | `<top-bar>`: the document's name, the status, the pane buttons |
-| `src/components/nav-pane.js`   | `<nav-pane>`: the folder tree, its menus and keys   |
+| `src/components/nav-pane.js`   | `<nav-pane>`: the tree of folders and files, its menus and keys |
 | `src/components/context-menu.js` | `<context-menu>`: a menu at a point of the window |
 | `src/components/move-dialog.js` | `<move-dialog>`: Move to…, choosing a folder       |
 | `src/components/commands-pane.js` | `<commands-pane>`: the command list, by group, foldable |
@@ -34,7 +34,7 @@ group, a collapsed folder).
 | State                    | Meaning                                         |
 |--------------------------|-------------------------------------------------|
 | `_root`, `_tree`         | The navigation root (a folder path) and its tree |
-| `_showEmpty`             | Whether the tree shows folders without documents (default on, remembered per browser) |
+| `_showOther`             | Whether the tree shows other files, and folders holding only other files (default on, remembered per browser) |
 | `_doc`, `_etag`, `_dirty` | The open document's path, its ETag from the last read or write, and whether it has unsaved changes |
 | `_status`                | The message in the top bar ("Saved", an error)  |
 | `_moving`                | The item being moved, with the whole tree, while `<move-dialog>` is open |
@@ -58,14 +58,15 @@ The commands call these public methods:
 | `reload()`             | Reads the document again (after confirming, if dirty) |
 | `newDocument(node?)`   | Asks for a name in the tree, `createFile`, opens it. The folder is `node`, or the folder of the document `node`; without `node`, likewise from the item last used in the tree, else the navigation root |
 | `newFolder(node?)`     | Asks for a name in the tree, `createFolder`, in a folder chosen as for `newDocument`; makes it the current item |
+| `upload(node?)`        | Opens the browser's file dialog (several files allowed) and `uploadFile`s each into a folder chosen as for `newDocument`. A name that exists or cannot be used is skipped; the status lists what was not uploaded |
 | `duplicate(node)`      | Copies a document next to it under a name asked for in the tree, opens the copy. Documents only |
-| `rename(node)`         | Asks for the new name in the item's row, warns about links, `moveItem` |
+| `rename(node)`         | Asks for the new name in the item's row, warns about links, `moveItem`. A document's name is asked without `.texl`; another file's with its extension, which cannot become `.texl` |
 | `moveTo(node)`         | Opens `<move-dialog>`, which carries the warning about links; then `moveItem` |
-| `deleteItem(node)`     | Confirms, then `deleteFile` or `deleteFolder`; closes the open document if it was deleted. The status says if a folder stayed because it holds other files |
-| `copyLink(node)`       | Puts a document's link on the clipboard, relative to the open document (`relativeLink` in `route.js`) |
+| `deleteItem(node)`     | Confirms, then `deleteFile` or `deleteFolder`; closes the open document if it was deleted. For a folder the question counts the documents and other files that go with it |
+| `copyLink(node)`       | Puts a file's link on the clipboard, relative to the open document (`relativeLink` in `route.js`) |
 | `openAsRoot(node)`     | Makes the folder, or the document's folder, the navigation root |
 | `refreshTree()`        | Reads the tree again; the old one stays until the new one is there |
-| `toggleEmptyFolders()` | Shows or hides folders without documents              |
+| `toggleOtherFiles()`   | Shows or hides other files, and folders holding only other files |
 | `toggleNav()`, `togglePane(pane)`, `toggleTheme()` | The view commands |
 | `toggleSource()`       | Shows the editor's value read-only in place of the editor (which stays, hidden), or goes back to it |
 | `runCommand(id, node?)` | Runs a command of `commands.js` by its id, on a tree node if given |
@@ -134,7 +135,16 @@ document (`_go`) and applies the route again on `popstate`.
   document. Their keys, F2 and Delete, have no `match`: `<nav-pane>`
   handles them, only when one of its items has the focus, because Delete
   also deletes cells in the editor. `treeMenus` lists which commands each
-  menu shows (on a file, on a folder, on the pane).
+  menu shows (on a document, on another file, on a folder, on the pane).
+
+**Other files.** The tree lists every file. Files that are not documents
+(`isDocument`) are muted (`--text-faint`, their own icon), and so are
+folders holding files but no document at any depth; an empty folder is not
+muted, being a place for documents. Another file's row is a link to its
+public URL with `target="_blank"` and `rel="noopener"`, so a click or
+Enter opens it in a new tab, where the server sandboxes what could run
+scripts. With `showOther` off (Show other files, in the pane's menu)
+`<nav-pane>` leaves the muted items out.
 
 `<nav-pane>` asks for names itself: `askName({folder, replaces, value, label,
 icon, submit})` opens a row in the folder, or in place of the item at `replaces`,
@@ -156,14 +166,16 @@ document is read again in a new editor, so its undo history starts afresh.
 |----------------------------|--------------------------|--------------------|
 | `readFile(path)`           | GET a file               | `{text, etag}`     |
 | `createFile(path, text)`   | CREATE                   | the ETag           |
+| `uploadFile(path, file)`   | CREATE, with the bytes of a `File` | —        |
 | `updateFile(path, text, etag)` | UPDATE with `If-Match` | the new ETag     |
 | `readTree(path, depth?)`   | QUERY the tree           | the tree           |
 | `createFolder(path)`       | CREATE a folder          | —                  |
 | `moveItem(path, to)`       | MOVE                     | —                  |
-| `deleteFile(path)`         | DELETE a document        | —                  |
-| `deleteFolder(path)`       | DELETE a folder          | `{deleted, removed}` |
+| `deleteFile(path)`         | DELETE a file            | —                  |
+| `deleteFolder(path)`       | DELETE a folder          | `{deleted}`        |
 | `documentUrl(path)`        | —                        | the public address |
 | `documentPath(url)`        | —                        | the path of a public address, or `null` |
+| `isDocument(path)`         | —                        | whether the path ends in `.texl` |
 
 Failed requests throw an `ApiError`, whose `status` is the HTTP status, and
 whose message is the server's `error`. Paths are relative to the server

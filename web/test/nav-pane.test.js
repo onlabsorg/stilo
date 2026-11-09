@@ -48,13 +48,13 @@ describe("nav-pane menus", () => {
     it("offers the folder commands on a folder", async () => {
         const el = await pane();
         await rightClick(el, row(el, "projects").querySelector(".item"));
-        expect(labels(el)).to.deep.equal(["New document…", "New folder…", "Open as root", "Rename", "Move to…", "Delete"]);
+        expect(labels(el)).to.deep.equal(["New document…", "New folder…", "Upload files…", "Open as root", "Rename", "Move to…", "Delete"]);
     });
 
     it("offers the pane commands on the empty area", async () => {
         const el = await pane();
         await rightClick(el, el.renderRoot.querySelector(".tree"));
-        expect(labels(el)).to.deep.equal(["New document…", "New folder…", "Refresh", "Show empty folders"]);
+        expect(labels(el)).to.deep.equal(["New document…", "New folder…", "Upload files…", "Refresh", "Show other files"]);
     });
 
     it("runs the chosen command on the node of the menu, and closes", async () => {
@@ -125,36 +125,62 @@ describe("nav-pane keys", () => {
     });
 });
 
-describe("nav-pane empty folders", () => {
-    const withEmpty = {
+describe("nav-pane other files", () => {
+    const withOthers = {
         name: "",
         path: "",
         type: "folder",
         children: [
-            { name: "a", path: "a", type: "folder", children: [{ name: "b", path: "a/b", type: "folder", children: [] }] },
-            { name: "c", path: "c", type: "folder", children: [{ name: "d.texl", path: "c/d.texl", type: "file" }] },
+            { name: "empty", path: "empty", type: "folder", children: [] },
+            {
+                name: "images",
+                path: "images",
+                type: "folder",
+                children: [
+                    { name: "raw", path: "images/raw", type: "folder", children: [{ name: "a.png", path: "images/raw/a.png", type: "file" }] },
+                    { name: "b.png", path: "images/b.png", type: "file" },
+                ],
+            },
+            { name: "c", path: "c", type: "folder", children: [{ name: "data", path: "c/data", type: "folder", children: [{ name: "d.csv", path: "c/data/d.csv", type: "file" }] }, { name: "d.texl", path: "c/d.texl", type: "file" }] },
+            { name: "report.pdf", path: "report.pdf", type: "file" },
         ],
     };
     const names = (el) => [...el.renderRoot.querySelectorAll(".name")].map((n) => n.textContent);
+    const muted = (el) => [...el.renderRoot.querySelectorAll(".item.other .name")].map((n) => n.textContent);
 
-    it("shows them by default", async () => {
-        const el = await fixture(html`<nav-pane .tree=${withEmpty}></nav-pane>`);
-        expect(names(el)).to.deep.equal(["a", "b", "c", "d"]);
+    it("shows every file by default, and mutes the other files and the folders of only other files", async () => {
+        const el = await fixture(html`<nav-pane .tree=${withOthers}></nav-pane>`);
+        expect(names(el)).to.deep.equal(["empty", "images", "raw", "a.png", "b.png", "c", "data", "d.csv", "d", "report.pdf"]);
+        expect(muted(el)).to.deep.equal(["images", "raw", "a.png", "b.png", "data", "d.csv", "report.pdf"]);
     });
 
-    it("hides a folder with no documents at any depth", async () => {
-        const el = await fixture(html`<nav-pane .tree=${withEmpty} .showEmpty=${false}></nav-pane>`);
-        expect(names(el)).to.deep.equal(["c", "d"]);
+    it("hides them when other files are hidden, and keeps empty folders", async () => {
+        const el = await fixture(html`<nav-pane .tree=${withOthers} .showOther=${false}></nav-pane>`);
+        expect(names(el)).to.deep.equal(["empty", "c", "d"]);
+    });
+
+    it("opens another file by its public URL in a new tab", async () => {
+        const el = await fixture(html`<nav-pane .tree=${withOthers}></nav-pane>`);
+        const link = row(el, "report.pdf").querySelector("a.item");
+        expect(new URL(link.href).pathname).to.equal("/report.pdf");
+        expect(link.target).to.equal("_blank");
+        expect(link.rel).to.equal("noopener");
+    });
+
+    it("offers the commands for other files", async () => {
+        const el = await fixture(html`<nav-pane .tree=${withOthers}></nav-pane>`);
+        await rightClick(el, row(el, "report.pdf").querySelector(".item"));
+        expect(labels(el)).to.deep.equal(["Rename", "Move to…", "Copy link", "Delete"]);
     });
 
     it("says there are no documents when nothing is left", async () => {
-        const tree = { ...withEmpty, children: [withEmpty.children[0]] };
-        const el = await fixture(html`<nav-pane .tree=${tree} .showEmpty=${false}></nav-pane>`);
+        const tree = { ...withOthers, children: [withOthers.children[1]] };
+        const el = await fixture(html`<nav-pane .tree=${tree} .showOther=${false}></nav-pane>`);
         expect(el.renderRoot.querySelector(".empty")).to.not.equal(null);
     });
 
     it("marks the option in the menu when on", async () => {
-        const el = await fixture(html`<nav-pane .tree=${withEmpty}></nav-pane>`);
+        const el = await fixture(html`<nav-pane .tree=${withOthers}></nav-pane>`);
         await rightClick(el, el.renderRoot.querySelector(".tree"));
         const option = menu(el).renderRoot.querySelector('[role="menuitemcheckbox"]');
         expect(option.getAttribute("aria-checked")).to.equal("true");

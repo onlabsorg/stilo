@@ -223,7 +223,10 @@ creates the GitHub release. Bump the version in `pyproject.toml`,
 - `web/src/components/top-bar.js`, `nav-pane.js`, `commands-pane.js`,
   `comments-pane.js`, `errors-pane.js` — the parts of the layout. They fire events; the app
   holds the state. `context-menu.js` — the menu `nav-pane.js` opens.
-  `move-dialog.js` — the Move to… dialog.
+  `move-dialog.js` — the Move to… dialog. The tree lists every file (S15):
+  documents open in the editor; other files (`isDocument` in `api.js`) are
+  muted, open by their public URL in a new tab and hide with Show other
+  files; Upload files… adds files with the browser's file dialog.
 - `web/src/commands.js` — the command list shown in the commands pane, with
   shortcuts, and the navigation pane's menus (`treeMenus`). Editor commands
   call the editor's `runCommand(name)`; tree commands have ids `tree-*`.

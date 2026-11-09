@@ -6,6 +6,24 @@ change the interfaces.
 
 ## Unreleased
 
+- **The navigation pane shows every file**: images, PDFs, data files and
+  any other file appear in the tree beside the documents, greyed out, and
+  so do folders that hold only such files. Clicking one opens it in a new
+  browser tab. **Show other files**, in the pane's `⋯` menu, hides them;
+  **Show empty folders** is gone.
+- **Upload files…**: a new command on folders and in the pane's menu adds
+  files from the computer through the browser's file dialog, several at a
+  time. A file whose name is already taken is skipped and reported.
+- **Other files can be renamed, moved, deleted and their link copied**, as
+  documents can. A rename keeps a file a document or not: it cannot add or
+  remove the `.texl` extension.
+- **Deleting a folder deletes everything in it**, other files included,
+  into the `.trash` folder; the folder is always gone afterwards. The
+  question says how many documents and other files go with it.
+- **Protocol:** the tree lists every file; CREATE, MOVE and DELETE accept
+  any file; DELETE of a folder answers `{"deleted": <number of files>}`
+  (no more `removed`).
+
 - **The beam example is an engineering report**: `beam-check.texl` reads
   as a short design report (introduction, scope of work, basis of design,
   method statement, analysis results, conclusions and recommendations)

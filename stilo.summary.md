@@ -20,13 +20,13 @@ to Word and Excel users, and renders them from the command line.
 
 | Part   | What                                                          |
 |--------|---------------------------------------------------------------|
-| Web app | The user interface (Lit web components, Vite): top bar, navigation pane with the folder's files and commands to manage them, the editor, right pane with commands, cell comments and errors. Light and dark theme. |
+| Web app | The user interface (Lit web components, Vite): top bar, navigation pane with all the folder's files (documents, and other files greyed out) and commands to manage and upload them, the editor, right pane with commands, cell comments and errors. Light and dark theme. |
 | Editor | Inside the web app: `<texl-editor>`, a document as a stack of typed cells (rich text, the default; text, Markdown, table, formula and data table; formulas as `<% %>` tags; LaTeX equations in Markdown and tables), live rendering, cell comments, errors shown where they happen. Until 2026-10-26 the separate `texl-editor` package. |
 | Server | Python (FastAPI): serves one folder of documents and the web app, for one user. |
 | CLI    | The `stilo` command: `stilo init [folder]` makes a folder a project, with the Stilo library in it; `stilo render <file>` prints a rendered document (or writes it to a file), says how many errors it has and can explain them; `stilo serve [folder]` starts the server on a folder; `stilo tutor` opens the tutorial. |
 | Stilo library | A folder of Texl documents (`texl-lib/`) that `stilo init` copies into each project, for documents to import. Its first function, `stilo.dataframe`, makes a table of data; it is what the data table cell writes. Tested on both Texl engines, the browser's and Python's, with the same cases. |
 | Tutorial | A guided tutorial for new users (`tutorial/`), Texl documents shipped in the package and served by `stilo tutor` in the web app: twelve short lessons (30–45 minutes) on the editor and the command line, from the first edit to one's own project, and two advanced ones. Many exercises check themselves and show "✓ Done"; an index shows the progress. The lessons link to the OnLabs.org manual instead of repeating it. Tested automatically, exercises included. |
-| Protocol | Plain HTTP between web app and server: GET a file, CREATE (POST), UPDATE (PUT, with an ETag so concurrent saves don't overwrite each other), QUERY a folder's tree, create a folder, move or rename a document or folder, delete a document or folder. |
+| Protocol | Plain HTTP between web app and server: GET a file, CREATE (POST), UPDATE (PUT, with an ETag so concurrent saves don't overwrite each other), QUERY a folder's tree (every file), create a folder, move or rename a file or folder, delete a file or folder. Any file can be created, so files can be uploaded; only documents can be updated. |
 | Documentation | Developer documentation only, as plain Markdown in `docs/`, read on GitHub: architecture, setup, server, CLI, web app, editor, the protocol, the editor component and its API. No site is built. Users read the OnLabs.org manual instead. |
 
 Web app, server and CLI ship as **one Python package**, `stilo`, with the
@@ -303,6 +303,19 @@ accept are not part of Stilo.
   shows how linked documents replace a long report. The automatic tests now
   check that every example renders without errors and opens in the editor
   as written.
+- 2026-11-09: **the navigation pane shows every file**: images, PDFs, data
+  and any other file appear beside the documents, greyed out, and so do
+  folders that hold only such files; empty folders look normal. Clicking one
+  opens it in a new browser tab. **Show other files**, in the pane's menu,
+  hides them; "Show empty folders" is gone. **Upload files…**, on folders and
+  in the pane's menu, adds files from the computer through the browser's
+  file dialog, several at a time; a name already taken is skipped and
+  reported. Other files can be renamed, moved, deleted and their link
+  copied, like documents; a rename cannot add or remove `.texl`. **Deleting
+  a folder now deletes everything in it**, other files included, into
+  `.trash`, and the folder is always gone; the question says how many
+  documents and other files go with it. Lessons 1, 8 and 10 of the tutorial
+  teach it. Not yet released.
 
 ## Known limitations
 
@@ -313,10 +326,11 @@ accept are not part of Stilo.
   use it from a copy of the source code. On a page whose address differs from
   its document's, links in rendered text resolve against the page.
 - Links: a link to a file that does not exist opens an empty Stilo in the new
-  tab, not a "file not found" page. Images and other files can only be added to
-  the folder outside Stilo, and their links typed by hand.
+  tab, not a "file not found" page.
 - Files and folders: renaming or moving does not update links to the item;
-  documents are got back from `.trash` by hand, as there is no restore command.
+  deleted files are got back from `.trash` by hand, as there is no restore
+  command. Upload is through the file dialog only (no drag and drop) and never
+  replaces an existing file.
 - Table cell: plain fields without formula highlighting; it cannot hold a
   caption (only a Markdown line can).
 - Data table cell: a value or column name cannot contain `"` or `%>`; a

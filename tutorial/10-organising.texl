@@ -42,8 +42,11 @@ is a plain text file, which any text editor can open.
 <!--{ or05 : rich }-->
 ## Files and folders
 
-The navigation pane shows the documents of the folder. Right-click a
-document, a folder or the empty area of the pane for its commands.
+The navigation pane shows the documents of the folder, and its other files
+too, greyed out: images, PDFs, data. Click one of those to open it in a new
+browser tab. Right-click a document, a file, a folder or the empty area of
+the pane for its commands; **Show other files**, in the menu of the empty
+area, hides or shows the greyed-out files.
 
 **Your turn.**
 
@@ -70,7 +73,8 @@ exists, has a comment, and has a hidden line.
 | **Move to…** | Moves it to another folder |
 | **Duplicate** | Copies a document next to it, under a new name |
 | **Copy link** | Copies its address, for a link or an import (lesson 8) |
-| **Delete** | Moves it to a hidden `.trash` folder: nothing is erased |
+| **Upload files…** | Adds files from your computer to a folder: images, PDFs, data |
+| **Delete** | Moves it to a hidden `.trash` folder, a folder with everything in it: nothing is erased |
 
 Links do not follow: after a rename or a move, links and imports in other
 documents that point to the old name stop working, and Stilo warns you.

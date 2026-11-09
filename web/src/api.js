@@ -29,12 +29,16 @@ export function documentUrl(path) {
     return new URL("/" + encode(path), location.origin).href;
 }
 
+/** Whether the file at `path` is a Texl document; any other file is opened
+ * by its public URL, not in the editor. */
+export const isDocument = (path) => path.endsWith(".texl");
+
 /** The path of the document at a public URL, or `null` if the URL is not a
  * `.texl` file on this server. The inverse of `documentUrl`. */
 export function documentPath(url) {
     if (url.origin !== location.origin) return null;
     const path = decodeURIComponent(url.pathname.slice(1));
-    return path.endsWith(".texl") ? path : null;
+    return isDocument(path) ? path : null;
 }
 
 /** The URL of a file in the protocol's API. */
@@ -54,6 +58,12 @@ export async function createFile(path, text = "") {
         await fetch(contentUrl(path), { method: "POST", body: text, headers: { "Content-Type": "text/plain; charset=utf-8" } }),
     );
     return response.headers.get("ETag");
+}
+
+/** CREATE a file from a `File` or `Blob` the user chose, of any type; fails
+ * with status 409 if it exists. */
+export async function uploadFile(path, file) {
+    await check(await fetch(contentUrl(path), { method: "POST", body: file, headers: { "Content-Type": "application/octet-stream" } }));
 }
 
 /** UPDATE a file; fails with status 412 if it changed since `etag`. Returns the new ETag. */
@@ -76,19 +86,18 @@ export async function createFolder(path) {
     await check(await fetch(`${API}/tree/${encode(path)}`, { method: "POST" }));
 }
 
-/** MOVE a document or a folder to the whole new path `to`; fails with status 409 if it exists. */
+/** MOVE a file or a folder to the whole new path `to`; fails with status 409 if it exists. */
 export async function moveItem(path, to) {
     const headers = { "Content-Type": "application/json" };
     await check(await fetch(`${API}/move/${encode(path)}`, { method: "POST", body: JSON.stringify({ to }), headers }));
 }
 
-/** DELETE a document. Its folder stays. */
+/** DELETE a file. Its folder stays. */
 export async function deleteFile(path) {
     await check(await fetch(contentUrl(path), { method: "DELETE" }));
 }
 
-/** DELETE a folder's documents, and the folder if that leaves it with nothing:
- * `{deleted, removed}`. */
+/** DELETE a folder with everything in it: `{deleted}`, the number of files. */
 export async function deleteFolder(path) {
     const response = await check(await fetch(`${API}/tree/${encode(path)}`, { method: "DELETE" }));
     return response.json();

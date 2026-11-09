@@ -57,7 +57,9 @@ An image is written as a link with `!` in front, as
 ![A simply supported beam under a uniform load](files/beam.svg)
 
 Try it: on an empty line at the end of this lesson, press **m** for
-Markdown and write a link to `files/beam-drawing.pdf`.
+Markdown and write a link to `files/beam-drawing.pdf`. The navigation pane
+shows the PDF in the folder `files`: right-click it and choose **Copy link**
+to get its address, then paste it into the link.
 
 More in the manual: [Linking documents](https://www.onlabs.org/manual/editor/linking.html).
 <!--{ li08 : rich }-->

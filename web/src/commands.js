@@ -67,6 +67,12 @@ export const commands = [
         group: "Navigation pane",
         run: (app, node) => app.newFolder(node),
     },
+    {
+        id: "tree-upload",
+        label: "Upload files…",
+        group: "Navigation pane",
+        run: (app, node) => app.upload(node),
+    },
     treeCommand("tree-rename", "Rename", "F2", (app, node) => app.rename(node)),
     treeCommand("tree-duplicate", "Duplicate", "", (app, node) => app.duplicate(node)),
     treeCommand("tree-move", "Move to…", "", (app, node) => app.moveTo(node)),
@@ -74,7 +80,7 @@ export const commands = [
     treeCommand("tree-open-root", "Open as root", "", (app, node) => app.openAsRoot(node)),
     treeCommand("tree-delete", "Delete", "Delete", (app, node) => app.deleteItem(node)),
     paneCommand("tree-refresh", "Refresh", (app) => app.refreshTree()),
-    paneCommand("tree-show-empty", "Show empty folders", (app) => app.toggleEmptyFolders()),
+    paneCommand("tree-show-other", "Show other files", (app) => app.toggleOtherFiles()),
 
     {
         id: "toggle-nav",
@@ -148,13 +154,14 @@ export const commands = [
 ];
 
 /**
- * The menus of the navigation pane, by what they open on: command ids, in
- * order, and "-" for a separator.
+ * The menus of the navigation pane, by what they open on (`file`: a document,
+ * `other`: any other file): command ids, in order, and "-" for a separator.
  */
 export const treeMenus = {
     file: ["tree-rename", "tree-duplicate", "tree-move", "tree-copy-link", "-", "tree-delete"],
-    folder: ["new-document", "tree-new-folder", "-", "tree-open-root", "tree-rename", "tree-move", "-", "tree-delete"],
-    pane: ["new-document", "tree-new-folder", "-", "tree-refresh", "tree-show-empty"],
+    other: ["tree-rename", "tree-move", "tree-copy-link", "-", "tree-delete"],
+    folder: ["new-document", "tree-new-folder", "tree-upload", "-", "tree-open-root", "tree-rename", "tree-move", "-", "tree-delete"],
+    pane: ["new-document", "tree-new-folder", "tree-upload", "-", "tree-refresh", "tree-show-other"],
 };
 
 /** The app command whose shortcut matches a key event, if any. */

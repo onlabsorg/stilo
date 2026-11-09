@@ -1,11 +1,20 @@
 import { LitElement, html, css } from "lit";
 import { base } from "./shared.js";
-import { folderIcon, fileIcon, chevronIcon, upIcon, moreIcon, newFileIcon, newFolderIcon } from "../icons.js";
+import { folderIcon, fileIcon, otherFileIcon, chevronIcon, upIcon, moreIcon, newFileIcon, newFolderIcon } from "../icons.js";
 import { commands, treeMenus, isMac } from "../commands.js";
+import { isDocument, documentUrl } from "../api.js";
 import "./context-menu.js";
 
 /** Whether a tree node is a document or has one somewhere inside. */
-const hasDocuments = (node) => node.type === "file" || !!node.children?.some(hasDocuments);
+const hasDocuments = (node) => (node.type === "file" ? isDocument(node.path) : !!node.children?.some(hasDocuments));
+
+/** Whether a tree node is a file or has one somewhere inside. */
+const hasFiles = (node) => node.type === "file" || !!node.children?.some(hasFiles);
+
+/** Whether a tree node is another file, or a folder with files but no
+ * documents at any depth: shown muted, and hidden with the other files. An
+ * empty folder is not one: it is a place for documents. */
+const isOther = (node) => !hasDocuments(node) && hasFiles(node);
 
 /** The node at `path` in a tree, if any. */
 function findNode(node, path) {
@@ -25,13 +34,14 @@ function focusedElement() {
 }
 
 /**
- * The navigation pane: the tree of folders and Texl files under the
- * navigation root (a tree node from the protocol's QUERY).
+ * The navigation pane: the tree of folders and files under the navigation
+ * root (a tree node from the protocol's QUERY). Documents open in the editor;
+ * other files are muted and open by their public URL in a new tab.
  *
  * Each item has a menu, opened by a right click or its `⋯` button; so has the
  * pane, from the empty area of the tree or the header's `⋯` button. When an
- * item has the focus, F2 renames it and Delete deletes it. With `showEmpty`
- * off, folders without documents are left out. `askName()` asks for a name in a
+ * item has the focus, F2 renames it and Delete deletes it. With `showOther`
+ * off, other files and folders holding only other files are left out. `askName()` asks for a name in a
  * row of the tree: a new one, or in place of the item being renamed.
  *
  * Fires `open-document` ({path}), `navigate` ({root}) to move the root, and
@@ -43,7 +53,7 @@ export class NavPane extends LitElement {
         root: { type: String },
         active: { type: String },
         error: { type: String },
-        showEmpty: { attribute: false },
+        showOther: { attribute: false },
         _collapsed: { state: true },
         _menu: { state: true },
         _naming: { state: true },
@@ -94,6 +104,13 @@ export class NavPane extends LitElement {
             }
             .item:hover {
                 background: var(--hover);
+            }
+            a.item {
+                text-decoration: none;
+            }
+            .item.other,
+            .item.other .icon {
+                color: var(--text-faint);
             }
             .item[aria-current="true"] {
                 background: var(--active);
@@ -189,7 +206,7 @@ export class NavPane extends LitElement {
         this.active = null;
         this.error = "";
         this._collapsed = new Set();
-        this.showEmpty = true;
+        this.showOther = true;
         this._menu = null;
         this._naming = null;
         this._current = null;
@@ -229,7 +246,7 @@ export class NavPane extends LitElement {
         const items = treeMenus[kind].map((id) => {
             if (id === "-") return id;
             const command = commands.find((c) => c.id === id);
-            return id === "tree-show-empty" ? { ...command, checked: this.showEmpty } : command;
+            return id === "tree-show-other" ? { ...command, checked: this.showOther } : command;
         });
         this._menu = { items, node, origin, x: point?.x ?? box.left, y: point?.y ?? box.bottom };
     }
@@ -379,10 +396,10 @@ export class NavPane extends LitElement {
         </div>`;
     }
 
-    /** Whether to show a tree node: an empty folder may be left out, unless a
-     * name is being asked for inside it. */
+    /** Whether to show a tree node: another file, or a folder of them, may be
+     * left out, unless a name is being asked for inside it. */
     _visible(node) {
-        if (this.showEmpty || hasDocuments(node)) return true;
+        if (this.showOther || !isOther(node)) return true;
         const folder = this._naming?.folder;
         return folder !== undefined && (folder === node.path || folder.startsWith(`${node.path}/`));
     }
@@ -411,6 +428,21 @@ export class NavPane extends LitElement {
     }
 
     _renderNode(node, depth) {
+        if (node.type === "file" && !isDocument(node.path)) {
+            // A link, so that the browser's own ways to open it work too
+            return html`<li>
+                ${this._renderRow("other", node, depth, html`<a
+                    class="item other"
+                    style="--depth: ${depth}"
+                    href=${documentUrl(node.path)}
+                    target="_blank"
+                    rel="noopener"
+                    title=${node.path}
+                >
+                    <span class="spacer-chevron"></span>${otherFileIcon}<span class="name">${node.name}</span>
+                </a>`)}
+            </li>`;
+        }
         if (node.type === "file") {
             return html`<li>
                 ${this._renderRow("file", node, depth, html`<button
@@ -427,7 +459,7 @@ export class NavPane extends LitElement {
         const open = !this._collapsed.has(node.path);
         return html`<li>
             ${this._renderRow("folder", node, depth, html`<button
-                class="item"
+                class="item ${isOther(node) ? "other" : ""}"
                 style="--depth: ${depth}"
                 aria-expanded=${open}
                 title=${node.path}

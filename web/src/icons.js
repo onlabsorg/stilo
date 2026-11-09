@@ -11,6 +11,8 @@ export const commentsIcon = icon(svg`<path d="M5 5h14a1 1 0 0 1 1 1v9a1 1 0 0 1-
 export const errorsIcon = icon(svg`<path d="M12 4 3 20h18z" /><path d="M12 10v4M12 17h.01" />`);
 export const folderIcon = icon(svg`<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />`);
 export const fileIcon = icon(svg`<path d="M7 3h7l5 5v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" /><path d="M14 3v5h5" />`);
+export const otherFileIcon = icon(svg`<path d="M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" />`);
+export const uploadIcon = icon(svg`<path d="M12 16V4M7 9l5-5 5 5M5 20h14" />`);
 export const chevronIcon = icon(svg`<path d="M9 6l6 6-6 6" />`);
 export const upIcon = icon(svg`<path d="M12 19V5M6 11l6-6 6 6" />`);
 export const moreIcon = icon(

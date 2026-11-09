@@ -2,10 +2,11 @@ import { LitElement, html, css } from "lit";
 import { keyed } from "lit/directives/keyed.js";
 import { parseDocument, cellComments } from "../editor/index.js";
 import { base } from "./shared.js";
-import { closeIcon, fileIcon, folderIcon } from "../icons.js";
+import { closeIcon, fileIcon, folderIcon, otherFileIcon } from "../icons.js";
 import {
     readFile,
     createFile,
+    uploadFile,
     updateFile,
     readTree,
     createFolder,
@@ -14,6 +15,7 @@ import {
     deleteFolder,
     documentUrl,
     documentPath,
+    isDocument,
 } from "../api.js";
 import { readRoute, routeUrl, relativeLink } from "../route.js";
 import { commands, matchCommand } from "../commands.js";
@@ -26,12 +28,19 @@ import "./errors-pane.js";
 import "./move-dialog.js";
 
 const NEW_DOCUMENT = (title) => `<!--{ rich }-->\n# ${title}\n`;
-const SHOW_EMPTY_KEY = "stilo-show-empty";
+const SHOW_OTHER_KEY = "stilo-show-other";
 
 const parentFolder = (path) => (path.includes("/") ? path.slice(0, path.lastIndexOf("/")) : "");
 const baseName = (path) => path.slice(path.lastIndexOf("/") + 1);
 const documentName = (path) => baseName(path).replace(/\.texl$/, "");
 const join = (folder, name) => (folder ? `${folder}/${name}` : name);
+/** How many documents and other files are in a tree node, at any depth. */
+function countFiles(node) {
+    if (node.type === "file") return isDocument(node.path) ? { documents: 1, others: 0 } : { documents: 0, others: 1 };
+    return (node.children ?? []).map(countFiles).reduce((a, b) => ({ documents: a.documents + b.documents, others: a.others + b.others }), { documents: 0, others: 0 });
+}
+const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+
 /** Whether `path` is the item at `item`, or inside it. */
 const isIn = (path, item) => path === item || !!path?.startsWith(`${item}/`);
 
@@ -63,7 +72,7 @@ export class StiloApp extends LitElement {
         _root: { state: true },
         _tree: { state: true },
         _treeError: { state: true },
-        _showEmpty: { state: true },
+        _showOther: { state: true },
         _moving: { state: true },
         _doc: { state: true },
         _docError: { state: true },
@@ -196,9 +205,9 @@ export class StiloApp extends LitElement {
         this._tree = null;
         this._treeError = "";
         this._moving = null;
-        this._showEmpty = true;
+        this._showOther = true;
         try {
-            this._showEmpty = localStorage.getItem(SHOW_EMPTY_KEY) !== "false";
+            this._showOther = localStorage.getItem(SHOW_OTHER_KEY) !== "false";
         } catch {}
         this._docError = "";
         this._dirty = false;
@@ -355,8 +364,9 @@ export class StiloApp extends LitElement {
         return !item ? this._root : item.type === "folder" ? item.path : parentFolder(item.path);
     }
 
-    /** Check a name typed for a document or a folder in `folder`: `{name}`, without
-     * the extension a document's may have, and `problem` if it cannot be used. */
+    /** Check a name typed for a document (`file`), another file (`other`) or a
+     * folder in `folder`: `{name}`, without the extension a document's may have,
+     * and `problem` if it cannot be used. */
     _checkName(typed, folder, type) {
         const name = type === "file" ? typed.replace(/\.texl$/, "") : typed;
         const problem = !name
@@ -367,9 +377,13 @@ export class StiloApp extends LitElement {
                 ? "A name cannot start with a dot."
                 : !folder && name.startsWith("_")
                   ? "A name here cannot start with _."
-                  : type === "folder" && name.endsWith(".texl")
-                    ? "A folder's name cannot end in .texl."
-                    : "";
+                  : name === "~"
+                    ? "A name cannot be ~."
+                    : type === "folder" && isDocument(name)
+                      ? "A folder's name cannot end in .texl."
+                      : type === "other" && isDocument(name)
+                        ? "Only documents end in .texl."
+                        : "";
         return { name, problem };
     }
 
@@ -387,8 +401,8 @@ export class StiloApp extends LitElement {
     /** Create a copy of a document, next to it, and open it. */
     async duplicate(node) {
         if (!node) return this._askForItem();
-        if (node.type === "folder") {
-            this._status = "Duplicate works on documents, not folders";
+        if (node.type === "folder" || !isDocument(node.path)) {
+            this._status = "Duplicate works on documents only";
             return;
         }
         if (!(await this._saveFirst(node))) return;
@@ -442,30 +456,66 @@ export class StiloApp extends LitElement {
         });
         if (!done) return;
         await this._showInTree(path);
-        if (!this._showEmpty) this._status = `Created /${path}; empty folders are hidden`;
     }
 
-    /** Rename a document or a folder, in its row of the tree. */
+    /** Choose files with the browser's dialog and add them to a folder. A file
+     * whose name is taken or cannot be used is left out, and the status says so. */
+    upload(node) {
+        const folder = this._folderFor(node);
+        const input = document.createElement("input");
+        input.type = "file";
+        input.multiple = true;
+        input.addEventListener("change", () => this._uploadFiles(folder, [...input.files]));
+        input.click();
+    }
+
+    async _uploadFiles(folder, files) {
+        if (!files.length) return;
+        const done = [];
+        const skipped = [];
+        this._status = "Uploading…";
+        for (const file of files) {
+            const { problem } = this._checkName(file.name, folder, isDocument(file.name) ? "file" : "other");
+            if (problem) {
+                skipped.push(`${file.name} (${problem.replace(/\.$/, "").toLowerCase()})`);
+                continue;
+            }
+            const path = join(folder, file.name);
+            try {
+                await uploadFile(path, file);
+                done.push(path);
+            } catch (error) {
+                skipped.push(`${file.name} (${error.status === 409 ? "already exists" : error.message})`);
+            }
+        }
+        await this._showInTree(done.length === 1 ? done[0] : null);
+        const hidden = !this._showOther && done.some((path) => !isDocument(path)) ? "; other files are hidden" : "";
+        const uploaded = done.length ? `Uploaded ${plural(done.length, "file")} to /${folder}${hidden}` : "Nothing uploaded";
+        this._status = skipped.length ? `${uploaded}. Not uploaded: ${skipped.join(", ")}` : uploaded;
+    }
+
+    /** Rename a file or a folder, in its row of the tree. */
     async rename(node) {
         if (!node) return this._askForItem();
         if (!(await this._saveFirst(node))) return;
         const isFile = node.type === "file";
+        const type = isFile && !isDocument(node.path) ? "other" : node.type;
         const folder = parentFolder(node.path);
-        const old = isFile ? documentName(node.path) : baseName(node.path);
+        const old = type === "file" ? documentName(node.path) : baseName(node.path);
         let to;
         const done = await this._askName({
             folder,
             replaces: node.path,
             value: old,
             label: `New name of ${old}`,
-            icon: isFile ? fileIcon : folderIcon,
+            icon: { file: fileIcon, other: otherFileIcon, folder: folderIcon }[type],
             submit: async (typed) => {
-                const { name, problem } = this._checkName(typed, folder, node.type);
+                const { name, problem } = this._checkName(typed, folder, type);
                 if (problem) return problem;
                 if (name === old) return false;
-                const what = isFile ? "it" : "the documents in it";
+                const what = isFile ? "it" : "the files in it";
                 if (!confirm(`Links from other documents to ${what} will stop working. Rename ${old} to ${name}?`)) return false;
-                to = join(folder, isFile ? `${name}.texl` : name);
+                to = join(folder, type === "file" ? `${name}.texl` : name);
                 try {
                     await moveItem(node.path, to);
                 } catch (error) {
@@ -476,7 +526,7 @@ export class StiloApp extends LitElement {
         if (done) await this._afterMove(node.path, to);
     }
 
-    /** Open the Move to… dialog for a document or a folder. */
+    /** Open the Move to… dialog for a file or a folder. */
     async moveTo(node) {
         if (!node) return this._askForItem();
         if (!(await this._saveFirst(node))) return;
@@ -505,21 +555,24 @@ export class StiloApp extends LitElement {
         this._status = `Moved to /${e.detail.folder}`;
     }
 
-    /** Move a document to the trash, or a folder's documents and the folder if
-     * nothing else is left in it. */
+    /** Move a file, or a folder with everything in it, to the trash. */
     async deleteItem(node) {
         if (!node) return this._askForItem();
         const isFile = node.type === "file";
         const closes = !!this._doc && isIn(this._doc, node.path);
-        const name = isFile ? documentName(node.path) : baseName(node.path);
-        const question = isFile
-            ? `Delete ${name}? It goes to the .trash folder.`
-            : `Delete the folder ${name} and all the documents in it? They go to the .trash folder. Any other files stay in the folder.`;
+        const name = isFile && isDocument(node.path) ? documentName(node.path) : baseName(node.path);
+        let question = `Delete ${name}? It goes to the .trash folder.`;
+        if (!isFile) {
+            const { documents, others } = countFiles(node);
+            const contents = [documents && plural(documents, "document"), others && plural(others, "other file")].filter(Boolean);
+            question = contents.length
+                ? `Delete the folder ${name} and everything in it (${contents.join(", ")})? It goes to the .trash folder.`
+                : `Delete the empty folder ${name}?`;
+        }
         const lost = closes && this._unsaved ? " Unsaved changes will be lost." : "";
         if (!confirm(question + lost)) return;
-        let result;
         try {
-            result = isFile ? await deleteFile(node.path) : await deleteFolder(node.path);
+            await (isFile ? deleteFile(node.path) : deleteFolder(node.path));
         } catch (error) {
             this._status = `Not deleted: ${error.message}`;
             return;
@@ -531,7 +584,7 @@ export class StiloApp extends LitElement {
             await this._applyRoute(route);
         }
         await this._loadTree();
-        this._status = result && !result.removed ? `The folder ${name} stays: it holds other files` : `Deleted ${name}`;
+        this._status = `Deleted ${name}`;
     }
 
     /** Before an operation on an item that holds the open document: offer to save
@@ -561,12 +614,12 @@ export class StiloApp extends LitElement {
         if (path) this._nav?.setCurrent(path);
     }
 
-    /** Copy a document's link, relative to the open document: what `texl.import`
-     * or a Markdown link there needs. */
+    /** Copy a file's link, relative to the open document: what `texl.import`
+     * or a Markdown link or image there needs. */
     async copyLink(node) {
         if (!node) return this._askForItem();
         if (node.type === "folder") {
-            this._status = "Copy link works on documents, not folders";
+            this._status = "Copy link works on files, not folders";
             return;
         }
         const link = relativeLink(this._doc, node.path);
@@ -583,10 +636,10 @@ export class StiloApp extends LitElement {
         return this._loadTree();
     }
 
-    toggleEmptyFolders() {
-        this._showEmpty = !this._showEmpty;
+    toggleOtherFiles() {
+        this._showOther = !this._showOther;
         try {
-            localStorage.setItem(SHOW_EMPTY_KEY, this._showEmpty);
+            localStorage.setItem(SHOW_OTHER_KEY, this._showOther);
         } catch {}
     }
 
@@ -758,7 +811,7 @@ export class StiloApp extends LitElement {
                 .root=${this._root}
                 .active=${this._doc}
                 .error=${this._treeError}
-                .showEmpty=${this._showEmpty}
+                .showOther=${this._showOther}
                 @open-document=${(e) => this._go({ root: this._root, doc: e.detail.path })}
                 @navigate=${(e) => this._go({ root: e.detail.root, doc: this._doc })}
                 @tree-command=${(e) => this.runCommand(e.detail.id, e.detail.node)}

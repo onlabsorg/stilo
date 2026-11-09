@@ -292,3 +292,37 @@ protects work done in it. Checks written in Texl need no new machinery in
 the app or the server, render in `stilo render`, and keep the tutorial a
 folder of plain Texl files. Testing the lessons in CI, with their solutions,
 keeps them true as the app changes.
+
+## S15 — 2026-11-09 — The navigation tree shows every file; Delete takes a folder whole
+
+Supersedes the parts of S8 on other files and empty folders.
+
+- **Every file in the tree.** The navigation pane lists every file, not only
+  `.texl` documents: images, PDFs, data files. Other files and folders that
+  hold only other files (no document at any depth) are muted, so documents
+  stand out; an empty folder is not muted. A click opens another file by its
+  public URL in a new browser tab. "Show other files", in the pane's menu,
+  hides them (on by default, remembered per browser); "Show empty folders" is
+  gone.
+- **Upload.** Folders and the pane have **Upload files…**, the browser's
+  file dialog for now (drag and drop later). An upload never overwrites: a
+  name that exists or cannot be used is skipped and reported.
+- **Other files can be managed.** Rename, Move to…, Copy link and Delete work
+  on them as on documents; Duplicate stays for documents. A rename or a move
+  never turns a file into a document or back (the `.texl` extension cannot be
+  gained or lost).
+- **Delete takes a folder whole**: everything in it, other files and hidden
+  entries too, goes to the trash, and the folder is gone. An empty folder is
+  a real empty folder.
+- **Protocol:** QUERY lists every file; CREATE takes any file; MOVE and
+  DELETE take any file; DELETE of a folder answers `{"deleted": <files>}`.
+  UPDATE stays for documents.
+
+*Reason:* a project is more than its documents: the figures, PDFs and data a
+report links to live beside it, and the user needs to see, add and tidy them
+without leaving Stilo. S8 kept other files out of Delete because the tree did
+not show them; now it does, and the trash keeps deletion recoverable, so the
+simpler rule, a folder goes with everything in it, is safe and what Word and
+Excel users expect from a file manager. Keeping the document/other-file
+distinction fixed through renames keeps the editor from opening, or losing,
+a file by surprise.

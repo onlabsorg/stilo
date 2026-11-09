@@ -168,7 +168,7 @@ export class MoveDialog extends LitElement {
 
     render() {
         const name = this.node.name?.replace(/\.texl$/, "") ?? this.node.path;
-        const what = this.node.type === "folder" ? "the documents in it" : "it";
+        const what = this.node.type === "folder" ? "the files in it" : "it";
         return html`<dialog
             aria-label="Move ${name} to a folder"
             @cancel=${(e) => {
