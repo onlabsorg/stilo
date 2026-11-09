@@ -126,8 +126,8 @@ uv build                              # after npm run build: dist/stilo_cli-*.wh
 TypeScript, no build step for the source) with Lit 3 web components, built
 with Vite. Texl runs in the browser as WebAssembly (`@onlabsorg/texl`).
 Cell output is sanitised with DOMPurify; Markdown cells convert it with
-`marked` first, typesetting LaTeX equations with KaTeX (`math.js`). Source text is edited with CodeMirror 6 (`@codemirror/*`), rich text with ProseMirror (`prosemirror-*`). The document fonts
-(Literata, Source Sans 3) come from `@fontsource-variable/*`, imported in
+`marked` first, typesetting LaTeX equations with KaTeX (`math.js`). Source text is edited with CodeMirror 6 (`@codemirror/*`), rich text with ProseMirror (`prosemirror-*`). The document font
+(Atkinson Hyperlegible Next) comes from `@fontsource-variable/*`, imported in
 `web/src/main.js` and bundled by the build; the typography is in
 `TexlCell`'s styles (`.view`), see `docs/editor-design.md`.
 Requires Node.js 22 or later; locally Node is managed by nvm, so

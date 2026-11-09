@@ -35,6 +35,24 @@ after them. Align the second column to the right and press **Ctrl+Enter**.
 
 <!--{ te05 : formula }-->
 <% tutorial.check (M == 56.25) %>
+<!--{ te08 : markdown }-->
+### Captions
+
+A table's caption goes on its own line right after the table, between
+`<caption>` and `</caption>`, and shows below the table:
+
+| Data | Value |
+|------|------:|
+| Span L | <% L %> m |
+| Load q | <% q %> kN/m |
+<caption><b>Table 1:</b> Data of the beam.</caption>
+
+Press **Enter** on this line to see how it is written, and **Escape** to
+leave it. A caption needs a Markdown line: a Table line refuses it.
+
+Try it on your table above: select it and press **m** to make it Markdown,
+press **Enter**, add a line such as `<caption><b>Table 2:</b> Midspan
+moment.</caption>` under the table and press **Ctrl+Enter**.
 <!--{ te06 : markdown }-->
 ## Equations
 

@@ -281,6 +281,19 @@ accept are not part of Stilo.
   its solution, is checked by the automatic tests, and a change visible to
   users must now update its lesson in the same commit. New dependency:
   `platformdirs`. Not yet released.
+- 2026-11-09: **new document typography**, after an engineering report the
+  founder liked, replacing the one of 2026-10-30: one font, Atkinson
+  Hyperlegible Next (wide and very legible, in the spirit of Verdana), for
+  text, headings and tables; paragraphs justified; tables full width with a
+  small margin on each side, columns sized by their content, strong rules
+  above and below, a thin rule under the header and light lines between
+  rows. Equations are now about the size of the text around them, no longer
+  larger. The font ships inside the package, so it works offline. Not yet
+  released.
+- 2026-11-09: **table captions**: a line `<caption>…</caption>` written
+  right after a table in a Markdown line shows below the table,
+  left-aligned. Plain HTML, no new syntax; lesson 6 of the tutorial shows
+  it. Not yet released.
 
 ## Known limitations
 
@@ -295,7 +308,8 @@ accept are not part of Stilo.
   the folder outside Stilo, and their links typed by hand.
 - Files and folders: renaming or moving does not update links to the item;
   documents are got back from `.trash` by hand, as there is no restore command.
-- Table cell: plain fields without formula highlighting.
+- Table cell: plain fields without formula highlighting; it cannot hold a
+  caption (only a Markdown line can).
 - Data table cell: a value or column name cannot contain `"` or `%>`; a
   wrong value inside a table is shown but not listed in the Errors pane;
   outside a project the table shows `[[Undefined]]`.

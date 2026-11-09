@@ -6,6 +6,15 @@ change the interfaces.
 
 ## Unreleased
 
+- **New document typography**: text, headings and table headers in
+  Atkinson Hyperlegible Next, a wide, very legible sans in the spirit of
+  Verdana; paragraphs and list items justified; tables full width with a
+  small margin on each side, columns sized by their content, with strong
+  rules above and below, a thin rule under the header and hairlines
+  between rows. Equations are no longer larger than the text around them.
+- **Table captions**: write `<caption>Table 1: …</caption>` on its own
+  line right after a table in a Markdown cell; it shows below the table,
+  left-aligned.
 - **`stilo tutor`**: a guided tutorial for new users, in the web app.
   Twelve short lessons (30–45 minutes) teach the editor and the `stilo`
   command by doing, from the first edit to your own project, and two

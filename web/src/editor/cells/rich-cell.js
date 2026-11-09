@@ -159,7 +159,7 @@ export class RichCell extends MarkdownCell {
                 padding: 0.15rem 0;
                 background: var(--texl-edit-bg, #f8f9fb);
                 border-bottom: 1px solid var(--texl-line, #e4e6ea);
-                font-family: var(--texl-heading-font, "Source Sans 3 Variable", "Segoe UI", sans-serif);
+                font-family: var(--texl-heading-font, var(--texl-font, "Atkinson Hyperlegible Next Variable", Verdana, sans-serif));
             }
             .tools .gap {
                 width: 1px;
@@ -314,7 +314,7 @@ export class RichCell extends MarkdownCell {
                 background: var(--texl-menu-bg, #fff);
                 color: var(--texl-menu-text, #1d2330);
                 box-shadow: 0 4px 16px rgb(0 0 0 / 0.18);
-                font-family: var(--texl-heading-font, "Source Sans 3 Variable", "Segoe UI", sans-serif);
+                font-family: var(--texl-heading-font, var(--texl-font, "Atkinson Hyperlegible Next Variable", Verdana, sans-serif));
                 font-size: 0.85rem;
                 line-height: 1.3;
             }

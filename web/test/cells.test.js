@@ -2,6 +2,7 @@ import { expect, fixture, html, unsafeStatic } from "@open-wc/testing";
 import { EditorView } from "@codemirror/view";
 import { swanTokens, findTags } from "../src/editor/swan.js";
 import { parseTable, serializeTable, parseFormula, TableCell, FormulaCell, TextCell, MarkdownCell } from "../src/editor/index.js";
+import { captionTables } from "../src/editor/cells/markdown-cell.js";
 
 async function cellInEditMode(tag, texl) {
     const element = await fixture(html`<${unsafeStatic(tag)} .texl=${texl}></${unsafeStatic(tag)}>`);
@@ -34,6 +35,26 @@ describe("cell rendering", () => {
         expect(view.textContent).to.equal("**a** b");
         expect(view.querySelector("em")).to.exist;
         expect(view.querySelector("strong")).to.be.null;
+    });
+
+    it("puts a <caption> written next to a Markdown table into it", async () => {
+        const table = "| a | b |\n|---|---|\n| 1 | 2 |\n";
+        for (const output of [
+            `${table}<caption>Table 1: <b>loads</b></caption>\n`,
+            `${table}\n<caption>Table 1: <b>loads</b></caption>\n`,
+            `<caption>Table 1: <b>loads</b></caption>\n\n${table}`,
+        ]) {
+            const cell = await fixture(html`<texl-cell-markdown .output=${output}></texl-cell-markdown>`);
+            const caption = cell.shadowRoot.querySelector(".view table > caption");
+            expect(caption, output).to.exist;
+            expect(caption.innerHTML).to.equal("Table 1: <b>loads</b>");
+            expect(cell.shadowRoot.querySelector(".view").textContent.match(/Table 1/g)).to.have.length(1);
+        }
+    });
+
+    it("gives a caption between two tables to the one above", () => {
+        const out = captionTables("<table><tr><td>1</td></tr></table>\n<caption>A</caption>\n<table><tr><td>2</td></tr></table>");
+        expect(out).to.equal("<table><tr><td>1</td></tr><caption>A</caption></table>\n<table><tr><td>2</td></tr></table>");
     });
 
     it("shows the output of a markdown cell as Markdown", async () => {

@@ -25,6 +25,12 @@ let fontsInstalled = false;
  */
 export const mathStyles = unsafeCSS(`
     ${katexStyles.replace(FONT_FACE, "")}
+    /* KaTeX enlarges equations by 1.21 to make up for the small x-height of
+       its font; the text font's is large (0.50 against 0.43), so 1.08 keeps
+       letters and digits close to the text's in size */
+    .katex {
+        font-size: var(--texl-math-size, 1.08em);
+    }
     .katex-display {
         overflow-x: auto;
         overflow-y: hidden;

@@ -44,6 +44,23 @@ const texlMath = {
 
 const markdownParser = new Marked(mathMarkdown);
 
+// A table's caption is an HTML <caption>, written on its own line right
+// after the table (or right before it; between two tables it belongs to the
+// one above). Markdown leaves it outside the table, where a browser would
+// drop the element and keep only its text, so it is moved inside.
+const CAPTION = String.raw`<caption\b[^>]*>[\s\S]*?<\/caption>`;
+const CAPTION_AFTER = new RegExp(String.raw`<\/table>\s*(${CAPTION})`, "gi");
+const CAPTION_BEFORE = new RegExp(String.raw`(${CAPTION})\s*(<table\b[^>]*>)`, "gi");
+
+/**
+ * Moves each `<caption>` that stands next to a table into it.
+ * @param {string} html - The HTML of a Markdown rendering.
+ * @returns {string}
+ */
+export function captionTables(html) {
+    return html.replace(CAPTION_AFTER, "$1</table>").replace(CAPTION_BEFORE, "$2$1");
+}
+
 /**
  * A Markdown Texl template: the text cell, with Markdown highlighting in
  * the editor (the Swan highlighting of tags stays) and the output turned
@@ -75,7 +92,7 @@ export class MarkdownCell extends TextCell {
 
     /** Shows `output` as Markdown, sanitised: documents are untrusted. */
     renderView() {
-        const content = sanitizeOutput(markdownParser.parse(this.output), this.errorMessages);
+        const content = sanitizeOutput(captionTables(markdownParser.parse(this.output)), this.errorMessages);
         return html`<div class="view">${unsafeHTML(content)}</div>`;
     }
 }

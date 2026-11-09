@@ -108,13 +108,13 @@ export class TexlCell extends LitElement {
             background: var(--texl-edit-bg, #f8f9fb);
             box-shadow: none;
         }
-        /* The document's typography: serif text, sans headings, tables ruled
-           as in a printed report */
+        /* The document's typography: one open sans font, justified
+           paragraphs, tables ruled as in a printed report */
         .view {
-            font-family: var(--texl-font, "Literata Variable", Literata, Georgia, serif);
-            font-size: var(--texl-font-size, 1rem);
+            font-family: var(--texl-font, "Atkinson Hyperlegible Next Variable", "Atkinson Hyperlegible Next", Verdana, sans-serif);
+            font-size: var(--texl-font-size, 0.97rem);
             font-optical-sizing: auto;
-            line-height: 1.65;
+            line-height: 1.6;
             text-rendering: optimizeLegibility;
         }
         .view > :first-child {
@@ -124,25 +124,23 @@ export class TexlCell extends LitElement {
             margin-bottom: 0;
         }
         .view :is(h1, h2, h3, h4, h5, h6, th) {
-            font-family: var(--texl-heading-font, "Source Sans 3 Variable", "Source Sans 3", "Segoe UI", sans-serif);
-            font-weight: 600;
+            font-family: var(--texl-heading-font, var(--texl-font, "Atkinson Hyperlegible Next Variable", "Atkinson Hyperlegible Next", Verdana, sans-serif));
+            font-weight: 700;
         }
         .view :is(h1, h2, h3, h4, h5, h6) {
             line-height: 1.25;
-            letter-spacing: -0.003em;
         }
         .view h1 {
-            font-size: 1.85em;
-            margin: 0.9em 0 0.35em;
-            letter-spacing: -0.01em;
+            font-size: 1.7em;
+            margin: 0.9em 0 0.4em;
         }
         .view h2 {
-            font-size: 1.3em;
-            margin: 1.2em 0 0.4em;
+            font-size: 1.25em;
+            margin: 1.2em 0 0.45em;
         }
         .view h3 {
-            font-size: 1.08em;
-            margin: 1.1em 0 0.3em;
+            font-size: 1.04em;
+            margin: 1.1em 0 0.35em;
         }
         .view :is(h4, h5, h6) {
             font-size: 1em;
@@ -154,19 +152,26 @@ export class TexlCell extends LitElement {
             margin-top: 0.5em;
         }
         .view :is(p, ul, ol, blockquote, pre) {
-            margin: 0 0 0.6em;
+            margin: 0 0 0.7em;
+        }
+        /* Paragraphs justified; hyphenation (where the browser has it for
+           the page's language) keeps narrow lines from opening gaps */
+        .view :is(p, li) {
+            text-align: justify;
+            hyphens: auto;
+            -webkit-hyphens: auto;
         }
         .view :is(ul, ol) {
-            padding-left: 1.4em;
+            padding-left: 1.5em;
         }
         .view li {
-            margin: 0.1em 0;
+            margin: 0.15em 0;
         }
         .view li::marker {
             color: var(--texl-text-muted, #687085);
         }
         .view strong {
-            font-weight: 600;
+            font-weight: 700;
         }
         .view a {
             color: var(--texl-accent, #2563eb);
@@ -187,32 +192,57 @@ export class TexlCell extends LitElement {
         .view sup {
             top: -0.45em;
         }
+        /* Tables: full width less a small margin on each side; a strong rule
+           above and below, a thin one under the header, hairlines between
+           rows */
         .view table {
-            width: 100%;
-            table-layout: fixed;
+            width: calc(100% - 2 * var(--texl-table-inset, 1em));
             border-collapse: collapse;
-            margin: 0.25em 0 0.75em;
-            font-size: 0.94em;
+            margin: 0.6em var(--texl-table-inset, 1em) 1em;
+            font-size: 0.92em;
+            line-height: 1.35;
             font-variant-numeric: tabular-nums lining-nums;
             border-top: 1.5px solid var(--texl-rule, #1d2330);
             border-bottom: 1.5px solid var(--texl-rule, #1d2330);
         }
+        .view :is(th, td) {
+            padding: 0.32em 0.9em;
+            overflow-wrap: anywhere;
+        }
+        .view :is(th, td):first-child {
+            padding-left: 0.15em;
+        }
+        .view :is(th, td):last-child {
+            padding-right: 0.15em;
+        }
         .view th {
-            border-bottom: 1px solid var(--texl-rule, #1d2330);
-            padding: 0.35em 1.25em 0.35em 0;
+            vertical-align: bottom;
+        }
+        .view td {
+            vertical-align: top;
         }
         .view th:not([align]) {
             text-align: left;
         }
-        .view td {
-            border-bottom: 1px solid var(--texl-line, #e4e6ea);
-            padding: 0.3em 1.25em 0.3em 0;
+        .view thead tr:last-child th {
+            border-bottom: 1px solid var(--texl-rule, #1d2330);
         }
-        .view tr:last-child td {
-            border-bottom: 0;
+        .view tbody tr + tr td {
+            border-top: 1px solid var(--texl-line, #e4e6ea);
         }
-        .view :is(th, td):last-child {
-            padding-right: 0;
+        /* Captions (HTML only for now) below, left-aligned with the table,
+           in the text colour */
+        .view caption {
+            caption-side: bottom;
+        }
+        .view :is(caption, figcaption) {
+            padding-top: 0.5em;
+            text-align: left;
+            font-size: 0.88em;
+            line-height: 1.4;
+        }
+        .view figure {
+            margin: 0.6em var(--texl-table-inset, 1em) 1em;
         }
         /* A returned undefined value: an error */
         .view .undefined-value {

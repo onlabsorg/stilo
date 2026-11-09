@@ -558,10 +558,9 @@ From `web/src/editor/swan.js`, for cells that use CodeMirror.
 
 The editor and cells use shadow DOM; style them with CSS custom properties
 (set on `texl-editor` or an ancestor) and parts. The editor does not load
-fonts: if the page does not load Literata and Source Sans 3 (e.g. from
-`@fontsource-variable/literata` and `@fontsource-variable/source-sans-3`),
-the rendered text falls back to the next fonts in `--texl-font` and
-`--texl-heading-font`.
+fonts: if the page does not load Atkinson Hyperlegible Next (e.g. from
+`@fontsource-variable/atkinson-hyperlegible-next`), the rendered text falls
+back to the next fonts in `--texl-font`.
 
 | Custom property             | Default                   | Used for |
 |-----------------------------|---------------------------|----------|
@@ -577,9 +576,11 @@ the rendered text falls back to the next fonts in `--texl-font` and
 | `--texl-selected-ring`      | `rgb(37 99 235 / 0.35)`   | Selected cell ring |
 | `--texl-edit-bg`            | `#f8f9fb`                 | Cell in edit mode |
 | `--texl-mono`               | `ui-monospace, monospace` | Font of the text editors |
-| `--texl-font`               | `"Literata Variable", Literata, Georgia, serif` | Font of the rendered text |
-| `--texl-heading-font`       | `"Source Sans 3 Variable", "Source Sans 3", "Segoe UI", sans-serif` | Font of rendered headings and table headers |
-| `--texl-font-size`          | `1rem`                    | Size of the rendered text (headings scale with it) |
+| `--texl-font`               | `"Atkinson Hyperlegible Next Variable", "Atkinson Hyperlegible Next", Verdana, sans-serif` | Font of the rendered text |
+| `--texl-heading-font`       | `--texl-font`             | Font of rendered headings and table headers |
+| `--texl-font-size`          | `0.97rem`                 | Size of the rendered text (headings scale with it) |
+| `--texl-table-inset`        | `1em`                     | Margin of tables and figures on each side |
+| `--texl-math-size`          | `1.08em`                  | Size of typeset equations, relative to the text |
 | `--texl-rule`               | `#1d2330`                 | Heavier table rules (top, bottom, under the header) |
 | `--texl-text-muted`         | `#687085`                 | List markers, quotations |
 | `--texl-comment`            | `#b7791f`                 | Comment icon and count |

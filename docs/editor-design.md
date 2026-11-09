@@ -147,16 +147,33 @@ edit mode a ProseMirror editor takes CodeMirror's place, with the same typograph
 ## Typography
 
 The rendered document reads like a well-set engineering report
-(2026-10-30, chosen among six options): **Literata** for the text, a serif
-designed for reading on screens, at 16 px with line height 1.65; **Source
-Sans 3**, a humanist sans close to Calibri and Segoe UI, for headings and
-table headers. Tables span the full width with equal columns, and are
-ruled as in print (heavier rules at top and bottom and under the header,
-light rules between rows) with tabular figures, so numbers line up; sub- and superscripts do not open up the line.
+(2026-11-09, chosen among five fonts, three table and three caption
+styles, after an engineering report set in Verdana; it replaces the
+Literata choice of 2026-10-30): **Atkinson Hyperlegible Next** for text,
+headings and table headers alike, a wide, open sans with a large x-height
+like Verdana and unambiguous shapes (1 l I, 0 O), at 15.5 px with line
+height 1.6. Paragraphs and list items are justified, with automatic
+hyphenation where the browser has it for the page's language. Tables span
+the full width less a small margin on each side (`--texl-table-inset`,
+1em), columns sized by their content; they are ruled as in print (a strong
+rule above and below, a thin one under the header, hairlines between
+rows) with
+tabular figures, so numbers line up. A table's caption is an HTML
+`<caption>` element, with no Markdown syntax of its own: written on its own
+line right after a Markdown table (or right before it), it is moved into
+the table when the cell renders (`captionTables` in `markdown-cell.js`;
+the HTML parser would otherwise drop it). It shows below the table,
+left-aligned with it, in the text colour. For now only `markdown` cells
+accept such a source: `table` and `rich` cells refuse it. Sub- and
+superscripts do not open up the line. Equations are set at 1.08 times the
+text size (`--texl-math-size`), not KaTeX's 1.21: the text font's x-height
+is larger than KaTeX's, so its letters and digits stay close to the
+text's.
 The styles are the cells' (`.view` in `TexlCell`), so every cell type
 shares them; a host changes the fonts with `--texl-font`,
-`--texl-heading-font` and `--texl-font-size`, and loads the font files
-itself (Stilo bundles them, so it works offline). Edit mode keeps the
+`--texl-heading-font` (defaults to `--texl-font`) and `--texl-font-size`,
+and loads the font files itself (Stilo bundles them, so it works
+offline). Edit mode keeps the
 monospace font (`--texl-mono`).
 
 ## File format
