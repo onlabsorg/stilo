@@ -46,7 +46,7 @@ def create_app(root: Path | str, web_dist: Path | str | None = None) -> FastAPI:
     """The server app for the documents under `root`. `web_dist` is the built
     web app (`stilo/web` in the CLI); without it, app pages show a notice."""
     storage = Storage(root)
-    app = FastAPI(title="Stilo server", version="0.3.0")
+    app = FastAPI(title="Stilo server", version="0.4.0")
 
     @app.exception_handler(StorageError)
     async def storage_error(request: Request, error: StorageError):

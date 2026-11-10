@@ -6,6 +6,8 @@ change the interfaces.
 
 ## Unreleased
 
+## 0.4.0 — 2026-11-10
+
 - **Tab icon**: the browser tab of Stilo shows an icon, the OnLabs.org mark
   (two concentric circles, the outer one with a sharp corner at the bottom
   left) in blue and orange.
