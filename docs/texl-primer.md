@@ -1,7 +1,8 @@
 # Texl primer for editor work
 
-*What you need to know about Texl to work on the editor, as of Texl 0.8
-(`@onlabsorg/texl` on npm), 2026-11-09. For the language in
+*What you need to know about Texl to work on the editor, as of Texl 0.9
+(`@onlabsorg/texl` on npm). Written for Texl 0.8 on 2026-11-09; 0.9 only
+adds the built-in `text.template`, which the Stilo library uses. For the language in
 depth, see the developer docs of <https://github.com/onlabsorg/texl>
 (`docs/language.md`). The results shown below were checked
 against the real engine.*

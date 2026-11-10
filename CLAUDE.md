@@ -174,7 +174,8 @@ creates the GitHub release. Bump the version in `pyproject.toml`,
   (no build, no site; relative links only). Index: `docs/README.md`;
   style guide: `docs/STYLE.md`. `architecture.md`, `setup.md`,
   `server.md`, `cli.md`, `projects.md` (projects, `~`, `texl-lib/`), `web-app.md`, `editor.md`, `editor-design.md`
-  (editing model, open points), `texl-primer.md`, `protocol.md` (protocol
+  (editing model, open points), `texl-primer.md`, `tutorial.md` (how the
+  tutorial is built and kept current), `protocol.md` (protocol
   v0: URL space, the interactions, errors, public document URLs, why
   plain HTTP — also the contract), `component/` (embedding guide and
   editor API reference).

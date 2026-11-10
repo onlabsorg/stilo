@@ -69,7 +69,8 @@ three parts in it:
 | `cli/`          | The `stilo` command                               |
 | `server/`       | The server; it never imports the CLI (checked by `tests/test_layout.py`) |
 | `web/`          | The built web app, written by `npm run build` in `web/` (git-ignored) |
-| `texl-lib/`     | Only in the wheel: the Texl library, copied from `texl-lib/` at the root |
+| `texl-lib/`     | Only in the wheel: the Stilo Texl library, copied from `texl-lib/` at the root |
+| `tutorial/`     | Only in the wheel: the tutorial, copied from `tutorial/` at the root |
 
 The web app's source stays in `web/`, a Node project of its own; only its
 build goes into the package. A checkout and an installed package thus have
@@ -96,10 +97,12 @@ document and serves the samples.
 
 | Part    | Tests                        | Run with                 |
 |---------|------------------------------|--------------------------|
-| Server  | `tests/server/test_api.py`: every interaction of the protocol, path validation, errors | `uv run pytest` |
-| CLI     | `tests/cli/test_render.py`   | `uv run pytest` |
+| Server  | `tests/server/test_api.py`: every interaction of the protocol, path validation, errors; `test_home.py`: the project home `~` | `uv run pytest` |
+| CLI     | `tests/cli/`: `test_render.py` (`stilo render`, every example renders), `test_errors.py` (the error report), `test_project.py` (`stilo init`, `~`), `test_tutor.py` (`stilo tutor`), `test_web.py` (stopping with Ctrl+C) | `uv run pytest` |
 | Layout  | `tests/test_layout.py`: the server does not import the rest of the package | `uv run pytest` |
-| Editor  | `web/test/document.test.js` (file format), `cells.test.js` (cells), `texl-editor.test.js` (editing, keys, clipboard, undo) | `npm test` in `web/` |
+| Stilo library | `tests/texl_lib/`: the cases in `<function>-cases.json`, run on pytexl; `web/test/texl-lib.test.js` runs the same cases in the browser | `uv run pytest`, `npm test` in `web/` |
+| Tutorial | `tests/tutorial/`: every lesson renders, `solutions.json` turns every check to ✓ Done; `web/test/tutorial.test.js`: every cell fits its type | `uv run pytest`, `npm test` in `web/` |
+| Editor  | `web/test/`: `document.test.js` (file format), `cells.test.js` (cells), `rich-cell.test.js` and `rich-markdown.test.js` (rich text), `data-cell.test.js`, `chart-cell.test.js`, `math.test.js` (equations), `errors.test.js` (errors), `texl-editor.test.js` (editing, keys, clipboard, undo), `nav-pane.test.js` (navigation pane), `examples.test.js` (every example's cells fit their types) | `npm test` in `web/` |
 | App shell | `web/smoke/app-shell.test.js`: smoke tests (open, edit and save, reload, open from the navigation pane) | `npm run smoke` in `web/`, after `npm run build` |
 
 The editor tests run in a real browser, because cells are custom elements
