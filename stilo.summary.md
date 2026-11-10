@@ -340,6 +340,12 @@ accept are not part of Stilo.
   values. The beam example has a bending-moment diagram; lesson 7 of the
   tutorial shows charts. Existing projects need their copy of the library
   refreshed to use charts. Not yet released.
+- 2026-11-10: **the app itself is now tested**, with a few quick smoke
+  tests: a headless browser runs against `stilo serve` and opens a
+  document, edits and saves it, reloads it, and opens another document
+  from the navigation pane; any error the page reports fails them. The
+  continuous integration runs them against the installed package. Nothing
+  changes for users.
 
 ## Known limitations
 

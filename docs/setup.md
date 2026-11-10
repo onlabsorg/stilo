@@ -26,6 +26,7 @@ cd web
 npm install
 npm test             # browser tests, in headless Chrome: test/**/*.test.js
 npm run build        # src/stilo/web/: the app served by the Python server
+npm run smoke        # after the build: the app shell against stilo serve
 ```
 
 The source is plain JavaScript (ES modules, with JSDoc types): there is no
@@ -99,13 +100,18 @@ document and serves the samples.
 | CLI     | `tests/cli/test_render.py`   | `uv run pytest` |
 | Layout  | `tests/test_layout.py`: the server does not import the rest of the package | `uv run pytest` |
 | Editor  | `web/test/document.test.js` (file format), `cells.test.js` (cells), `texl-editor.test.js` (editing, keys, clipboard, undo) | `npm test` in `web/` |
+| App shell | `web/smoke/app-shell.test.js`: smoke tests (open, edit and save, reload, open from the navigation pane) | `npm run smoke` in `web/`, after `npm run build` |
 
 The editor tests run in a real browser, because cells are custom elements
 and Texl is WebAssembly. Synthetic key events in tests need
 `cancelable: true`, or the editor cannot tell that a cell handled them.
 
-The app shell has no tests yet. To check it, run the server and drive the
-page with a headless browser (puppeteer-core with the local Chrome works).
+The app shell has only smoke tests: a few quick checks that the app starts
+and its main paths work at all. They start `stilo serve` on a copy of
+`examples/` (`uv run stilo` at the root, or the command in `STILO`) and
+drive the page in the local Chrome with puppeteer-core, through
+`node --test`. A path they do not cover is checked by hand the same way:
+run the server and drive the page with a headless browser.
 
 The continuous integration, `.github/workflows/stilo.yml`, runs all the
 tests, the web build and the package build on every push and pull request.

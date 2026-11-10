@@ -138,6 +138,8 @@ cd web
 npm install
 npm test             # @web/test-runner in headless local Chrome: test/**/*.test.js
 npm run build        # src/stilo/web/, served by the Python server under /_app/
+npm run smoke        # after the build: smoke/*.test.js, node --test + puppeteer-core
+                     # against `uv run stilo serve` on a copy of examples/ ($STILO)
 npm run dev          # Vite on :5173 with hot reload; proxies to the server on :8000
                      # (STILO_SERVER=http://127.0.0.1:8765 npm run dev for another port)
 ```
@@ -151,11 +153,14 @@ Two ways to run it:
   Vite serves the pages and forwards `/_api` and the public URLs of files
   (imports, images, PDFs).
 
-The app shell has no tests yet (the editor has). To check the UI, run the
-server and drive it with a headless browser (puppeteer-core with the local
-Chrome works). CI: `.github/workflows/stilo.yml` (tests, web build, and
+The app shell has only smoke tests (`web/smoke/app-shell.test.js`: open,
+edit and save, reload, open from the navigation pane; any page error fails
+them); a new main path of the shell gets one there. To check other UI
+behaviour, run the server and drive it with a headless browser
+(puppeteer-core with the local Chrome works). CI: `.github/workflows/stilo.yml` (tests, web build, and
 the `package` job: builds the wheel, installs it, smoke-tests `render` and
-`serve`). Release: `.github/workflows/release.yml`, at a pushed tag
+`serve`, and runs the app-shell smoke tests against the installed
+`stilo`). Release: `.github/workflows/release.yml`, at a pushed tag
 `vX.Y.Z` matching `pyproject.toml` and a `CHANGELOG.md` entry: tests,
 builds, publishes on PyPI (Trusted Publishing, environment `pypi`) and
 creates the GitHub release. Bump the version in `pyproject.toml`,

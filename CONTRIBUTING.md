@@ -22,7 +22,9 @@ reason.
 3. Make the change, with tests:
    - the server and the CLI: `tests/server/`, `tests/cli/`, run with
      `uv run pytest` at the root;
-   - the editor: `web/test/`, run with `npm test` in `web/`.
+   - the editor: `web/test/`, run with `npm test` in `web/`;
+   - the app shell: `web/smoke/`, smoke tests only, run with
+     `npm run build && npm run smoke` in `web/`.
 4. Update the documentation that the change affects (see below).
 5. Add a line to the *Unreleased* section of `CHANGELOG.md` if users will
    notice the change.

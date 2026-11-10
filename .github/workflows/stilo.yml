@@ -78,6 +78,12 @@ jobs:
           for i in $(seq 50); do curl -sf -o /dev/null localhost:8766/index.texl && break; sleep 0.2; done
           curl -sf localhost:8766/index.texl | grep -q 'Learn Stilo'
           venv/bin/stilo render --strict tutorial/07-data-tables.texl > /dev/null
+      # The runner image has Chrome, which chrome-launcher finds
+      - name: Smoke-test the app shell in a headless browser
+        working-directory: web
+        env:
+          STILO: ${{ runner.temp }}/venv/bin/stilo
+        run: npm run smoke
       - uses: actions/upload-artifact@v4
         with:
           name: stilo-package
