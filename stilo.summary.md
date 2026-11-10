@@ -280,7 +280,7 @@ accept are not part of Stilo.
   itself; the others are steps to try. Every lesson, and every exercise with
   its solution, is checked by the automatic tests, and a change visible to
   users must now update its lesson in the same commit. New dependency:
-  `platformdirs`. Not yet released.
+  `platformdirs`.
 - 2026-11-09: **new document typography**, after an engineering report the
   founder liked, replacing the one of 2026-10-30: one font, Atkinson
   Hyperlegible Next (wide and very legible, in the spirit of Verdana), for
@@ -293,7 +293,7 @@ accept are not part of Stilo.
 - 2026-11-09: **table captions**: a line `<caption>…</caption>` written
   right after a table in a Markdown line shows below the table,
   left-aligned. Plain HTML, no new syntax; lesson 6 of the tutorial shows
-  it. Not yet released.
+  it.
 - 2026-11-09: **the beam example reads as an engineering report**: a short
   design report (introduction, scope of work, basis of design, method
   statement, results, conclusions, recommendations) that links to two
@@ -315,14 +315,13 @@ accept are not part of Stilo.
   a folder now deletes everything in it**, other files included, into
   `.trash`, and the folder is always gone; the question says how many
   documents and other files go with it. Lessons 1, 8 and 10 of the tutorial
-  teach it. Not yet released.
+  teach it.
 - 2026-11-09: **moved to Texl 0.9**, in the browser and on the command line.
   Nothing changes for users. The Stilo library's data tables now use Texl's
   new text templates to write their table, which shows exactly as before.
-  Not yet released.
 - 2026-11-09: **Ctrl+C stops `stilo serve` and `stilo tutor` cleanly**, with
   a goodbye message instead of an error report; `stilo serve` says at start
-  how to stop it. Not yet released.
+  how to stop it.
 - 2026-11-10: **chart cell**. A new cell type, Chart (key `c`), draws a line
   chart, for example of two columns of a data table, across the width of
   the page, in the colours of the light or dark theme. It is edited as a
@@ -339,7 +338,7 @@ accept are not part of Stilo.
   form is a shared part, meant for future cells that set a few named
   values. The beam example has a bending-moment diagram; lesson 7 of the
   tutorial shows charts. Existing projects need their copy of the library
-  refreshed to use charts. Not yet released.
+  refreshed to use charts.
 - 2026-11-10: **the app itself is now tested**, with a few quick smoke
   tests: a headless browser runs against `stilo serve` and opens a
   document, edits and saves it, reloads it, and opens another document
@@ -348,7 +347,9 @@ accept are not part of Stilo.
   changes for users.
 - 2026-11-10: **tab icon**: the browser tab of Stilo shows the OnLabs.org
   mark (two concentric circles, the outer one with a sharp corner at the
-  bottom left), in Stilo's blue with an orange centre. Not yet released.
+  bottom left), in Stilo's blue with an orange centre.
+- 2026-11-10: **0.4.0 released**: tagged `v0.4.0` and published on PyPI as
+  `stilo-cli`, with all the changes since 0.3.0 listed above.
 
 ## Known limitations
 
