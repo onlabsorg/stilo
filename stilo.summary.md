@@ -346,6 +346,9 @@ accept are not part of Stilo.
   from the navigation pane; any error the page reports fails them. The
   continuous integration runs them against the installed package. Nothing
   changes for users.
+- 2026-11-10: **tab icon**: the browser tab of Stilo shows the OnLabs.org
+  mark (two concentric circles, the outer one with a sharp corner at the
+  bottom left), in Stilo's blue with an orange centre. Not yet released.
 
 ## Known limitations
 

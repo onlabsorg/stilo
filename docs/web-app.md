@@ -195,6 +195,11 @@ with the app, so Stilo needs no network for it.
 browser. The default is dark; `index.html` applies the saved theme before
 the first paint.
 
+The tab icon is `web/public/favicon.svg`, linked from `index.html`: the
+OnLabs.org mark, two concentric circles, the outer one with a sharp corner
+at the bottom left, in Stilo's blue with an orange centre. Vite copies `public/` into the build as it is,
+so the server serves it at `/_app/favicon.svg`.
+
 ## Rules for the web app
 
 - Declare a component's reactive properties in `static properties` and

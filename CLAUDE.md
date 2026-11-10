@@ -224,6 +224,8 @@ creates the GitHub release. Bump the version in `pyproject.toml`,
 - `src/stilo/cli/errors.py` — finds the undefined values a document returned
   and formats the report of `stilo render`.
 - `web/src/main.js` — entry: theme CSS, the editor, the app.
+  `web/public/` — files copied into the build as they are
+  (`favicon.svg`, the tab icon, linked from `web/index.html`).
 - `web/src/components/stilo-app.js` — the shell: layout, state (navigation
   root and tree, open document, ETag, dirty flag, open pane), routing,
   commands (save, new, …), editor events.

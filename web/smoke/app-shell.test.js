@@ -74,9 +74,7 @@ before(async () => {
     await page.setViewport({ width: 1280, height: 900 });
     page.on("pageerror", (error) => pageErrors.push(error.message));
     page.on("console", (message) => {
-        const url = message.location()?.url ?? "";
-        // The browser asks for a favicon by itself; the app has none
-        if (message.type() === "error" && !url.endsWith("/favicon.ico")) pageErrors.push(`${message.text()} ${url}`);
+        if (message.type() === "error") pageErrors.push(`${message.text()} ${message.location()?.url ?? ""}`);
     });
     // Leaving with unsaved changes asks: that would be a failure, not a wait
     page.on("dialog", (dialog) => {

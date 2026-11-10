@@ -6,6 +6,9 @@ change the interfaces.
 
 ## Unreleased
 
+- **Tab icon**: the browser tab of Stilo shows an icon, the OnLabs.org mark
+  (two concentric circles, the outer one with a sharp corner at the bottom
+  left) in blue and orange.
 - **Chart cells**: a new cell type, **Chart** (key **c**), draws a line
   chart, for example of two columns of a data table. It is edited as a
   form: the chart type (only Line for now), the X and Y values (formulas
