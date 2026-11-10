@@ -1,0 +1,161 @@
+# `charts` — charts drawn as SVG
+
+`charts` is a namespace of functions that draw a chart and return it as an
+SVG image, the way a Stilo `chart` cell writes it. There is one for now,
+`charts.line`.
+
+## `charts.line` — a line chart
+
+```
+stilo.charts.line {
+    x: loads.column "x (m)",
+    y: loads.column "M (kNm)",
+    x_label: "x (m)",
+    y_label: "M (kNm)",
+    title: "Bending moment"
+}
+```
+
+(between the tag delimiters, in a document that imported the library; see
+`index.texl`). The tag shows the chart in place.
+
+- `x` and `y` are lists of numbers of the same size, the coordinates of the
+  points, joined by a line in the order given. Typically each is a column of
+  a dataframe (`dataframe.texl`). A point whose `x` or `y` is not a number
+  (an empty table cell, `""`, or an undefined value) is left out.
+- `x_label`, `y_label` and `title` are texts, all optional: a label or title
+  that is missing or empty is not drawn.
+
+The chart spans the width of the page and keeps its proportions (16:9), so
+its text grows and shrinks with it. The axes run from a round number below
+the smallest value to one above the largest, with about five ticks, labelled
+without rounding noise. Text and axes take the colour of the text around
+them, the line the accent colour of the page (`--texl-accent`), so the chart
+fits a light and a dark page.
+
+Bad input (no namespace, `x` or `y` not a list, lists of different sizes, no
+point with two numbers) gives an undefined value that says what is wrong, in
+a few words.
+
+The SVG has one element per line and no blank line, so a Markdown converter
+keeps it as one block of HTML.
+
+The functions below are plain Swan. They use no recursion except `range`,
+whose depth grows with the logarithm of the number of points.
+
+<%
+# A line break, for joining the lines of the SVG.
+NL = "
+",
+
+# The numbers a .. b - 1, as a list.
+range = (a, b) -> (b - a < 1) ? [] ; ((b - a == 1) ? [a] ; (
+    m = math.floor ((a + b) / 2),
+    [list.enum (range (a, m)), list.enum (range (m, b))]
+)),
+
+# `v` rounded to `d` decimals; Texl writes the result without rounding noise
+# (and `+ 0` turns -0 into 0).
+fixed = (d, v) -> (
+    p = math.pow d 10,
+    math.round (v * p) / p + 0
+),
+
+# A value as text, safe inside an SVG element and a quoted attribute: `&`,
+# `<`, `>` and `'` escaped.
+replace = (old, new, t) -> text.join new (text.split old t),
+shown = text.template "{v}",
+escaped = v -> replace ("'", "&apos;", replace (">", "&gt;", replace ("<", "&lt;", replace ("&", "&amp;", shown {v: v})))),
+
+# The ticks of an axis that shows the values from `lo` to `hi`: about five
+# round numbers, one at or below `lo` and one at or above `hi`. Returns
+# `{from, to, values}`, the ends of the axis and the tick values.
+ticks = (lo, hi) -> (
+    pad = (hi > lo) ? 0 ; ((lo == 0) ? 1 ; math.abs lo / 10),
+    low = lo - pad,
+    high = hi + pad,
+    raw = (high - low) / 5,
+    mag = math.pow (math.floor (math.log10 raw)) 10,
+    norm = raw / mag,
+    step = mag * ((norm < 1.5) ? 1 ; ((norm < 3) ? 2 ; ((norm < 7) ? 5 ; 10))),
+    d = math.max (0, 0 - math.floor (math.log10 step + 0.000000001)),
+    first = math.floor (low / step + 0.000000001),
+    last = math.ceil (high / step - 0.000000001),
+    {
+        from: first * step,
+        to: last * step,
+        values: [(list.enum (range (0, last - first + 1))) => (k -> fixed (d, (first + k) * step))]
+    }
+),
+
+# The size of the image, in its own units; the text sizes are in the same
+# units, so they scale with the image.
+WIDTH = 640,
+HEIGHT = 360,
+CHAR = 7,
+
+# The SVG elements.
+svg_open = text.template "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 {w} {h}' width='100%' role='img' aria-label='{label}' font-size='12' fill='currentColor'>",
+svg_text = text.template "<text x='{x}' y='{y}' text-anchor='{anchor}'{extra}>{text}</text>",
+svg_line = text.template "<line x1='{x1}' y1='{y1}' x2='{x2}' y2='{y2}' stroke='currentColor' stroke-opacity='{opacity}'/>",
+svg_axes = text.template "<path d='M{l} {t}V{b}H{r}' fill='none' stroke='currentColor' stroke-opacity='0.6'/>",
+svg_polyline = text.template "<polyline points='{points}' fill='none' stroke='#2563eb' style='stroke: var(--texl-accent, #2563eb)' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'/>",
+svg_dot = text.template "<circle cx='{x}' cy='{y}' r='3' fill='#2563eb' style='fill: var(--texl-accent, #2563eb)'/>",
+point = text.template "{x},{y}",
+
+# The chart of checked points (a list of [x, y], at least one) and texts.
+draw = (pts, x_label, y_label, title) -> (
+    xs = [(list.enum pts) => (p -> p 0)],
+    ys = [(list.enum pts) => (p -> p 1)],
+    tx = ticks (math.min (list.enum xs), math.max (list.enum xs)),
+    ty = ticks (math.min (list.enum ys), math.max (list.enum ys)),
+    y_widest = math.max ((list.enum ty.values) => (v -> text.size (shown {v: v}))),
+
+    # The plot area: room for the title, the labels and the tick labels
+    l = ((y_label == "") ? 8 ; 30) + 10 + CHAR * y_widest,
+    r = WIDTH - 20,
+    t = (title == "") ? 16 ; 44,
+    b = HEIGHT - ((x_label == "") ? 28 ; 48),
+    sx = v -> fixed (2, l + (v - tx.from) / (tx.to - tx.from) * (r - l)),
+    sy = v -> fixed (2, b - (v - ty.from) / (ty.to - ty.from) * (b - t)),
+
+    grid_x = (list.enum tx.values) => (v -> svg_line {x1: sx v, y1: t, x2: sx v, y2: b, opacity: 0.12}),
+    grid_y = (list.enum ty.values) => (v -> svg_line {x1: l, y1: sy v, x2: r, y2: sy v, opacity: 0.12}),
+    labels_x = (list.enum tx.values) => (v -> svg_text {x: sx v, y: b + 18, anchor: "middle", extra: "", text: v}),
+    labels_y = (list.enum ty.values) => (v -> svg_text {x: l - 8, y: sy v, anchor: "end", extra: " dy='0.32em'", text: v}),
+    points = text.join " " ((list.enum pts) => (p -> point {x: sx (p 0), y: sy (p 1)})),
+    curve = (list.size pts == 1) ? svg_dot {x: sx (xs 0), y: sy (ys 0)} ; svg_polyline {points: points},
+
+    text.join NL (
+        svg_open {w: WIDTH, h: HEIGHT, label: (title == "") ? "Line chart" ; title},
+        (title != "") ? svg_text {x: WIDTH / 2, y: 24, anchor: "middle", extra: " font-size='15' font-weight='600'", text: title},
+        grid_x,
+        grid_y,
+        svg_axes {l: l, t: t, b: b, r: r},
+        labels_x,
+        labels_y,
+        (x_label != "") ? svg_text {x: fixed (2, (l + r) / 2), y: HEIGHT - 10, anchor: "middle", extra: " font-size='13'", text: x_label},
+        (y_label != "") ? svg_text {x: fixed (2, 0 - (t + b) / 2), y: 16, anchor: "middle", extra: " font-size='13' transform='rotate(-90)'", text: y_label},
+        curve,
+        "</svg>"
+    )
+),
+
+# The points of `x` and `y` (lists of the same size) with two numbers, as a
+# list of [x, y].
+numeric_points = (x, y) -> [(list.enum (range (0, list.size x))) => (i ->
+    ((type (x i) == "Numb") & (type (y i) == "Numb")) ? [x i, y i]
+)],
+
+line = spec ->
+    (type spec != "Namespace") ? undef.from "not a namespace" ; (
+    (type spec.x != "List") ? undef.from "x: not a list" ; (
+    (type spec.y != "List") ? undef.from "y: not a list" ; (
+    (list.size spec.x != list.size spec.y) ? undef.from "x, y: different sizes" ; (
+    pts = numeric_points (spec.x, spec.y),
+    (list.size pts == 0) ? undef.from "no points to draw" ;
+    draw (pts, escaped (spec.x_label), escaped (spec.y_label), escaped (spec.title))
+)))),
+
+charts = {line: line}
+%>

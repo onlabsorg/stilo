@@ -111,6 +111,7 @@ same folder, imported by a relative path:
 | Function           | Document         | What it does                         |
 |--------------------|------------------|--------------------------------------|
 | `stilo.dataframe`  | `dataframe.texl` | A table of data: column names and rows, shown as a Markdown table (the `data` cell writes it) |
+| `stilo.charts`     | `charts.texl`    | Charts as SVG images: `stilo.charts.line {x, y, x_label, y_label, title}` (the `chart` cell writes it) |
 
 Each document's text is the function's documentation, readable on GitHub.
 A document of the library must not quote an import tag of the library (or
@@ -125,7 +126,10 @@ To add a function: write it in a new document of `texl-lib/`, describe it
 in that document's text, and add it to the namespace `index.texl` binds.
 Avoid unbounded recursion: Texl has no depth limit yet, and a runaway
 recursion crashes the engine instead of giving an undefined value. Test it
-with cases in a JSON file under `tests/texl_lib/` (see
-`dataframe-cases.json`), which both engines run: `tests/texl_lib/` with
-`pytexl`, `web/test/texl-lib.test.js` in the browser. Each case renders as a
-document of `texl-lib/` after the import of `index.texl`.
+with cases in a JSON file under `tests/texl_lib/`, `<function>-cases.json`
+(see `dataframe-cases.json`), which both engines run: `tests/texl_lib/` with
+`pytexl`, `web/test/texl-lib.test.js` in the browser (add the file's name to
+its list). Each case renders as a document of `texl-lib/` after the import
+of `index.texl`, and checks its `text`, or parts it `contains` and
+`excludes`. Swan texts have no escapes, so a function that writes markup
+quotes its attributes with `'` (`charts.texl`).

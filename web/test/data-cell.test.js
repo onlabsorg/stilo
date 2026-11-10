@@ -200,7 +200,7 @@ describe("data cell in the editor", () => {
     /** Serves the Stilo library from texl-lib/ where a project would have it, under lib/stilo/. */
     async function serveLibrary() {
         const files = {};
-        for (const name of ["index.texl", "dataframe.texl"])
+        for (const name of ["index.texl", "dataframe.texl", "charts.texl"])
             files[`/lib/stilo/${name}`] = await (await FETCH(`/texl-lib/${name}`)).text();
         window.fetch = async (url, ...rest) => {
             const name = Object.keys(files).find((file) => String(url.url ?? url).endsWith(file));

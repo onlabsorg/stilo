@@ -7,7 +7,7 @@
 
 A **data table** holds values that other lines compute with, as a range of
 cells does in a spreadsheet: a list of load cases, of sections, of prices.
-About six minutes.
+About eight minutes.
 
 Here is one, named `sections`:
 <!--{ da03 : data }-->
@@ -64,11 +64,37 @@ press **=**, and write
 <% tutorial.check ((type max_fx == "Numb") & (max_fx == math.max (list.enum (loads.column "Fx (kN)")))) %>
 <!--{ da12 : markdown }-->
 The largest horizontal load is **<% max_fx ; "…" %> kN**.
+<!--{ da15 : markdown }-->
+## Charts
+
+A **chart** draws the values of a data table. This one shows the mass of
+the sections above against their height:
+<!--{ da16 : chart }-->
+<% stilo.charts.line {
+    x: sections.column "h (mm)",
+    y: sections.column "Mass (kg/m)",
+    x_label: "h (mm)",
+    y_label: "Mass (kg/m)",
+    title: "IPE sections"
+} %>
+<!--{ da17 : markdown }-->
+Press **Enter** on it: it is edited as a form. **Chart type** chooses the
+kind of chart (only Line for now). **X values** and **Y values** are formulas
+that give a list of numbers, usually a column of a table, such as
+`sections.column "h (mm)"`. The labels and the title are plain text, without
+quotes, and can stay empty. **Tab** goes to the next field, **Ctrl+Enter**
+saves.
+
+**Try it:** select the empty line below and press **c**: a new chart. In
+**X values** write `sections.column "h (mm)"`, in **Y values**
+`sections.column "Mass (kg/m)"`, give it a title, and press **Ctrl+Enter**.
+<!--{ da18 : rich }-->
+
 <!--{ da13 : rich }-->
 ## The Stilo library
 
-A data table needs the **Stilo library**, a document of functions that comes
-with Stilo. When you write the first data table of a document, the editor adds
+Data tables and charts need the **Stilo library**, a document of functions that comes
+with Stilo. When you write the first data table or chart of a document, the editor adds
 a hidden line at the top that imports it. This lesson has that line already.
 To see it, open the commands (**F1**) and choose **Show or hide the hidden
 cells**; choose it again to hide it.

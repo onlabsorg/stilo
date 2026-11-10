@@ -10,7 +10,10 @@ editor inserts that import when it is needed (the full tag is in Stilo's
 Each function lives in its own document of this folder, which describes it:
 
 - `stilo.dataframe` — a table of data (`dataframe.texl`).
+- `stilo.charts` — charts drawn as SVG: `stilo.charts.line`
+  (`charts.texl`).
 
-<% texl.import "dataframe.texl" ~> (m -> bind "stilo" {
-    dataframe: m.data.dataframe
-}) %>
+<% texl.import "dataframe.texl" ~> (d -> (texl.import "charts.texl" ~> (c -> bind "stilo" {
+    dataframe: d.data.dataframe,
+    charts: c.data.charts
+}))) %>

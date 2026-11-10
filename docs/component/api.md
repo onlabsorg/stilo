@@ -11,8 +11,10 @@ API is young and will change before 1.0. The examples import the editor as
 - [`<texl-editor>`](#texl-editor) — the editor element
 - [`TexlCell`](#texlcell) — base class of all cells
 - [`RichCell`](#richcell), [`TextCell`](#textcell), [`MarkdownCell`](#markdowncell),
-  [`TableCell`](#tablecell), [`FormulaCell`](#formulacell) and
-  [`DataCell`](#datacell) — built-in cells
+  [`TableCell`](#tablecell), [`FormulaCell`](#formulacell),
+  [`DataCell`](#datacell), [`FormCell`](#formcell) and
+  [`ChartCell`](#chartcell) — built-in cells, and
+  [`<texl-form>`](#texl-form)
 - [Cell registry](#cell-registry) — `registerCell`, `cellTagName`,
   `cellClass`, `cellTypes`
 - [Document functions](#document-functions) — parse, serialise, names,
@@ -360,7 +362,55 @@ white space and comments around the tag. `requires` the Stilo library:
 (`~/lib/stilo/index.texl`). `parseData(source)` returns `{before, after,
 name, columns, rows}` (entries as Swan source), or null;
 `serializeData(data)` writes it back, one row per line;
-`entryError(text)` resolves to why a value cannot be an entry, or `""`.
+`entryError(text)` resolves to why a value cannot be an entry, or `""`
+(the same as `expressionError`, below).
+
+## `FormCell`
+
+Base of the cells edited as a form (not a type itself). Extends
+`TextCell`. A source that is one tag applying a function to a namespace,
+`<% stilo.charts.line {x: [1, 2], y: [3, 4], title: "T"} %>`, edited as a
+[`<texl-form>`](#texl-form) and shown as its output (sanitised HTML, like
+the base cell). A subclass sets:
+
+- `static forms`: the kinds it makes, `[{call, label, fields}]`: `call` the
+  function (`"stilo.charts.line"`), `label` its name in the drop-down
+  ("Line"), `fields` the members, in order (see `<texl-form>`).
+- `static kindLabel`: the description of the drop-down of kinds, the
+  form's first line ("Chart type").
+
+`accepts` a blank source (a new form of the first kind) or such a tag whose
+function is one of `forms`, every member a field of it, each of a shape
+its field holds (a `text` or `choice` field a Swan text, a `number` field
+a number). An empty field writes no member; a `required` one, a text with
+`"` or `%>`, a field that is not a number, or an expression that would not
+parse refuse the commit. An unchanged form keeps its source as written.
+`static readForm(source)` returns `{call, form, values}`, or null.
+`parseCall(source)` returns `{before, after, call, members}` (members as
+`[name, Swan source]`), or null; `serializeCall(call)` writes it back, one
+member per line. `expressionError(text)` (from `expression.js`) resolves to
+why a Swan value cannot be written inside a tag's list or namespace, or
+`""`.
+
+## `ChartCell`
+
+Type `chart`, label "Chart", key `c`. A `FormCell` with one kind for now,
+`stilo.charts.line` ("Line"), whose fields are `x` and `y` (required
+expressions that give lists), and `x_label`, `y_label` and `title`
+(text). Shown as the SVG image the Stilo library draws. `requires` the
+Stilo library, as `DataCell`.
+
+## `<texl-form>`
+
+From `web/src/editor/texl-form.js`. A form: one line per field, the
+description on the left, the input on the right. Properties: `fields`, a
+list of `{key, label, type, options?, placeholder?, required?}` (`type` is
+`"text"`, `"choice"` with `options` `[{value, label}]`, `"number"` or
+`"expression"`, the last in the monospaced font); `values`, the text of
+each input by key; `errors`, a `Map` from key to the reason a field is
+wrong (outlined, the reason as tooltip). Fires `form-input` with `{key,
+value}` on every change; `focusField(key?)` focuses a field (the first by
+default). ↑ and ↓ move between text boxes.
 
 ## Cell registry
 

@@ -21,10 +21,10 @@ to Word and Excel users, and renders them from the command line.
 | Part   | What                                                          |
 |--------|---------------------------------------------------------------|
 | Web app | The user interface (Lit web components, Vite): top bar, navigation pane with all the folder's files (documents, and other files greyed out) and commands to manage and upload them, the editor, right pane with commands, cell comments and errors. Light and dark theme. |
-| Editor | Inside the web app: `<texl-editor>`, a document as a stack of typed cells (rich text, the default; text, Markdown, table, formula and data table; formulas as `<% %>` tags; LaTeX equations in Markdown and tables), live rendering, cell comments, errors shown where they happen. Until 2026-10-26 the separate `texl-editor` package. |
+| Editor | Inside the web app: `<texl-editor>`, a document as a stack of typed cells (rich text, the default; text, Markdown, table, formula, data table and chart; formulas as `<% %>` tags; LaTeX equations in Markdown and tables), live rendering, cell comments, errors shown where they happen. Until 2026-10-26 the separate `texl-editor` package. |
 | Server | Python (FastAPI): serves one folder of documents and the web app, for one user. |
 | CLI    | The `stilo` command: `stilo init [folder]` makes a folder a project, with the Stilo library in it; `stilo render <file>` prints a rendered document (or writes it to a file), says how many errors it has and can explain them; `stilo serve [folder]` starts the server on a folder; `stilo tutor` opens the tutorial. |
-| Stilo library | A folder of Texl documents (`texl-lib/`) that `stilo init` copies into each project, for documents to import. Its first function, `stilo.dataframe`, makes a table of data; it is what the data table cell writes. Tested on both Texl engines, the browser's and Python's, with the same cases. |
+| Stilo library | A folder of Texl documents (`texl-lib/`) that `stilo init` copies into each project, for documents to import. `stilo.dataframe` makes a table of data, which the data table cell writes; `stilo.charts.line` draws a line chart as an image, which the chart cell writes. Tested on both Texl engines, the browser's and Python's, with the same cases. |
 | Tutorial | A guided tutorial for new users (`tutorial/`), Texl documents shipped in the package and served by `stilo tutor` in the web app: twelve short lessons (30–45 minutes) on the editor and the command line, from the first edit to one's own project, and two advanced ones. Many exercises check themselves and show "✓ Done"; an index shows the progress. The lessons link to the OnLabs.org manual instead of repeating it. Tested automatically, exercises included. |
 | Protocol | Plain HTTP between web app and server: GET a file, CREATE (POST), UPDATE (PUT, with an ETag so concurrent saves don't overwrite each other), QUERY a folder's tree (every file), create a folder, move or rename a file or folder, delete a file or folder. Any file can be created, so files can be uploaded; only documents can be updated. |
 | Documentation | Developer documentation only, as plain Markdown in `docs/`, read on GitHub: architecture, setup, server, CLI, web app, editor, the protocol, the editor component and its API. No site is built. Users read the OnLabs.org manual instead. |
@@ -323,6 +323,23 @@ accept are not part of Stilo.
 - 2026-11-09: **Ctrl+C stops `stilo serve` and `stilo tutor` cleanly**, with
   a goodbye message instead of an error report; `stilo serve` says at start
   how to stop it. Not yet released.
+- 2026-11-10: **chart cell**. A new cell type, Chart (key `c`), draws a line
+  chart, for example of two columns of a data table, across the width of
+  the page, in the colours of the light or dark theme. It is edited as a
+  **form**: a fixed line per setting, a description on the left and a box or
+  drop-down on the right: the chart type (only Line for now), the X and Y
+  values (formulas that give a list of numbers, such as
+  `loads.column "x (m)"`), the axis labels and the title (plain text,
+  optional). Wrong formulas are outlined while typing, and X and Y must be
+  filled in before the cell is committed. Points that are not numbers are
+  left out. Axes run between round numbers. File format: the cell stores
+  one formula calling `stilo.charts.line` from the Stilo library, which
+  returns the chart as an SVG image, so `stilo render` shows it too; the
+  first chart adds the import of the library, as a data table does. The
+  form is a shared part, meant for future cells that set a few named
+  values. The beam example has a bending-moment diagram; lesson 7 of the
+  tutorial shows charts. Existing projects need their copy of the library
+  refreshed to use charts. Not yet released.
 
 ## Known limitations
 
@@ -343,6 +360,8 @@ accept are not part of Stilo.
 - Data table cell: a value or column name cannot contain `"` or `%>`; a
   wrong value inside a table is shown but not listed in the Errors pane;
   outside a project the table shows `[[Undefined]]`.
+- Chart cell: line charts only, one line per chart; its text grows and
+  shrinks with the page width; a label or title cannot contain `"` or `%>`.
 - Hidden cells: no keys for hiding and unhiding, only commands.
 - Rich text cell: no colours, fonts or alignment; repeated empty paragraphs
   collapse; images are shown and kept but cannot be inserted; a comment can be

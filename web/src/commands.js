@@ -139,6 +139,7 @@ export const commands = [
     editorCommand("make-markdown", "Make it Markdown and edit", "M"),
     editorCommand("make-table", "Make it a table and edit", "Shift+T"),
     editorCommand("make-data", "Make it a data table and edit", "D"),
+    editorCommand("make-chart", "Make it a chart and edit", "C"),
     editorCommand("undo", "Undo", "Mod+Z"),
     editorCommand("redo", "Redo", "Mod+Shift+Z"),
     editorCommand("comments", "Show the cell's comments", "Shift+F2"),

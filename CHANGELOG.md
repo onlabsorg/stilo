@@ -6,6 +6,24 @@ change the interfaces.
 
 ## Unreleased
 
+- **Chart cells**: a new cell type, **Chart** (key **c**), draws a line
+  chart, for example of two columns of a data table. It is edited as a
+  form: the chart type (only Line for now), the X and Y values (formulas
+  that give a list, such as `loads.column "x (m)"`), the axis labels and
+  the title. The chart spans the width of the page and follows the light
+  and dark themes. It is stored as one formula,
+  `<% stilo.charts.line {x: ..., y: ..., x_label: "...", y_label: "...",
+  title: "..."} %>`, so `stilo render` shows it too, as an SVG image.
+- **`stilo.charts.line`**: the Stilo library has a new function that draws
+  a line chart as an SVG image, with round-numbered axes. Points whose X or
+  Y is not a number are left out. Copy the library into existing projects
+  again (`lib/stilo/`) to use it.
+- **Forms**: cells that set a few named values, such as the chart, are
+  edited as a form, one line per field: a description on the left, a text
+  box or a drop-down on the right. Tab and ↑/↓ move between fields.
+- The tutorial's lesson 7 shows charts, and the beam example has a
+  bending-moment diagram.
+
 - **Ctrl+C stops `stilo serve` and `stilo tutor` cleanly**, with a goodbye
   message instead of an error traceback. `stilo serve` now says how to stop
   it when it starts.

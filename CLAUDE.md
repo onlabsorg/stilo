@@ -197,10 +197,12 @@ creates the GitHub release. Bump the version in `pyproject.toml`,
   the text of a new `project.texl`.
 - `texl-lib/` — the Stilo Texl library: `index.texl` binds `stilo`,
   gathering one document per function (`dataframe.texl`:
-  `stilo.dataframe`). Tested by the cases in
-  `tests/texl_lib/dataframe-cases.json`, run on both engines
+  `stilo.dataframe`; `charts.texl`: `stilo.charts.line`, an SVG line
+  chart). Tested by the cases in `tests/texl_lib/<function>-cases.json`,
+  run on both engines
   (`tests/texl_lib/`, `web/test/texl-lib.test.js`). Its text must not quote its own
-  import tag: tags run even in code blocks.
+  import tag: tags run even in code blocks. Swan texts have no escapes:
+  markup written in Swan quotes its attributes with `'`.
 - `tutorial/` — the tutorial (S14, `docs/tutorial.md`): `index.texl`,
   lessons `NN-name.texl`, `files/`, `lib/tutorial/` (the checks:
   `tutorial.check`, `.progress`, `.tag`) and `lib/steel/`. Shipped in the
@@ -252,8 +254,12 @@ creates the GitHub release. Bump the version in `pyproject.toml`,
     the same Markdown as `markdown`; `text`, `markdown`, `table`: a Markdown
     pipe table edited as a grid, `formula`: one tag edited without its delimiters,
     `data`: a `stilo.dataframe` formula edited as a name and a grid of Swan
-    values, each checked by the engine; `grid-cell.js`, the grid both
-    `table` and `data` extend);
+    values, each checked by the engine (`expression.js`); `grid-cell.js`,
+    the grid both `table` and `data` extend; `chart`: a `stilo.charts`
+    formula edited as a form; `form-cell.js`, `FormCell`, the base of
+    cells edited as a form, `<texl-form>` (`texl-form.js`): fixed lines,
+    a description and a field each, of type text, choice, number or
+    expression; a new form-like cell extends `FormCell`);
     formulas are `<% %>` tags inside them. A type that needs a shape
     overrides the static `accepts(source)` (white space and comments
     never count against it): the type menu offers only accepting types,

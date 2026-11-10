@@ -85,7 +85,7 @@ shown, and any structure they have, is up to the platform.
 | `table`     | A grid where each table cell's Texl source is edited in its own field; shown as the rendered table | Ready for the MVP (2026-10-31): a Markdown pipe table (O5) edited as a grid of fields |
 | `formula`   | One tag, edited as its expression without the `<% %>`, shown as its output | First version |
 | `data`      | "Data table": a table of values (`stilo.dataframe`), edited as a name and a grid of Swan expressions, shown as the table the library renders | First version (2026-11-09); replaces the dropped `spreadsheet` idea |
-| `chart`     | Shows a chart; edits as a table of values    | Planned       |
+| `chart`     | "Chart": a chart drawn by the Stilo library (`stilo.charts.line`), edited as a form: chart type, X and Y values (formulas giving lists), axis labels and title (plain text) | First version (2026-11-10) |
 | `figure`    | A parametric figure                          | Idea          |
 | `ai`        | A prompt from which AI writes the cell's Texl | Idea         |
 | `rich`      | WYSIWYG, with a toolbar; formulas as chips that show their value (see Rich text below) | Default type of new cells; first version |
@@ -473,6 +473,36 @@ this section keeps the outline.
   table is first written with content and no cell mentions
   `~/lib/stilo/index.texl`, the editor adds a hidden formula cell with the
   import at the top (S12, S13).
+- Forms (first version, 2026-11-10): a cell whose source makes a namespace
+  is edited as a **form**, `<texl-form>` (`texl-form.js`), so every such
+  cell looks and works the same: one line per field, a fixed description
+  on the left, an input on the right. The lines are fixed (no lines the
+  user adds, no editable descriptions: the planned definitions cell, which
+  needed them, was dropped on 2026-11-10). Field types: `text` (free text,
+  saved as a Swan text `"..."`, so no `"` or `%>`), `choice` (a drop-down,
+  saved as a text), `number`, and `expression` (Swan source, checked as it
+  is typed like the values of a data table: `expression.js`). A form cell
+  (`FormCell`, `cells/form-cell.js`, not a type itself) stores one tag
+  applying a function to the namespace, `<% stilo.charts.line {x: ..., y:
+  ...} %>`, written one member per line in the order of the fields; an
+  empty field writes no member, a `required` one refuses the commit. A
+  drop-down on the first line chooses the kind (the function); changing it
+  keeps the fields the kinds share. Tab and ↑/↓ move between fields;
+  Mod+Enter and Escape commit and discard, as everywhere. A source edited
+  by hand into another shape (unknown members, a text field holding a
+  formula, comments inside the tag) is edited as text.
+- Charts (first version, 2026-11-10): the `chart` cell is a form cell
+  whose kinds are the functions of `stilo.charts` (only `line` for now),
+  each returning an SVG image (`texl-lib/charts.texl`), so a chart renders
+  without the editor (`stilo render`, other Texl hosts). The image has a
+  fixed 16:9 `viewBox` and spans the cell's width: its text scales with it
+  (Swan cannot know the width; accepted 2026-11-10). Axes and text use
+  `currentColor`, the line `--texl-accent`, so both themes work. X and Y
+  are formulas that give lists, typically columns of a data table; the
+  labels and title are plain text (not formulas: familiar, and enough).
+  The chart has no name: it is an end product. Like the data table, it
+  `requires` the Stilo library. Later: more series, other chart types
+  (each a kind of the drop-down and a function of `stilo.charts`).
 - **Shape rule** for changing type (decided 2026-10-30, O2 + O3 below). A
   structured type accepts only sources of a certain shape: `table` a
   Markdown pipe table, `formula` one tag; `text` and `markdown` accept any

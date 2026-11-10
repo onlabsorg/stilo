@@ -17,6 +17,7 @@ no checks: try each step and look at the result. About three minutes.
 | Formula | **=** | The result of one formula, edited without its brackets (lesson 4). |
 | Table | **Shift+T** | A table, edited as a grid (lesson 6). |
 | Data table | **d** | A table of values that other lines compute with (lesson 7). |
+| Chart | **c** | A chart of values, such as two columns of a data table (lesson 7). |
 <!--{ ty03 : rich }-->
 ## Change the type
 

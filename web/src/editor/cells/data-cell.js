@@ -1,10 +1,9 @@
 import { html, css } from "lit";
-import { collect, isUndefined } from "@onlabsorg/texl";
 import { GridCell } from "./grid-cell.js";
 import { parseFormula, serializeFormula } from "./formula-cell.js";
 import { TAG_CLOSE } from "../swan.js";
 import { isBlank } from "../document.js";
-import { createEngine } from "../engine.js";
+import { expressionError } from "../expression.js";
 
 /** The import path of the Stilo library, in a project (docs/projects.md). */
 export const STILO_LIBRARY = "~/lib/stilo/index.texl";
@@ -176,71 +175,17 @@ export function nameError(name) {
     return !name || NAME.test(name) ? "" : "A name has only letters, digits and _, and does not start with a digit";
 }
 
+/**
+ * Why `text` cannot be an entry of a row, or "": the check of any value
+ * written as Swan source (`expression.js`).
+ */
+export const entryError = expressionError;
+
 /** Why `text` cannot be a column name, or "". */
 export function columnError(text) {
     if (text.includes('"')) return "A column name cannot contain “\"”";
     if (text.includes(TAG_CLOSE)) return `A column name cannot contain “${TAG_CLOSE}”`;
     return "";
-}
-
-/**
- * Why `text` cannot be an entry, as far as its text tells: it would end the
- * tag, or a comma outside brackets and texts would make two entries.
- */
-function entryTextError(text) {
-    if (text.includes(TAG_CLOSE)) return `A value cannot contain “${TAG_CLOSE}”`;
-    let depth = 0;
-    for (let i = 0; i < text.length; i++) {
-        const c = text[i];
-        if (c === '"') {
-            const close = text.indexOf('"', i + 1);
-            if (close < 0) return "";
-            i = close;
-        } else if ("([{".includes(c)) depth++;
-        else if (")]}".includes(c)) depth--;
-        else if (c === "," && depth === 0) return "A value cannot hold a comma outside brackets; for a tuple, write (a, b)";
-    }
-    return "";
-}
-
-// The context the entries are checked in, made on first use, and the
-// checks done so far, by entry
-let checker = null;
-const checked = new Map();
-
-/**
- * Why `text` cannot be an entry, or "": checked by the browser's Texl engine.
- * An entry is accepted when, put alone in a namespace beside another member,
- * the namespace keeps both: a syntax error there would drop the entry, and
- * others after it, from the list of the row. The check evaluates the entry
- * in an empty context (names are unknown there), so a value that is merely
- * undefined, such as `1 + "a"`, passes: it shows as `[[Undefined]]`.
- * @param {string} text
- * @returns {Promise<string>}
- */
-export function entryError(text) {
-    const value = text.trim();
-    if (!value) return Promise.resolve("");
-    const quick = entryTextError(value);
-    if (quick) return Promise.resolve(quick);
-    if (!checked.has(value)) checked.set(value, checkEntry(value).catch(() => ""));
-    return checked.get(value);
-}
-
-async function checkEntry(value) {
-    checker ??= createEngine();
-    const engine = await checker;
-    const context = engine.createContext({});
-    try {
-        const probe = await context.render(`<% nspace.size {x__: (${value}), y__: 1} %>`);
-        if (probe.text === "2") return "";
-        const alone = await context.render(`<% ${value} %>`);
-        const result = alone.tags[0]?.value;
-        return isUndefined(result) ? `Not a valid value: ${result.description}` : "Not a single value";
-    } finally {
-        context.free();
-        collect();
-    }
 }
 
 /**
