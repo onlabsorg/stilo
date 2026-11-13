@@ -4,8 +4,9 @@ import { createEngine } from "./engine.js";
 
 // The check of a value that a structured cell writes as Swan source inside its
 // tag: an entry of a data table, an expression field of a form. Written in
-// a list or a namespace, a value that does not parse would vanish silently,
-// so these cells check each one as it is typed.
+// a list or a namespace, a value that does not parse would make the whole
+// list or namespace undefined (Texl 0.10; before, it vanished silently), so
+// these cells check each one as it is typed.
 
 /**
  * Why `text` cannot be a value, as far as its text tells: it would end the
@@ -36,8 +37,8 @@ const checked = new Map();
 /**
  * Why `text` cannot be a value, or "": checked by the browser's Texl engine.
  * A value is accepted when, put alone in a namespace beside another member,
- * the namespace keeps both: a syntax error there would drop the value, and
- * others after it, from the list or namespace it is written in. The check
+ * the namespace keeps both: a syntax error there would make the list or
+ * namespace it is written in undefined, and the whole cell with it. The check
  * evaluates the value in an empty context (names are unknown there), so a
  * value that is merely undefined, such as `1 + "a"`, passes: it shows as
  * `[[Undefined]]`.

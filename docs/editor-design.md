@@ -456,8 +456,9 @@ this section keeps the outline.
   `spreadsheet` idea messy. Why row by row: Swan enumerates namespace
   members sorted (column order would be lost), lists drop `()` (an empty
   value would shift the values after it), and headers must be free text.
-  **Checking values:** a syntax error inside a Swan list drops the item
-  silently (and the rest of the row with it), so each value is checked as
+  **Checking values:** a syntax error inside a Swan list makes the whole
+  expression undefined (Texl 0.10; before, it dropped the item silently),
+  so the table would vanish: each value is checked as
   it is typed: by its text (no `%>`, no comma outside brackets: write a
   tuple as `(a, b)`) and by the browser's Texl engine, in an empty
   context, as the member of a throwaway namespace beside another member

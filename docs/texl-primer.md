@@ -1,8 +1,9 @@
 # Texl primer for editor work
 
-*What you need to know about Texl to work on the editor, as of Texl 0.9
+*What you need to know about Texl to work on the editor, as of Texl 0.10
 (`@onlabsorg/texl` on npm). Written for Texl 0.8 on 2026-11-09; 0.9 only
-adds the built-in `text.template`, which the Stilo library uses. For the language in
+adds the built-in `text.template`, which the Stilo library uses; 0.10 makes
+syntax errors and runaway recursion stricter (see Errors). For the language in
 depth, see the developer docs of <https://github.com/onlabsorg/texl>
 (`docs/language.md`). The results shown below were checked
 against the real engine.*
@@ -78,8 +79,12 @@ Swan is small, dynamically typed and expression-only (no statements).
 Every error, including a syntax error, produces an **undefined value**,
 which flows on like any other value and renders as `[[Undefined]]`. A broken
 cell therefore never breaks the document; the editor should show such values
-clearly (`undef.inspect` gives details). Tokens left over after an
-expression, such as a stray `)`, make the whole tag undefined. Promises never
+clearly (`undef.inspect` gives details). A syntax error anywhere in an
+expression, also inside brackets, makes the whole expression undefined and
+nothing in it runs: `[1, (2 +, 3]` is undefined, not a shorter list. Tokens
+left over after an expression, such as a stray `)`, make the whole tag
+undefined too. Runaway recursion gives an undefined value ("recursion too
+deep", about 320 levels in the browser) instead of crashing. Promises never
 reject: a failed operation, a failed import or a rejected JavaScript promise
 resolves to an undefined value.
 

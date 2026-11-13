@@ -350,6 +350,12 @@ accept are not part of Stilo.
   bottom left), in Stilo's blue with an orange centre.
 - 2026-11-10: **0.4.0 released**: tagged `v0.4.0` and published on PyPI as
   `stilo-cli`, with all the changes since 0.3.0 listed above.
+- 2026-11-13: **moved to Texl 0.10**, in the browser and on the command
+  line. Formulas are stricter: a syntax error anywhere in a formula makes
+  the whole formula show as an error (before, part of it could still work
+  or a list could silently lose an item), and endless recursion shows an
+  error instead of crashing. Data tables already check each value as it is
+  typed, so they are not affected.
 
 ## Known limitations
 

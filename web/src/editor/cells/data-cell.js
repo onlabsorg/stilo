@@ -201,8 +201,8 @@ export function columnError(text) {
  * empty field is an empty value (`""`). The data cells do not refer to each
  * other.
  *
- * A value that would break the row (a syntax error drops it from the list,
- * silently) is marked as it is typed, checked by the Texl engine
+ * A value that would break the table (a syntax error makes the whole
+ * formula undefined) is marked as it is typed, checked by the Texl engine
  * (`entryError`), and the cell refuses to commit while one is marked, as
  * Excel does with an invalid formula. A name that is not a Swan name, and a
  * column name with `"` or `%>`, are refused too.

@@ -6,6 +6,14 @@ change the interfaces.
 
 ## Unreleased
 
+- **Texl 0.10**: Stilo now requires `pytexl` 0.10 and `@onlabsorg/texl`
+  0.10. Formulas are stricter: a syntax error anywhere in a formula, also
+  inside brackets, makes the whole formula undefined (before, part of it
+  could still run or a list item vanish), and endless recursion shows an
+  error ("recursion too deep") instead of crashing. Data tables were
+  already checked value by value as they are typed, so they are not
+  affected.
+
 ## 0.4.0 — 2026-11-10
 
 - **Tab icon**: the browser tab of Stilo shows an icon, the OnLabs.org mark
