@@ -25,7 +25,7 @@ library `stilo init` copies into projects, shipped in the package as
 
 ```text
         browser                                  your computer or server
-┌──────────────────────────┐   protocol v0   ┌──────────────────────────────┐
+┌──────────────────────────┐   protocol v1   ┌──────────────────────────────┐
 │ web app (web/)           │   plain HTTP    │ server (stilo.server)        │
 │  ├ core services, and    │ ──────────────▶ │  create_app(): HTTP routes   │
 │  │ panes that show them  │  GET / POST /   │  Storage: one folder on disk │

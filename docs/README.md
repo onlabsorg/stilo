@@ -24,7 +24,7 @@ from the repository's [README](../README.md).
 - [The editor](editor.md): `<texl-editor>`, cells, rendering.
 - [Editor design](editor-design.md): the editing model and its open points.
 - [Texl primer](texl-primer.md): the Texl you need to work on the editor.
-- [Protocol v0](protocol.md): documents over plain HTTP, the contract
+- [Protocol v1](protocol.md): documents over plain HTTP, the contract
   between the web app and the server.
 - [The editor component](component/README.md): using `<texl-editor>` in
   your own page or app.

@@ -204,7 +204,8 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
   `server.md`, `cli.md`, `projects.md` (projects, `~`, `texl-lib/`), `web-app.md`, `editor.md`, `editor-design.md`
   (editing model, open points), `texl-primer.md`, `tutorial.md` (how the
   tutorial is built and kept current), `protocol.md` (protocol
-  v0: URL space, the interactions, errors, public document URLs, why
+  v1: URL space, `/_api/info`, `/_api/x/`, the interactions, read-only
+  items, login and refusals, errors, public document URLs, why
   plain HTTP — also the contract), `component/` (embedding guide and
   editor API reference).
 - The **user manual** (getting started, the web editor, the `stilo`

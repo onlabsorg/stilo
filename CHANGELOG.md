@@ -6,6 +6,12 @@ change the interfaces.
 
 ## Unreleased
 
+- **Protocol v1** (for developers; `docs/protocol.md`): adds to v0, which
+  still works, `GET /_api/info` (the server, its capabilities and
+  extensions), the `/_api/x/<id>/` space for server extensions, read-only
+  items (`readOnly` in the tree, `403` on writing them), and `401` with a
+  login page and `403` with a reason, for servers that need a signed-in
+  user.
 - **Questions in Stilo's own dialogs**: Stilo now asks before deleting,
   discarding unsaved changes, renaming or saving first in a dialog of its
   own, in the colours of the app, with buttons that say what they do

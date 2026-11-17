@@ -1,10 +1,13 @@
-# Protocol v0 — documents over HTTP
+# Protocol v1 — documents over HTTP
 
-*The contract between the web app and the server, as of 2026-11-09. Plain
+*The contract between the web app and the server, as of 2026-11-17. Plain
 HTTP, close to how the web already serves files, so that `texl.import` can
-fetch documents by URL with no special client. Version 0: no accounts, no
-permissions, no versions; everything under the server root is readable and
-writable.*
+fetch documents by URL with no special client. Version 1: no accounts and no
+versions in Stilo's own server; a server can describe itself
+([`/_api/info`](#get-the-servers-info)), mark items read-only, and ask for a
+login or refuse a request in a way every client understands
+([Login and refusals](#login-and-refusals)). What changed from version 0 is
+[at the end](#changes-from-version-0).*
 
 ## URL space
 
@@ -17,6 +20,8 @@ root; document folders and files cannot use them there.
 | `/_api/files/<path>`  | File content: read, create, delete; update for documents |
 | `/_api/tree/<path>`   | Folder structure, as JSON; create and delete folders |
 | `/_api/move/<path>`   | Move or rename a file or a folder                |
+| `/_api/info`          | What the server is and can do, as JSON           |
+| `/_api/x/<id>/...`    | Reserved for the endpoints of server extensions, by extension id |
 | `/_app/...`           | The web app's static assets (built bundle)       |
 | `/<path>`             | Any other path: the **public URL** of a document or other file (GET, HEAD) |
 
@@ -110,7 +115,49 @@ document showing it, so its relative links resolve from there too, not from
 the imported document's folder. A document stores links as written: the
 server and the web app do not rewrite them.
 
+**Extensions.** `/_api/x/<id>/` is reserved for the endpoints a server
+extension adds, under the extension's id (lowercase letters, digits and
+dashes); `/_api/info` lists the extensions a server has. Stilo's own
+endpoints never use it. A request for an extension the server does not have
+gets `404`.
+
 ## Interactions
+
+### GET the server's info
+
+```
+GET /_api/info
+→ 200 OK
+  Content-Type: application/json
+  {
+    "protocol": 1,
+    "server": { "name": "stilo", "version": "0.4.0" },
+    "capabilities": ["files", "tree", "folders", "move", "upload", "trash", "home"],
+    "extensions": []
+  }
+```
+
+`protocol` is the version of this protocol the server speaks. `server` names
+the software. `capabilities` lists what it can do:
+
+| Capability | Means |
+|------------|-------|
+| `files`    | GET, CREATE, UPDATE and DELETE files |
+| `tree`     | QUERY the tree |
+| `folders`  | CREATE and DELETE folders |
+| `move`     | MOVE files and folders |
+| `upload`   | CREATE files that are not documents |
+| `trash`    | A deleted item can be got back on the server (not through the protocol) |
+| `home`     | The project home, `~` in paths |
+
+A request for something the server cannot do gets `501 Not Implemented`;
+a client hides what the server lacks. `extensions` lists the server's
+extensions, `{"id": "<id>"}` each, with their endpoints under `/_api/x/<id>/`.
+A client ignores members, capabilities and fields it does not know.
+
+A server that answers `404` here speaks version 0: a client treats it as
+having every capability above but `trash` (which version 0 does not
+promise), and no extensions.
 
 ### GET a resource
 
@@ -182,6 +229,8 @@ GET /_api/tree/projects?depth=2
 ```
 
 `/_api/tree/` (empty path) is the root, whose `name` and `path` are `""`.
+A node may carry `"readOnly": "<reason>"`: the item cannot be changed (see
+[Read-only items](#read-only-items)).
 Children are folders first, then files, each sorted by name. Every file is
 listed, documents and other files alike (a client tells them apart by the
 `.texl` extension); hidden entries are skipped. `depth` limits
@@ -253,10 +302,62 @@ the file or folder to `.trash/<time of the deletion>/<its path>` under its root
 user can get it back from the file system (S8, S15). As a hidden folder, `.trash`
 cannot be reached through the protocol.
 
+## Read-only items
+
+A server can refuse changes to some items: files it cannot write, a library
+that must not be edited, items the user may only read. It marks them in the
+tree, with the reason, which a client shows:
+
+```
+{ "name": "steel.texl", "path": "lib/steel.texl", "type": "file",
+  "readOnly": "The file cannot be written on the server" }
+```
+
+A read-only file cannot be updated, moved or deleted; a read-only folder
+cannot be moved or deleted, and nothing can be created in it, moved into or
+out of it, or deleted from it. Such a request gets `403 Forbidden` with the
+reason as its `error`. A server may refuse a write with `403` also for an
+item it did not mark; a client shows the reason.
+
+Stilo's own server marks the files and folders it cannot write on its file
+system ("The file cannot be written on the server", "The folder cannot be
+written on the server").
+
+## Login and refusals
+
+A server may need to know who the user is (Stilo's own never does; a
+platform in front of it may). The answers are the same for every request,
+the public URLs included:
+
+```
+GET /_api/tree/
+→ 401 Unauthorized
+  Content-Type: application/json
+  { "error": "Sign in to continue", "login": "https://example.com/login" }
+```
+
+`401` means that the request needs a signed-in user. `login`, if given, is
+the address of the page where the user signs in: a client sends the user
+there, adding `next=<the address to come back to>` to its query string, and
+does not repeat the request on its own. How the user is then recognized
+(a cookie, a header) is up to the server and the client's transport.
+
+```
+PUT /_api/files/lib/steel.texl
+→ 403 Forbidden
+  { "error": "Libraries are read-only" }
+```
+
+`403` means that the user may not do this; `error` says why, in words a
+user can read.
+
 ## Errors
 
 Error responses have a JSON body `{"error": "<message>"}` and the status
-codes above.
+codes above: `400` for a request the protocol refuses, `401` and `403` (see
+[Login and refusals](#login-and-refusals)), `404` for an item that does not
+exist, `409` for an item in the way, `412` for a document changed since it
+was read, `501` for something the server cannot do.
 
 ## Why plain HTTP (and not something else)
 
@@ -274,3 +375,15 @@ codes above.
   so that the web app works against either, and to add its own endpoints
   under `/_api/` (accounts, repositories, release and accept) without
   breaking these.
+
+## Changes from version 0
+
+Version 1 (2026-11-17) adds to version 0 and changes none of it, so a
+version 0 client still works with a version 1 server:
+
+- `GET /_api/info`: the protocol version, the server, its capabilities and
+  extensions; `501` for what a server cannot do.
+- `/_api/x/<id>/`, reserved for server extensions.
+- Read-only items: `readOnly` in the tree, `403` on writing them.
+- `401` with `login`, and `403` with a reason, for servers that need a
+  signed-in user or refuse a request.

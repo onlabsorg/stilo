@@ -443,6 +443,13 @@ accept are not part of Stilo.
   custom cell type, a replaced panel), and an automatic test exercises
   all of them at once. The server and command-line sides of extensions
   are not built yet. Nothing changes for users without extensions.
+- 2026-11-17: **protocol version 1 written down** (not built yet): the
+  rules between the web app and a server now also say how a server
+  describes itself and what it can do, where server extensions put their
+  own addresses, how it marks files and folders that cannot be changed,
+  and how it asks the user to sign in or refuses a request with a reason.
+  Everything from version 0 stays as it was. Stilo's server and web app
+  follow in the next steps.
 
 ## Known limitations
 
