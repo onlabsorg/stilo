@@ -215,6 +215,7 @@ export class StiloApp extends LitElement {
         super.connectedCallback();
         window.addEventListener("keydown", this._onKeyDown);
         window.addEventListener("beforeunload", this._onBeforeUnload);
+        this.stilo.info.load();
         this.stilo.router.start();
     }
 

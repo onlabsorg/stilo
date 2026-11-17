@@ -1,4 +1,4 @@
-"""HTTP layer: protocol v0 (docs/protocol.md) and the web app's files."""
+"""HTTP layer: protocol v1 (docs/protocol.md) and the web app's files."""
 
 from __future__ import annotations
 
@@ -14,6 +14,13 @@ from .home import has_home
 from .storage import BadRequest, Storage, StorageError
 
 TEXT = "text/plain; charset=utf-8"
+
+# The server's version, as published (bumped with pyproject.toml).
+VERSION = "0.4.0"
+
+# The version of the protocol it speaks, and what it can do (GET /_api/info).
+PROTOCOL = 1
+CAPABILITIES = ["files", "tree", "folders", "move", "upload", "trash", "home"]
 
 # Document contents change and the editor fetches imports on every rendering:
 # browsers must not reuse a stored copy without asking the server again.
@@ -46,7 +53,7 @@ def create_app(root: Path | str, web_dist: Path | str | None = None) -> FastAPI:
     """The server app for the documents under `root`. `web_dist` is the built
     web app (`stilo/web` in the CLI); without it, app pages show a notice."""
     storage = Storage(root)
-    app = FastAPI(title="Stilo server", version="0.4.0")
+    app = FastAPI(title="Stilo server", version=VERSION)
 
     @app.exception_handler(StorageError)
     async def storage_error(request: Request, error: StorageError):
@@ -110,6 +117,19 @@ def create_app(root: Path | str, web_dist: Path | str | None = None) -> FastAPI:
     @app.get("/_api/tree/{path:path}")
     async def get_tree(path: str, depth: int | None = Query(None, ge=1)):
         return storage.tree(path, depth)
+
+    @app.get("/_api/info")
+    async def info():
+        """What the server is and can do (docs/protocol.md)."""
+        return {"protocol": PROTOCOL, "server": {"name": "stilo", "version": VERSION},
+                "capabilities": CAPABILITIES, "extensions": []}
+
+    @app.api_route("/_api/x/{extension}/{path:path}", methods=["GET", "HEAD", "POST", "PUT", "DELETE", "PATCH"])
+    @app.api_route("/_api/x/{extension}", methods=["GET", "HEAD", "POST", "PUT", "DELETE", "PATCH"])
+    async def no_extension(extension: str, path: str = ""):
+        """The space of server extensions (docs/protocol.md): this server has
+        none yet."""
+        return JSONResponse({"error": f"no extension {extension}"}, status_code=404)
 
     @app.api_route("/_api/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
     async def unknown_api(path: str):

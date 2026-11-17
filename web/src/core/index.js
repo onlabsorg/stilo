@@ -18,6 +18,7 @@ import { Tree } from "./tree.js";
 import { Extensions, API_VERSION } from "./extensions.js";
 import { Settings } from "./settings.js";
 import { Cells } from "./cells.js";
+import { Info } from "./info.js";
 
 export { Service } from "./service.js";
 export { stiloContext, StiloController, StiloProvider } from "./context.js";
@@ -35,6 +36,7 @@ export { Router } from "./router.js";
 export { Extensions, API_VERSION, compatible } from "./extensions.js";
 export { Settings } from "./settings.js";
 export { Cells } from "./cells.js";
+export { Info } from "./info.js";
 export { Tree, findNode, checkName, parentFolder, baseName } from "./tree.js";
 
 /**
@@ -45,6 +47,7 @@ export { Tree, findNode, checkName, parentFolder, baseName } from "./tree.js";
  */
 export function createStilo({ transport = new Transport() } = {}) {
     const stilo = { apiVersion: API_VERSION, transport };
+    stilo.info = new Info(stilo);
     stilo.commands = new Commands(stilo);
     stilo.keys = new Keys();
     stilo.menus = new Menus();

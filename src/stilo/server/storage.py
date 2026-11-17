@@ -1,4 +1,4 @@
-"""File-system storage of Texl documents (protocol v0, see docs/protocol.md).
+"""File-system storage of Texl documents (protocol v1, see docs/protocol.md).
 
 Paths are relative to the storage root, with "/" separators. Every public
 method validates its path and raises a StorageError subclass that the HTTP
@@ -25,6 +25,12 @@ class StorageError(Exception):
 
 class BadRequest(StorageError):
     status = 400
+
+
+class Forbidden(StorageError):
+    """A write to an item the server cannot write (a read-only item)."""
+
+    status = 403
 
 
 class NotFound(StorageError):
@@ -88,6 +94,45 @@ class Storage:
     def relative(self, target: Path) -> str:
         return target.relative_to(self.root).as_posix() if target != self.root else ""
 
+    # -- read-only items -----------------------------------------------------
+
+    @staticmethod
+    def _writable(target: Path) -> bool:
+        return os.access(target, os.W_OK) if os.path.lexists(target) else True
+
+    def read_only(self, target: Path) -> str | None:
+        """Why the item at `target` cannot be changed, or None: a folder the
+        server cannot write, a file it cannot write, or a file in such a folder
+        (a document is saved by writing a sibling and renaming it)."""
+        if target.is_dir() and not target.is_symlink():
+            return None if self._writable(target) else "The folder cannot be written on the server"
+        if not self._writable(target):
+            return "The file cannot be written on the server"
+        if not self._writable(target.parent):
+            return "Its folder cannot be written on the server"
+        return None
+
+    def _check_writable(self, target: Path) -> None:
+        """Refuse a change to a read-only item."""
+        if reason := self.read_only(target):
+            raise Forbidden(reason)
+
+    def _check_room(self, target: Path) -> None:
+        """Refuse a new item at `target` if the nearest existing folder above
+        it cannot be written."""
+        folder = target.parent
+        while not os.path.lexists(folder) and folder != self.root:
+            folder = folder.parent
+        if folder.is_dir() and not self._writable(folder):
+            raise Forbidden("The folder cannot be written on the server")
+
+    def _check_inside(self, folder: Path) -> None:
+        """Refuse moving or deleting a folder that holds read-only items."""
+        for here, dirs, files in os.walk(folder):
+            for name in dirs + files:
+                if self.read_only(Path(here) / name):
+                    raise Forbidden("It holds items that cannot be written on the server")
+
     # -- files ---------------------------------------------------------------
 
     def read(self, path: str) -> tuple[bytes, str]:
@@ -113,12 +158,15 @@ class Storage:
         target = self._item(path)
         if target.is_dir():
             raise Conflict(f"already exists, as a folder: {path!r}")
+        self._check_room(target)
         self._make_folder(target.parent, path)
         try:
             with open(target, "xb") as file:
                 file.write(content)
         except FileExistsError:
             raise Conflict(f"already exists: {path!r}") from None
+        except PermissionError:
+            raise Forbidden("The folder cannot be written on the server") from None
         return etag(content)
 
     def update(self, path: str, content: bytes, if_match: str | None = None) -> str:
@@ -131,11 +179,15 @@ class Storage:
             raise NotFound(f"no such file: {path!r}")
         if if_match is not None and if_match != etag(target.read_bytes()):
             raise PreconditionFailed(f"changed since it was read: {path!r}")
+        self._check_writable(target)
         # Write a sibling and rename it over the target, so readers never see
         # a half-written document.
         temp = target.with_name(f".{target.name}.tmp")
-        temp.write_bytes(content)
-        os.replace(temp, target)
+        try:
+            temp.write_bytes(content)
+            os.replace(temp, target)
+        except PermissionError:
+            raise Forbidden("The file cannot be written on the server") from None
         return etag(content)
 
     def _item(self, path: str) -> Path:
@@ -169,8 +221,15 @@ class Storage:
         # On a file system that ignores case, a new case of the name is the same item
         if os.path.lexists(target) and not os.path.samefile(source, target):
             raise Conflict(f"already exists: {to!r}")
+        self._check_writable(source)
+        if source.is_dir() and not source.is_symlink():
+            self._check_inside(source)
+        self._check_room(target)
         self._make_folder(target.parent, to)
-        shutil.move(source, target)
+        try:
+            shutil.move(source, target)
+        except PermissionError:
+            raise Forbidden("The item cannot be moved on the server") from None
         return self.relative(target)
 
     # -- delete --------------------------------------------------------------
@@ -182,6 +241,7 @@ class Storage:
             raise NotFound(f"no such file: {path!r}")
         if source.is_dir():
             raise BadRequest(f"is a folder: {path!r}")
+        self._check_writable(source)
         self._to_trash(source, self._new_trash())
 
     def delete_folder(self, path: str) -> dict:
@@ -193,6 +253,10 @@ class Storage:
             raise NotFound(f"no such folder: {path!r}")
         if folder.is_symlink() or not folder.is_dir():
             raise BadRequest(f"not a folder: {path!r}")
+        self._check_writable(folder)
+        if not self._writable(folder.parent):
+            raise Forbidden("Its folder cannot be written on the server")
+        self._check_inside(folder)
         count = self._count_files(folder)
         if count:
             self._to_trash(folder, self._new_trash())
@@ -225,7 +289,10 @@ class Storage:
         """Move an item into the trash folder, under its path from the root."""
         target = trash / source.relative_to(self.root)
         target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.move(source, target)
+        try:
+            shutil.move(source, target)
+        except PermissionError:
+            raise Forbidden("The item cannot be deleted on the server") from None
 
     # -- tree ----------------------------------------------------------------
 
@@ -236,6 +303,7 @@ class Storage:
             raise Conflict(f"already exists: {path!r}")
         if target.suffix == DOCUMENT_SUFFIX:
             raise BadRequest(f"a folder's name cannot end in {DOCUMENT_SUFFIX}: {path!r}")
+        self._check_room(target)
         self._make_folder(target, path)
 
     def _make_folder(self, folder: Path, path: str) -> None:
@@ -243,6 +311,8 @@ class Storage:
             folder.mkdir(parents=True, exist_ok=True)
         except (FileExistsError, NotADirectoryError):
             raise Conflict(f"a file is in the way: {path!r}") from None
+        except PermissionError:
+            raise Forbidden("The folder cannot be written on the server") from None
 
 
     @staticmethod
@@ -262,6 +332,8 @@ class Storage:
     def _folder(self, folder: Path, depth: int | None) -> dict:
         node = {"name": folder.name if folder != self.root else "",
                 "path": self.relative(folder), "type": "folder"}
+        if reason := self.read_only(folder):
+            node["readOnly"] = reason
         if depth is not None and depth <= 0:
             return node
         folders, files = [], []
@@ -275,8 +347,11 @@ class Storage:
             elif entry.is_file():
                 stat = entry.stat()
                 modified = datetime.fromtimestamp(stat.st_mtime, timezone.utc)
-                files.append({"name": entry.name, "path": self.relative(entry), "type": "file",
-                              "size": stat.st_size,
-                              "modified": modified.strftime("%Y-%m-%dT%H:%M:%SZ")})
+                item = {"name": entry.name, "path": self.relative(entry), "type": "file",
+                        "size": stat.st_size,
+                        "modified": modified.strftime("%Y-%m-%dT%H:%M:%SZ")}
+                if reason := self.read_only(entry):
+                    item["readOnly"] = reason
+                files.append(item)
         node["children"] = folders + files
         return node

@@ -92,7 +92,10 @@ guide and reference: `docs/extensions.md`):
 each through a scoped `stilo` that records its registrations (the table
 `REGISTRATIONS` there: a new hook returning `dispose()` is added to it,
 to `docs/extensions.md` and to the contract test,
-`web/test/contract.test.js`). The server and CLI sides (S17 phases 4–5)
+`web/test/contract.test.js`). Protocol v1 (S17 phase 4, S19) gives the
+server's side: `/_api/info`, `/_api/x/<id>/` reserved, read-only items,
+`401` with a login address and `403` with a reason. `create_app()` taking
+routers and a storage, and CLI commands from other packages (phase 5),
 are not built yet.
 Keep each extension point in one place: cell types only through the registry
 (`web/src/editor/registry.js`), CLI commands only through `COMMANDS`
@@ -222,11 +225,14 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
 - `src/stilo/server/storage.py` — `Storage`: path validation (no `..`,
   no hidden segments, no `~` names, no `_` names at the root, no escape
   through symlinks), `expand_home` on reads,
-  read / create / update / move / delete (to `.trash`) / tree, ETags (sha256). Raises `StorageError`
-  subclasses carrying the HTTP status.
+  read / create / update / move / delete (to `.trash`) / tree, ETags (sha256);
+  `read_only` (what the server cannot write, from the file system's
+  permissions: `readOnly` in the tree, `Forbidden` (403) on writing it).
+  Raises `StorageError` subclasses carrying the HTTP status.
 - `src/stilo/server/app.py` — `create_app(root, web_dist)`: the
-  `/_api/` routes, `/_app/` static bundle, and `/<path>` (web app for
-  browsers, the file for other clients).
+  `/_api/` routes (`/_api/info` from `PROTOCOL`, `VERSION`,
+  `CAPABILITIES`; `/_api/x/` reserved, `404`), `/_app/` static bundle,
+  and `/<path>` (web app for browsers, the file for other clients).
 - `src/stilo/cli/project.py` — `create_engine()` (the one place an engine
   is made; its file loader resolves `~`, top: `$HOME` or `/`), `TEXL_LIB`,
   the text of a new `project.texl`.
@@ -278,7 +284,9 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
   `runCommand(name)`, tree commands have ids `tree-*`), `panels.js` (the
   errors, comments and commands panels), `go-to.js` (going to a place a
   pane points to, in another document if needed), `files.js` (the
-  commands on files and folders, one function each), `index.js`
+  commands on files and folders, one function each), `server.js` (the
+  server's read-only items, and its `401` with a login address: a Stilo
+  dialog, then the login page with `next`), `index.js`
   (`activateBuiltins`, run by `<stilo-app>`).
 - `web/src/core/` — the core services (S17): `createStilo()`
   (`index.js`, the `stilo` object), `Service` (`service.js`: an
@@ -287,7 +295,8 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
   (`enabled`, `disabledReason`: a command that does not apply is greyed
   out with the reason, and does not run),
   `keys.js` (shortcuts bound to commands, `when` = `global`, `tree` or
-  `editor`; `formatKeys`, `isMac`), `menus.js`, `ui.js` (status and its level, navigation
+  `editor`; `formatKeys`, `isMac`), `menus.js`, `info.js` (what the server
+  is and can do, `/_api/info`; `has(capability)`), `ui.js` (status and its level, navigation
   pane, open panel, source view, dialogs: `dialog`, `confirm`, `prompt`,
   shown by `<stilo-app>`), `settings.js` (per browser, by namespace; an
   extension's own), `cells.js` (cell types for extensions, with
@@ -315,8 +324,9 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
 - `web/src/route.js` — browser URL ↔ `{root, doc, view, params}`
   (`?view=<id>`: a view, no document). `web/src/api.js` —
   the protocol client, `Transport` (`stilo.transport`); every request goes
-  through its `fetch`, and its middleware (`use`); `loader`, given to the
-  editor, sends Texl imports through it too. `web/src/theme.js`,
+  through its `fetch`, and its middleware (`use`, `{outermost}`); `loader`,
+  given to the editor, sends Texl imports through it too; `info()`;
+  `ApiError` (`status`, message, `body`). `web/src/theme.js`,
   `theme.css` — light/dark theme (default dark), design tokens as CSS custom properties, also mapped onto
   the editor's `--texl-*` properties.
 - `web/src/editor/` — the editor:

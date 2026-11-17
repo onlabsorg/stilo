@@ -1,24 +1,35 @@
-// Client of protocol v0 (docs/protocol.md): the `Transport`, the only way the
+// Client of protocol v1 (docs/protocol.md): the `Transport`, the only way the
 // web app talks to the server. Paths are relative to the server root, without
 // leading "/".
 
 const API = "/_api";
 
 export class ApiError extends Error {
-    constructor(status, message) {
+    /**
+     * @param {number} status - The HTTP status.
+     * @param {string} message - The server's `error`.
+     * @param {object} [body] - The whole error body, e.g. `login` with a `401`.
+     */
+    constructor(status, message, body = {}) {
         super(message);
         this.status = status;
+        this.body = body;
     }
 }
 
 async function check(response) {
     if (response.ok) return response;
     let message = response.statusText;
+    let body = {};
     try {
-        message = (await response.json()).error ?? message;
+        body = await response.json();
+        message = body.error ?? message;
     } catch {}
-    throw new ApiError(response.status, message);
+    throw new ApiError(response.status, message, body);
 }
+
+/** What a version 0 server can do (docs/protocol.md, GET the server's info). */
+export const V0_CAPABILITIES = ["files", "tree", "folders", "move", "upload", "home"];
 
 const encode = (path) => path.split("/").map(encodeURIComponent).join("/");
 
@@ -37,8 +48,9 @@ export class Transport {
      */
     constructor({ origin = location.origin } = {}) {
         this.origin = origin;
-        /** The middleware, outermost last. */
+        /** The middleware, outermost last; then the outermost ones (`use(…, {outermost})`). */
         this._middleware = [];
+        this._outermost = [];
         /** The loader of Texl imports for the editor's engine (`load`, bound). */
         this.loader = (url) => this.load(url);
     }
@@ -52,19 +64,22 @@ export class Transport {
      * @param {(url: string, init: RequestInit | undefined, next: (url: string, init?: RequestInit) => Promise<Response>) => Response | Promise<Response>} middleware
      * @returns {() => void}
      */
-    use(middleware) {
+    use(middleware, { outermost = false } = {}) {
+        const list = outermost ? this._outermost : this._middleware;
         const entry = { middleware };
-        this._middleware.push(entry);
+        list.push(entry);
         return () => {
-            const i = this._middleware.indexOf(entry);
-            if (i >= 0) this._middleware.splice(i, 1);
+            const i = list.indexOf(entry);
+            if (i >= 0) list.splice(i, 1);
         };
     }
 
     /** Send a request through the middleware; the response as it comes,
-     * failed or not. */
+     * failed or not. Middleware added with `{outermost: true}` (Stilo's
+     * handling of a login, for one) wraps all the others, so it sees what
+     * they made of the response. */
     send(url, init) {
-        const chain = [...this._middleware];
+        const chain = [...this._middleware, ...this._outermost];
         const call = (i, url, init) => (i < 0 ? fetch(url, init) : Promise.resolve(chain[i].middleware(url, init, (u, n) => call(i - 1, u, n))));
         return call(chain.length - 1, url, init);
     }
@@ -108,6 +123,21 @@ export class Transport {
     /** The URL of a folder's tree in the protocol's API. */
     treeUrl(path) {
         return new URL(`${API}/tree/${encode(path)}`, this.origin).href;
+    }
+
+    /**
+     * What the server is and can do (`GET /_api/info`): `{protocol, server,
+     * capabilities, extensions}`. A server without it (`404`) speaks version
+     * 0: every capability of version 0, no extensions.
+     */
+    async info() {
+        try {
+            const response = await this.fetch(new URL(`${API}/info`, this.origin).href, { cache: "no-store" });
+            return await response.json();
+        } catch (error) {
+            if (error.status !== 404) throw error;
+            return { protocol: 0, server: null, capabilities: [...V0_CAPABILITIES], extensions: [] };
+        }
     }
 
     /** GET a file: `{text, etag}`. */

@@ -11,9 +11,10 @@ whoever runs Stilo, that uses Stilo as a dependency and plugs into public
 hooks. Documents never load extensions. A hook Stilo lacks is added to
 Stilo in general terms ("put a mark on a cell"), never for one consumer.
 
-This page covers the web app. Server endpoints for extensions, a
-`Storage` given to `create_app()` and CLI commands from other packages
-are planned (S17) and not there yet.
+This page covers the web app. The protocol has a place for the endpoints
+of server extensions (`/_api/x/<id>/`, listed by `/_api/info`); adding them
+to `create_app()`, a `Storage` of one's own and CLI commands from other
+packages are planned (S17, phase 5) and not there yet.
 
 ## A first extension
 
@@ -138,7 +139,8 @@ details of each service.
 | Ask the tree's providers again | `tree.invalidate()` | — |
 | Mark cells | `editor.decorate(({path, value, cells}) => [{cell, text, tone, title}])`; `editor.invalidate()`; event `mark-click` | `dispose` |
 | Add comments from elsewhere | `comments.addProvider({id, label, comments(path)})`, anchored to cells by name; `comments.refresh()` | `dispose` |
-| See or change every request | `transport.use((url, init, next) => response)`, Texl imports included | `dispose` |
+| See or change every request | `transport.use((url, init, next) => response)`, Texl imports included; `{outermost: true}` to wrap all the others | `dispose` |
+| Know what the server can do | `info.protocol`, `info.has("upload")`, `info.hasExtension(id)`, `info.server` | — |
 | Add a cell type | `cells.register(CellClass)`, a subclass of `stilo.TexlCell`, with its "Make it …" command | `dispose` (the command; the type stays) |
 | Talk to the user | `ui.notify(message, {level})`, `ui.confirm(message, {ok, danger})`, `ui.prompt(message, value)`, `ui.dialog(render)` | promises |
 | Keep settings | `settings.get(key, fallback)`, `settings.set(key, value)`, `settings.on("change")`, per browser | — |
@@ -179,28 +181,32 @@ CLI wait for phases 4 and 5 of S17.
    panel lists them, a click calls `editor.reveal(line)`; a command
    "Check again" (`commands`, `keys`) recomputes and calls
    `editor.invalidate()`. `mark-click` opens the panel.
-3. **Version history.** `tree.decorate` marks changed files; `menus.add`
+3. **Version history.** `info.hasExtension("history")` says whether the
+   server has its part; `tree.decorate` marks changed files; `menus.add`
    puts "Show history" on documents; a panel lists versions; a view
    `history.version` (`?view=history.version&path=…&rev=…`) renders
    `<texl-editor readonly>` with the old text, and `history.compare` two
    of them side by side; `document.on("save")` records a version. Reading
-   versions needs a server endpoint (`/_api/x/history/`, phase 4) and the
-   folder's history a `Storage` wrapper or a CLI command (phase 5).
+   versions needs a server endpoint (`/_api/x/history/`) and the folder's
+   history a `Storage` wrapper or a CLI command (phase 5).
 4. **Read-only folders.** `tree.readOnly(path => path.startsWith("lib/") &&
    "a third-party library")`, and `tree.decorate` for a mark on a library
    changed anyway.
-5. **A server behind a login.** `startStilo({transport})` with the
-   server's origin; `transport.use` adds credentials and, on a `401`,
-   sends the user to the login page; `topBar.register` shows the user's
-   name and a "Sign out" item. How the server answers `401` is part of
-   the protocol (phase 4).
+5. **A server behind a login.** The server answers `401` with a `login`
+   address (protocol v1): Stilo asks the user to sign in and goes there,
+   adding `next`. The extension, if the server needs more than its
+   cookies: `transport.use` adds a header with the user's token and, on a
+   `401`, refreshes the token and repeats the request, so Stilo's own
+   question never comes; `topBar.register` shows the user's name and a
+   "Sign out" item; `info.server` says which server it is.
 6. **Comments from an outside source.** `comments.addProvider` with
    `comments(path)` fetching an issue tracker (through `transport.fetch`
    or the tracker's own API); `panels.setBadge("comments", …)` or a
    `topBar` item for new notifications.
 7. **Export to PDF.** A command and a menu entry on documents that
-   download from a server endpoint (`/_api/x/pdf/`, phase 4); a CLI
-   command (phase 5).
+   download from a server endpoint (`/_api/x/pdf/`, offered only when
+   `info.hasExtension("pdf")`; the endpoint itself comes with phase 5); a
+   CLI command (phase 5).
 8. **A dashboard page.** `views.register({id: "dash.board", …})`, its
    content from `tree.tree` and `transport.readFile` for each document;
    links in it to `?view=` or to documents open in the app.

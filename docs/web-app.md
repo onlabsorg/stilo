@@ -23,6 +23,7 @@ its own page: [The editor](editor.md).*
 | `src/core/`                    | The core services (S17): `createStilo()`, `Service`, `StiloController`, `<stilo-provider>`; `commands`, `keys`, `menus`, `ui`, `panels`, `topBar`, `status` (`registry.js`), `errors`, `comments`, `editor`, `document`, `router`, `tree`, `extensions` |
 | `src/builtins/`                | Stilo's own contributions, registered through the services: `commands.js` (commands, keys, menus), `panels.js` (the right pane's panels), `go-to.js` (going to a place the errors or comments pane points to), `files.js` (the commands on files and folders); `index.js` (`activateBuiltins`) |
 | `src/api.js`                   | The protocol client, `Transport`: the only module that talks to the server |
+| `src/builtins/server.js`       | What the server says, applied through the services: its read-only items (a `tree.readOnly` provider) and its asking for a login (a transport middleware) |
 | `src/route.js`                 | Browser address ↔ `{root, doc}`                     |
 | `src/theme.js`, `src/theme.css` | Light and dark theme, design tokens               |
 
@@ -210,6 +211,26 @@ window, right-aligned, as in Word; the line shows only while it has
 items, so without extensions the window is as before. An item's
 `render(stilo)` is called again when its registry changes (`changed()`),
 or it renders an element that follows the services itself.
+
+## The server: `info`
+
+The `info` service holds what the server is and can do (protocol v1),
+read once when the app connects (`load`):
+
+| Member | Is or does |
+|--------|------------|
+| `protocol` | The protocol version the server speaks (0 for a server without `/_api/info`), `null` until read |
+| `server` | `{name, version}`, or `null` |
+| `capabilities`, `has(name)` | What it can do (`files`, `tree`, `folders`, `move`, `upload`, `trash`, `home`); `has` is `true` until the info is read, or if it cannot be (`error`), so nothing is greyed out for nothing |
+| `extensions`, `hasExtension(id)` | The server's extensions, with endpoints under `/_api/x/<id>/` |
+
+Stilo's commands that need a capability are greyed out without it, with
+the reason: New folder… and deleting a folder (`folders`), Upload files…
+(`upload`), Rename and Move to… (`move`). The server's read-only items
+(`readOnly` in the tree) are a read-only provider of the `tree` service
+(`builtins/server.js`), so they get the lock, the disabled commands and
+the read-only editor like any other. An item outside the navigation root
+is not in the tree: the server still refuses it, with `403`.
 
 ## Settings: `settings`
 
@@ -564,6 +585,25 @@ change the request (a header, credentials), call `next(url, init)` and
 change the response, or answer itself (a `401` that sends the user to a
 login page). The one added last is the outermost. `send(url, init)` is the
 request through the middleware, failed or not; `fetch` checks it.
+
+A middleware added with `use(middleware, {outermost: true})` wraps all the
+others, so it sees what they made of the response: Stilo's own handling
+of a login is one (below), and an extension's ordinary middleware can
+handle a `401` before it.
+
+**Errors.** A failed request throws an `ApiError`: `status`, the message
+(the server's `error`) and `body`, the whole error body (`login` with a
+`401`). A `403` shows its reason where the request was made ("Not
+saved: …").
+
+**Login** (`builtins/server.js`). A response `401` with a `login` address
+asks the user, in a dialog ("Sign in to continue", the server's `error`,
+with a Sign in button), and if they agree goes to the login page, adding
+`next=<the page's address>` (`loginUrl`); the request fails as it would.
+Requests that fail together ask once.
+
+**Server info.** `info()` reads `GET /_api/info`; a `404` gives a version 0
+server: protocol 0, the capabilities of version 0, no extensions.
 
 **Imports.** `load(url)` reads a Texl document through the middleware:
 `{url, source}`, the URL being the final one after redirects (a `~` in an

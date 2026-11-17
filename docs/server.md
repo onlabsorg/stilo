@@ -105,8 +105,32 @@ Returns the folder at `path` as a nested dictionary, the JSON body of the
 protocol's QUERY: folders with `children`, files with `size` and
 `modified`. Children are folders first, then files, each sorted by name;
 every file is listed, without hidden entries, folders named `~`, or
-reserved names at the root. `depth` limits the recursion. Raises
-`NotFound` and `BadRequest` as `read` does.
+reserved names at the root. `depth` limits the recursion. A node the
+server cannot change carries `readOnly`, the reason (`read_only`, below).
+Raises `NotFound` and `BadRequest` as `read` does.
+
+### `read_only`
+
+```python
+def read_only(self, target: Path) -> str | None
+```
+
+Why the item at `target` cannot be changed, or `None` (protocol v1,
+read-only items): a folder the server cannot write ("The folder cannot be
+written on the server"), a file it cannot write ("The file cannot be
+written on the server"), or a file in such a folder ("Its folder cannot be
+written on the server"; a document is saved by writing a sibling and
+renaming it, which needs the folder). It asks the operating system
+(`os.access`), so it follows the file system's permissions; a server run
+as root can write everything.
+
+The writing methods refuse a read-only item with `Forbidden`: `update`
+and `delete_file` the item, `move` the item and the folder it goes to,
+`create` and `create_folder` the nearest existing folder above the new
+item, `move` and `delete_folder` a folder holding a read-only item ("It
+holds items that cannot be written on the server"). A permission error of
+the file system they meet anyway becomes `Forbidden` too, never a server
+error.
 
 ### `create_folder`
 
@@ -162,6 +186,7 @@ requires.
 ```text
 StorageError (500)
  ├─ BadRequest (400)
+ ├─ Forbidden (403)
  ├─ NotFound (404)
  ├─ Conflict (409)
  └─ PreconditionFailed (412)
@@ -200,18 +225,25 @@ The routes, in the order they match:
 | `/_api/tree/{path}`                | POST         | `Storage.create_folder`; `201`, `Location` |
 | `/_api/tree/{path}`                | DELETE       | `Storage.delete_folder`; `{deleted, removed}` |
 | `/_api/tree/{path}`                | GET          | `Storage.tree`, with `?depth=` (1 or more) |
+| `/_api/info`                       | GET          | `{protocol, server, capabilities, extensions}`: `PROTOCOL` (1), `VERSION`, `CAPABILITIES`, no extensions yet |
+| `/_api/x/{extension}/{path}`       | any          | `404` "no extension …": the space of server extensions, reserved (S17 phase 5) |
 | `/_api/{path}`                     | any          | `404`: unknown endpoint                  |
 | `/_app/...`                        | GET          | The web app's static files (`web_dist`)  |
 | `/{path}`                          | GET, HEAD    | The public address. A path with `~`: `307` to the real path, for every client (`home_redirect`). A file that is not a document: itself, for every client, with its real type and the safety headers of the protocol (`other_file_response`). Otherwise the web app for a browser (`Accept` includes `text/html`), the file for anything else. `Vary: Accept` |
 
-`create_app()` is the server's extension point: new endpoints go under
-`/_api/`, added here, without changing the existing ones.
+`create_app()` is the server's extension point: Stilo's own new endpoints
+go under `/_api/`, added here, without changing the existing ones; those of
+server extensions go under `/_api/x/<id>/` (S17, phase 5).
+`VERSION` in `app.py` is the server's version, bumped with
+`pyproject.toml`.
 
 ## Tests
 
 `tests/server/test_api.py` tests the app through FastAPI's `TestClient`,
 on a temporary folder: every interaction of the protocol, the errors, path
-validation, and content negotiation on public addresses.
+validation, content negotiation on public addresses, `/_api/info`,
+`/_api/x/`, and read-only items (with real file permissions; skipped when
+run as root or on Windows, where they do not apply).
 `tests/server/test_home.py` covers the project home: nearest manifest,
 fallback to the root, several `~`, libraries with and without their own
 manifest, cycles, and `~` refused as a name. A change to the protocol starts

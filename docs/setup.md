@@ -163,7 +163,7 @@ in the GitHub environments `pypi` and `npm`: there are no tokens.
 To release:
 
 1. Set the version in `pyproject.toml`, `web/package.json` and
-   `src/stilo/server/app.py`; run `uv lock` and `npm install` in `web/`.
+   `src/stilo/server/app.py` (`VERSION`); run `uv lock` and `npm install` in `web/`.
 2. Rename the changelog's *Unreleased* section to `## X.Y.Z — <date>` and
    start a new, empty *Unreleased*.
 3. Commit on `main`, then `git tag vX.Y.Z && git push origin main vX.Y.Z`.

@@ -1,3 +1,5 @@
+import os
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -450,3 +452,84 @@ def test_trash_is_out_of_reach(client, root):
     client.delete("/_api/files/library/steel.texl")
     assert client.get("/_api/tree/.trash").status_code == 400
     assert all(child["name"] != ".trash" for child in client.get("/_api/tree/").json()["children"])
+
+
+# -- info and extensions (protocol v1) -----------------------------------------
+
+def test_info(client):
+    info = client.get("/_api/info").json()
+    assert info["protocol"] == 1
+    assert info["server"] == {"name": "stilo", "version": "0.4.0"}
+    assert info["capabilities"] == ["files", "tree", "folders", "move", "upload", "trash", "home"]
+    assert info["extensions"] == []
+
+
+def test_extension_space_is_reserved(client):
+    for path in ("/_api/x/history", "/_api/x/history/log/a.texl"):
+        response = client.get(path)
+        assert response.status_code == 404
+        assert response.json() == {"error": "no extension history"}
+    assert client.post("/_api/x/pdf/export").status_code == 404
+
+
+# -- read-only items (protocol v1) ---------------------------------------------
+
+needs_permissions = pytest.mark.skipif(
+    not hasattr(os, "geteuid") or os.geteuid() == 0,
+    reason="needs file permissions that apply (not root, not Windows)",
+)
+
+
+@pytest.fixture
+def locked(root):
+    """`library/` that the server cannot write, and `projects/beam/check.texl`
+    that it cannot write; restored afterwards so the folder can be removed."""
+    library = root / "library"
+    check = root / "projects" / "beam" / "check.texl"
+    library.chmod(0o555)
+    check.chmod(0o444)
+    yield root
+    library.chmod(0o755)
+    check.chmod(0o644)
+
+
+def node(tree, path):
+    if tree["path"] == path:
+        return tree
+    for child in tree.get("children", []):
+        if found := node(child, path):
+            return found
+
+
+@needs_permissions
+def test_tree_marks_what_cannot_be_written(client, locked):
+    tree = client.get("/_api/tree/").json()
+    assert node(tree, "library")["readOnly"] == "The folder cannot be written on the server"
+    assert node(tree, "library/steel.texl")["readOnly"] == "Its folder cannot be written on the server"
+    assert node(tree, "projects/beam/check.texl")["readOnly"] == "The file cannot be written on the server"
+    assert "readOnly" not in node(tree, "projects/beam/notes.txt")
+    assert "readOnly" not in node(tree, "projects")
+
+
+@needs_permissions
+def test_writes_to_read_only_items_are_forbidden(client, locked):
+    def forbidden(response):
+        assert response.status_code == 403, response.text
+        assert response.json()["error"]
+        return response.json()["error"]
+
+    assert forbidden(client.put("/_api/files/projects/beam/check.texl", content="x")) == "The file cannot be written on the server"
+    forbidden(client.put("/_api/files/library/steel.texl", content="x"))
+    forbidden(client.post("/_api/files/library/new.texl", content=""))
+    forbidden(client.post("/_api/files/library/deep/new.texl", content=""))
+    forbidden(client.post("/_api/tree/library/sub"))
+    forbidden(client.delete("/_api/files/library/steel.texl"))
+    forbidden(client.delete("/_api/files/projects/beam/check.texl"))
+    forbidden(client.delete("/_api/tree/library"))
+    forbidden(client.post("/_api/move/library/steel.texl", json={"to": "steel.texl"}))
+    forbidden(client.post("/_api/move/projects/beam/notes.txt", json={"to": "library/notes.txt"}))
+    assert forbidden(client.delete("/_api/tree/projects")) == "It holds items that cannot be written on the server"
+    # Reading still works, and the rest can be written
+    assert client.get("/_api/files/library/steel.texl").text == "steel"
+    assert client.post("/_api/files/projects/new.texl", content="").status_code == 201
+    assert (locked / "library" / "steel.texl").read_text() == "steel"

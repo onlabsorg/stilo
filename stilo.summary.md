@@ -443,13 +443,23 @@ accept are not part of Stilo.
   custom cell type, a replaced panel), and an automatic test exercises
   all of them at once. The server and command-line sides of extensions
   are not built yet. Nothing changes for users without extensions.
-- 2026-11-17: **protocol version 1 written down** (not built yet): the
+- 2026-11-17: **protocol version 1 written down**: the
   rules between the web app and a server now also say how a server
   describes itself and what it can do, where server extensions put their
   own addresses, how it marks files and folders that cannot be changed,
   and how it asks the user to sign in or refuses a request with a reason.
   Everything from version 0 stays as it was. Stilo's server and web app
   follow in the next steps.
+- 2026-11-17: **protocol version 1 built** in Stilo's server and web app.
+  The server says what it is and what it can do, and keeps a place for
+  the addresses of server extensions (none yet). Files and folders the
+  server has no permission to write on its computer are now read-only in
+  Stilo: they show a lock, such a document opens read-only with the
+  reason in the top bar, and it cannot be saved, renamed, moved or
+  deleted (before, saving it failed with a server error). The web app
+  greys out what a server cannot do, shows the reason when a server
+  refuses a change, and when a server asks for a login, offers to go to
+  its sign-in page.
 
 ## Known limitations
 

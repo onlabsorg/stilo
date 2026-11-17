@@ -13,6 +13,25 @@ import { toggleTheme } from "../theme.js";
 import { editorCommands } from "../editor/index.js";
 import * as files from "./files.js";
 
+/** The first answer of `checks` that is not `true`, or `true`. */
+const all =
+    (...checks) =>
+    (stilo, context) => {
+        for (const check of checks) {
+            const answer = check(stilo, context);
+            if (answer !== true) return answer;
+        }
+        return true;
+    };
+
+/** `true` if the server can do `capability` (`info`), or why not. */
+const can = (capability, reason) => (stilo) => stilo.info.has(capability) || reason;
+const canMove = can("move", "the server cannot move items");
+const canUpload = can("upload", "the server does not take uploaded files");
+const canFolders = can("folders", "the server cannot create or delete folders");
+/** Deleting a folder needs `folders`, a file only `files`. */
+const canDelete = (stilo, { node } = {}) => ((node ?? stilo.tree.target)?.type === "folder" ? canFolders(stilo) : true);
+
 /** `true`, or why the open document cannot be changed. */
 const documentWritable = (stilo) => stilo.document.readOnly ?? true;
 
@@ -95,21 +114,21 @@ export const definitions = [
         label: "New folder…",
         group: "Navigation pane",
         run: (stilo, { node } = {}) => files.newFolder(stilo, node),
-        enabled: folderWritable,
+        enabled: all(canFolders, folderWritable),
     },
     {
         id: "tree-upload",
         label: "Upload files…",
         group: "Navigation pane",
         run: (stilo, { node } = {}) => files.upload(stilo, node),
-        enabled: folderWritable,
+        enabled: all(canUpload, folderWritable),
     },
-    treeCommand("tree-rename", "Rename", "F2", files.rename, itemUnlocked),
+    treeCommand("tree-rename", "Rename", "F2", files.rename, all(canMove, itemUnlocked)),
     treeCommand("tree-duplicate", "Duplicate", "", files.duplicate, besideWritable),
-    treeCommand("tree-move", "Move to…", "", files.moveTo, itemUnlocked),
+    treeCommand("tree-move", "Move to…", "", files.moveTo, all(canMove, itemUnlocked)),
     treeCommand("tree-copy-link", "Copy link", "", files.copyLink),
     treeCommand("tree-open-root", "Open as root", "", files.openAsRoot),
-    treeCommand("tree-delete", "Delete", "Delete", files.deleteItem, itemUnlocked),
+    treeCommand("tree-delete", "Delete", "Delete", files.deleteItem, all(canDelete, itemUnlocked)),
     paneCommand("tree-refresh", "Refresh", (stilo) => stilo.tree.refresh()),
     {
         ...paneCommand("tree-show-other", "Show other files", (stilo) => stilo.tree.toggleShowOther()),

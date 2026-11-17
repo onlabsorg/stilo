@@ -6,6 +6,17 @@ change the interfaces.
 
 ## Unreleased
 
+- **Files the server cannot write are read-only**: a file or folder that
+  Stilo's server has no permission to write on its computer now shows a
+  lock in the navigation pane; such a document opens read-only, with the
+  reason in the top bar, and cannot be saved, renamed, moved or deleted.
+  Before, saving it failed with a server error.
+- **Protocol v1 in Stilo's server and web app** (for developers): the
+  server answers `/_api/info`, reserves `/_api/x/`, marks read-only items
+  and refuses writes to them with `403`; the web app reads the info
+  (`stilo.info`), greys out what a server cannot do, shows the server's
+  read-only items and reasons, and on a `401` with a login address asks
+  the user to sign in.
 - **Protocol v1** (for developers; `docs/protocol.md`): adds to v0, which
   still works, `GET /_api/info` (the server, its capabilities and
   extensions), the `/_api/x/<id>/` space for server extensions, read-only

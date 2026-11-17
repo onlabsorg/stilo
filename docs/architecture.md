@@ -88,8 +88,10 @@ public hooks. The core services are in place (the web app's state and
 behaviour, which Stilo's own panes and commands use), and the extension
 API of the web app opens them to extensions: `startStilo()` activates
 them, each with a `stilo` object that records its registrations
-([Extensions](extensions.md), [S18](../DECISIONS.md)). The server and the
-CLI follow (S17, phases 4 and 5). Each extension point lives in one
+([Extensions](extensions.md), [S18](../DECISIONS.md)). Protocol v1 has the
+server's side of it (`/_api/info`, `/_api/x/`, read-only items, login;
+[S19](../DECISIONS.md)); the server's and the CLI's own extension points
+follow (S17, phase 5). Each extension point lives in one
 place:
 
 | Extension       | The one place today                        | Planned (S17) |
@@ -103,9 +105,9 @@ place:
 | Comments from elsewhere, marks on cells | Comment providers in the `comments` service (`addProvider`) and mark providers in the `editor` service (`decorate`), anchored to cells by name | — |
 | Dialogs, settings | `ui.dialog`, `confirm`, `prompt` (shown by `<stilo-app>`), `notify` with a level; `settings`, per browser, one namespace per extension | Settings stored in the folder |
 | Pages that are not documents | The `views` service (`web/src/core/registry.js`), addressed by `?view=<id>` (`route.js`, `router`) | — |
-| Server access | The `transport` service, a `Transport` (`web/src/api.js`): replaceable (`startStilo({transport})`), wrapped by middleware (`transport.use`); Texl imports go through it (the editor's `loader`) | — |
+| Server access | The `transport` service, a `Transport` (`web/src/api.js`): replaceable (`startStilo({transport})`), wrapped by middleware (`transport.use`); Texl imports go through it (the editor's `loader`). The `info` service: what the server can do. A `401` with a login address asks the user to sign in (`web/src/builtins/server.js`) | — |
 | CLI commands    | The `COMMANDS` list in `src/stilo/cli/commands.py` | Also from other packages, by a Python entry-point group |
-| Server          | `create_app()` in `src/stilo/server/app.py` | `create_app()` takes a storage, routers and middleware; extension endpoints under `/_api/x/<id>/` |
+| Server          | `create_app()` in `src/stilo/server/app.py`; `/_api/info` says what it can do, `/_api/x/<id>/` is reserved for extensions (protocol v1) | `create_app()` takes a storage, routers and middleware, mounted under `/_api/x/<id>/` (phase 5) |
 
 How it fits together, in short: core services hold the state and the
 behaviour, and panes only show them, reaching the services through Lit

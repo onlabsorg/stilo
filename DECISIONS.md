@@ -489,3 +489,38 @@ dialogs, which look like the app and name their actions. A recording
 `stilo` makes deactivation reliable without asking extensions to be
 careful; stacks make replacement a registration like any other; a view
 for old versions keeps one meaning for "the open document".
+
+## S19 — 2026-11-17 — Protocol v1: the server describes itself, read-only items, login
+
+Extends S3 and S17 (phase 4); the protocol is `docs/protocol.md`.
+
+- **Version 1 adds to version 0 and changes none of it.** A version 0
+  client works with a version 1 server; a server without `/_api/info`
+  counts as version 0, with every capability of version 0.
+- **`GET /_api/info`** gives the protocol version, the server, its
+  capabilities (`files`, `tree`, `folders`, `move`, `upload`, `trash`,
+  `home`) and its extensions. A client hides what a server cannot do; a
+  request for it gets `501`. Clients ignore what they do not know. The web
+  app reads it once (`stilo.info`); until then nothing is greyed out.
+- **`/_api/x/<id>/`** is reserved for server extensions, listed in
+  `info`. Stilo's server answers `404` there until `create_app()` takes
+  extensions (phase 5).
+- **Read-only items** are marked in the tree (`readOnly`, the reason) and
+  refused with `403` on writing. Stilo's own server marks what it cannot
+  write on its file system, a file in a folder it cannot write included,
+  since a document is saved by renaming a sibling over it. The web app
+  turns the marks into a read-only provider of the `tree` service, so
+  phase 3's lock, greyed-out commands and read-only editor apply.
+- **Login and refusal**: `401` with `login`, an address; the client sends
+  the user there, adding `next=<the page>`, and does not retry on its own.
+  `403` with a reason a user can read. Stilo's server sends neither for
+  access. The web app's handling of `401` is a transport middleware that
+  wraps all others (`use(…, {outermost: true})`), so an extension can
+  handle a `401` first.
+
+*Reason:* a front end must work against servers that can do less (or
+more) than Stilo's, and against a platform that knows its users (Papiro,
+D18), without changing; describing the server and marking items in the
+tree keeps the protocol plain HTTP, and reusing the read-only machinery of
+phase 3 gives one behaviour whatever says an item is read-only. The client
+adds `next` because it alone knows where the user was.

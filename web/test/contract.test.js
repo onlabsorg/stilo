@@ -80,6 +80,9 @@ const contract = {
             return next(url, init);
         });
 
+        // The server's info
+        seen.info = stilo.info;
+
         // Events and settings
         stilo.document.on("open", ({ path }) => seen.opened.push(path));
         stilo.editor.on("edit", () => seen.edits++);
@@ -104,6 +107,7 @@ function serve() {
     window.fetch = async (url, init) => {
         const path = new URL(url, location.href).pathname;
         if (!path.startsWith("/_api/")) return realFetch(url, init);
+        if (path === "/_api/info") return new Response(JSON.stringify({ protocol: 1, server: { name: "test" }, capabilities: ["files", "tree", "folders", "move"], extensions: [{ id: "contract" }] }), { status: 200 });
         if (path.startsWith("/_api/files/")) return new Response(DOC, { status: 200, headers: { ETag: '"e"' } });
         if (path.startsWith("/_api/tree")) return new Response(JSON.stringify(TREE), { status: 200 });
         return new Response(JSON.stringify({ error: "not found" }), { status: 404 });
@@ -191,6 +195,13 @@ describe("the extension API contract", () => {
         expect(seen.requests.some((url) => url.includes("/_api/files/doc.texl"))).to.be.true;
         expect(seen.requests.some((url) => url.includes("/_api/tree"))).to.be.true;
         expect(localStorage.getItem("stilo.ext.contract.runs")).to.equal("1");
+    });
+
+    it("knows what the server is and can do", () => {
+        expect(seen.info.protocol).to.equal(1);
+        expect(seen.info.has("tree")).to.be.true;
+        expect(seen.info.has("upload")).to.be.false;
+        expect(seen.info.hasExtension("contract")).to.be.true;
     });
 
     it("adds a cell type, with its command", () => {
