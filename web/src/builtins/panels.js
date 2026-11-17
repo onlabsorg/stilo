@@ -8,11 +8,9 @@ import "../components/commands-pane.js";
 import "../components/comments-pane.js";
 import "../components/errors-pane.js";
 
-// The comments pane takes its state from the app until its service exists
-// (phase 2 of S17).
 export const panels = [
     { id: "errors", label: "Errors", icon: errorsIcon, order: 10, render: () => html`<errors-pane></errors-pane>` },
-    { id: "comments", label: "Comments", icon: commentsIcon, order: 20, render: (stilo) => stilo._app._renderCommentsPane() },
+    { id: "comments", label: "Comments", icon: commentsIcon, order: 20, render: () => html`<comments-pane></comments-pane>` },
     { id: "commands", label: "Commands", icon: commandsIcon, order: 30, render: () => html`<commands-pane></commands-pane>` },
 ];
 

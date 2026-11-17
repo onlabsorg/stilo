@@ -245,3 +245,38 @@ describe("errors service and pane", () => {
         expect(stilo.ui.pane).to.equal(null);
     });
 });
+
+describe("comments service and pane", () => {
+    const text = "<!--{ aaaa : text }-->\nOne\n<!--{ bbbb : text }-->\nTwo\n<!--[ Check this. ]-->\n<!--{ cccc : text }-->\nThree\n<!--[ And this. ]-->\n";
+
+    it("reads the comments of each line, points one out and opens the panel", () => {
+        const stilo = createStilo();
+        stilo.comments.read(text);
+        expect(stilo.comments.list.map((c) => c.comments.length)).to.deep.equal([0, 1, 1]);
+        stilo.comments.show(2);
+        expect([stilo.comments.line, stilo.ui.pane]).to.deep.equal([2, "comments"]);
+        stilo.comments.clear();
+        expect([stilo.comments.list.length, stilo.comments.line]).to.deep.equal([0, null]);
+    });
+
+    it("lists the lines with comments, highlights the one pointed out, and goes to a line on a click", async () => {
+        const { fixture, html } = await import("@open-wc/testing");
+        await import("../src/components/comments-pane.js");
+        const stilo = createStilo();
+        stilo.comments.read(text);
+        stilo.comments.show(3);
+        const places = [];
+        stilo.comments.on("go-to", (place) => places.push(place));
+        const el = await fixture(html`<stilo-provider .stilo=${stilo}><comments-pane></comments-pane></stilo-provider>`);
+        const pane = el.querySelector("comments-pane");
+        await pane.updateComplete;
+        const entries = [...pane.renderRoot.querySelectorAll(".entry")];
+        expect(entries.map((e) => e.querySelector(".where").textContent)).to.deep.equal(["Cell 2", "Cell 3"]);
+        expect(entries[1].classList.contains("current")).to.equal(true);
+        entries[0].click();
+        expect(places).to.deep.equal([{ line: 2 }]);
+        expect(stilo.comments.line).to.equal(2);
+        pane.renderRoot.querySelector("[aria-label=Close]").click();
+        expect(stilo.ui.pane).to.equal(null);
+    });
+});

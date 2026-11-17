@@ -1,6 +1,5 @@
 import { LitElement, html, css } from "lit";
 import { keyed } from "lit/directives/keyed.js";
-import { parseDocument, cellComments } from "../editor/index.js";
 import { base } from "./shared.js";
 import { closeIcon, fileIcon, folderIcon, otherFileIcon } from "../icons.js";
 import { ContextProvider } from "@lit/context";
@@ -64,8 +63,6 @@ export class StiloApp extends LitElement {
         _doc: { state: true },
         _docError: { state: true },
         _dirty: { state: true },
-        _comments: { state: true },
-        _commentLine: { state: true },
     };
 
     static styles = [
@@ -197,8 +194,6 @@ export class StiloApp extends LitElement {
         } catch {}
         this._docError = "";
         this._dirty = false;
-        this._comments = [];
-        this._commentLine = null;
         this._etag = null;
         this._onKeyDown = this._onKeyDown.bind(this);
         this._onPopState = () => this._applyRoute(readRoute());
@@ -222,8 +217,9 @@ export class StiloApp extends LitElement {
         activateBuiltins(this.stilo);
         this._unwatch?.();
         const stops = [this.stilo.ui, this.stilo.panels].map((service) => service.on("change", () => this.requestUpdate()));
-        // Going to an error's place needs the open document, still the app's
+        // Going to a place needs the open document, still the app's
         stops.push(this.stilo.errors.on("go-to", (place) => this._onErrorGoTo(place)));
+        stops.push(this.stilo.comments.on("go-to", ({ line }) => this._goToLine(line)));
         this._unwatch = () => stops.forEach((stop) => stop());
     }
 
@@ -291,8 +287,7 @@ export class StiloApp extends LitElement {
         this._docError = "";
         this._dirty = false;
         this._ui.notify("");
-        this._comments = [];
-        this._commentLine = null;
+        this.stilo.comments.clear();
         this.stilo.errors.clear();
         this._ui.setSource(null);
         if (!path) return;
@@ -705,19 +700,16 @@ export class StiloApp extends LitElement {
         }
     }
 
-    /** A comment in the comments pane was clicked: select its line. */
-    _onCommentClick(e) {
-        const editor = this._editor;
-        if (!editor) return;
-        this._commentLine = e.detail.line;
+    /** Select a line of the open document, back in the editor view. */
+    async _goToLine(line) {
         this._ui.setSource(null);
-        editor.select(e.detail.line);
-        editor.focus();
+        await this.updateComplete;
+        this._editor?.select(line);
+        this._editor?.focus();
     }
 
     _onCommentsClick(e) {
-        this._commentLine = e.detail.line;
-        this._ui.openPane("comments");
+        this.stilo.comments.show(e.detail.line);
     }
 
     _onErrorsChange(e) {
@@ -735,15 +727,11 @@ export class StiloApp extends LitElement {
         if (!path) return;
         if (path !== this._doc) await this._go({ root: this._root, doc: path });
         if (path !== this._doc) return; // the user kept the unsaved changes
-        this._ui.setSource(null);
-        await this.updateComplete;
-        this._editor?.select(line);
-        this._editor?.focus();
+        await this._goToLine(line);
     }
 
     _updateComments() {
-        const text = this._editor?.value ?? "";
-        this._comments = parseDocument(text).map((cell, i) => ({ line: i + 1, comments: cellComments(cell.texl) }));
+        this.stilo.comments.read(this._editor?.value ?? "");
     }
 
     // -- render --------------------------------------------------------------
@@ -791,11 +779,6 @@ export class StiloApp extends LitElement {
                 : ""}`;
     }
 
-    /** The comments pane, until the comments service (phase 2 of S17). */
-    _renderCommentsPane() {
-        return html`<comments-pane .comments=${this._comments} .line=${this._commentLine} @comment-click=${this._onCommentClick}></comments-pane>`;
-    }
-
     render() {
         const panel = this._ui.pane ? this.stilo.panels.get(this._ui.pane) : null;
         return html`
@@ -812,7 +795,7 @@ export class StiloApp extends LitElement {
                 @tree-command=${(e) => this.runCommand(e.detail.id, e.detail.node)}
             ></nav-pane>
             <main @click=${this._onLinkClick}>${this._renderMain()}</main>
-            <aside ?hidden=${!panel} @close-pane=${() => this._ui.openPane(null)}>${panel?.render(this.stilo) ?? ""}</aside>
+            <aside ?hidden=${!panel}>${panel?.render(this.stilo) ?? ""}</aside>
             ${this._moving
                 ? html`<move-dialog
                       .tree=${this._moving.tree}

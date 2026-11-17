@@ -9,6 +9,7 @@ import { Menus } from "./menus.js";
 import { UI } from "./ui.js";
 import { Panels } from "./panels.js";
 import { Errors } from "./errors.js";
+import { Comments } from "./comments.js";
 
 export { Service } from "./service.js";
 export { stiloContext, StiloController, StiloProvider } from "./context.js";
@@ -18,6 +19,7 @@ export { Menus } from "./menus.js";
 export { UI } from "./ui.js";
 export { Panels } from "./panels.js";
 export { Errors } from "./errors.js";
+export { Comments } from "./comments.js";
 
 /**
  * Create the services of one app.
@@ -33,5 +35,6 @@ export function createStilo({ transport = new Transport() } = {}) {
     stilo.ui = new UI();
     stilo.panels = new Panels();
     stilo.errors = new Errors(stilo);
+    stilo.comments = new Comments(stilo);
     return stilo;
 }

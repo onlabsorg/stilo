@@ -1,19 +1,14 @@
 import { LitElement, html, css } from "lit";
 import { base } from "./shared.js";
 import { closeIcon } from "../icons.js";
+import { StiloController } from "../core/context.js";
 
 /**
- * Right pane: the cell comments of the open document, by line.
- * `comments` is `[{line, comments: string[]}]`; `line` highlights one.
- *
- * Fires `close-pane`, and `comment-click` with `{line}` when an entry is
- * clicked.
+ * Right pane: the cell comments of the open document, by line, from the
+ * `comments` service, the line it points out highlighted. A click on an
+ * entry goes to its line (`comments.goTo`).
  */
 export class CommentsPane extends LitElement {
-    static properties = {
-        comments: { attribute: false },
-        line: { type: Number },
-    };
 
     static styles = [
         base,
@@ -57,16 +52,20 @@ export class CommentsPane extends LitElement {
 
     constructor() {
         super();
-        this.comments = [];
-        this.line = null;
+        this._stilo = new StiloController(this, (stilo) => [stilo.comments]);
+        this._shown = null;
     }
 
-    updated(changed) {
-        if (changed.has("line") && this.line) this.renderRoot.querySelector(".current")?.scrollIntoView({ block: "nearest" });
+    updated() {
+        // Scroll to the line pointed out, when it changes
+        const line = this._stilo.stilo?.comments.line ?? null;
+        if (line !== this._shown && line) this.renderRoot.querySelector(".current")?.scrollIntoView({ block: "nearest" });
+        this._shown = line;
     }
 
     render() {
-        const entries = this.comments.filter((c) => c.comments.length);
+        const stilo = this._stilo.stilo;
+        const entries = (stilo?.comments.list ?? []).filter((c) => c.comments.length);
         return html`
             <div class="pane-header">
                 <span>Comments</span><span class="spacer"></span>
@@ -74,7 +73,7 @@ export class CommentsPane extends LitElement {
                     class="icon-button"
                     aria-label="Close"
                     title="Close"
-                    @click=${() => this.dispatchEvent(new CustomEvent("close-pane", { bubbles: true, composed: true }))}
+                    @click=${() => stilo?.ui.openPane(null)}
                 >
                     ${closeIcon}
                 </button>
@@ -83,12 +82,9 @@ export class CommentsPane extends LitElement {
                 ${entries.length
                     ? entries.map(
                           ({ line, comments }) => html`<div
-                              class="entry ${line === this.line ? "current" : ""}"
+                              class="entry ${line === stilo.comments.line ? "current" : ""}"
                               title="Go to cell ${line}"
-                              @click=${() =>
-                                  this.dispatchEvent(
-                                      new CustomEvent("comment-click", { detail: { line }, bubbles: true, composed: true }),
-                                  )}
+                              @click=${() => stilo.comments.goTo(line)}
                           >
                               <div class="where">Cell ${line}</div>
                               ${comments.map((text) => html`<p>${text}</p>`)}

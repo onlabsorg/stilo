@@ -249,10 +249,9 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
   commands (save, new, …), editor events.
 - `web/src/components/top-bar.js`, `nav-pane.js`, `commands-pane.js`,
   `comments-pane.js`, `errors-pane.js` — the parts of the layout. The top
-  bar, the commands pane and the errors pane read the services through
-  context; the others
-  still fire events to the app, which holds their state, until phase 2 of
-  S17 moves it. `context-menu.js` — the menu `nav-pane.js` opens.
+  bar and the right panes read the services through context and call
+  them; the navigation pane still fires events to the app, which holds its
+  state, until phase 2 of S17 moves it. `context-menu.js` — the menu `nav-pane.js` opens.
   `move-dialog.js` — the Move to… dialog. The tree lists every file (S15):
   documents open in the editor; other files (`isDocument` in `api.js`) are
   muted, open by their public URL in a new tab and hide with Show other
@@ -272,7 +271,8 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
   `editor`; `formatKeys`, `isMac`), `menus.js`, `ui.js` (status, navigation
   pane, open panel, source view, `confirm`), `panels.js` (the right pane's
   panels, the top bar's buttons, badges), `errors.js` (the open document's
-  errors, the one pointed out, `go-to`). `<stilo-app>` creates and
+  errors, the one pointed out, `go-to`), `comments.js` (its cell comments
+  by line, the line pointed out, `go-to`). `<stilo-app>` creates and
   provides it. A new command, key or menu entry is registered there.
 - `web/src/route.js` — browser URL ↔ `{root, doc}`. `web/src/api.js` —
   the protocol client, `Transport` (`stilo.transport`); every request goes
