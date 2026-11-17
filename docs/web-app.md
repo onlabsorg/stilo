@@ -9,17 +9,17 @@ its own page: [The editor](editor.md).*
 | Module                         | Role                                                 |
 |--------------------------------|------------------------------------------------------|
 | `src/main.js`                  | Entry point: loads the theme CSS, the editor and the app |
-| `src/components/stilo-app.js`  | `StiloApp`, `<stilo-app>`: the shell. Creates and provides the services, the layout, the navigation pane's state and commands, link clicks |
+| `src/components/stilo-app.js`  | `StiloApp`, `<stilo-app>`: the shell. Creates and provides the services, the layout, link clicks |
 | `src/components/top-bar.js`    | `<top-bar>`: the document's name, the status (`ui`), a button per panel (`panels`) |
-| `src/components/nav-pane.js`   | `<nav-pane>`: the tree of folders and files, its menus and keys |
+| `src/components/nav-pane.js`   | `<nav-pane>`: the tree of folders and files (`tree`), its menus (`menus`) and keys (`keys`) |
 | `src/components/context-menu.js` | `<context-menu>`: a menu at a point of the window |
 | `src/components/move-dialog.js` | `<move-dialog>`: Move to…, choosing a folder       |
 | `src/components/commands-pane.js` | `<commands-pane>`: the command list, by group, foldable |
 | `src/components/comments-pane.js` | `<comments-pane>`: the comments of each line (`comments`) |
 | `src/components/errors-pane.js` | `<errors-pane>`: the errors of the document (`errors`) |
 | `src/components/shared.js`     | Shared styles (`base`) and icons for the components |
-| `src/core/`                    | The core services (S17), being built: `createStilo()`, `Service`, `StiloController`, `<stilo-provider>`; `commands`, `keys`, `menus`, `ui`, `panels`, `errors`, `comments`, `editor`, `document`, `router` |
-| `src/builtins/`                | Stilo's own contributions, registered through the services: `commands.js` (commands, keys, menus), `panels.js` (the right pane's panels), `go-to.js` (going to a place the errors or comments pane points to); `index.js` (`activateBuiltins`) |
+| `src/core/`                    | The core services (S17), being built: `createStilo()`, `Service`, `StiloController`, `<stilo-provider>`; `commands`, `keys`, `menus`, `ui`, `panels`, `errors`, `comments`, `editor`, `document`, `router`, `tree` |
+| `src/builtins/`                | Stilo's own contributions, registered through the services: `commands.js` (commands, keys, menus), `panels.js` (the right pane's panels), `go-to.js` (going to a place the errors or comments pane points to), `files.js` (the commands on files and folders); `index.js` (`activateBuiltins`) |
 | `src/api.js`                   | The protocol client, `Transport`: the only module that talks to the server |
 | `src/route.js`                 | Browser address ↔ `{root, doc}`                     |
 | `src/theme.js`, `src/theme.css` | Light and dark theme, design tokens               |
@@ -36,14 +36,14 @@ that work is done, most state is still in `StiloApp` (below).
   `ui` and `panels` (see [The window](#the-window-ui-and-panels)), `errors`
   (see [Errors](#errors-errors)), `comments` (see
   [Comments](#comments-comments)), `editor`, `document` and `router` (see
-  [The document](#the-document-editor-document-and-router)). Some listen
+  [The document](#the-document-editor-document-and-router)), `tree` (see
+  [The tree](#the-tree-tree)). Some listen
   to others (the errors to the editor, for instance), so `createStilo`
   makes them in order.
 - Stilo's own contributions are in `src/builtins/`, as `activate(stilo)`
   functions that register them through the services, as an extension
   would; `<stilo-app>` runs them once on its `stilo` object
-  (`activateBuiltins`). Until the state has moved, the commands reach the
-  app through `stilo._app`, a temporary bridge.
+  (`activateBuiltins`).
 - `Service` (`core/service.js`) is their base: an `EventTarget` with
   `on(name, listener)`, which returns a function that stops listening,
   `emit(name, detail)`, and `changed()`, which fires `change` after every
@@ -76,6 +76,10 @@ getter, and changes it in its methods:
 
 `confirm(message)` asks the user and resolves to the answer (the browser's
 dialog for now; asynchronous, so a dialog of Stilo's own can replace it).
+`settled()` resolves when the window shows the latest state, e.g. the
+navigation pane after `setNavOpen(true)` or the editor after
+`setSource(null)`; the app that renders the window sets how
+(`setSettle`).
 
 **`panels`** holds the panels of the right pane:
 
@@ -140,8 +144,7 @@ focuses the editor.
 **`editor`** stands for the open document's `<texl-editor>`. A new one is
 made for every document (Lit's `keyed` in `<stilo-app>`), so value, undo
 history and selection start fresh; after every rendering the app
-attaches the current one (`attach(element, settle)`, where `settle()`
-waits until the app has rendered its latest state). The service passes on
+attaches the current one (`attach(element)`). The service passes on
 the editor's events as its own: `edit` (the editor's `change`),
 `comments-click`, `errors-change`, `error-click`, `selection-change`.
 
@@ -149,7 +152,7 @@ the editor's events as its own: `edit` (the editor's `change`),
 |--------------------|-----------------------------------------------------|
 | `element`, `value`, `editing` | The element (or `null`), its text, whether a cell is being edited |
 | `whenReady()`      | The editor once attached; `null` if another document comes first |
-| `settled()`        | The editor once the app shows the latest state       |
+| `settled()`        | The editor once the window shows the latest state (`ui.settled`) |
 | `reveal(line)`     | Back in the editor view, selects the line and focuses it |
 | `runCommand(name)` | Back in the editor view, runs an editor command (`docs/component/api.md`) |
 | `reset()`          | Lets go of the editor: a new document is coming      |
@@ -175,46 +178,60 @@ A route whose document is not the open one opens it (`document.load`).
 
 ## The shell: `StiloApp`
 
-`<stilo-app>` creates and provides the services, lays out the window in a
-CSS grid (top bar; navigation, main area, right pane), renders the editor
-of the open document (its `url` is the document's public address, so
-relative imports resolve from the document's folder) or the source view,
-and the open panel. It still holds the navigation pane's state and runs
-its commands, until they move into a `tree` service:
+`<stilo-app>` holds no state of its own. It creates the services (or takes
+a `stilo` object set as its property before it connects), provides them by
+context, activates Stilo's own contributions on them (`activateBuiltins`),
+and tells `ui` how to wait for its rendering (`ui.setSettle`). It lays out
+the window in a CSS grid (top bar; navigation, main area, right pane) and
+renders:
 
-| State                    | Meaning                                         |
-|--------------------------|-------------------------------------------------|
-| `_tree`                  | The tree of the navigation root (`router.root`), read again when the root changes |
-| `_showOther`             | Whether the tree shows other files, and folders holding only other files (default on, remembered per browser) |
-| `_moving`                | The item being moved, with the whole tree, while `<move-dialog>` is open |
+- the editor of the open document (its `url` is the document's public
+  address, so relative imports resolve from the document's folder),
+  attached to the `editor` service after every rendering, or the source
+  view, whose close button runs Show source again;
+- the open panel (`panels`, `ui.pane`) in the right pane;
+- `<move-dialog>` while `tree.moving` is set: its `choose` event goes to
+  `tree.chooseMove`, `close` to `tree.endMove`.
 
-### Methods
+It also listens on the window: shortcuts bound `when: "global"` run their
+commands (not while the Move to… dialog is open), and a page with unsaved
+changes asks before it is left. A click on a link in the main area
+resolves the link from the open document's address: a `.texl` document on
+this server opens in the app (`router.go`); anything else over HTTP,
+another file or another site, opens in a new tab; other schemes (`mailto:`)
+stay with the browser. `runCommand(id, node?)` runs a command, on a tree
+node if given.
 
-The navigation pane's commands call these public methods:
+## The tree: `tree`
 
-| Method                 | Does                                                  |
-|------------------------|-------------------------------------------------------|
-| `newDocument(node?)`   | Asks for a name in the tree, `createFile`, opens it. The folder is `node`, or the folder of the document `node`; without `node`, likewise from the item last used in the tree, else the navigation root |
-| `newFolder(node?)`     | Asks for a name in the tree, `createFolder`, in a folder chosen as for `newDocument`; makes it the current item |
-| `upload(node?)`        | Opens the browser's file dialog (several files allowed) and `uploadFile`s each into a folder chosen as for `newDocument`. A name that exists or cannot be used is skipped; the status lists what was not uploaded |
-| `duplicate(node)`      | Copies a document next to it under a name asked for in the tree, opens the copy. Documents only |
-| `rename(node)`         | Asks for the new name in the item's row, warns about links, `moveItem`. A document's name is asked without `.texl`; another file's with its extension, which cannot become `.texl` |
-| `moveTo(node)`         | Opens `<move-dialog>`, which carries the warning about links; then `moveItem` |
-| `deleteItem(node)`     | Confirms, then `deleteFile` or `deleteFolder`; closes the open document if it was deleted. For a folder the question counts the documents and other files that go with it |
-| `copyLink(node)`       | Puts a file's link on the clipboard, relative to the open document (`relativeLink` in `route.js`) |
-| `openAsRoot(node)`     | Makes the folder, or the document's folder, the navigation root |
-| `refreshTree()`        | Reads the tree again; the old one stays until the new one is there |
-| `toggleOtherFiles()`   | Shows or hides other files, and folders holding only other files |
-| `runCommand(id, node?)` | Runs a command of the `commands` service by its id, on a tree node if given |
+The `tree` service holds what the navigation pane shows:
 
-### Events
+| Member              | Is or does                                          |
+|---------------------|-----------------------------------------------------|
+| `root`, `tree`, `error` | The navigation root (`router.root`), its tree (a node of the protocol's QUERY, `null` while read), why it could not be read |
+| `refresh()`         | Reads the tree again; the old one stays until the new one is there. A new root reads its tree by itself |
+| `current`, `setCurrent(path)` | The item last focused or right-clicked in the pane; found again in a new tree |
+| `target`            | What a tree command acts on without a node: `current`, or else the open document |
+| `folderFor(node?)`  | Where a new item goes: `node` if a folder, the folder of `node` if a file; without `node` likewise from `current`, else the root |
+| `showInTree(path)`  | Reads the tree again, then makes `path` the current item |
+| `showOther`, `setShowOther(on)`, `toggleShowOther()` | Whether other files show (default on); the toggle remembers it in the browser |
+| `askName(request)`  | Asks for a name in the pane, opened if needed (above) |
+| `moving`, `startMove`, `chooseMove`, `failMove`, `endMove` | The Move to… dialog: the item and the whole tree, a folder chosen, a failure shown in the dialog, closing it |
 
-| From            | Event                       | The app                                  |
-|-----------------|-----------------------------|------------------------------------------|
-| `<nav-pane>`    | `open-document`, `navigate` | `router.go`: opens a document, changes the root |
-| `<nav-pane>`    | `tree-command`              | Runs a command on a tree node (`runCommand(id, node)`) |
-| `<move-dialog>` | `choose`, `close`           | Moves the item to that folder, or closes the dialog; a name already there shows in the dialog |
-| main area       | click on a link             | Resolves the link from the open document's address. A `.texl` document on this server opens in the app; anything else over HTTP, another file or another site, opens in a new tab; other schemes (`mailto:`) stay with the browser |
+`checkName(typed, folder, type)` checks a name typed for a document, another
+file or a folder against the protocol's rules for paths; `findNode`,
+`parentFolder` and `baseName` help with tree nodes and paths.
+
+The commands on files and folders are in `builtins/files.js`, one function
+each, taking the services and a node: `newDocument`, `duplicate`,
+`newFolder`, `upload` (the browser's file dialog; a name that exists or
+cannot be used is skipped, and the status lists it), `rename` (the name is
+asked in the item's row; a document's without `.texl`, another file's with
+its extension, which cannot become `.texl`), `moveTo` (the dialog carries
+the warning about links), `deleteItem` (closes the open document if it was
+deleted; for a folder the question counts the documents and other files
+that go with it), `copyLink` (relative to the open document, `relativeLink`
+in `route.js`) and `openAsRoot`.
 
 ## Routing: `route.js`
 
@@ -283,15 +300,17 @@ Stilo's own commands:
 
 - **Editor commands** have the id of an editor command
   (`docs/component/api.md`, Commands). Running one calls
-  `app.runEditorCommand(id)`, which calls the editor's `runCommand`.
+  `editor.runCommand(id)`, back in the editor view.
 - Commands without `run` (Mod+E and Shift+F2 inside a cell's text
   editor) are listed for reference: they belong to the cell.
-- **Navigation pane commands** (ids `tree-*`) act on a tree node. From a
-  menu or a key of `<nav-pane>` the node comes with the `tree-command`
-  event. From the commands pane they act on the app's `treeTarget`: the
-  item last focused or right-clicked in the tree, or else the open
-  document. `<nav-pane>` still handles F2 and Delete itself, and reads
-  its menus from `builtins/commands.js`, until it reads the services.
+- **Navigation pane commands** (ids `tree-*`, and New document) act on a
+  tree node, the functions of `builtins/files.js`. From a menu or a key of
+  `<nav-pane>` the node is the item's (`commands.run(id, {node})`). From
+  the commands pane they act on `tree.target`: the item last focused or
+  right-clicked in the tree, or else the open document. Their keys, F2 and
+  Delete (⌫ too on macOS), are bound `when: "tree"`: `<nav-pane>` runs
+  them only when one of its items has the focus, since Delete also
+  deletes cells in the editor.
 
 **Other files.** The tree lists every file. Files that are not documents
 (`isDocument`) are muted (`--text-faint`, their own icon), and so are
@@ -302,16 +321,17 @@ Enter opens it in a new tab, where the server sandboxes what could run
 scripts. With `showOther` off (Show other files, in the pane's menu)
 `<nav-pane>` leaves the muted items out.
 
-`<nav-pane>` asks for names itself: `askName({folder, replaces, value, label,
-icon, submit})` opens a row in the folder, or in place of the item at `replaces`,
-and resolves to whether it was done. `submit(name)` does the work; it returns a
+`<nav-pane>` is the `tree` service's view for names: `tree.askName(request)`
+opens the pane if needed and calls the pane's `askName({folder, replaces,
+value, label, icon, submit})`, which opens a row in the folder, or in place of
+the item at `replaces`, and resolves to whether it was done. `submit(name)` does the work; it returns a
 message if the name cannot be used, and the row stays and shows it, or `false` to
 give up. Enter submits; Escape, leaving the row or an empty name give up.
 
 **Moving what is open.** Before a rename or a move of an item holding the open
-document, `_saveFirst` offers to save unsaved changes; declining stops the
-command. Afterwards `_afterMove` follows the item with the open document and the
-navigation root, replacing the history entry, since the old address is gone. The
+document, `files.js` offers to save unsaved changes (`saveFirst`); declining
+stops the command. Afterwards it follows the item with the open document and the
+navigation root (`afterMove`, with `router.replace`), replacing the history entry, since the old address is gone. The
 document is read again in a new editor, so its undo history starts afresh.
 
 `formatKeys(keys)` (`core/keys.js`) turns `Mod+S` into the platform's
@@ -342,8 +362,7 @@ methods:
 `ApiError`'s `status` is the HTTP status, and its message the server's
 `error`. Paths are relative to the server root, without a leading `/`.
 `isDocument(path)`, whether a path ends in `.texl`, is a plain function of
-the module. So are `documentUrl` and `documentPath` for the page's own
-server, kept only until the panes read the transport from the services.
+the module.
 
 ## Theme: `theme.css` and `theme.js`
 

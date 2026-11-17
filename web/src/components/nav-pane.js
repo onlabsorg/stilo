@@ -1,12 +1,11 @@
 import { LitElement, html, css } from "lit";
 import { base } from "./shared.js";
 import { folderIcon, fileIcon, otherFileIcon, chevronIcon, upIcon, moreIcon, newFileIcon, newFolderIcon } from "../icons.js";
-import { isMac } from "../core/keys.js";
-// Until the pane reads the services (phase 2 of S17)
-import { definitions, menus } from "../builtins/commands.js";
+import { isDocument } from "../api.js";
+import { StiloController } from "../core/context.js";
 
+/** The menu of the `menus` service each kind of row opens. */
 const MENUS = { file: "tree/document", other: "tree/other", folder: "tree/folder", pane: "tree/pane" };
-import { isDocument, documentUrl } from "../api.js";
 import "./context-menu.js";
 
 /** Whether a tree node is a document or has one somewhere inside. */
@@ -20,16 +19,6 @@ const hasFiles = (node) => node.type === "file" || !!node.children?.some(hasFile
  * empty folder is not one: it is a place for documents. */
 const isOther = (node) => !hasDocuments(node) && hasFiles(node);
 
-/** The node at `path` in a tree, if any. */
-function findNode(node, path) {
-    if (node.path === path) return node;
-    for (const child of node.children ?? []) {
-        const found = findNode(child, path);
-        if (found) return found;
-    }
-    return null;
-}
-
 /** The element that has the focus, inside shadow roots too. */
 function focusedElement() {
     let element = document.activeElement;
@@ -39,25 +28,21 @@ function focusedElement() {
 
 /**
  * The navigation pane: the tree of folders and files under the navigation
- * root (a tree node from the protocol's QUERY). Documents open in the editor;
+ * root, from the `tree` service. Documents open in the editor (`router.go`);
  * other files are muted and open by their public URL in a new tab.
  *
  * Each item has a menu, opened by a right click or its `⋯` button; so has the
- * pane, from the empty area of the tree or the header's `⋯` button. When an
- * item has the focus, F2 renames it and Delete deletes it. With `showOther`
- * off, other files and folders holding only other files are left out. `askName()` asks for a name in a
- * row of the tree: a new one, or in place of the item being renamed.
- *
- * Fires `open-document` ({path}), `navigate` ({root}) to move the root, and
- * `tree-command` ({id, node}) to run a command on a tree node.
+ * pane, from the empty area of the tree or the header's `⋯` button. The menus
+ * come from the `menus` service (`tree/document`, `tree/other`,
+ * `tree/folder`, `tree/pane`), and their entries run commands on the item.
+ * When an item has the focus, its keys (bound `when: "tree"`: F2, Delete)
+ * run their commands on it. With `tree.showOther` off, other files and
+ * folders holding only other files are left out. The pane is the `tree`
+ * service's view for `askName()`, which asks for a name in a row of the
+ * tree: a new one, or in place of the item being renamed.
  */
 export class NavPane extends LitElement {
     static properties = {
-        tree: { attribute: false },
-        root: { type: String },
-        active: { type: String },
-        error: { type: String },
-        showOther: { attribute: false },
         _collapsed: { state: true },
         _menu: { state: true },
         _naming: { state: true },
@@ -205,37 +190,46 @@ export class NavPane extends LitElement {
 
     constructor() {
         super();
-        this.tree = null;
-        this.root = "";
-        this.active = null;
-        this.error = "";
         this._collapsed = new Set();
-        this.showOther = true;
         this._menu = null;
         this._naming = null;
-        this._current = null;
+        this._shownTree = null;
+        this._stilo = new StiloController(this, (stilo) => [stilo.tree, stilo.router, stilo.document, stilo.menus, stilo.commands, stilo.keys]);
     }
 
-    /** The tree node last focused or right-clicked, if any: what a command acts
-     * on when it is not called from the node's own menu or keys. */
-    get current() {
-        return this._current;
+    get _services() {
+        return this._stilo.stilo;
     }
 
-    /** Make the item at `path` the current one, if it is in the tree. */
-    setCurrent(path) {
-        this._current = this.tree ? findNode(this.tree, path) : null;
+    willUpdate() {
+        // A new tree closes the menu, whose node may be gone
+        const tree = this._services?.tree.tree ?? null;
+        if (tree !== this._shownTree) this._menu = null;
+        this._shownTree = tree;
     }
 
-    willUpdate(changed) {
-        if (changed.has("tree")) {
-            this._current = this._current && this.tree ? findNode(this.tree, this._current.path) : null;
-            this._menu = null;
-        }
+    updated() {
+        const tree = this._services?.tree;
+        if (tree && tree._view !== this) tree.attachView(this);
     }
 
-    _fire(name, detail) {
-        this.dispatchEvent(new CustomEvent(name, { detail, bubbles: true, composed: true }));
+    disconnectedCallback() {
+        this._services?.tree.detachView(this);
+        super.disconnectedCallback();
+    }
+
+    /** Run a command, on a node if given. */
+    _run(id, node) {
+        this._services.commands.run(id, { node });
+    }
+
+    /** Show a route, with a new history entry. */
+    _go(route) {
+        this._services.router.go(route);
+    }
+
+    _setCurrent(node) {
+        this._services.tree.setCurrent(node?.path ?? null);
     }
 
     _toggle(path) {
@@ -246,13 +240,17 @@ export class NavPane extends LitElement {
 
     /** Open the menu `kind` (`file`, `other`, `folder`, `pane`) on `node`, at a point or below `origin`. */
     _openMenu(kind, node, origin, point) {
+        const stilo = this._services;
         const box = origin.getBoundingClientRect();
-        const ids = Object.values(menus[MENUS[kind]]).flatMap((group, i) => (i ? ["-", ...group] : group));
-        const items = ids.map((id) => {
-            if (id === "-") return id;
-            const command = definitions.find((c) => c.id === id);
-            return id === "tree-show-other" ? { ...command, checked: this.showOther } : command;
-        });
+        const items = stilo.menus
+            .items(MENUS[kind])
+            .map((id) => {
+                if (id === "-") return id;
+                const command = stilo.commands.get(id);
+                if (!command) return null;
+                return { id, label: command.label, keys: stilo.keys.keysFor(id), checked: command.checked?.(stilo) };
+            })
+            .filter(Boolean);
         this._menu = { items, node, origin, x: point?.x ?? box.left, y: point?.y ?? box.bottom };
     }
 
@@ -265,7 +263,7 @@ export class NavPane extends LitElement {
     _onContextMenu(e, kind, node) {
         e.preventDefault();
         e.stopPropagation();
-        this._current = kind === "pane" ? this._current : node;
+        if (kind !== "pane") this._setCurrent(node);
         // A menu key or Shift+F10 can report no position: then open at the item
         const point = e.clientX || e.clientY ? { x: e.clientX, y: e.clientY } : null;
         this._openMenu(kind, node, e.target, point);
@@ -275,16 +273,15 @@ export class NavPane extends LitElement {
     _onMoreClick(e, kind, node) {
         const origin = e.currentTarget;
         if (this._menu?.origin === origin) return this._closeMenu();
-        if (kind !== "pane") this._current = node;
+        if (kind !== "pane") this._setCurrent(node);
         this._openMenu(kind, node, origin);
     }
 
     _onRowKeyDown(e, node) {
-        if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
-        const id = e.key === "F2" ? "tree-rename" : e.key === "Delete" || (isMac && e.key === "Backspace") ? "tree-delete" : null;
+        const id = this._services.keys.match(e, "tree");
         if (!id) return;
         e.preventDefault();
-        this._fire("tree-command", { id, node });
+        this._run(id, node);
     }
 
     /** What every row has around its item button: the menu, the keys, the `⋯` button. */
@@ -292,8 +289,8 @@ export class NavPane extends LitElement {
         if (this._naming?.replaces === node.path) return this._renderNaming(depth);
         return html`<div
             class="row ${this._menu?.node === node ? "target" : ""}"
-            @focusin=${() => (this._current = node)}
-            @pointerdown=${() => (this._current = node)}
+            @focusin=${() => this._setCurrent(node)}
+            @pointerdown=${() => this._setCurrent(node)}
             @contextmenu=${(e) => this._onContextMenu(e, kind, node)}
             @keydown=${(e) => this._onRowKeyDown(e, node)}
         >
@@ -404,7 +401,7 @@ export class NavPane extends LitElement {
     /** Whether to show a tree node: another file, or a folder of them, may be
      * left out, unless a name is being asked for inside it. */
     _visible(node) {
-        if (this.showOther || !isOther(node)) return true;
+        if (this._services.tree.showOther || !isOther(node)) return true;
         const folder = this._naming?.folder;
         return folder !== undefined && (folder === node.path || folder.startsWith(`${node.path}/`));
     }
@@ -426,7 +423,7 @@ export class NavPane extends LitElement {
             class="icon-button"
             title=${label}
             aria-label=${label}
-            @click=${() => this._fire("tree-command", { id, node: null })}
+            @click=${() => this._run(id, null)}
         >
             ${icon}
         </button>`;
@@ -439,7 +436,7 @@ export class NavPane extends LitElement {
                 ${this._renderRow("other", node, depth, html`<a
                     class="item other"
                     style="--depth: ${depth}"
-                    href=${documentUrl(node.path)}
+                    href=${this._services.transport.documentUrl(node.path)}
                     target="_blank"
                     rel="noopener"
                     title=${node.path}
@@ -453,9 +450,9 @@ export class NavPane extends LitElement {
                 ${this._renderRow("file", node, depth, html`<button
                     class="item"
                     style="--depth: ${depth}"
-                    aria-current=${node.path === this.active}
+                    aria-current=${node.path === this._services.document.path}
                     title=${node.path}
-                    @click=${() => this._fire("open-document", { path: node.path })}
+                    @click=${() => this._go({ root: this._services.router.root, doc: node.path })}
                 >
                     <span class="spacer-chevron"></span>${fileIcon}<span class="name">${node.name.replace(/\.texl$/, "")}</span>
                 </button>`)}
@@ -469,7 +466,7 @@ export class NavPane extends LitElement {
                 aria-expanded=${open}
                 title=${node.path}
                 @click=${() => this._toggle(node.path)}
-                @dblclick=${() => this._fire("navigate", { root: node.path })}
+                @dblclick=${() => this._go({ root: node.path, doc: this._services.document.path })}
             >
                 <span class="chevron ${open ? "open" : ""}">${chevronIcon}</span>${folderIcon}<span class="name">${node.name}</span>
             </button>`)}
@@ -478,20 +475,24 @@ export class NavPane extends LitElement {
     }
 
     render() {
-        const parent = this.root.includes("/") ? this.root.slice(0, this.root.lastIndexOf("/")) : "";
+        const stilo = this._services;
+        if (!stilo) return "";
+        const { tree: service, document } = stilo;
+        const { root, tree, error } = service;
+        const parent = root.includes("/") ? root.slice(0, root.lastIndexOf("/")) : "";
         return html`
             <div class="pane-header">
-                <span class="root" title=${"/" + this.root}>/${this.root}</span>
+                <span class="root" title=${"/" + root}>/${root}</span>
                 <span class="spacer"></span>
                 ${this._headerButton("new-document", "New document", newFileIcon)}
                 ${this._headerButton("tree-new-folder", "New folder", newFolderIcon)}
-                ${this._moreButton("pane", this.tree, "More actions for the navigation pane")}
-                ${this.root
+                ${this._moreButton("pane", tree, "More actions for the navigation pane")}
+                ${root
                     ? html`<button
                           class="icon-button"
                           title="Parent folder"
                           aria-label="Parent folder"
-                          @click=${() => this._fire("navigate", { root: parent })}
+                          @click=${() => this._go({ root: parent, doc: document.path })}
                       >
                           ${upIcon}
                       </button>`
@@ -499,15 +500,15 @@ export class NavPane extends LitElement {
             </div>
             <div
                 class="tree"
-                @contextmenu=${(e) => this._onContextMenu(e, "pane", this.tree)}
+                @contextmenu=${(e) => this._onContextMenu(e, "pane", tree)}
                 @scroll=${() => (this._menu = null)}
             >
-                ${this.error
-                    ? html`<div class="error">${this.error}</div>`
-                    : !this.tree
+                ${error
+                    ? html`<div class="error">${error}</div>`
+                    : !tree
                       ? html`<div class="empty">Loading…</div>`
-                      : this._naming || this.tree.children?.some((c) => this._visible(c))
-                        ? this._renderChildren(this.tree, 0)
+                      : this._naming || tree.children?.some((c) => this._visible(c))
+                        ? this._renderChildren(tree, 0)
                         : html`<div class="empty">No documents here.</div>`}
             </div>
             ${this._menu
@@ -519,7 +520,7 @@ export class NavPane extends LitElement {
                       @pick=${(e) => {
                           const { node } = this._menu;
                           this._closeMenu();
-                          this._fire("tree-command", { id: e.detail.id, node });
+                          this._run(e.detail.id, node);
                       }}
                   ></context-menu>`
                 : ""}

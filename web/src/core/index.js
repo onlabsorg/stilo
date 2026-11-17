@@ -13,6 +13,7 @@ import { Comments } from "./comments.js";
 import { Editor } from "./editor.js";
 import { Document } from "./document.js";
 import { Router } from "./router.js";
+import { Tree } from "./tree.js";
 
 export { Service } from "./service.js";
 export { stiloContext, StiloController, StiloProvider } from "./context.js";
@@ -26,6 +27,7 @@ export { Comments } from "./comments.js";
 export { Editor } from "./editor.js";
 export { Document } from "./document.js";
 export { Router } from "./router.js";
+export { Tree, findNode, checkName, parentFolder, baseName } from "./tree.js";
 
 /**
  * Create the services of one app.
@@ -46,5 +48,6 @@ export function createStilo({ transport = new Transport() } = {}) {
     stilo.document = new Document(stilo);
     stilo.comments = new Comments(stilo);
     stilo.router = new Router(stilo);
+    stilo.tree = new Tree(stilo);
     return stilo;
 }

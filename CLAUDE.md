@@ -244,15 +244,14 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
 - `web/src/main.js` — entry: theme CSS, the editor, the app.
   `web/public/` — files copied into the build as they are
   (`favicon.svg`, the tab icon, linked from `web/index.html`).
-- `web/src/components/stilo-app.js` — the shell: creates and provides the
-  services, the layout, the editor of the open document (attached to the
-  `editor` service after every rendering), link clicks, and, until a
-  `tree` service exists, the navigation pane's state and commands.
+- `web/src/components/stilo-app.js` — the shell, with no state of its
+  own: creates and provides the services, activates the built-ins, lays
+  out the window, renders the editor of the open document (attached to
+  the `editor` service after every rendering), the open panel and the Move
+  to… dialog, handles link clicks and the window's shortcuts.
 - `web/src/components/top-bar.js`, `nav-pane.js`, `commands-pane.js`,
-  `comments-pane.js`, `errors-pane.js` — the parts of the layout. The top
-  bar and the right panes read the services through context and call
-  them; the navigation pane still fires events to the app, which holds its
-  state, until phase 2 of S17 moves it. `context-menu.js` — the menu `nav-pane.js` opens.
+  `comments-pane.js`, `errors-pane.js` — the parts of the layout, views of
+  the services: they read them through context and call them. `context-menu.js` — the menu `nav-pane.js` opens.
   `move-dialog.js` — the Move to… dialog. The tree lists every file (S15):
   documents open in the editor; other files (`isDocument` in `api.js`) are
   muted, open by their public URL in a new tab and hide with Show other
@@ -262,10 +261,9 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
   the navigation pane's menus; editor commands call the editor's
   `runCommand(name)`, tree commands have ids `tree-*`), `panels.js` (the
   errors, comments and commands panels), `go-to.js` (going to a place a
-  pane points to, in another document if needed), `index.js`
-  (`activateBuiltins`, run by `<stilo-app>`). The navigation pane's
-  commands reach the app through `stilo._app` until phase 2 of S17 is
-  done.
+  pane points to, in another document if needed), `files.js` (the
+  commands on files and folders, one function each), `index.js`
+  (`activateBuiltins`, run by `<stilo-app>`).
 - `web/src/core/` — the core services (S17, being built): `createStilo()`
   (`index.js`, the `stilo` object), `Service` (`service.js`: an
   `EventTarget` firing `change`), `StiloController` and `<stilo-provider>`
@@ -278,8 +276,10 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
   by line, the line pointed out, `go-to`), `editor.js` (the open
   document's `<texl-editor>`, its events passed on), `document.js` (the
   open document: load, save, reload, dirty), `router.js` (the address:
-  navigation root, `go`, `replace`, back and forward). `<stilo-app>`
-  creates and provides it. A new command, key or menu entry is registered there.
+  navigation root, `go`, `replace`, back and forward), `tree.js` (the
+  navigation pane's tree, current item, other files, `askName` through
+  the pane, the Move to… dialog; `checkName`). `<stilo-app>` creates and
+  provides it. A new command, key or menu entry is registered there.
 - `web/src/route.js` — browser URL ↔ `{root, doc}`. `web/src/api.js` —
   the protocol client, `Transport` (`stilo.transport`); every request goes
   through its `fetch`. `web/src/theme.js`,

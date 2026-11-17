@@ -374,10 +374,11 @@ accept are not part of Stilo.
   rework: the commands, keyboard shortcuts, menus, the status message, the
   open pane, the right pane's panels, the document's errors and cell
   comments, the open document itself (opening, saving, reloading, unsaved
-  changes) and the browser address are now kept in shared building blocks
-  ("services") that the top bar and the three panes on the right read,
-  instead of in the app shell, which keeps the layout and the navigation
-  pane for now. Nothing visible changes, except that a shortcut no
+  changes), the browser address and the navigation pane's folder tree are
+  now kept in shared building blocks ("services") that every part of the
+  window reads, instead of in the app shell, which now only lays out the
+  window. Stilo's own commands, including those that manage files and
+  folders, use only these services. Nothing visible changes, except that a shortcut no
   longer runs when extra modifier keys are held (Alt+Shift+N used to act as
   Alt+N).
 

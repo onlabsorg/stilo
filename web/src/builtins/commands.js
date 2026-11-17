@@ -7,13 +7,9 @@
 // Commands without `run` are listed for reference only (keys of a cell's own
 // text editor).
 //
-// Until the state has moved into the services (phase 2 of S17), commands
-// reach the app through `stilo._app`.
-
 import { isMac } from "../core/keys.js";
 import { toggleTheme } from "../theme.js";
-
-const app = (stilo) => stilo._app;
+import * as files from "./files.js";
 
 /** A command of the editor, by its name there, which is also its id. */
 function editorCommand(id, label, keys, group = "Document") {
@@ -29,8 +25,8 @@ function toggleSource({ ui, editor }) {
     editor.settled().then((element) => element?.focus());
 }
 
-/** A command on an item of the navigation pane. Without a node, from the
- * commands pane, it acts on the app's `treeTarget`. */
+/** A command on an item of the navigation pane (`files.js`). Without a
+ * node, from the commands pane, it acts on `tree.target`. */
 function treeCommand(id, label, keys, run) {
     return {
         id,
@@ -38,13 +34,13 @@ function treeCommand(id, label, keys, run) {
         keys,
         when: "tree",
         group: "Navigation pane",
-        run: (stilo, { node } = {}) => run(app(stilo), node ?? app(stilo).treeTarget),
+        run: (stilo, { node } = {}) => run(stilo, node ?? stilo.tree.target),
     };
 }
 
 /** A command of the navigation pane as a whole. */
 function paneCommand(id, label, run) {
-    return { id, label, group: "Navigation pane", run: (stilo) => run(app(stilo)) };
+    return { id, label, group: "Navigation pane", run };
 }
 
 /**
@@ -58,7 +54,7 @@ export const definitions = [
         label: "New document…",
         keys: "Alt+N",
         group: "File",
-        run: (stilo, { node } = {}) => app(stilo).newDocument(node),
+        run: (stilo, { node } = {}) => files.newDocument(stilo, node),
     },
     { id: "reload", label: "Reload document", group: "File", run: (stilo) => stilo.document.reload() },
 
@@ -66,24 +62,24 @@ export const definitions = [
         id: "tree-new-folder",
         label: "New folder…",
         group: "Navigation pane",
-        run: (stilo, { node } = {}) => app(stilo).newFolder(node),
+        run: (stilo, { node } = {}) => files.newFolder(stilo, node),
     },
     {
         id: "tree-upload",
         label: "Upload files…",
         group: "Navigation pane",
-        run: (stilo, { node } = {}) => app(stilo).upload(node),
+        run: (stilo, { node } = {}) => files.upload(stilo, node),
     },
-    treeCommand("tree-rename", "Rename", "F2", (app, node) => app.rename(node)),
-    treeCommand("tree-duplicate", "Duplicate", "", (app, node) => app.duplicate(node)),
-    treeCommand("tree-move", "Move to…", "", (app, node) => app.moveTo(node)),
-    treeCommand("tree-copy-link", "Copy link", "", (app, node) => app.copyLink(node)),
-    treeCommand("tree-open-root", "Open as root", "", (app, node) => app.openAsRoot(node)),
-    treeCommand("tree-delete", "Delete", "Delete", (app, node) => app.deleteItem(node)),
-    paneCommand("tree-refresh", "Refresh", (app) => app.refreshTree()),
+    treeCommand("tree-rename", "Rename", "F2", files.rename),
+    treeCommand("tree-duplicate", "Duplicate", "", files.duplicate),
+    treeCommand("tree-move", "Move to…", "", files.moveTo),
+    treeCommand("tree-copy-link", "Copy link", "", files.copyLink),
+    treeCommand("tree-open-root", "Open as root", "", files.openAsRoot),
+    treeCommand("tree-delete", "Delete", "Delete", files.deleteItem),
+    paneCommand("tree-refresh", "Refresh", (stilo) => stilo.tree.refresh()),
     {
-        ...paneCommand("tree-show-other", "Show other files", (app) => app.toggleOtherFiles()),
-        checked: (stilo) => app(stilo)._showOther,
+        ...paneCommand("tree-show-other", "Show other files", (stilo) => stilo.tree.toggleShowOther()),
+        checked: (stilo) => stilo.tree.showOther,
     },
 
     { id: "toggle-nav", label: "Toggle navigation pane", keys: "Mod+B", group: "View", run: (stilo) => stilo.ui.toggleNav() },

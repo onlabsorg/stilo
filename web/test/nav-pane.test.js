@@ -2,6 +2,8 @@ import { expect, fixture, html } from "@open-wc/testing";
 import "../src/components/nav-pane.js";
 import "../src/components/move-dialog.js";
 import { relativeLink } from "../src/route.js";
+import { createStilo } from "../src/core/index.js";
+import { activateBuiltins } from "../src/builtins/index.js";
 
 const tree = {
     name: "",
@@ -17,11 +19,29 @@ const tree = {
     ],
 };
 
-async function pane() {
-    const el = await fixture(html`<nav-pane .tree=${tree}></nav-pane>`);
-    el.fired = [];
-    el.addEventListener("tree-command", (e) => el.fired.push(e.detail));
+/** A navigation pane on Stilo's services, showing `shown`; the commands it
+ * runs are recorded in `el.fired` ({id, node}) instead of running. */
+async function pane(shown = tree, { showOther = true } = {}) {
+    const stilo = createStilo();
+    activateBuiltins(stilo);
+    stilo.transport.readTree = async () => shown;
+    stilo.tree.setShowOther(showOther);
+    await stilo.tree.refresh();
+    const fired = [];
+    stilo.commands.run = (id, context = {}) => void fired.push({ id, node: context.node });
+    const host = await fixture(html`<stilo-provider .stilo=${stilo}><nav-pane></nav-pane></stilo-provider>`);
+    const el = host.querySelector("nav-pane");
+    await el.updateComplete;
+    el.fired = fired;
+    el.stilo = stilo;
     return el;
+}
+
+/** Show another tree in the pane, as after reading it again. */
+async function showTree(el, shown) {
+    el.stilo.transport.readTree = async () => shown;
+    await el.stilo.tree.refresh();
+    await el.updateComplete;
 }
 
 const row = (el, text) => [...el.renderRoot.querySelectorAll(".row")].find((r) => r.querySelector(".name").textContent === text);
@@ -119,9 +139,9 @@ describe("nav-pane keys", () => {
 
     it("remembers the last focused item as the current one", async () => {
         const el = await pane();
-        expect(el.current).to.equal(null);
+        expect(el.stilo.tree.current).to.equal(null);
         row(el, "projects").querySelector(".item").focus();
-        expect(el.current.path).to.equal("projects");
+        expect(el.stilo.tree.current.path).to.equal("projects");
     });
 });
 
@@ -149,18 +169,18 @@ describe("nav-pane other files", () => {
     const muted = (el) => [...el.renderRoot.querySelectorAll(".item.other .name")].map((n) => n.textContent);
 
     it("shows every file by default, and mutes the other files and the folders of only other files", async () => {
-        const el = await fixture(html`<nav-pane .tree=${withOthers}></nav-pane>`);
+        const el = await pane(withOthers);
         expect(names(el)).to.deep.equal(["empty", "images", "raw", "a.png", "b.png", "c", "data", "d.csv", "d", "report.pdf"]);
         expect(muted(el)).to.deep.equal(["images", "raw", "a.png", "b.png", "data", "d.csv", "report.pdf"]);
     });
 
     it("hides them when other files are hidden, and keeps empty folders", async () => {
-        const el = await fixture(html`<nav-pane .tree=${withOthers} .showOther=${false}></nav-pane>`);
+        const el = await pane(withOthers, { showOther: false });
         expect(names(el)).to.deep.equal(["empty", "c", "d"]);
     });
 
     it("opens another file by its public URL in a new tab", async () => {
-        const el = await fixture(html`<nav-pane .tree=${withOthers}></nav-pane>`);
+        const el = await pane(withOthers);
         const link = row(el, "report.pdf").querySelector("a.item");
         expect(new URL(link.href).pathname).to.equal("/report.pdf");
         expect(link.target).to.equal("_blank");
@@ -168,19 +188,19 @@ describe("nav-pane other files", () => {
     });
 
     it("offers the commands for other files", async () => {
-        const el = await fixture(html`<nav-pane .tree=${withOthers}></nav-pane>`);
+        const el = await pane(withOthers);
         await rightClick(el, row(el, "report.pdf").querySelector(".item"));
         expect(labels(el)).to.deep.equal(["Rename", "Move to…", "Copy link", "Delete"]);
     });
 
     it("says there are no documents when nothing is left", async () => {
         const tree = { ...withOthers, children: [withOthers.children[1]] };
-        const el = await fixture(html`<nav-pane .tree=${tree} .showOther=${false}></nav-pane>`);
+        const el = await pane(tree, { showOther: false });
         expect(el.renderRoot.querySelector(".empty")).to.not.equal(null);
     });
 
     it("marks the option in the menu when on", async () => {
-        const el = await fixture(html`<nav-pane .tree=${withOthers}></nav-pane>`);
+        const el = await pane(withOthers);
         await rightClick(el, el.renderRoot.querySelector(".tree"));
         const option = menu(el).renderRoot.querySelector('[role="menuitemcheckbox"]');
         expect(option.getAttribute("aria-checked")).to.equal("true");
@@ -274,14 +294,12 @@ describe("nav-pane rename row", () => {
 
     it("finds the current item again in a new tree", async () => {
         const el = await pane();
-        el.setCurrent("projects/beam.texl");
-        expect(el.current.name).to.equal("beam.texl");
-        el.tree = JSON.parse(JSON.stringify(tree));
-        await el.updateComplete;
-        expect(el.current.path).to.equal("projects/beam.texl");
-        el.tree = { ...tree, children: [] };
-        await el.updateComplete;
-        expect(el.current).to.equal(null);
+        el.stilo.tree.setCurrent("projects/beam.texl");
+        expect(el.stilo.tree.current.name).to.equal("beam.texl");
+        await showTree(el, JSON.parse(JSON.stringify(tree)));
+        expect(el.stilo.tree.current.path).to.equal("projects/beam.texl");
+        await showTree(el, { ...tree, children: [] });
+        expect(el.stilo.tree.current).to.equal(null);
     });
 });
 

@@ -18,7 +18,6 @@ export class Editor extends Service {
         super();
         this._stilo = stilo;
         this._element = null;
-        this._settle = null;
         this._stops = [];
         this._newWait();
     }
@@ -43,18 +42,14 @@ export class Editor extends Service {
     }
 
     /**
-     * Attach the editor element the view made (or `null`). `settle()`
-     * resolves when the view has rendered its latest state, e.g. shown the
-     * editor again after the source view (`ui.source`).
+     * Attach the editor element the view made (or `null`).
      * @param {HTMLElement | null} element
-     * @param {() => Promise<unknown>} [settle]
      */
-    attach(element, settle) {
+    attach(element) {
         if (element === this._element) return;
         for (const stop of this._stops) stop();
         this._stops = [];
         this._element = element ?? null;
-        this._settle = settle ?? null;
         if (this._element) {
             for (const [from, to] of Object.entries(EVENTS)) {
                 const listener = (e) => this.emit(to, e.detail);
@@ -80,9 +75,10 @@ export class Editor extends Service {
         return this._element ? Promise.resolve(this._element) : this._ready;
     }
 
-    /** The editor once the view shows the latest state, or `null`. */
+    /** The editor once the window shows the latest state (`ui.settled`),
+     * or `null`. */
     async settled() {
-        await this._settle?.();
+        await this._stilo.ui.settled();
         return this._element;
     }
 

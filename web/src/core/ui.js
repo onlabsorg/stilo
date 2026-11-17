@@ -10,6 +10,7 @@ export class UI extends Service {
         this._navOpen = true;
         this._pane = null;
         this._source = null;
+        this._settle = null;
     }
 
     /** The message in the top bar ("Saved", an error), or `""`. */
@@ -65,6 +66,18 @@ export class UI extends Service {
     /** Open a panel, or close it if it is the one open. */
     togglePane(id) {
         this.openPane(this._pane === id ? null : id);
+    }
+
+    /** Set how to wait until the window shows the latest state: the app
+     * that renders the window gives it (`settled`). */
+    setSettle(settle) {
+        this._settle = settle;
+    }
+
+    /** Resolves when the window shows the latest state, e.g. the navigation
+     * pane after `setNavOpen(true)`, or the editor after `setSource(null)`. */
+    async settled() {
+        await this._settle?.();
     }
 
     /** Show a text read-only in place of the editor, or go back with `null`. */

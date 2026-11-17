@@ -231,3 +231,96 @@ describe("editor service", () => {
         expect(editor().selected).to.equal(2);
     });
 });
+
+describe("tree service", () => {
+    const shown = {
+        name: "",
+        path: "",
+        type: "folder",
+        children: [{ name: "p", path: "p", type: "folder", children: [{ name: "x.texl", path: "p/x.texl", type: "file" }] }],
+    };
+
+    /** The services with a tree read from `trees` by root, and a navigation
+     * pane stand-in that answers `askName` with `answer(request)`. */
+    function treeSetUp(trees = { "": shown, p: shown.children[0] }) {
+        const stilo = createStilo();
+        stilo.transport.readTree = async (root) => {
+            if (!(root in trees)) throw new ApiError(404, "not found");
+            return trees[root];
+        };
+        const requests = [];
+        stilo.tree.attachView({ askName: async (request) => (requests.push(request), true) });
+        return { stilo, requests };
+    }
+
+    it("checks names as the protocol's paths need", async () => {
+        const { checkName } = await import("../src/core/index.js");
+        expect(checkName("report.texl", "p", "file")).to.deep.equal({ name: "report", problem: "" });
+        expect(checkName("a/b", "p", "file").problem).to.equal("A name cannot contain / or \\.");
+        expect(checkName("_x", "", "folder").problem).to.equal("A name here cannot start with _.");
+        expect(checkName("_x", "p", "folder").problem).to.equal("");
+        expect(checkName("x.texl", "p", "other").problem).to.equal("Only documents end in .texl.");
+    });
+
+    it("reads the tree of a new root, and says when it is not there", async () => {
+        const { stilo } = treeSetUp();
+        await stilo.router.apply({ root: "", doc: null });
+        await new Promise((r) => setTimeout(r));
+        expect(stilo.tree.tree).to.equal(shown);
+        await stilo.router.apply({ root: "gone", doc: null });
+        await new Promise((r) => setTimeout(r));
+        expect(stilo.tree.error).to.equal("Folder /gone not found.");
+    });
+
+    it("keeps the current item through a new tree, and acts on it or the open document", async () => {
+        const { stilo } = treeSetUp();
+        await stilo.tree.refresh();
+        expect(stilo.tree.target).to.equal(null);
+        stilo.tree.setCurrent("p/x.texl");
+        await stilo.tree.refresh();
+        expect(stilo.tree.current.path).to.equal("p/x.texl");
+        expect(stilo.tree.folderFor()).to.equal("p");
+        expect(stilo.tree.folderFor(shown.children[0])).to.equal("p");
+        stilo.tree.setCurrent(null);
+        expect(stilo.tree.folderFor()).to.equal("");
+    });
+
+    it("asks for names through its view, the navigation pane opened", async () => {
+        const { stilo, requests } = treeSetUp();
+        stilo.ui.setNavOpen(false);
+        expect(await stilo.tree.askName({ folder: "p", label: "Name" })).to.equal(true);
+        expect(stilo.ui.navOpen).to.equal(true);
+        expect(requests.map((r) => r.folder)).to.deep.equal(["p"]);
+    });
+
+    it("creates a folder with the name asked for, and makes it the current item", async () => {
+        const { newFolder } = await import("../src/builtins/files.js");
+        const { stilo } = treeSetUp();
+        const created = [];
+        stilo.transport.createFolder = async (path) => {
+            created.push(path);
+            shown.children.push({ name: "new", path: "p/new", type: "folder", children: [] });
+        };
+        stilo.tree.attachView({ askName: async ({ submit }) => !(await submit("_ok")) && !(await submit("new")) });
+        await stilo.tree.refresh();
+        stilo.tree.setCurrent("p");
+        await newFolder(stilo);
+        shown.children.pop();
+        expect(created).to.deep.equal(["p/_ok", "p/new"]);
+    });
+
+    it("opens the Move to… dialog, shows a failure there, and closes it", async () => {
+        const { moveTo } = await import("../src/builtins/files.js");
+        const { stilo } = treeSetUp();
+        stilo.transport.moveItem = async () => {
+            throw new ApiError(409, "exists");
+        };
+        const node = shown.children[0].children[0];
+        await moveTo(stilo, node);
+        expect(stilo.tree.moving.node).to.equal(node);
+        await stilo.tree.chooseMove("q");
+        expect(stilo.tree.moving.error).to.equal("x already exists in that folder.");
+        stilo.tree.endMove();
+        expect(stilo.tree.moving).to.equal(null);
+    });
+});
