@@ -73,7 +73,7 @@ web app and server. Change it there first, then in `src/stilo/server/` and
 app must use only it, and a server in another language (e.g. Node.js) must
 be able to replace the Python one.
 
-**Extensions** (S16, S17; being built in phases). Anything beyond a
+**Extensions** (S16, S17; built in phases). Anything beyond a
 single-user editor is built outside Stilo, as an extension that uses Stilo
 as a dependency; a missing hook is added to Stilo in general terms, never
 for one consumer. The web app is published on npm as `@onlabsorg/stilo-web`
@@ -82,8 +82,9 @@ else. The design (S17): core services hold the state and behaviour, panes
 only show them, through Lit context; visible contributions go through
 registries (no slots); Stilo's own panes and commands use the same API,
 except the navigation pane, which is core and extended through the `tree`
-and `menus` services. Until that is in place, keep each extension point in
-one place: cell types only through the registry
+and `menus` services. The core services are in place (`web/src/core/`,
+phase 2); the extension API that opens them to others is not yet. Until
+then, keep each extension point in one place: cell types only through the registry
 (`web/src/editor/registry.js`), CLI commands only through `COMMANDS`
 (`src/stilo/cli/commands.py`), the server only through `create_app()`.
 Never shape a hook around one known consumer.
@@ -264,7 +265,7 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
   pane points to, in another document if needed), `files.js` (the
   commands on files and folders, one function each), `index.js`
   (`activateBuiltins`, run by `<stilo-app>`).
-- `web/src/core/` — the core services (S17, being built): `createStilo()`
+- `web/src/core/` — the core services (S17): `createStilo()`
   (`index.js`, the `stilo` object), `Service` (`service.js`: an
   `EventTarget` firing `change`), `StiloController` and `<stilo-provider>`
   (`context.js`: the `stilo` object by Lit context); `commands.js`,
@@ -364,6 +365,11 @@ valid Texl document that renders without the editor (`stilo render`,
   Colours only through the tokens in `theme.css`; both themes must work.
 - The editor owns the document; cells are views of their Texl source and
   report changes by events. Don't keep cell data outside the Texl source.
+- In the web app, state and behaviour go in a core service
+  (`web/src/core/`); components are views that read the services through
+  a `StiloController` and call them. Stilo's own commands, keys, menus and
+  panels are registered through the services (`web/src/builtins/`), never
+  wired around them.
 - Lit in plain JS: declare reactive properties in `static properties` and
   initialise them in the constructor, never as class fields.
 - A cell that handles a key itself calls `preventDefault()`; the editor

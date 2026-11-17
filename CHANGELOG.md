@@ -6,6 +6,15 @@ change the interfaces.
 
 ## Unreleased
 
+- **Keyboard shortcuts match exactly**: a shortcut no longer runs when
+  extra modifier keys are held. Alt+Shift+N used to act as Alt+N (New
+  document); likewise Alt+C, Alt+U and Alt+T. The shortcuts as listed in
+  the commands pane work as before.
+- **Web app reorganised inside** (for developers): its state and behaviour
+  now live in core services (`web/src/core/`) that the panes show and
+  Stilo's own commands use, the first part of the extension system (S17).
+  Nothing else changes for users. After a click in the comments pane while
+  Show source is on, the editor now gets the focus back.
 - **The web app on npm**: Stilo's web app and its editor component are
   published as the npm package `@onlabsorg/stilo-web`, for developers who
   build their own front end or embed the editor

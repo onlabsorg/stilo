@@ -27,8 +27,8 @@ library `stilo init` copies into projects, shipped in the package as
         browser                                  your computer or server
 ┌──────────────────────────┐   protocol v0   ┌──────────────────────────────┐
 │ web app (web/)           │   plain HTTP    │ server (stilo.server)        │
-│  ├ app shell: navigation,│ ──────────────▶ │  create_app(): HTTP routes   │
-│  │ panes, commands, save │  GET / POST /   │  Storage: one folder on disk │
+│  ├ core services, and    │ ──────────────▶ │  create_app(): HTTP routes   │
+│  │ panes that show them  │  GET / POST /   │  Storage: one folder on disk │
 │  └ <texl-editor>: cells, │  PUT / tree     │                              │
 │    Texl as WebAssembly   │ ◀────────────── │  started by `stilo serve`    │
 └──────────────────────────┘                 └──────────────────────────────┘
@@ -40,7 +40,7 @@ server: a few interactions over plain HTTP (GET, CREATE, UPDATE, QUERY the
 tree, CREATE a folder, MOVE, DELETE). The rules that follow from it:
 
 - The web app talks to the server **only** through the protocol, in
-  `web/src/api.js`. So another server that speaks the protocol, in another
+  `web/src/api.js` (the `Transport`, `stilo.transport`). So another server that speaks the protocol, in another
   language or with accounts and permissions, can replace the Python one.
 - A change to the protocol is made in `docs/protocol.md` first,
   then in `src/stilo/server/` and `web/src/api.js`.
@@ -61,10 +61,10 @@ When a user opens `http://127.0.0.1:8000/projects/beam/beam-check.texl`:
 1. The browser asks for the address with `Accept: text/html`, so the server
    answers with the web app's `index.html`, and then its bundle from
    `/_app/`.
-2. The app reads the path from the address (`web/src/route.js`), asks for
-   the folder tree (`GET /_api/tree/`) and the document
-   (`GET /_api/files/projects/beam/beam-check.texl`), and gives the text to
-   `<texl-editor>`.
+2. The app's router reads the path from the address (`web/src/route.js`);
+   the services ask for the folder tree (`GET /_api/tree/`) and the
+   document (`GET /_api/files/projects/beam/beam-check.texl`), and give the
+   text to `<texl-editor>` ([The web app](web-app.md#the-core-srccore)).
 3. The editor parses the text into cells, renders the whole document with
    Texl, as the document at its public address, and splits the rendering
    into the cells' outputs.
@@ -84,8 +84,10 @@ When a user opens `http://127.0.0.1:8000/projects/beam/beam-check.texl`:
 Stilo is getting an extension system, built in phases
 ([S16, S17](../DECISIONS.md)): anything beyond a single-user editor is built
 outside Stilo, as an extension that uses it as a dependency and plugs into
-public hooks. Until the system is in place, each extension point lives in
-one place:
+public hooks. The core services are in place (the web app's state and
+behaviour, which Stilo's own panes and commands use); the extension API
+that opens them to others comes next. Until then, each extension point
+lives in one place:
 
 | Extension       | The one place today                        | Planned (S17) |
 |-----------------|--------------------------------------------|---------------|
@@ -94,15 +96,15 @@ one place:
 | Commands, keys, menus | The `commands`, `keys` and `menus` services (`web/src/core/`); Stilo's own in `web/src/builtins/commands.js` | Open to extensions |
 | Right-pane panels | The `panels` service (`web/src/core/`); Stilo's own in `web/src/builtins/panels.js` | Open to extensions |
 | Top bar, status line | `<top-bar>` | The `topBar` and `status` registries |
-| Tree markers, filters, read-only items | — | The `tree` service; the navigation pane itself stays core |
+| Tree markers, filters, read-only items | The `tree` service holds the tree; no markers yet | Providers in the `tree` service; the navigation pane itself stays core |
 | Pages that are not documents | — | The `views` service, addressed by `?view=<id>` |
-| Server access | `web/src/api.js` | The `transport`, which imports by Texl go through too |
+| Server access | The `transport` service, a `Transport` (`web/src/api.js`) | Replaceable or wrapped by extensions; imports by Texl go through it too |
 | CLI commands    | The `COMMANDS` list in `src/stilo/cli/commands.py` | Also from other packages, by a Python entry-point group |
 | Server          | `create_app()` in `src/stilo/server/app.py` | `create_app()` takes a storage, routers and middleware; extension endpoints under `/_api/x/<id>/` |
 
 How it fits together, in short: core services hold the state and the
 behaviour, and panes only show them, reaching the services through Lit
-context. An extension is an object with `activate(stilo)`, which registers
+context ([The web app](web-app.md#the-core-srccore)). An extension is an object with `activate(stilo)`, which registers
 its contributions; each registration returns a `dispose()`. Stilo's own
 panes and commands are registered the same way, so the API stays complete.
 A guide, `docs/extensions.md`, comes with the extension API.

@@ -18,7 +18,7 @@ its own page: [The editor](editor.md).*
 | `src/components/comments-pane.js` | `<comments-pane>`: the comments of each line (`comments`) |
 | `src/components/errors-pane.js` | `<errors-pane>`: the errors of the document (`errors`) |
 | `src/components/shared.js`     | Shared styles (`base`) and icons for the components |
-| `src/core/`                    | The core services (S17), being built: `createStilo()`, `Service`, `StiloController`, `<stilo-provider>`; `commands`, `keys`, `menus`, `ui`, `panels`, `errors`, `comments`, `editor`, `document`, `router`, `tree` |
+| `src/core/`                    | The core services (S17): `createStilo()`, `Service`, `StiloController`, `<stilo-provider>`; `commands`, `keys`, `menus`, `ui`, `panels`, `errors`, `comments`, `editor`, `document`, `router`, `tree` |
 | `src/builtins/`                | Stilo's own contributions, registered through the services: `commands.js` (commands, keys, menus), `panels.js` (the right pane's panels), `go-to.js` (going to a place the errors or comments pane points to), `files.js` (the commands on files and folders); `index.js` (`activateBuiltins`) |
 | `src/api.js`                   | The protocol client, `Transport`: the only module that talks to the server |
 | `src/route.js`                 | Browser address ↔ `{root, doc}`                     |
@@ -26,12 +26,15 @@ its own page: [The editor](editor.md).*
 
 ## The core: `src/core/`
 
-The app's state and behaviour are moving out of `StiloApp` into **core
-services** ([S17](../DECISIONS.md)), which the panes only show. Until
-that work is done, most state is still in `StiloApp` (below).
+The app's state and behaviour live in **core services**
+([S17](../DECISIONS.md)); the components only show them and call them.
+Stilo's own commands and panels are registered through the services, as
+an extension's will be, so the services are complete: nothing of Stilo
+goes around them. They are internal for now: the npm package does not
+export them, and there is no way yet to give the app extensions.
 
 - `createStilo({transport?})` (`core/index.js`) builds the `stilo` object,
-  the services of one app. So far: `transport` (a `Transport`, below),
+  the services of one app: `transport` (a `Transport`, below),
   `commands`, `keys` and `menus` (see [Commands](#commands-keys-and-menus)),
   `ui` and `panels` (see [The window](#the-window-ui-and-panels)), `errors`
   (see [Errors](#errors-errors)), `comments` (see
@@ -388,8 +391,13 @@ so the server serves it at `/_app/favicon.svg`.
 - Declare a component's reactive properties in `static properties` and
   initialize them in the constructor, never as class fields: in plain
   JavaScript, class fields hide Lit's accessors.
-- Components fire events (`bubbles: true, composed: true`); the app holds
-  the state.
+- State and behaviour go in a service (`src/core/`); a component is a
+  view: it reads the services through a `StiloController`, renders again
+  when they change, and calls them. It keeps only what is its own to show
+  (a folded group, an open menu, the row asking for a name).
+- Stilo's own commands, keys, menus and panels are registered through the
+  services (`src/builtins/`), never wired around them: what Stilo needs,
+  an extension will be able to use too.
 - The app talks to the server only through the transport (`api.js`,
   `stilo.transport`).
 - Colors only through the tokens of `theme.css`; check both themes.
