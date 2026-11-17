@@ -111,10 +111,11 @@ valid or taken, its `apiVersion` does not match (`API_VERSION`, now
 that records each registration (the table `REGISTRATIONS`: `commands.register`,
 `keys.bind`, `menus.add`, `register` and `replace` of `panels`, `topBar`
 and `status`, `transport.use`, `decorate`, `filter` and `readOnly` of
-`tree`, `views.register` and `views.replace`, and every service's `on`), so
+`tree`, `editor.decorate`, `comments.addProvider`, `views.register` and `views.replace`, and every service's `on`), so
 `deactivate(id)` undoes all
 of them, the latest first; a `dispose()` the extension calls itself is not
-undone twice. The ids of its commands, panels, views and top-bar and status items
+undone twice. The ids of its commands, panels, views, comment providers and top-bar
+and status items
 must start with `<id>.`; another is refused (and an `activate` that does
 it fails). `replace` may take the place of one of Stilo's own.
 
@@ -208,21 +209,35 @@ line, opening the other document first if needed.
 ## Comments: `comments`
 
 The `comments` service holds the cell comments of the open document, read
-from its text (`<!--[ ... ]-->` in each cell):
+from its text (`<!--[ ... ]-->` in each cell), and the comments of
+**providers**, from outside the document (an issue tracker, a review):
 
 | Member          | Is or does                                             |
 |-----------------|--------------------------------------------------------|
-| `list`          | `[{line, comments}]`: every line (from 1) with the texts of its comments, maybe none |
+| `list`          | `[{line, comments, others}]`: every line (from 1) with the texts of its comments, maybe none, and the providers' comments on it (`{text, author?, date?, source, provider}`) |
 | `line`          | The line pointed out, or `null`                        |
-| `read(text)`    | Reads them again, on opening the document and on every change |
+| `addProvider(provider)` | Adds a provider; returns `dispose()`. A taken id is refused |
+| `refresh()`     | Asks the providers again for the open document's comments (also when it opens) |
+| `read(text)`    | Reads them again, on opening the document and on every change, and places the providers' comments |
 | `clear()`       | Forgets them, when another document opens              |
 | `show(line)`    | Points out a line and opens the comments panel (the editor's `comments-click`) |
 | `goTo(line)`    | Points out a line and fires `go-to` with `{line}`       |
 
+A provider is `{id, label, comments(path)}`: `comments` returns, or
+resolves to, the comments of the document at `path`,
+`[{cell, text, author?, date?}]`, each anchored to a cell **by its name**
+(compared without case), the only stable anchor in a document: they
+follow their cell when it moves, and a comment whose cell is not there is
+left out. They are read-only. A provider that fails is reported in the
+console and left out; answers for a document no longer open are ignored.
+The service gives the editor their texts by cell name (`extraComments`),
+so the margin counts them with the file's own.
+
 `<comments-pane>` shows the lines that have comments, highlights and
-scrolls to `line`, and calls `goTo` on a click. `builtins/go-to.js`
-handles `go-to`: it selects the line, back in the editor view, and
-focuses the editor.
+scrolls to `line`, and calls `goTo` on a click; under the file's comments
+of a line come the providers', each with its source, author and date.
+`builtins/go-to.js` handles `go-to`: it selects the line, back in the
+editor view, and focuses the editor.
 
 ## The document: `editor`, `document` and `router`
 
@@ -231,7 +246,19 @@ made for every document (Lit's `keyed` in `<stilo-app>`), so value, undo
 history and selection start fresh; after every rendering the app
 attaches the current one (`attach(element)`). The service passes on
 the editor's events as its own: `edit` (the editor's `change`),
-`comments-click`, `errors-change`, `error-click`, `selection-change`.
+`comments-click`, `errors-change`, `error-click`, `selection-change`,
+`mark-click`.
+
+**Marks.** `decorate(provider)` adds a mark provider (a checker, say) and
+returns `dispose()`: `provider({path, value, cells})` returns the marks of
+the open document, `[{cell, text, tone?, title?}]`, each on a cell by its
+name, shown in the cell's right margin in the colours of errors and
+comments (`tone`: `accent`, `warning`, `danger`), `title` as hover text.
+`cells` are the cells as the file format reads them, with their `line`.
+The service asks the providers when a document opens, after every edit,
+and on `invalidate()`, and gives the editor the result (`marks`). A click
+on a mark fires `mark-click` (`{line, cell, mark}`). A provider that
+throws is reported in the console and left out.
 
 | Member             | Is or does                                          |
 |--------------------|-----------------------------------------------------|

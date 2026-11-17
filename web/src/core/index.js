@@ -57,5 +57,7 @@ export function createStilo({ transport = new Transport() } = {}) {
     stilo.router = new Router(stilo);
     stilo.tree = new Tree(stilo);
     stilo.extensions = new Extensions(stilo);
+    // The editor's marks follow the document opened (created after the editor)
+    stilo.document.on("open", () => stilo.editor.applyMarks());
     return stilo;
 }

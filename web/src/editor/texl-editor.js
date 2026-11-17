@@ -158,6 +158,8 @@ export class TexlEditor extends LitElement {
         rows: { type: Number },
         readonly: { type: Boolean, reflect: true },
         loader: { attribute: false },
+        extraComments: { attribute: false },
+        marks: { attribute: false },
         _cells: { state: true },
         _outputs: { state: true },
         _errors: { state: true },
@@ -388,6 +390,34 @@ export class TexlEditor extends LitElement {
             width: 1rem;
             height: 1rem;
         }
+        .mark {
+            height: 1.5rem;
+            max-width: 100%;
+            padding: 0 0.25rem;
+            overflow: hidden;
+            border: none;
+            border-radius: 4px;
+            background: none;
+            font: inherit;
+            font-size: 0.75rem;
+            font-weight: 600;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            color: var(--texl-text-muted, #687085);
+            cursor: pointer;
+        }
+        .mark:hover {
+            background: var(--texl-hover-bg, rgb(15 23 42 / 0.06));
+        }
+        .mark.accent {
+            color: var(--texl-accent, #2563eb);
+        }
+        .mark.warning {
+            color: var(--texl-comment, #b7791f);
+        }
+        .mark.danger {
+            color: var(--texl-error, #b91c1c);
+        }
     `;
 
     constructor() {
@@ -411,6 +441,10 @@ export class TexlEditor extends LitElement {
         this.readonly = false;
         /** The engine's loader of `http` and `https` URIs, or null for Texl's own. */
         this.loader = null;
+        /** Comments from outside the document, by cell name (lowercase): `{name: [text]}`. */
+        this.extraComments = {};
+        /** Marks in the right margin, by cell name (lowercase): `{name: [{text, tone?, title?}]}`. */
+        this.marks = {};
         /** The Texl engine, as a promise, created on the first rendering. */
         this._engine = null;
         this._generation = 0;
@@ -1100,6 +1134,39 @@ export class TexlEditor extends LitElement {
         );
     }
 
+    /** What `map` (by cell name, lowercase) holds for the cell at `index`, or `[]`. */
+    _byName(map, index) {
+        const name = this._cells[index]?.name?.toLowerCase();
+        return (name && map?.[name]) || [];
+    }
+
+    /** The marks of the cell at `index` (`marks`), as buttons; a click fires
+     * `mark-click` with the line, the cell name and the mark. */
+    _renderMarks(index) {
+        return this._byName(this.marks, index).map(
+            (mark) => html`<button
+                class="mark ${mark.tone ?? ""}"
+                type="button"
+                tabindex="-1"
+                title=${mark.title ?? mark.text}
+                @mousedown=${(e) => e.preventDefault()}
+                @click=${() => {
+                    this._select(index);
+                    this.focus();
+                    this.dispatchEvent(
+                        new CustomEvent("mark-click", {
+                            detail: { line: index + 1, cell: this._cells[index].name, mark },
+                            bubbles: true,
+                            composed: true,
+                        }),
+                    );
+                }}
+            >
+                ${mark.text}
+            </button>`,
+        );
+    }
+
     /** Selects line `index` and reports the error of `place` (may be none) with `error-click`. */
     _onErrorClick(index, place) {
         this._select(index);
@@ -1146,8 +1213,9 @@ export class TexlEditor extends LitElement {
 
     /** A comment icon with the number of `comments` of line `index`, or nothing. */
     _renderCommentCount(index, comments) {
-        if (comments.length === 0) return "";
-        const label = comments.length === 1 ? "1 comment" : `${comments.length} comments`;
+        const count = comments.length + this._byName(this.extraComments, index).length;
+        if (count === 0) return "";
+        const label = count === 1 ? "1 comment" : `${count} comments`;
         return html`<button
             class="comment-count"
             type="button"
@@ -1157,7 +1225,7 @@ export class TexlEditor extends LitElement {
             @mousedown=${(e) => e.preventDefault()}
             @click=${() => this._onCommentsClick(index, comments)}
         >
-            <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>${comments.length}
+            <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>${count}
         </button>`;
     }
 
@@ -1256,7 +1324,7 @@ export class TexlEditor extends LitElement {
                 @cell-exit=${() => this._onCellExit()}
             ></${tag}>
                 <div class="margin right ${rowClasses}" part="right-margin">
-                    ${this._renderErrorCount(i)}${this._renderCommentCount(i, cellComments(cell.texl))}
+                    ${this._renderMarks(i)}${this._renderErrorCount(i)}${this._renderCommentCount(i, cellComments(cell.texl))}
                 </div>`;
         });
         return html`<div class="sheet" @click=${{ handleEvent: (e) => this._onSheetClick(e), capture: true }}>${rows}</div>`;

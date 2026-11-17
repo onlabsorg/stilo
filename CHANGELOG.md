@@ -31,8 +31,16 @@ change the interfaces.
   (`/?view=<id>`), shown in place of the editor; they can be bookmarked,
   and the back button works. Nothing changes for users without
   extensions.
+- **Comments from elsewhere, marks on cells** (extensions): an extension
+  can add comments from outside the document (an issue tracker, a review),
+  shown in the comments pane under the file's own, with their source,
+  author and date, and counted in the margin, on the cells they belong
+  to; and put short marks on cells (a checker's findings) in the right
+  margin. Nothing changes for users without extensions.
 - **Editor component** (for developers): `<texl-editor>` gains a
   read-only mode (`readonly`), a `loader` for the documents it imports,
+  comments from outside counted in its margin (`extraComments`), marks on
+  cells (`marks`, event `mark-click`),
   and `editorCommands()`, the list of its commands with their labels and
   keys. In Stilo's commands pane the "Make it …" commands now follow the
   order of the cell type menu.

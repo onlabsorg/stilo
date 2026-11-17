@@ -416,6 +416,13 @@ accept are not part of Stilo.
   shown in place of the editor; they can be bookmarked, the back button
   works, and links to them open them in the app. Nothing changes for users
   without extensions.
+- 2026-11-17: **extensions, sixth part**: an extension can add comments
+  from outside the document (for example from an issue tracker or a
+  review), shown in the comments pane under the document's own, with where
+  they come from, who wrote them and when, and counted in the margin of
+  the cells they belong to; they stay with their cell when it moves. It
+  can also put short marks on cells, such as a checker's findings.
+  Nothing changes for users without extensions.
 
 ## Known limitations
 

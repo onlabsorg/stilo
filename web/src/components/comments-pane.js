@@ -5,8 +5,10 @@ import { StiloController } from "../core/context.js";
 
 /**
  * Right pane: the cell comments of the open document, by line, from the
- * `comments` service, the line it points out highlighted. A click on an
- * entry goes to its line (`comments.goTo`).
+ * `comments` service, the line it points out highlighted, and under each the
+ * comments of the providers (an issue tracker, a review), with where they come
+ * from and who wrote them; all read-only here. A click on an entry goes to its
+ * line (`comments.goTo`).
  */
 export class CommentsPane extends LitElement {
 
@@ -47,6 +49,16 @@ export class CommentsPane extends LitElement {
                 white-space: pre-wrap;
                 line-height: 1.45;
             }
+            .other {
+                margin-top: 0.5rem;
+                padding-left: 0.5rem;
+                border-left: 2px solid var(--border);
+            }
+            .by {
+                margin-top: 0.125rem;
+                font-size: 11px;
+                color: var(--text-muted);
+            }
         `,
     ];
 
@@ -65,7 +77,7 @@ export class CommentsPane extends LitElement {
 
     render() {
         const stilo = this._stilo.stilo;
-        const entries = (stilo?.comments.list ?? []).filter((c) => c.comments.length);
+        const entries = (stilo?.comments.list ?? []).filter((c) => c.comments.length || c.others?.length);
         return html`
             <div class="pane-header">
                 <span>Comments</span><span class="spacer"></span>
@@ -81,13 +93,19 @@ export class CommentsPane extends LitElement {
             <div class="list">
                 ${entries.length
                     ? entries.map(
-                          ({ line, comments }) => html`<div
+                          ({ line, comments, others = [] }) => html`<div
                               class="entry ${line === stilo.comments.line ? "current" : ""}"
                               title="Go to cell ${line}"
                               @click=${() => stilo.comments.goTo(line)}
                           >
                               <div class="where">Cell ${line}</div>
                               ${comments.map((text) => html`<p>${text}</p>`)}
+                              ${others.map(
+                                  (c) => html`<div class="other">
+                                      <p>${c.text}</p>
+                                      <div class="by">${[c.source, c.author, c.date].filter(Boolean).join(" · ")}</div>
+                                  </div>`,
+                              )}
                           </div>`,
                       )
                     : html`<div class="empty">No comments in this document. Add one to a cell with Shift+F2 while editing it.</div>`}

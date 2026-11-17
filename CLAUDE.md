@@ -287,8 +287,10 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
   place of the editor), `panels.js` (the right pane's
   panels, the top bar's buttons, badges; a `Registry`), `errors.js` (the open document's
   errors, the one pointed out, `go-to`), `comments.js` (its cell comments
-  by line, the line pointed out, `go-to`), `editor.js` (the open
-  document's `<texl-editor>`, its events passed on), `document.js` (the
+  by line, the line pointed out, `go-to`; comment providers, anchored to
+  cells by name), `editor.js` (the open
+  document's `<texl-editor>`, its events passed on; mark providers,
+  `decorate`), `document.js` (the
   open document: load, save, reload, dirty), `router.js` (the address:
   navigation root, the view and its parameters, `go`, `replace`, back and
   forward), `tree.js` (the
@@ -314,6 +316,7 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
     pass, split into cell outputs at the markers by `outputSpans`, from the
     tags' positions).
     Public surface: `value`, `url`, `rows`, `readonly`, `loader`,
+    `extraComments`, `marks` (both by cell name; event `mark-click`),
     `rendered`, `errors`, `editing`,
     `runCommand(name)`, `select(line)`, `commands`, events `change`,
     `comments-click`, `errors-change`, `error-click`, `selection-change`,
