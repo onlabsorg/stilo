@@ -8,7 +8,9 @@ import { formatKeys } from "../core/keys.js";
  * keys move through the items.
  *
  * `items` holds commands (`{id, label, keys?}`) and `"-"` for a separator. An item
- * with a boolean `checked` is an option, with a check mark when on.
+ * with a boolean `checked` is an option, with a check mark when on. An item
+ * whose `disabled` is a text (the reason, maybe empty) is greyed out, with
+ * the reason as its hover text, and cannot be picked.
  *
  * Fires `pick` ({id}) when an item is chosen, `close` on Escape, Tab, a press
  * outside the menu, or when the window loses focus or changes size.
@@ -54,6 +56,10 @@ export class ContextMenu extends LitElement {
             button:focus {
                 background: var(--hover);
                 outline: none;
+            }
+            button[aria-disabled="true"] {
+                color: var(--text-faint);
+                cursor: default;
             }
             .label {
                 flex: 1;
@@ -125,7 +131,9 @@ export class ContextMenu extends LitElement {
                     : html`<button
                           role=${item.checked === undefined ? "menuitem" : "menuitemcheckbox"}
                           aria-checked=${ifDefined(item.checked)}
-                          @click=${() => this.dispatchEvent(new CustomEvent("pick", { detail: { id: item.id } }))}
+                          aria-disabled=${item.disabled != null ? "true" : "false"}
+                          title=${ifDefined(item.disabled || undefined)}
+                          @click=${() => item.disabled == null && this.dispatchEvent(new CustomEvent("pick", { detail: { id: item.id } }))}
                       >
                           <span class="label">${item.label}</span>${item.keys
                               ? html`<span class="keys">${formatKeys(item.keys)}</span>`

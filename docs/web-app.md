@@ -110,7 +110,8 @@ valid or taken, its `apiVersion` does not match (`API_VERSION`, now
 `activate` gets a **scoped `stilo`**: the same services, through a proxy
 that records each registration (the table `REGISTRATIONS`: `commands.register`,
 `keys.bind`, `menus.add`, `register` and `replace` of `panels`, `topBar`
-and `status`, `transport.use`, and every service's `on`), so
+and `status`, `transport.use`, `decorate`, `filter` and `readOnly` of
+`tree`, and every service's `on`), so
 `deactivate(id)` undoes all
 of them, the latest first; a `dispose()` the extension calls itself is not
 undone twice. The ids of its commands, panels and top-bar and status items
@@ -243,7 +244,11 @@ the editor's events as its own: `edit` (the editor's `change`),
 
 **`document`** is the open document: `path`, `error` (why it could not be
 read), `dirty` (unsaved changes), `unsaved` (the same, or a cell being
-edited). An edit makes it dirty and clears the status.
+edited), `readOnly` (why it cannot be changed, from the `tree` service's
+read-only providers, or `null`). An edit makes it dirty and clears the
+status. A read-only document opens in the editor's read-only mode
+(`<stilo-app>` sets `readonly`), the top bar shows "Read-only" with the
+reason as hover text, and `save` refuses it.
 
 | Method       | Does                                                       |
 |--------------|------------------------------------------------------------|
@@ -304,6 +309,22 @@ The `tree` service holds what the navigation pane shows:
 | `askName(request)`  | Asks for a name in the pane, opened if needed (above) |
 | `moving`, `startMove`, `chooseMove`, `failMove`, `endMove` | The Move to… dialog: the item and the whole tree, a folder chosen, a failure shown in the dialog, closing it |
 
+**Providers.** Extensions (and Stilo) add to the tree through providers,
+each added by a method that returns `dispose()`; `invalidate()` says that
+what they return has changed, so the views ask again. A provider that
+throws counts as saying nothing.
+
+| Method | The provider | Read with |
+|--------|--------------|-----------|
+| `decorate(provider)` | `(node) => {badge?, tooltip?, tone?, muted?}` or nothing: a short text after the name, a line of hover text, the badge's colour (`accent`, `warning`, `danger`), the item muted | `decoration(node)`: `{badges, tooltip, muted}` of all of them, or `null` |
+| `filter(provider)` | `(node) => false` leaves the node, and what is in it, out of the pane | `shows(node)` |
+| `readOnly(provider)` | `(path) =>` why the item cannot be changed (a text, or `true`), or nothing | `readOnlyReason(path)`: the first reason (`true` reads "Read-only"), or `null`; `lockedReason(node)`: the same, or for a folder "It holds read-only items" |
+
+`<nav-pane>` shows a lock after a read-only item's name, the decorations'
+badges after it, their tooltips and the read-only reason in its hover
+text, and leaves filtered items out. The Move to… dialog refuses a
+read-only folder (`chooseMove`).
+
 `checkName(typed, folder, type)` checks a name typed for a document, another
 file or a folder against the protocol's rules for paths; `findNode`,
 `parentFolder` and `baseName` help with tree nodes and paths.
@@ -353,10 +374,22 @@ stilo.commands.register({
     group: "File",                      // its heading in the commands pane
     run: (stilo, { node }) => ...,      // node: the tree item, if called on one
     checked: (stilo) => ...,            // for an option: on or off, in menus
+    enabled: (stilo, { node }) => ...,  // true, or why it does not apply now
 });                                     // returns dispose(); a taken id throws
 stilo.commands.run("save", { node });
+stilo.commands.disabledReason("save", { node }); // null, or the reason ("" if none)
 stilo.commands.list();                  // in the order added: the commands pane
 ```
+
+A command whose `enabled` returns a text (the reason) or `false` does not
+apply now: menus and the commands pane show it greyed out, with the reason
+as hover text, and `run` does not run it but says in the status "Save is
+not available: …". Stilo's own: Save and the editor commands that change
+the document (`changes` in `editorCommands()`) do not apply to a read-only
+document; Rename, Move to… and Delete not to a read-only item, nor to a
+folder holding one (`tree.lockedReason`); New document…, New folder…,
+Upload files… and Duplicate not where the new item would go in a read-only
+folder.
 
 **`keys`** binds shortcuts to commands:
 `bind("Mod+S", "save", {when, show})`, which returns `dispose()`. `Mod` is

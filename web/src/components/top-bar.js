@@ -6,7 +6,8 @@ import { StiloController } from "../core/context.js";
 /**
  * The title/tool bar: navigation toggle on the left; in the middle the open
  * document's name, with • while it has unsaved changes (`document`), or else
- * the navigation root (`router`), and the status (`ui`); on the right the
+ * the navigation root (`router`), "Read-only" with the reason if the
+ * document is (`document.readOnly`), and the status (`ui`); on the right the
  * items of the `topBar` service, then one button per panel of the right pane
  * (`panels`), with its badge.
  */
@@ -53,6 +54,14 @@ export class TopBar extends LitElement {
                 font-size: 12px;
                 color: var(--text-muted);
             }
+            .read-only {
+                padding: 0 0.375rem;
+                border: 1px solid var(--border);
+                border-radius: 4px;
+                font-size: 11px;
+                font-weight: 500;
+                color: var(--text-muted);
+            }
             button.icon-button.has-badge {
                 width: auto;
                 gap: 0.25rem;
@@ -74,7 +83,7 @@ export class TopBar extends LitElement {
 
     constructor() {
         super();
-        this._stilo = new StiloController(this, (stilo) => [stilo.ui, stilo.panels, stilo.topBar, stilo.document, stilo.router]);
+        this._stilo = new StiloController(this, (stilo) => [stilo.ui, stilo.panels, stilo.topBar, stilo.document, stilo.router, stilo.tree]);
     }
 
     /** The open document's name, or else the navigation root. */
@@ -120,6 +129,9 @@ export class TopBar extends LitElement {
             </div>
             <div class="title">
                 <span>${this._heading(stilo)}</span>
+                ${stilo.document.readOnly !== null
+                    ? html`<span class="read-only" title=${stilo.document.readOnly}>Read-only</span>`
+                    : ""}
                 ${ui.status ? html`<span class="status">${ui.status}</span>` : ""}
             </div>
             <div class="right">

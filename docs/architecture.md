@@ -99,7 +99,7 @@ place:
 | Web app as a dependency | — | The npm package `@onlabsorg/stilo-web`; its public API is the `exports` map of `web/package.json` (S16) |
 | Commands, keys, menus | The `commands`, `keys` and `menus` services (`web/src/core/`); Stilo's own in `web/src/builtins/commands.js` | Open to extensions |
 | Right-pane panels, top bar, status line | The `panels`, `topBar` and `status` registries (`web/src/core/`), open to extensions, which may also replace a panel; Stilo's own panels in `web/src/builtins/panels.js` | — |
-| Tree markers, filters, read-only items | The `tree` service holds the tree; no markers yet | Providers in the `tree` service; the navigation pane itself stays core |
+| Tree markers, filters, read-only items | Providers in the `tree` service (`decorate`, `filter`, `readOnly`); read-only documents open in the editor's read-only mode; commands say when they do not apply (`enabled`). The navigation pane itself stays core | — |
 | Pages that are not documents | — | The `views` service, addressed by `?view=<id>` |
 | Server access | The `transport` service, a `Transport` (`web/src/api.js`): replaceable (`startStilo({transport})`), wrapped by middleware (`transport.use`); Texl imports go through it (the editor's `loader`) | — |
 | CLI commands    | The `COMMANDS` list in `src/stilo/cli/commands.py` | Also from other packages, by a Python entry-point group |

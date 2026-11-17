@@ -8,14 +8,42 @@
 // text editor).
 //
 import { isMac } from "../core/keys.js";
+import { parentFolder } from "../core/tree.js";
 import { toggleTheme } from "../theme.js";
 import { editorCommands } from "../editor/index.js";
 import * as files from "./files.js";
 
+/** `true`, or why the open document cannot be changed. */
+const documentWritable = (stilo) => stilo.document.readOnly ?? true;
+
+/** `true`, or why nothing can be added to the folder a new item would go in. */
+const folderWritable = (stilo, { node } = {}) => {
+    const reason = stilo.tree.readOnlyReason(stilo.tree.folderFor(node));
+    return reason === null ? true : `the folder is read-only: ${reason}`;
+};
+
+/** `true`, or why a tree item cannot be renamed, moved or deleted. */
+const itemUnlocked = (stilo, { node } = {}) => stilo.tree.lockedReason(node ?? stilo.tree.target) ?? true;
+
+/** `true`, or why a copy of a tree item cannot be made next to it. */
+const besideWritable = (stilo, { node } = {}) => {
+    const item = node ?? stilo.tree.target;
+    return item ? folderWritable(stilo, { node: { type: "folder", path: parentFolder(item.path) } }) : true;
+};
+
 /** A command of the editor (`editorCommands`), by its name there, which is
- * also its id; a key of a cell's own text editor is listed without `run`. */
-function editorCommand({ name, label, keys, group, cell }) {
-    return { id: name, label, keys, when: "editor", group, ...(cell ? {} : { run: (stilo) => stilo.editor.runCommand(name) }) };
+ * also its id; a key of a cell's own text editor is listed without `run`.
+ * One that changes the document does not apply to a read-only one. */
+function editorCommand({ name, label, keys, group, cell, changes }) {
+    return {
+        id: name,
+        label,
+        keys,
+        when: "editor",
+        group,
+        ...(cell ? {} : { run: (stilo) => stilo.editor.runCommand(name) }),
+        ...(changes ? { enabled: documentWritable } : {}),
+    };
 }
 
 /** Show the document's text, as it would be saved, instead of the editor;
@@ -29,7 +57,7 @@ function toggleSource({ ui, editor }) {
 
 /** A command on an item of the navigation pane (`files.js`). Without a
  * node, from the commands pane, it acts on `tree.target`. */
-function treeCommand(id, label, keys, run) {
+function treeCommand(id, label, keys, run, enabled) {
     return {
         id,
         label,
@@ -37,6 +65,7 @@ function treeCommand(id, label, keys, run) {
         when: "tree",
         group: "Navigation pane",
         run: (stilo, { node } = {}) => run(stilo, node ?? stilo.tree.target),
+        ...(enabled ? { enabled } : {}),
     };
 }
 
@@ -50,13 +79,14 @@ function paneCommand(id, label, run) {
  * bound where `when` says, `global` by default).
  */
 export const definitions = [
-    { id: "save", label: "Save", keys: "Mod+S", group: "File", run: (stilo) => stilo.document.save() },
+    { id: "save", label: "Save", keys: "Mod+S", group: "File", run: (stilo) => stilo.document.save(), enabled: documentWritable },
     {
         id: "new-document",
         label: "New document…",
         keys: "Alt+N",
         group: "File",
         run: (stilo, { node } = {}) => files.newDocument(stilo, node),
+        enabled: folderWritable,
     },
     { id: "reload", label: "Reload document", group: "File", run: (stilo) => stilo.document.reload() },
 
@@ -65,19 +95,21 @@ export const definitions = [
         label: "New folder…",
         group: "Navigation pane",
         run: (stilo, { node } = {}) => files.newFolder(stilo, node),
+        enabled: folderWritable,
     },
     {
         id: "tree-upload",
         label: "Upload files…",
         group: "Navigation pane",
         run: (stilo, { node } = {}) => files.upload(stilo, node),
+        enabled: folderWritable,
     },
-    treeCommand("tree-rename", "Rename", "F2", files.rename),
-    treeCommand("tree-duplicate", "Duplicate", "", files.duplicate),
-    treeCommand("tree-move", "Move to…", "", files.moveTo),
+    treeCommand("tree-rename", "Rename", "F2", files.rename, itemUnlocked),
+    treeCommand("tree-duplicate", "Duplicate", "", files.duplicate, besideWritable),
+    treeCommand("tree-move", "Move to…", "", files.moveTo, itemUnlocked),
     treeCommand("tree-copy-link", "Copy link", "", files.copyLink),
     treeCommand("tree-open-root", "Open as root", "", files.openAsRoot),
-    treeCommand("tree-delete", "Delete", "Delete", files.deleteItem),
+    treeCommand("tree-delete", "Delete", "Delete", files.deleteItem, itemUnlocked),
     paneCommand("tree-refresh", "Refresh", (stilo) => stilo.tree.refresh()),
     {
         ...paneCommand("tree-show-other", "Show other files", (stilo) => stilo.tree.toggleShowOther()),

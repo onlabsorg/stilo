@@ -18,6 +18,14 @@ change the interfaces.
   group. Extensions can also send every request to the server through
   their own code (`stilo.transport.use`), Texl imports included.
   Nothing changes for users without extensions.
+- **Read-only files and folders, markers in the navigation pane**
+  (extensions): an extension can mark files and folders as read-only,
+  put badges and hover text on items of the navigation pane, and hide
+  items. A read-only document opens read-only ("Read-only" in the top
+  bar, with the reason) and cannot be saved, renamed, moved or deleted;
+  nothing can be added to a read-only folder. Commands that do not apply
+  are greyed out in menus and in the commands pane, with the reason.
+  Nothing changes for users without extensions.
 - **Editor component** (for developers): `<texl-editor>` gains a
   read-only mode (`readonly`), a `loader` for the documents it imports,
   and `editorCommands()`, the list of its commands with their labels and

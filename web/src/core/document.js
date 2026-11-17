@@ -39,6 +39,14 @@ export class Document extends Service {
         return this._dirty;
     }
 
+    /** Why the open document cannot be changed (the `tree` service's
+     * read-only providers), or `null` if it can, or if none is open. The
+     * editor shows it in read-only mode; it cannot be saved. It follows the
+     * providers: views showing it watch `tree` too. */
+    get readOnly() {
+        return this._path ? (this._stilo.tree?.readOnlyReason(this._path) ?? null) : null;
+    }
+
     /** Whether it has changes not saved yet, a cell being edited included. */
     get unsaved() {
         return this._dirty || this._stilo.editor.editing;
@@ -84,6 +92,11 @@ export class Document extends Service {
         const { editor, ui, transport } = this._stilo;
         const path = this._path;
         if (!path || !editor.element) return;
+        const readOnly = this.readOnly;
+        if (readOnly !== null) {
+            ui.notify(`Not saved: read-only (${readOnly})`);
+            return;
+        }
         if (editor.editing && !(await editor.element.runCommand("commit"))) {
             ui.setSource(null);
             ui.notify("Not saved: correct the cell being edited");

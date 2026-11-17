@@ -275,6 +275,7 @@ export class StiloApp extends LitElement {
                     ?hidden=${this._ui.source !== null}
                     url=${this._transport.documentUrl(this._doc)}
                     .loader=${this._transport.loader}
+                    ?readonly=${this.stilo.document.readOnly !== null}
                 ></texl-editor>`,
             )}
             ${this._ui.source !== null

@@ -403,6 +403,14 @@ accept are not part of Stilo.
   now lists its own commands with their names and keys, which Stilo's
   commands pane shows. The only visible change: in the commands pane the
   "Make it …" commands now follow the order of the cell type menu.
+- 2026-11-17: **extensions, fourth part**: an extension can mark files and
+  folders as read-only, put small badges and hover text on items of the
+  navigation pane, and hide items there. A read-only document opens
+  read-only, with "Read-only" and the reason in the top bar, and cannot be
+  saved, renamed, moved or deleted; nothing can be added to a read-only
+  folder. Commands that do not apply at the moment are greyed out in
+  menus and in the commands pane, with the reason. Nothing changes for
+  users without extensions.
 
 ## Known limitations
 

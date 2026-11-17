@@ -10,7 +10,8 @@ const EXTENSIONS = Symbol("extensions");
 
 /**
  * Right pane: every command of the `commands` service, by group, with its
- * shortcut from the `keys` service. A click runs it.
+ * shortcut from the `keys` service. A click runs it. A command that does
+ * not apply now (`enabled`) is greyed out, with the reason as hover text.
  *
  * Groups fold and unfold on a click on their heading.
  *
@@ -90,6 +91,13 @@ export class CommandsPane extends LitElement {
             button.command:hover {
                 background: var(--hover);
             }
+            button.command[aria-disabled="true"] {
+                color: var(--text-faint);
+                cursor: default;
+            }
+            button.command[aria-disabled="true"]:hover {
+                background: none;
+            }
             div.command {
                 color: var(--text-muted);
             }
@@ -114,7 +122,7 @@ export class CommandsPane extends LitElement {
     constructor() {
         super();
         this._collapsed = new Set();
-        this._stilo = new StiloController(this, (stilo) => [stilo.commands, stilo.keys, stilo.extensions]);
+        this._stilo = new StiloController(this, (stilo) => [stilo.commands, stilo.keys, stilo.extensions, stilo.document, stilo.tree]);
     }
 
     _toggle(group) {
@@ -137,6 +145,9 @@ export class CommandsPane extends LitElement {
         const { commands, keys } = this._stilo.stilo;
         const shortcut = keys.keysFor(command.id);
         const content = html`<span class="label">${command.label}</span>${shortcut ? html`<kbd>${formatKeys(shortcut)}</kbd>` : ""}`;
+        const disabled = command.run ? commands.disabledReason(command.id) : null;
+        if (disabled !== null)
+            return html`<button class="command" aria-disabled="true" title=${disabled || "Does not apply now"}>${content}</button>`;
         return command.run
             ? html`<button class="command" @click=${() => commands.run(command.id)}>${content}</button>`
             : html`<div class="command" title="Use the keyboard shortcut">${content}</div>`;

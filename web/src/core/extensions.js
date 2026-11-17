@@ -29,6 +29,7 @@ const REGISTRATIONS = {
     topBar: { register: "id", replace: null },
     status: { register: "id", replace: null },
     transport: { use: null },
+    tree: { decorate: null, filter: null, readOnly: null },
 };
 
 /**

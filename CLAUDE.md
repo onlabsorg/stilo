@@ -275,7 +275,9 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
 - `web/src/core/` — the core services (S17): `createStilo()`
   (`index.js`, the `stilo` object), `Service` (`service.js`: an
   `EventTarget` firing `change`), `StiloController` and `<stilo-provider>`
-  (`context.js`: the `stilo` object by Lit context); `commands.js`,
+  (`context.js`: the `stilo` object by Lit context); `commands.js`
+  (`enabled`, `disabledReason`: a command that does not apply is greyed
+  out with the reason, and does not run),
   `keys.js` (shortcuts bound to commands, `when` = `global`, `tree` or
   `editor`; `formatKeys`, `isMac`), `menus.js`, `ui.js` (status, navigation
   pane, open panel, source view, `confirm`), `registry.js` (`Registry`:
@@ -289,7 +291,9 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
   open document: load, save, reload, dirty), `router.js` (the address:
   navigation root, `go`, `replace`, back and forward), `tree.js` (the
   navigation pane's tree, current item, other files, `askName` through
-  the pane, the Move to… dialog; `checkName`), `extensions.js` (the
+  the pane, the Move to… dialog; `checkName`; providers: `decorate`,
+  `filter`, `readOnly`, read by `decoration`, `shows`, `readOnlyReason`,
+  `lockedReason`), `extensions.js` (the
   `extensions` service, `API_VERSION`, the scoped `stilo` an extension
   gets). `<stilo-app>` creates and
   provides it. A new command, key or menu entry is registered there.

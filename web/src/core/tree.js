@@ -17,6 +17,25 @@ export function findNode(node, path) {
     return null;
 }
 
+/**
+ * @typedef {object} Decoration
+ * @property {string} [badge] - A short text after the item's name.
+ * @property {string} [tooltip] - A line of its hover text.
+ * @property {"accent" | "warning" | "danger"} [tone] - The badge's colour.
+ * @property {boolean} [muted] - Show the item muted.
+ */
+
+/** Call a provider; one that throws counts as saying nothing, and is
+ * reported in the console. */
+function call(provider, arg) {
+    try {
+        return provider(arg);
+    } catch (error) {
+        console.error("Stilo: a tree provider failed", error);
+        return null;
+    }
+}
+
 export const parentFolder = (path) => (path.includes("/") ? path.slice(0, path.lastIndexOf("/")) : "");
 export const baseName = (path) => path.slice(path.lastIndexOf("/") + 1);
 
@@ -63,6 +82,10 @@ export class Tree extends Service {
         this._view = null;
         this._root = undefined;
         this._showOther = true;
+        /** The providers of extensions: decorations, filters, read-only items. */
+        this._decorators = [];
+        this._filters = [];
+        this._readOnly = [];
         try {
             this._showOther = localStorage.getItem(SHOW_OTHER_KEY) !== "false";
         } catch {}
@@ -131,6 +154,101 @@ export class Tree extends Service {
         this.changed();
     }
 
+    // -- providers -----------------------------------------------------------
+
+    /** Add a provider to a list; returns the function that removes it. */
+    _addProvider(list, provider) {
+        const entry = { provider };
+        list.push(entry);
+        this.changed();
+        return () => {
+            const i = list.indexOf(entry);
+            if (i < 0) return;
+            list.splice(i, 1);
+            this.changed();
+        };
+    }
+
+    /**
+     * Add a decoration provider: `provider(node)` returns how to show a tree
+     * node, or nothing: `{badge?, tooltip?, tone?, muted?}`, `badge` a short
+     * text after its name, `tooltip` a line of its hover text, `tone` the
+     * badge's colour (`"accent"`, `"warning"`, `"danger"`), `muted` to show it
+     * muted. Returns the function that removes it. Call `invalidate()` when
+     * what it returns changes.
+     * @param {(node: object) => Decoration | null | undefined} provider
+     * @returns {() => void}
+     */
+    decorate(provider) {
+        return this._addProvider(this._decorators, provider);
+    }
+
+    /**
+     * Add a filter: `provider(node)` returns `false` to leave a node, and what
+     * is inside it, out of the navigation pane. Returns the function that
+     * removes it.
+     * @param {(node: object) => boolean} provider
+     * @returns {() => void}
+     */
+    filter(provider) {
+        return this._addProvider(this._filters, provider);
+    }
+
+    /**
+     * Add a read-only provider: `provider(path)` returns why the file or
+     * folder at `path` cannot be changed (a text, or `true`), or nothing if
+     * it can. A read-only document opens in the editor's read-only mode;
+     * saving, renaming, moving and deleting it are disabled, and so is
+     * adding items to a read-only folder. Returns the function that removes it.
+     * @param {(path: string) => string | boolean | null | undefined} provider
+     * @returns {() => void}
+     */
+    readOnly(provider) {
+        return this._addProvider(this._readOnly, provider);
+    }
+
+    /** Ask the providers again: what they return has changed. */
+    invalidate() {
+        this.changed();
+    }
+
+    /** How to show a node, from every decoration provider: `{badges, tooltip,
+     * muted}`, `badges` being `[{text, tone}]`; `null` if none says anything. */
+    decoration(node) {
+        const found = this._decorators.map(({ provider }) => call(provider, node)).filter(Boolean);
+        if (!found.length) return null;
+        return {
+            badges: found.filter((d) => d.badge).map((d) => ({ text: String(d.badge), tone: d.tone })),
+            tooltip: found.map((d) => d.tooltip).filter(Boolean).join("\n"),
+            muted: found.some((d) => d.muted),
+        };
+    }
+
+    /** Whether a node shows in the navigation pane (the filters). */
+    shows(node) {
+        return this._filters.every(({ provider }) => call(provider, node) !== false);
+    }
+
+    /** Why the item at `path` cannot be changed, or `null` if it can. */
+    readOnlyReason(path) {
+        for (const { provider } of this._readOnly) {
+            const reason = call(provider, path);
+            if (reason) return typeof reason === "string" ? reason : "Read-only";
+        }
+        return null;
+    }
+
+    /** Why a node cannot be renamed, moved or deleted: it, or for a folder
+     * an item inside it, is read-only; `null` if it can. */
+    lockedReason(node) {
+        if (!node) return null;
+        const own = this.readOnlyReason(node.path);
+        if (own !== null) return own;
+        if (node.type !== "folder" || !this._readOnly.length) return null;
+        const inside = (folder) => (folder.children ?? []).some((child) => this.readOnlyReason(child.path) !== null || inside(child));
+        return inside(findNode(this._tree, node.path) ?? node) ? "It holds read-only items" : null;
+    }
+
     /** Make the item at `path` the current one, if it is in the tree. */
     setCurrent(path) {
         const node = path ? findNode(this._tree, path) : null;
@@ -195,9 +313,12 @@ export class Tree extends Service {
         this.changed();
     }
 
-    /** A folder was chosen in the dialog. */
+    /** A folder was chosen in the dialog; a read-only one is refused. */
     chooseMove(folder) {
-        return this._moving?.choose(folder);
+        if (!this._moving) return;
+        const reason = this.readOnlyReason(folder);
+        if (reason !== null) return this.failMove(`That folder is read-only: ${reason}`);
+        return this._moving.choose(folder);
     }
 
     /** Show why the move failed, in the dialog. */

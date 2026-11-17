@@ -1,6 +1,6 @@
 import { LitElement, html, css } from "lit";
 import { base } from "./shared.js";
-import { folderIcon, fileIcon, otherFileIcon, chevronIcon, upIcon, moreIcon, newFileIcon, newFolderIcon } from "../icons.js";
+import { folderIcon, fileIcon, otherFileIcon, chevronIcon, upIcon, moreIcon, newFileIcon, newFolderIcon, lockIcon } from "../icons.js";
 import { isDocument } from "../api.js";
 import { StiloController } from "../core/context.js";
 
@@ -98,8 +98,38 @@ export class NavPane extends LitElement {
                 text-decoration: none;
             }
             .item.other,
-            .item.other .icon {
+            .item.other .icon,
+            .item.muted,
+            .item.muted .icon {
                 color: var(--text-faint);
+            }
+            .item .lock {
+                display: inline-flex;
+                flex: none;
+            }
+            .item .lock .icon {
+                width: 13px;
+                height: 13px;
+                color: var(--text-faint);
+            }
+            .badge {
+                flex: none;
+                padding: 0 0.3rem;
+                border-radius: 4px;
+                background: var(--surface-2);
+                color: var(--text-muted);
+                font-size: 11px;
+                font-weight: 600;
+                line-height: 1.4;
+            }
+            .badge.accent {
+                color: var(--accent);
+            }
+            .badge.warning {
+                color: var(--warning);
+            }
+            .badge.danger {
+                color: var(--danger);
             }
             .item[aria-current="true"] {
                 background: var(--active);
@@ -248,7 +278,8 @@ export class NavPane extends LitElement {
                 if (id === "-") return id;
                 const command = stilo.commands.get(id);
                 if (!command) return null;
-                return { id, label: command.label, keys: stilo.keys.keysFor(id), checked: command.checked?.(stilo) };
+                const disabled = stilo.commands.disabledReason(id, { node });
+                return { id, label: command.label, keys: stilo.keys.keysFor(id), checked: command.checked?.(stilo), disabled };
             })
             .filter(Boolean);
         this._menu = { items, node, origin, x: point?.x ?? box.left, y: point?.y ?? box.bottom };
@@ -401,6 +432,7 @@ export class NavPane extends LitElement {
     /** Whether to show a tree node: another file, or a folder of them, may be
      * left out, unless a name is being asked for inside it. */
     _visible(node) {
+        if (!this._services.tree.shows(node)) return false;
         if (this._services.tree.showOther || !isOther(node)) return true;
         const folder = this._naming?.folder;
         return folder !== undefined && (folder === node.path || folder.startsWith(`${node.path}/`));
@@ -429,7 +461,22 @@ export class NavPane extends LitElement {
         </button>`;
     }
 
+    /** What the providers of the `tree` service add to a node's item: its
+     * hover text, whether it is muted, and the marks after its name (a lock
+     * if it is read-only, the decorations' badges). */
+    _marks(node) {
+        const { tree } = this._services;
+        const decoration = tree.decoration(node);
+        const reason = tree.readOnlyReason(node.path);
+        const title = [node.path, reason !== null ? `Read-only: ${reason}` : "", decoration?.tooltip ?? ""].filter(Boolean).join("\n");
+        const marks = html`${reason !== null ? html`<span class="lock" aria-label="read-only">${lockIcon}</span>` : ""}${(decoration?.badges ?? []).map(
+            (badge) => html`<span class="badge ${badge.tone ?? ""}">${badge.text}</span>`,
+        )}`;
+        return { title, muted: !!decoration?.muted, marks };
+    }
+
     _renderNode(node, depth) {
+        const { title, muted, marks } = this._marks(node);
         if (node.type === "file" && !isDocument(node.path)) {
             // A link, so that the browser's own ways to open it work too
             return html`<li>
@@ -439,36 +486,36 @@ export class NavPane extends LitElement {
                     href=${this._services.transport.documentUrl(node.path)}
                     target="_blank"
                     rel="noopener"
-                    title=${node.path}
+                    title=${title}
                 >
-                    <span class="spacer-chevron"></span>${otherFileIcon}<span class="name">${node.name}</span>
+                    <span class="spacer-chevron"></span>${otherFileIcon}<span class="name">${node.name}</span>${marks}
                 </a>`)}
             </li>`;
         }
         if (node.type === "file") {
             return html`<li>
                 ${this._renderRow("file", node, depth, html`<button
-                    class="item"
+                    class="item ${muted ? "muted" : ""}"
                     style="--depth: ${depth}"
                     aria-current=${node.path === this._services.document.path}
-                    title=${node.path}
+                    title=${title}
                     @click=${() => this._go({ root: this._services.router.root, doc: node.path })}
                 >
-                    <span class="spacer-chevron"></span>${fileIcon}<span class="name">${node.name.replace(/\.texl$/, "")}</span>
+                    <span class="spacer-chevron"></span>${fileIcon}<span class="name">${node.name.replace(/\.texl$/, "")}</span>${marks}
                 </button>`)}
             </li>`;
         }
         const open = !this._collapsed.has(node.path);
         return html`<li>
             ${this._renderRow("folder", node, depth, html`<button
-                class="item ${isOther(node) ? "other" : ""}"
+                class="item ${isOther(node) ? "other" : ""} ${muted ? "muted" : ""}"
                 style="--depth: ${depth}"
                 aria-expanded=${open}
-                title=${node.path}
+                title=${title}
                 @click=${() => this._toggle(node.path)}
                 @dblclick=${() => this._go({ root: node.path, doc: this._services.document.path })}
             >
-                <span class="chevron ${open ? "open" : ""}">${chevronIcon}</span>${folderIcon}<span class="name">${node.name}</span>
+                <span class="chevron ${open ? "open" : ""}">${chevronIcon}</span>${folderIcon}<span class="name">${node.name}</span>${marks}
             </button>`)}
             ${open && node.children ? this._renderChildren(node, depth + 1) : ""}
         </li>`;
