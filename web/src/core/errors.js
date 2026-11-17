@@ -6,7 +6,7 @@ import { Service } from "./service.js";
  * The editor finds the errors on every rendering (`DocumentError`s, see
  * docs/component/api.md); this service holds the latest list, and which
  * error to point out. Going to an error's place is done by whoever handles
- * the `go-to` event (the app).
+ * the `go-to` event (Stilo's own: `builtins/go-to.js`).
  */
 export class Errors extends Service {
     constructor(stilo) {
@@ -14,6 +14,8 @@ export class Errors extends Service {
         this._stilo = stilo;
         this._list = [];
         this._current = null;
+        stilo.editor.on("errors-change", ({ errors }) => this.set(errors));
+        stilo.editor.on("error-click", ({ error }) => this.show(error?.key ?? null));
     }
 
     /** The errors, as the editor gives them. */

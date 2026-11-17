@@ -11,12 +11,22 @@
 // reach the app through `stilo._app`.
 
 import { isMac } from "../core/keys.js";
+import { toggleTheme } from "../theme.js";
 
 const app = (stilo) => stilo._app;
 
 /** A command of the editor, by its name there, which is also its id. */
 function editorCommand(id, label, keys, group = "Document") {
-    return { id, label, keys, when: "editor", group, run: (stilo) => app(stilo).runEditorCommand(id) };
+    return { id, label, keys, when: "editor", group, run: (stilo) => stilo.editor.runCommand(id) };
+}
+
+/** Show the document's text, as it would be saved, instead of the editor;
+ * read-only. Again: back to the editor. */
+function toggleSource({ ui, editor }) {
+    if (!editor.element) return;
+    if (ui.source === null) return ui.setSource(editor.value);
+    ui.setSource(null);
+    editor.settled().then((element) => element?.focus());
 }
 
 /** A command on an item of the navigation pane. Without a node, from the
@@ -42,7 +52,7 @@ function paneCommand(id, label, run) {
  * bound where `when` says, `global` by default).
  */
 export const definitions = [
-    { id: "save", label: "Save", keys: "Mod+S", group: "File", run: (stilo) => app(stilo).save() },
+    { id: "save", label: "Save", keys: "Mod+S", group: "File", run: (stilo) => stilo.document.save() },
     {
         id: "new-document",
         label: "New document…",
@@ -50,7 +60,7 @@ export const definitions = [
         group: "File",
         run: (stilo, { node } = {}) => app(stilo).newDocument(node),
     },
-    { id: "reload", label: "Reload document", group: "File", run: (stilo) => app(stilo).reload() },
+    { id: "reload", label: "Reload document", group: "File", run: (stilo) => stilo.document.reload() },
 
     {
         id: "tree-new-folder",
@@ -79,8 +89,8 @@ export const definitions = [
     { id: "toggle-nav", label: "Toggle navigation pane", keys: "Mod+B", group: "View", run: (stilo) => stilo.ui.toggleNav() },
     { id: "show-commands", label: "Show commands", keys: "F1", group: "View", run: (stilo) => stilo.ui.togglePane("commands") },
     { id: "show-comments", label: "Show comments", keys: "Alt+C", group: "View", run: (stilo) => stilo.ui.togglePane("comments") },
-    { id: "show-source", label: "Show source", keys: "Alt+U", group: "View", run: (stilo) => app(stilo).toggleSource() },
-    { id: "toggle-theme", label: "Switch light / dark theme", keys: "Alt+T", group: "View", run: (stilo) => app(stilo).toggleTheme() },
+    { id: "show-source", label: "Show source", keys: "Alt+U", group: "View", run: toggleSource },
+    { id: "toggle-theme", label: "Switch light / dark theme", keys: "Alt+T", group: "View", run: () => toggleTheme() },
 
     editorCommand("edit", "Edit the selected cell", "Enter"),
     editorCommand("insert-below", "Insert a cell below", "Alt+Enter"),

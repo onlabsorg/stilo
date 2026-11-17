@@ -5,8 +5,9 @@ import { parseDocument, cellComments } from "../editor/index.js";
 
 /**
  * The comments are read from the document's text: `<!--[ ... ]-->` in each
- * cell. The service holds them by line, and which line is pointed out. Going
- * to a line is done by whoever handles the `go-to` event (the app).
+ * cell, when the document opens and on every edit. The service holds them by
+ * line, and which line is pointed out. Going to a line is done by whoever
+ * handles the `go-to` event (Stilo's own: `builtins/go-to.js`).
  */
 export class Comments extends Service {
     constructor(stilo) {
@@ -14,6 +15,9 @@ export class Comments extends Service {
         this._stilo = stilo;
         this._list = [];
         this._line = null;
+        stilo.document.on("open", ({ text }) => this.read(text));
+        stilo.editor.on("edit", () => this.read(stilo.editor.value));
+        stilo.editor.on("comments-click", ({ line }) => this.show(line));
     }
 
     /** `[{line, comments}]`: every line of the document (from 1), with the

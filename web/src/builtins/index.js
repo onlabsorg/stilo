@@ -3,6 +3,7 @@
 
 import { activate as commands } from "./commands.js";
 import { activate as panels } from "./panels.js";
+import { activate as goTo } from "./go-to.js";
 
 const activated = new WeakSet();
 
@@ -12,4 +13,5 @@ export function activateBuiltins(stilo) {
     activated.add(stilo);
     commands(stilo);
     panels(stilo);
+    goTo(stilo);
 }

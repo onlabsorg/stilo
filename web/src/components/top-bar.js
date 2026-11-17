@@ -4,14 +4,12 @@ import { menuIcon } from "../icons.js";
 import { StiloController } from "../core/context.js";
 
 /**
- * The title/tool bar: navigation toggle on the left, title and status (`ui`)
- * in the middle, one button per panel of the right pane (`panels`), with its
- * badge, on the right.
+ * The title/tool bar: navigation toggle on the left; in the middle the open
+ * document's name, with • while it has unsaved changes (`document`), or else
+ * the navigation root (`router`), and the status (`ui`); on the right one
+ * button per panel of the right pane (`panels`), with its badge.
  */
 export class TopBar extends LitElement {
-    static properties = {
-        heading: { type: String },
-    };
 
     static styles = [
         base,
@@ -71,8 +69,15 @@ export class TopBar extends LitElement {
 
     constructor() {
         super();
-        this.heading = "";
-        this._stilo = new StiloController(this, (stilo) => [stilo.ui, stilo.panels]);
+        this._stilo = new StiloController(this, (stilo) => [stilo.ui, stilo.panels, stilo.document, stilo.router]);
+    }
+
+    /** The open document's name, or else the navigation root. */
+    _heading({ document, router }) {
+        const path = document.path;
+        if (!path) return router.root ? `/${router.root}` : "Documents";
+        const name = path.slice(path.lastIndexOf("/") + 1).replace(/\.texl$/, "");
+        return `${name}${document.dirty ? " •" : ""}`;
     }
 
     /** The button of a panel, with its badge if it has one. */
@@ -109,7 +114,7 @@ export class TopBar extends LitElement {
                 <span class="brand">Stilo</span>
             </div>
             <div class="title">
-                <span>${this.heading}</span>
+                <span>${this._heading(stilo)}</span>
                 ${ui.status ? html`<span class="status">${ui.status}</span>` : ""}
             </div>
             <div class="right">${panels.list().map((panel) => this._panelButton(panel))}</div>

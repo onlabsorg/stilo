@@ -5,9 +5,8 @@ import { closeIcon, fileIcon, folderIcon, otherFileIcon } from "../icons.js";
 import { ContextProvider } from "@lit/context";
 import { isDocument } from "../api.js";
 import { createStilo, stiloContext } from "../core/index.js";
-import { readRoute, routeUrl, relativeLink } from "../route.js";
+import { relativeLink } from "../route.js";
 import { activateBuiltins } from "../builtins/index.js";
-import { toggleTheme } from "../theme.js";
 import "./top-bar.js";
 import "./nav-pane.js";
 import "./move-dialog.js";
@@ -48,21 +47,17 @@ async function copyText(text) {
 }
 
 /**
- * The app shell: top bar, navigation pane, editor, right pane. Holds the
- * state (navigation root and tree, open document, dirty flag) and runs the
- * commands.
+ * The app shell: top bar, navigation pane, editor, right pane. Creates and
+ * provides the services (`stilo`), lays out the window, and holds the
+ * navigation pane's state (the tree) and its commands.
  */
 export class StiloApp extends LitElement {
     static properties = {
         stilo: { attribute: false },
-        _root: { state: true },
         _tree: { state: true },
         _treeError: { state: true },
         _showOther: { state: true },
         _moving: { state: true },
-        _doc: { state: true },
-        _docError: { state: true },
-        _dirty: { state: true },
     };
 
     static styles = [
@@ -192,13 +187,10 @@ export class StiloApp extends LitElement {
         try {
             this._showOther = localStorage.getItem(SHOW_OTHER_KEY) !== "false";
         } catch {}
-        this._docError = "";
-        this._dirty = false;
-        this._etag = null;
+        this._treeRoot = null;
         this._onKeyDown = this._onKeyDown.bind(this);
-        this._onPopState = () => this._applyRoute(readRoute());
         this._onBeforeUnload = (e) => {
-            if (this._dirty) e.preventDefault();
+            if (this.stilo.document.dirty) e.preventDefault();
         };
     }
 
@@ -216,11 +208,20 @@ export class StiloApp extends LitElement {
         this.stilo._app = this;
         activateBuiltins(this.stilo);
         this._unwatch?.();
-        const stops = [this.stilo.ui, this.stilo.panels].map((service) => service.on("change", () => this.requestUpdate()));
-        // Going to a place needs the open document, still the app's
-        stops.push(this.stilo.errors.on("go-to", (place) => this._onErrorGoTo(place)));
-        stops.push(this.stilo.comments.on("go-to", ({ line }) => this._goToLine(line)));
+        const { ui, panels, document, router } = this.stilo;
+        const stops = [ui, panels, document].map((service) => service.on("change", () => this.requestUpdate()));
+        stops.push(router.on("change", () => this._onRouteChange()));
         this._unwatch = () => stops.forEach((stop) => stop());
+    }
+
+    /** The open document's path, or `null`. */
+    get _doc() {
+        return this.stilo.document.path;
+    }
+
+    /** The navigation root. */
+    get _root() {
+        return this.stilo.router.root;
     }
 
     get _transport() {
@@ -234,37 +235,37 @@ export class StiloApp extends LitElement {
     connectedCallback() {
         super.connectedCallback();
         window.addEventListener("keydown", this._onKeyDown);
-        window.addEventListener("popstate", this._onPopState);
         window.addEventListener("beforeunload", this._onBeforeUnload);
-        this._applyRoute(readRoute());
+        this.stilo.router.start();
     }
 
     disconnectedCallback() {
         window.removeEventListener("keydown", this._onKeyDown);
-        window.removeEventListener("popstate", this._onPopState);
         window.removeEventListener("beforeunload", this._onBeforeUnload);
+        this.stilo.router.stop();
         super.disconnectedCallback();
     }
 
-    get _editor() {
-        return this.renderRoot.querySelector("texl-editor");
+    /** After every rendering: attach the editor made for the open document. */
+    updated() {
+        const editor = this.renderRoot.querySelector("texl-editor");
+        if (editor !== this.stilo.editor.element) this.stilo.editor.attach(editor, () => this.updateComplete);
     }
 
-    // -- routing -------------------------------------------------------------
+    // -- the tree ------------------------------------------------------------
 
-    async _applyRoute({ root, doc }) {
-        if (root !== this._root) {
-            this._root = root;
-            this._tree = null;
-            this._loadTree();
-        }
-        if (doc !== this._doc) await this._loadDocument(doc);
+    /** A new navigation root: read its tree. */
+    _onRouteChange() {
+        this.requestUpdate();
+        if (this._root === this._treeRoot) return;
+        this._treeRoot = this._root;
+        this._tree = null;
+        this._loadTree();
     }
 
-    async _go(route) {
-        if (this._dirty && route.doc !== this._doc && !(await this._ui.confirm("Discard unsaved changes?"))) return;
-        history.pushState(null, "", routeUrl(route));
-        return this._applyRoute(route);
+    /** Show a route, with a new history entry. */
+    _go(route) {
+        return this.stilo.router.go(route);
     }
 
     /** Read the tree of the root again. The old tree stays until the new one
@@ -279,29 +280,6 @@ export class StiloApp extends LitElement {
         } catch (error) {
             if (root !== this._root) return;
             this._treeError = error.status === 404 ? `Folder /${root} not found.` : error.message;
-        }
-    }
-
-    async _loadDocument(path) {
-        this._doc = path;
-        this._docError = "";
-        this._dirty = false;
-        this._ui.notify("");
-        this.stilo.comments.clear();
-        this.stilo.errors.clear();
-        this._ui.setSource(null);
-        if (!path) return;
-        try {
-            const { text, etag } = await this._transport.readFile(path);
-            if (path !== this._doc) return; // another document was opened meanwhile
-            this._etag = etag;
-            await this.updateComplete;
-            const editor = this._editor;
-            editor.value = text;
-            this._updateComments();
-            editor.focus();
-        } catch (error) {
-            this._docError = error.status === 404 ? `Document /${path} not found.` : error.message;
         }
     }
 
@@ -327,35 +305,6 @@ export class StiloApp extends LitElement {
 
     get _nav() {
         return this.renderRoot.querySelector("nav-pane");
-    }
-
-    /** Whether the open document has changes not saved yet, a cell being edited included. */
-    get _unsaved() {
-        return this._dirty || !!this._editor?.editing;
-    }
-
-    async save() {
-        if (!this._doc || !this._editor) return;
-        // The cell being edited goes in too; one that refuses its edit shows why
-        if (this._editor.editing && !(await this._editor.runCommand("commit"))) {
-            this._ui.setSource(null);
-            this._ui.notify("Not saved: correct the cell being edited");
-            return;
-        }
-        this._ui.notify("Saving…");
-        try {
-            this._etag = await this._transport.updateFile(this._doc, this._editor.value, this._etag);
-            this._dirty = false;
-            this._ui.notify("Saved");
-        } catch (error) {
-            this._ui.notify(error.status === 412 ? "Not saved: changed on the server, reload it" : `Not saved: ${error.message}`);
-        }
-    }
-
-    async reload() {
-        if (!this._doc) return;
-        if (this._dirty && !(await this._ui.confirm("Discard unsaved changes?"))) return;
-        await this._loadDocument(this._doc);
     }
 
     /** The folder a new item goes in: `node` if it is one, the folder of `node` if
@@ -571,7 +520,7 @@ export class StiloApp extends LitElement {
                 ? `Delete the folder ${name} and everything in it (${contents.join(", ")})? It goes to the .trash folder.`
                 : `Delete the empty folder ${name}?`;
         }
-        const lost = closes && this._unsaved ? " Unsaved changes will be lost." : "";
+        const lost = closes && this.stilo.document.unsaved ? " Unsaved changes will be lost." : "";
         if (!(await this._ui.confirm(question + lost))) return;
         try {
             await (isFile ? this._transport.deleteFile(node.path) : this._transport.deleteFolder(node.path));
@@ -580,10 +529,8 @@ export class StiloApp extends LitElement {
             return;
         }
         if (closes) {
-            this._dirty = false;
-            const route = { root: this._root, doc: null };
-            history.replaceState(null, "", routeUrl(route));
-            await this._applyRoute(route);
+            this.stilo.document.discard();
+            await this.stilo.router.replace({ root: this._root, doc: null });
         }
         await this._loadTree();
         this._ui.notify(`Deleted ${name}`);
@@ -592,10 +539,11 @@ export class StiloApp extends LitElement {
     /** Before an operation on an item that holds the open document: offer to save
      * its unsaved changes. Returns whether to go on. */
     async _saveFirst(node) {
-        if (!this._doc || !isIn(this._doc, node.path) || !this._unsaved) return true;
+        const { document } = this.stilo;
+        if (!this._doc || !isIn(this._doc, node.path) || !document.unsaved) return true;
         if (!(await this._ui.confirm("The open document has unsaved changes. Save them first?"))) return false;
-        await this.save();
-        return !this._unsaved;
+        await document.save();
+        return !document.unsaved;
     }
 
     /** After a move: follow the item with the open document and the root, whose
@@ -604,8 +552,7 @@ export class StiloApp extends LitElement {
         const follow = (path) => (isIn(path, from) ? to + path.slice(from.length) : path);
         const route = { root: follow(this._root), doc: follow(this._doc) };
         const sameRoot = route.root === this._root;
-        history.replaceState(null, "", routeUrl(route));
-        await this._applyRoute(route);
+        await this.stilo.router.replace(route);
         await this._showInTree(sameRoot ? to : null);
     }
 
@@ -649,35 +596,7 @@ export class StiloApp extends LitElement {
         this._ui.notify("Choose an item in the navigation pane first");
     }
 
-    toggleTheme() {
-        toggleTheme();
-    }
-
-    /** Show the document's text, as it would be saved, instead of the
-     * editor; read-only. Again: back to the editor. */
-    toggleSource() {
-        const editor = this._editor;
-        if (!editor) return;
-        this._ui.setSource(this._ui.source === null ? editor.value : null);
-        if (this._ui.source === null) this.updateComplete.then(() => editor.focus());
-    }
-
-    /** Run a command of the editor (`runCommand`), back in the editor view. */
-    runEditorCommand(name) {
-        const editor = this._editor;
-        if (!editor) return;
-        this._ui.setSource(null);
-        editor.focus();
-        editor.runCommand(name);
-    }
-
-    // -- editor events -------------------------------------------------------
-
-    _onEditorChange() {
-        this._dirty = true;
-        this._ui.notify("");
-        this._updateComments();
-    }
+    // -- the main area -------------------------------------------------------
 
     /** A click on a link to a document on this server opens it in the app;
      * a link to anything else on the web, another file or another site, opens
@@ -700,50 +619,11 @@ export class StiloApp extends LitElement {
         }
     }
 
-    /** Select a line of the open document, back in the editor view. */
-    async _goToLine(line) {
-        this._ui.setSource(null);
-        await this.updateComplete;
-        this._editor?.select(line);
-        this._editor?.focus();
-    }
-
-    _onCommentsClick(e) {
-        this.stilo.comments.show(e.detail.line);
-    }
-
-    _onErrorsChange(e) {
-        this.stilo.errors.set(e.detail.errors);
-    }
-
-    /** A highlighted value or a margin icon was clicked: show its error. */
-    _onErrorClick(e) {
-        this.stilo.errors.show(e.detail.error?.key ?? null);
-    }
-
-    /** A place in the errors pane was clicked: go there, in another document if needed. */
-    async _onErrorGoTo({ uri, line }) {
-        const path = uri ? this._transport.documentPath(new URL(uri)) : this._doc;
-        if (!path) return;
-        if (path !== this._doc) await this._go({ root: this._root, doc: path });
-        if (path !== this._doc) return; // the user kept the unsaved changes
-        await this._goToLine(line);
-    }
-
-    _updateComments() {
-        this.stilo.comments.read(this._editor?.value ?? "");
-    }
-
     // -- render --------------------------------------------------------------
 
-    _heading() {
-        if (!this._doc) return this._root ? `/${this._root}` : "Documents";
-        const name = this._doc.slice(this._doc.lastIndexOf("/") + 1).replace(/\.texl$/, "");
-        return `${name}${this._dirty ? " •" : ""}`;
-    }
-
     _renderMain() {
-        if (this._docError) return html`<div class="placeholder error">${this._docError}</div>`;
+        const { error } = this.stilo.document;
+        if (error) return html`<div class="placeholder error">${error}</div>`;
         if (!this._doc)
             return html`<div class="placeholder">
                 Open a document from the navigation pane, or create one with
@@ -759,10 +639,6 @@ export class StiloApp extends LitElement {
                 html`<texl-editor
                     ?hidden=${this._ui.source !== null}
                     url=${this._transport.documentUrl(this._doc)}
-                    @change=${this._onEditorChange}
-                    @comments-click=${this._onCommentsClick}
-                    @errors-change=${this._onErrorsChange}
-                    @error-click=${this._onErrorClick}
                 ></texl-editor>`,
             )}
             ${this._ui.source !== null
@@ -770,7 +646,7 @@ export class StiloApp extends LitElement {
                       <div class="pane-header">
                           Source (read-only)
                           <span class="spacer"></span>
-                          <button class="icon-button" title="Back to the editor" aria-label="Back to the editor" @click=${this.toggleSource}>
+                          <button class="icon-button" title="Back to the editor" aria-label="Back to the editor" @click=${() => this.stilo.commands.run("show-source")}>
                               ${closeIcon}
                           </button>
                       </div>
@@ -782,7 +658,7 @@ export class StiloApp extends LitElement {
     render() {
         const panel = this._ui.pane ? this.stilo.panels.get(this._ui.pane) : null;
         return html`
-            <top-bar .heading=${this._heading()}></top-bar>
+            <top-bar></top-bar>
             <nav-pane
                 ?hidden=${!this._ui.navOpen}
                 .tree=${this._tree}

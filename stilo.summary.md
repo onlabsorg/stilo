@@ -372,10 +372,12 @@ accept are not part of Stilo.
   (a one-time step); nothing is published yet.
 - 2026-11-17: **web app reorganised inside**, the first part of a larger
   rework: the commands, keyboard shortcuts, menus, the status message, the
-  open pane, the right pane's panels, and the document's errors and cell
-  comments are now kept in shared building blocks ("services") that the
-  top bar and the three panes on the right read, instead of in the app
-  shell. Nothing visible changes, except that a shortcut no
+  open pane, the right pane's panels, the document's errors and cell
+  comments, the open document itself (opening, saving, reloading, unsaved
+  changes) and the browser address are now kept in shared building blocks
+  ("services") that the top bar and the three panes on the right read,
+  instead of in the app shell, which keeps the layout and the navigation
+  pane for now. Nothing visible changes, except that a shortcut no
   longer runs when extra modifier keys are held (Alt+Shift+N used to act as
   Alt+N).
 

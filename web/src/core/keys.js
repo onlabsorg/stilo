@@ -53,7 +53,8 @@ export class Keys extends Service {
 
     /**
      * Bind a shortcut to a command. For the same keys and place, the last
-     * binding wins, with a warning; removing it brings back the one before.
+     * binding wins, with a warning (not for `editor`, whose bindings are only
+     * listed); removing it brings back the one before.
      * Returns the function that removes it.
      * @param {string} keys
      * @param {string} command
@@ -62,7 +63,9 @@ export class Keys extends Service {
      */
     bind(keys, command, { when = "global", show = true } = {}) {
         const binding = { keys, command, when, show };
-        const taken = this._bindings.findLast((b) => b.keys === keys && b.when === when);
+        // The editor's own keys are only listed: two of them may share keys
+        // (a cell selected, a cell being edited)
+        const taken = when !== "editor" && this._bindings.findLast((b) => b.keys === keys && b.when === when);
         if (taken) console.warn(`Stilo: ${keys} (${when}) now runs ${command} instead of ${taken.command}`);
         this._bindings.push(binding);
         this.changed();

@@ -9,7 +9,7 @@ its own page: [The editor](editor.md).*
 | Module                         | Role                                                 |
 |--------------------------------|------------------------------------------------------|
 | `src/main.js`                  | Entry point: loads the theme CSS, the editor and the app |
-| `src/components/stilo-app.js`  | `StiloApp`, `<stilo-app>`: the shell. Layout, state, routing, commands, editor events |
+| `src/components/stilo-app.js`  | `StiloApp`, `<stilo-app>`: the shell. Creates and provides the services, the layout, the navigation pane's state and commands, link clicks |
 | `src/components/top-bar.js`    | `<top-bar>`: the document's name, the status (`ui`), a button per panel (`panels`) |
 | `src/components/nav-pane.js`   | `<nav-pane>`: the tree of folders and files, its menus and keys |
 | `src/components/context-menu.js` | `<context-menu>`: a menu at a point of the window |
@@ -18,8 +18,8 @@ its own page: [The editor](editor.md).*
 | `src/components/comments-pane.js` | `<comments-pane>`: the comments of each line (`comments`) |
 | `src/components/errors-pane.js` | `<errors-pane>`: the errors of the document (`errors`) |
 | `src/components/shared.js`     | Shared styles (`base`) and icons for the components |
-| `src/core/`                    | The core services (S17), being built: `createStilo()`, `Service`, `StiloController`, `<stilo-provider>`; `commands`, `keys`, `menus`, `ui`, `panels`, `errors`, `comments` |
-| `src/builtins/`                | Stilo's own contributions, registered through the services: `commands.js` (commands, keys, menus), `panels.js` (the right pane's panels); `index.js` (`activateBuiltins`) |
+| `src/core/`                    | The core services (S17), being built: `createStilo()`, `Service`, `StiloController`, `<stilo-provider>`; `commands`, `keys`, `menus`, `ui`, `panels`, `errors`, `comments`, `editor`, `document`, `router` |
+| `src/builtins/`                | Stilo's own contributions, registered through the services: `commands.js` (commands, keys, menus), `panels.js` (the right pane's panels), `go-to.js` (going to a place the errors or comments pane points to); `index.js` (`activateBuiltins`) |
 | `src/api.js`                   | The protocol client, `Transport`: the only module that talks to the server |
 | `src/route.js`                 | Browser address ↔ `{root, doc}`                     |
 | `src/theme.js`, `src/theme.css` | Light and dark theme, design tokens               |
@@ -35,7 +35,10 @@ that work is done, most state is still in `StiloApp` (below).
   `commands`, `keys` and `menus` (see [Commands](#commands-keys-and-menus)),
   `ui` and `panels` (see [The window](#the-window-ui-and-panels)), `errors`
   (see [Errors](#errors-errors)), `comments` (see
-  [Comments](#comments-comments)).
+  [Comments](#comments-comments)), `editor`, `document` and `router` (see
+  [The document](#the-document-editor-document-and-router)). Some listen
+  to others (the errors to the editor, for instance), so `createStilo`
+  makes them in order.
 - Stilo's own contributions are in `src/builtins/`, as `activate(stilo)`
   functions that register them through the services, as an extension
   would; `<stilo-app>` runs them once on its `stilo` object
@@ -110,8 +113,8 @@ rendering, the editor's `DocumentError`s ([API](component/api.md)):
 | `goTo(place)`   | Fires `go-to` with `{line}` in the open document, or `{uri, line}` in another |
 
 `<errors-pane>` shows `list`, highlights and scrolls to `current`, and calls
-`goTo` on a click. The app handles `go-to` (it holds the open document, for
-now): it selects that line, opening the other document first if needed.
+`goTo` on a click. `builtins/go-to.js` handles `go-to`: it selects that
+line, opening the other document first if needed.
 
 ## Comments: `comments`
 
@@ -128,37 +131,69 @@ from its text (`<!--[ ... ]-->` in each cell):
 | `goTo(line)`    | Points out a line and fires `go-to` with `{line}`       |
 
 `<comments-pane>` shows the lines that have comments, highlights and
-scrolls to `line`, and calls `goTo` on a click. The app handles `go-to`:
-it selects the line, back in the editor view, and focuses the editor.
+scrolls to `line`, and calls `goTo` on a click. `builtins/go-to.js`
+handles `go-to`: it selects the line, back in the editor view, and
+focuses the editor.
+
+## The document: `editor`, `document` and `router`
+
+**`editor`** stands for the open document's `<texl-editor>`. A new one is
+made for every document (Lit's `keyed` in `<stilo-app>`), so value, undo
+history and selection start fresh; after every rendering the app
+attaches the current one (`attach(element, settle)`, where `settle()`
+waits until the app has rendered its latest state). The service passes on
+the editor's events as its own: `edit` (the editor's `change`),
+`comments-click`, `errors-change`, `error-click`, `selection-change`.
+
+| Member             | Is or does                                          |
+|--------------------|-----------------------------------------------------|
+| `element`, `value`, `editing` | The element (or `null`), its text, whether a cell is being edited |
+| `whenReady()`      | The editor once attached; `null` if another document comes first |
+| `settled()`        | The editor once the app shows the latest state       |
+| `reveal(line)`     | Back in the editor view, selects the line and focuses it |
+| `runCommand(name)` | Back in the editor view, runs an editor command (`docs/component/api.md`) |
+| `reset()`          | Lets go of the editor: a new document is coming      |
+
+**`document`** is the open document: `path`, `error` (why it could not be
+read), `dirty` (unsaved changes), `unsaved` (the same, or a cell being
+edited). An edit makes it dirty and clears the status.
+
+| Method       | Does                                                       |
+|--------------|------------------------------------------------------------|
+| `load(path)` | Resets the status, comments, errors and source view, reads the file, waits for the new editor and gives it the text; fires `open` (`{path, text}`). Used by the router |
+| `save()`     | Commits the cell being edited, then `updateFile` with the editor's value and the ETag of the last read or write; a cell that refuses its edit stops the save, a `412` shows "changed on the server, reload it". Fires `save` (`{path}`) |
+| `reload()`   | Reads the document again, after confirming if dirty         |
+| `discard()`  | Forgets the unsaved changes (the document is going away)    |
+
+**`router`** follows the browser's address ([Routing](#routing-routejs)):
+`root` is the navigation root. `go(route)` adds a history entry, after
+confirming if the document is dirty and another one would open;
+`replace(route)` changes the current entry without asking (after a move or
+a delete, when the old address is gone); `start()`, called by the app when
+it connects, applies the address and follows the back and forward buttons.
+A route whose document is not the open one opens it (`document.load`).
 
 ## The shell: `StiloApp`
 
-`<stilo-app>` lays out the window in a CSS grid (top bar; navigation,
-main area, right pane) and **holds all the state**. The other components
-receive what they show as properties and report what the user does with
-events; they keep no state of their own beyond what is visible (a folded
-group, a collapsed folder).
+`<stilo-app>` creates and provides the services, lays out the window in a
+CSS grid (top bar; navigation, main area, right pane), renders the editor
+of the open document (its `url` is the document's public address, so
+relative imports resolve from the document's folder) or the source view,
+and the open panel. It still holds the navigation pane's state and runs
+its commands, until they move into a `tree` service:
 
 | State                    | Meaning                                         |
 |--------------------------|-------------------------------------------------|
-| `_root`, `_tree`         | The navigation root (a folder path) and its tree |
+| `_tree`                  | The tree of the navigation root (`router.root`), read again when the root changes |
 | `_showOther`             | Whether the tree shows other files, and folders holding only other files (default on, remembered per browser) |
-| `_doc`, `_etag`, `_dirty` | The open document's path, its ETag from the last read or write, and whether it has unsaved changes |
 | `_moving`                | The item being moved, with the whole tree, while `<move-dialog>` is open |
-
-The editor is created anew for every document (Lit's `keyed`), so value,
-undo history and selection start fresh. Its `url` is the document's public
-address (`documentUrl`), so relative imports resolve from the document's
-folder.
 
 ### Methods
 
-The commands call these public methods:
+The navigation pane's commands call these public methods:
 
 | Method                 | Does                                                  |
 |------------------------|-------------------------------------------------------|
-| `save()`               | Commits the cell being edited, then `updateFile` with the editor's value and the ETag; a cell that refuses its edit stops the save, a `412` shows "changed on the server, reload it" |
-| `reload()`             | Reads the document again (after confirming, if dirty) |
 | `newDocument(node?)`   | Asks for a name in the tree, `createFile`, opens it. The folder is `node`, or the folder of the document `node`; without `node`, likewise from the item last used in the tree, else the navigation root |
 | `newFolder(node?)`     | Asks for a name in the tree, `createFolder`, in a folder chosen as for `newDocument`; makes it the current item |
 | `upload(node?)`        | Opens the browser's file dialog (several files allowed) and `uploadFile`s each into a folder chosen as for `newDocument`. A name that exists or cannot be used is skipped; the status lists what was not uploaded |
@@ -170,30 +205,21 @@ The commands call these public methods:
 | `openAsRoot(node)`     | Makes the folder, or the document's folder, the navigation root |
 | `refreshTree()`        | Reads the tree again; the old one stays until the new one is there |
 | `toggleOtherFiles()`   | Shows or hides other files, and folders holding only other files |
-| `toggleTheme()`        | Switches the light and dark theme                     |
-| `toggleSource()`       | Shows the editor's value read-only in place of the editor (which stays, hidden), or goes back to it |
 | `runCommand(id, node?)` | Runs a command of the `commands` service by its id, on a tree node if given |
-| `runEditorCommand(name)` | Runs a command of the editor (`editor.runCommand(name)`) and focuses it |
 
 ### Events
 
 | From            | Event                       | The app                                  |
 |-----------------|-----------------------------|------------------------------------------|
-| `<texl-editor>` | `change`                    | Sets `_dirty`, `comments.read`           |
-| `<texl-editor>` | `comments-click`            | `comments.show`: the comments pane on that line |
-| `<texl-editor>` | `errors-change`             | `errors.set` (the badge follows)         |
-| `<texl-editor>` | `error-click`               | `errors.show`: the errors pane on that error |
-| `<nav-pane>`    | `open-document`, `navigate` | Opens a document, changes the root       |
+| `<nav-pane>`    | `open-document`, `navigate` | `router.go`: opens a document, changes the root |
 | `<nav-pane>`    | `tree-command`              | Runs a command on a tree node (`runCommand(id, node)`) |
 | `<move-dialog>` | `choose`, `close`           | Moves the item to that folder, or closes the dialog; a name already there shows in the dialog |
-| `comments` service | `go-to`                  | Selects that line in the editor (`select(line)`) and focuses it |
-| `errors` service | `go-to`                    | Selects that line, opening another document first if the error was made there |
 | main area       | click on a link             | Resolves the link from the open document's address. A `.texl` document on this server opens in the app; anything else over HTTP, another file or another site, opens in a new tab; other schemes (`mailto:`) stay with the browser |
 
 ## Routing: `route.js`
 
 The browser address decides what the app shows, so every view can be
-bookmarked and the back button works:
+bookmarked and the back button works (the `router` service):
 
 ```text
 /                            root = the server root, no document open
@@ -203,8 +229,12 @@ bookmarked and the back button works:
 ```
 
 `readRoute(url)` returns `{root, doc}` for an address; `routeUrl({root,
-doc})` builds the address. The app pushes a history entry when it opens a
-document (`_go`) and applies the route again on `popstate`.
+doc})` builds the address. `router.go` pushes a history entry when it
+opens a document, and the router applies the route again on `popstate`.
+
+The editor's events go to the services directly: an edit makes the
+document dirty and the comments are read again; `errors-change` and
+`error-click` go to `errors`, `comments-click` to `comments`.
 
 ## Commands, keys and menus
 
