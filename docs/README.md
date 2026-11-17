@@ -19,6 +19,8 @@ from the repository's [README](../README.md).
 - [Projects and the Stilo library](projects.md): `project.texl`, the home
   `~`, `lib/`, `stilo init`, and `texl-lib/`.
 - [The web app](web-app.md): the shell around the editor.
+- [Extensions](extensions.md): writing an extension for the web app, every
+  hook, and the extensions the API is checked against.
 - [The editor](editor.md): `<texl-editor>`, cells, rendering.
 - [Editor design](editor-design.md): the editing model and its open points.
 - [Texl primer](texl-primer.md): the Texl you need to work on the editor.

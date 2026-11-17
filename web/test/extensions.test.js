@@ -36,7 +36,7 @@ describe("extensions", () => {
         const ok = await stilo.extensions.activate({ id: "word-count", apiVersion: "1.0", activate: (s) => (given = s) });
         expect(ok).to.be.true;
         expect(stilo.extensions.list().map((e) => e.id)).to.deep.equal(["word-count"]);
-        for (const name of ["html", "css", "svg", "LitElement", "styles", "apiVersion", "commands", "keys", "menus", "panels", "document", "editor", "tree", "transport"])
+        for (const name of ["html", "css", "svg", "LitElement", "StiloController", "TexlCell", "styles", "apiVersion", "commands", "keys", "menus", "panels", "topBar", "status", "views", "document", "editor", "comments", "errors", "tree", "transport", "ui", "settings", "cells", "router", "extensions"])
             expect(given[name], name).to.exist;
         // The same services: what it registers is there for everyone
         given.commands.register({ id: "word-count.count", label: "Count words", group: "Document", run: () => 7 });

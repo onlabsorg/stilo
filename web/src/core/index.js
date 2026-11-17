@@ -17,6 +17,7 @@ import { Router } from "./router.js";
 import { Tree } from "./tree.js";
 import { Extensions, API_VERSION } from "./extensions.js";
 import { Settings } from "./settings.js";
+import { Cells } from "./cells.js";
 
 export { Service } from "./service.js";
 export { stiloContext, StiloController, StiloProvider } from "./context.js";
@@ -33,6 +34,7 @@ export { Document } from "./document.js";
 export { Router } from "./router.js";
 export { Extensions, API_VERSION, compatible } from "./extensions.js";
 export { Settings } from "./settings.js";
+export { Cells } from "./cells.js";
 export { Tree, findNode, checkName, parentFolder, baseName } from "./tree.js";
 
 /**
@@ -59,6 +61,7 @@ export function createStilo({ transport = new Transport() } = {}) {
     stilo.comments = new Comments(stilo);
     stilo.router = new Router(stilo);
     stilo.tree = new Tree(stilo);
+    stilo.cells = new Cells(stilo);
     stilo.extensions = new Extensions(stilo);
     // The editor's marks follow the document opened (created after the editor)
     stilo.document.on("open", () => stilo.editor.applyMarks());

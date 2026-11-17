@@ -14,7 +14,7 @@ npm install --save-dev vite
 
 | Import                             | Gives                                            |
 |------------------------------------|--------------------------------------------------|
-| `@onlabsorg/stilo-web`             | The whole app: fonts, theme, `<stilo-app>`, and `startStilo({target, extensions, transport})`, which starts it with extensions (the extension API is being built; see `docs/web-app.md`). It talks to a server that speaks Stilo's protocol, at the page's origin |
+| `@onlabsorg/stilo-web`             | The whole app: fonts, theme, `<stilo-app>`; `startStilo({target, extensions, transport})`, which starts it with extensions, and `API_VERSION`; `createStilo`, `StiloProvider`, `StiloController`, `stiloContext` for front ends composed differently. It talks to a server that speaks Stilo's protocol, at the page's origin |
 | `@onlabsorg/stilo-web/editor`      | `<texl-editor>`, the built-in cells, `TexlCell`, `registerCell`, the document functions |
 | `@onlabsorg/stilo-web/theme.css`   | The design tokens, light and dark                |
 
@@ -35,6 +35,8 @@ export default defineConfig({
 });
 ```
 
+Writing extensions:
+[docs/extensions.md](https://github.com/onlabsorg/stilo/blob/main/docs/extensions.md).
 Guide and API reference:
 [embedding the editor](https://github.com/onlabsorg/stilo/blob/main/docs/component/README.md).
 License: MIT.

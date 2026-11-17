@@ -42,6 +42,12 @@ change the interfaces.
   author and date, and counted in the margin, on the cells they belong
   to; and put short marks on cells (a checker's findings) in the right
   margin. Nothing changes for users without extensions.
+- **The extension API, complete for the web app** (for developers): the
+  package `@onlabsorg/stilo-web` exports `createStilo`, `StiloController`,
+  `StiloProvider` and `stiloContext` beside `startStilo`; extensions can
+  add cell types with their command (`stilo.cells.register`); the guide
+  and reference are in `docs/extensions.md`, and a contract test uses
+  every hook.
 - **Dialogs and settings for extensions**: an extension can show dialogs,
   ask questions and texts in Stilo's own dialogs, show a status message
   as a warning or an error, and keep its settings in the browser.

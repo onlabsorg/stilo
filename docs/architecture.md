@@ -85,19 +85,19 @@ Stilo is getting an extension system, built in phases
 ([S16, S17](../DECISIONS.md)): anything beyond a single-user editor is built
 outside Stilo, as an extension that uses it as a dependency and plugs into
 public hooks. The core services are in place (the web app's state and
-behaviour, which Stilo's own panes and commands use); the extension API
-that opens them to others is being built: `startStilo()` and the
-`extensions` service activate extensions
-([The web app](web-app.md#extensions-startstilo-and-extensions)), and the
-hooks open to them grow step by step. Each extension point lives in one
+behaviour, which Stilo's own panes and commands use), and the extension
+API of the web app opens them to extensions: `startStilo()` activates
+them, each with a `stilo` object that records its registrations
+([Extensions](extensions.md), [S18](../DECISIONS.md)). The server and the
+CLI follow (S17, phases 4 and 5). Each extension point lives in one
 place:
 
 | Extension       | The one place today                        | Planned (S17) |
 |-----------------|--------------------------------------------|---------------|
-| Extensions of the web app | `startStilo()` (`web/src/start.js`) and the `extensions` service (`web/src/core/extensions.js`) | More hooks; exports for front ends |
-| Cell types      | The registry, `registerCell()` in `web/src/editor/registry.js` | Also `stilo.cells.register()` |
-| Web app as a dependency | — | The npm package `@onlabsorg/stilo-web`; its public API is the `exports` map of `web/package.json` (S16) |
-| Commands, keys, menus | The `commands`, `keys` and `menus` services (`web/src/core/`); Stilo's own in `web/src/builtins/commands.js` | Open to extensions |
+| Extensions of the web app | `startStilo()` (`web/src/start.js`) and the `extensions` service (`web/src/core/extensions.js`); guide and reference in [Extensions](extensions.md); contract test `web/test/contract.test.js` | Loaded at run time, from `pip`-installed packages (phase 6) |
+| Cell types      | The registry, `registerCell()` in `web/src/editor/registry.js`; for extensions `stilo.cells.register()`, which adds the type's command | — |
+| Web app as a dependency | The npm package `@onlabsorg/stilo-web` (not published yet); its public API is the `exports` map of `web/package.json` (S16): `startStilo`, `API_VERSION`, `createStilo`, `StiloController`, `StiloProvider`, `stiloContext`, the editor, the theme | The panes |
+| Commands, keys, menus | The `commands`, `keys` and `menus` services (`web/src/core/`), open to extensions; Stilo's own in `web/src/builtins/commands.js` | — |
 | Right-pane panels, top bar, status line | The `panels`, `topBar` and `status` registries (`web/src/core/`), open to extensions, which may also replace a panel; Stilo's own panels in `web/src/builtins/panels.js` | — |
 | Tree markers, filters, read-only items | Providers in the `tree` service (`decorate`, `filter`, `readOnly`); read-only documents open in the editor's read-only mode; commands say when they do not apply (`enabled`). The navigation pane itself stays core | — |
 | Comments from elsewhere, marks on cells | Comment providers in the `comments` service (`addProvider`) and mark providers in the `editor` service (`decorate`), anchored to cells by name | — |

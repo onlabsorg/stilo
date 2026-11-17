@@ -58,7 +58,9 @@ CLI passes it to `create_app()` (`WEB_DIST` = `stilo/web`). The server
 must not import the rest of the package (`tests/test_layout.py` checks
 it), and neither imports the web app's code. The web app's source is
 also published on npm as `@onlabsorg/stilo-web` (S16): `web/` as it is,
-`files` = `src/`, public API = the `exports` map (`.` → `src/main.js`,
+`files` = `src/`, public API = the `exports` map (`.` → `src/main.js`:
+the app, `startStilo`, `API_VERSION`, `createStilo`, `StiloController`,
+`StiloProvider`, `stiloContext`;
 `./editor` → `src/editor/index.js`, `./theme.css`); a new entry point is
 added only by a decision. `web/package-check/` checks it as a consumer
 gets it. A future part (e.g. a
@@ -83,11 +85,15 @@ only show them, through Lit context; visible contributions go through
 registries (no slots); Stilo's own panes and commands use the same API,
 except the navigation pane, which is core and extended through the `tree`
 and `menus` services. The core services are in place (`web/src/core/`,
-phase 2). The extension API (phase 3) is being built step by step:
+phase 2), and so is the extension API of the web app (phase 3, S18;
+guide and reference: `docs/extensions.md`):
 `startStilo({target, extensions, transport})` (`web/src/start.js`) and the
 `extensions` service (`web/src/core/extensions.js`) activate extensions,
 each through a scoped `stilo` that records its registrations (the table
-`REGISTRATIONS` there: a new hook returning `dispose()` is added to it).
+`REGISTRATIONS` there: a new hook returning `dispose()` is added to it,
+to `docs/extensions.md` and to the contract test,
+`web/test/contract.test.js`). The server and CLI sides (S17 phases 4–5)
+are not built yet.
 Keep each extension point in one place: cell types only through the registry
 (`web/src/editor/registry.js`), CLI commands only through `COMMANDS`
 (`src/stilo/cli/commands.py`), the server only through `create_app()`.
@@ -283,7 +289,8 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
   `editor`; `formatKeys`, `isMac`), `menus.js`, `ui.js` (status and its level, navigation
   pane, open panel, source view, dialogs: `dialog`, `confirm`, `prompt`,
   shown by `<stilo-app>`), `settings.js` (per browser, by namespace; an
-  extension's own), `registry.js` (`Registry`:
+  extension's own), `cells.js` (cell types for extensions, with
+  their "Make it …" command), `registry.js` (`Registry`:
   items by id and order, `register`, `replace`; the `topBar` and `status`
   services: top-bar items, the status line at the bottom, shown only with
   items; `views`: pages that are not a document, at `?view=<id>`, shown in

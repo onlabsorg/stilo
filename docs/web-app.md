@@ -33,9 +33,9 @@ The app's state and behaviour live in **core services**
 Stilo's own commands and panels are registered through the services, as
 an extension's will be, so the services are complete: nothing of Stilo
 goes around them. Extensions reach them through `startStilo` and the
-`extensions` service ([below](#extensions-startstilo-and-extensions)); the
-extension API is being built (phase 3), so the hooks open to extensions are
-still few.
+`extensions` service ([below](#extensions-startstilo-and-extensions));
+[Extensions](extensions.md) is the guide and the reference of every
+hook.
 
 - `createStilo({transport?})` (`core/index.js`) builds the `stilo` object,
   the services of one app: `transport` (a `Transport`, below),
@@ -126,8 +126,13 @@ extensions and, in the danger colour with the reason as tooltip, those
 not activated; it shows only while there is one, so nothing changes for
 users of Stilo alone. The object also holds what an element needs, so an
 extension imports nothing from Stilo: `html`, `css`, `svg`, `LitElement`,
-`styles.base` (the shared styles of `components/shared.js`) and
-`apiVersion`.
+`StiloController`, `TexlCell`, `styles.base` (the shared styles of
+`components/shared.js`), `apiVersion`, and its own `settings`.
+
+**`cells`** registers cell types (`register(CellClass)`, through the
+editor's `registerCell`) with their "Make it …" command and key; disposing
+removes the command, while the type stays known to the editor (a custom
+element cannot be undefined). `types()` lists them.
 
 ## The window: `ui`, `panels`, `topBar` and `status`
 

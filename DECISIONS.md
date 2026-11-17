@@ -445,3 +445,47 @@ across shadow roots. The navigation pane is too tied to the commands that
 ask for names and to the tree's keys to be worth making replaceable; its
 hooks cover what extensions need. Cell names are the only stable anchor in
 a document; a path-based view would collide with files.
+
+## S18 — 2026-11-17 — The extension API of the web app, as built
+
+Refines S17 with what phase 3 settled; S17 stays in force.
+
+- **Activation.** `startStilo({target, extensions, transport})` activates
+  Stilo's own contributions, then the extensions in order. An
+  extension's `apiVersion` is `"major.minor"`: it works with the same
+  major version and a minor version up to Stilo's (`API_VERSION`,
+  `"1.0"`). Stilo's own contributions are not listed as extensions and
+  keep their bare ids.
+- **A recording `stilo`.** Each extension gets the services through a
+  proxy that records its registrations (one table, `REGISTRATIONS`), so
+  deactivating it undoes everything, even what it forgot to dispose. The
+  object also carries Lit, `StiloController`, `TexlCell` and the shared
+  styles, so an extension imports nothing from Stilo.
+- **Registries hold stacks.** Panels, top-bar and status items and views
+  share one `Registry`: `replace(id, item)` puts an extension's item in
+  place of any, Stilo's too, and disposing it brings the old one back.
+  This is how a built-in panel is replaced.
+- **The status line** is at the bottom of the window, as in Word, and
+  shows only while it has items, so nothing changes without extensions.
+- **No `document.open({source})`.** The `document` service is always the
+  file on the server. A document as it was earlier is an extension's
+  view that renders a read-only `<texl-editor>` with that text.
+- **Commands say when they do not apply** (`enabled`: `true` or the
+  reason); menus and the commands pane grey them out with the reason,
+  and running one only says why. Read-only items use it.
+- **Comments and marks are anchored by cell name**, in the `comments`
+  service (providers, read-only) and the `editor` service (mark
+  providers, synchronous: an asynchronous checker calls `invalidate()`).
+- **Dialogs are Stilo's own** (`ui.dialog`, `confirm`, `prompt`), also for
+  Stilo's questions, with buttons that say what they do; the browser's
+  are used only where no view shows dialogs, and for leaving the page.
+- **`info` waits for the protocol** (phase 4, `/_api/info`); until then
+  `extensions.list()` gives the active extensions.
+
+*Reason:* each point is the smallest design that lets the Validation
+extensions be written with the public API alone (`docs/extensions.md`)
+while keeping Stilo without extensions unchanged for users, except the
+dialogs, which look like the app and name their actions. A recording
+`stilo` makes deactivation reliable without asking extensions to be
+careful; stacks make replacement a registration like any other; a view
+for old versions keeps one meaning for "the open document".

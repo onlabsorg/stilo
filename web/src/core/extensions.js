@@ -5,6 +5,8 @@
 import { LitElement, html, css, svg } from "lit";
 import { Service } from "./service.js";
 import { base } from "../components/shared.js";
+import { StiloController } from "./context.js";
+import { TexlCell } from "../editor/index.js";
 
 /** The version of the extension API: `major.minor`. An extension written
  * for the same major version and a minor version up to this one works. */
@@ -33,6 +35,7 @@ const REGISTRATIONS = {
     tree: { decorate: null, filter: null, readOnly: null },
     editor: { decorate: null },
     comments: { addProvider: "id" },
+    cells: { register: null },
 };
 
 /**
@@ -68,6 +71,8 @@ class Scope {
             css,
             svg,
             LitElement,
+            StiloController,
+            TexlCell,
             styles: { base },
         };
         // Its own settings, named by its id

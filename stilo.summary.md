@@ -40,7 +40,9 @@ package**, `@onlabsorg/stilo-web`, for developers who build their own front
 end or embed the editor. It is not published yet. It has the same version
 as the Python package; only its three entry points (the whole app, the
 editor and the theme) are its public interface, and before 1.0 any version
-may change them.
+may change them. The web app can be extended without changing its
+code: extensions add commands, panels, pages, marks, comments and more
+(see Status).
 
 Each document has one URL, `/path/to/doc.texl`: a browser gets the web app,
 `texl.import` gets the file. Any other file in the folder, such as an image or
@@ -431,6 +433,16 @@ accept are not part of Stilo.
   tutorial says so. **Extensions, seventh part**: an extension can show
   dialogs and ask questions in the same style, show a status message as a
   warning or an error, and keep its own settings in the browser.
+- 2026-11-17: **extensions for the web app complete**: an extension can
+  also add a cell type of its own; the npm package offers what a
+  developer needs to start Stilo with extensions or to build a different
+  front end from its parts. A developer guide (`docs/extensions.md`)
+  describes every way to extend the web app, with a sketch of ten example
+  extensions (word count, checker, version history, read-only folders, a
+  server behind a login, outside comments, export to PDF, a dashboard, a
+  custom cell type, a replaced panel), and an automatic test exercises
+  all of them at once. The server and command-line sides of extensions
+  are not built yet. Nothing changes for users without extensions.
 
 ## Known limitations
 
