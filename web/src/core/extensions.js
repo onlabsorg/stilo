@@ -25,7 +25,9 @@ const REGISTRATIONS = {
     commands: { register: "id" },
     keys: { bind: null },
     menus: { add: null },
-    panels: { register: "id" },
+    panels: { register: "id", replace: null },
+    topBar: { register: "id", replace: null },
+    status: { register: "id", replace: null },
 };
 
 /**

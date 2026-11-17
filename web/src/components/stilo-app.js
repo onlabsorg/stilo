@@ -13,7 +13,8 @@ import "./move-dialog.js";
  * The app shell: top bar, navigation pane, editor, right pane. Creates and
  * provides the services (`stilo`, S17), activates Stilo's own contributions
  * on them, and lays out the window: the editor of the open document (or the
- * source view), the open panel, the Move to… dialog. The state lives in the
+ * source view), the open panel, the status line (`status`, only while it
+ * has items), the Move to… dialog. The state lives in the
  * services; the parts read it through context.
  */
 export class StiloApp extends LitElement {
@@ -26,11 +27,12 @@ export class StiloApp extends LitElement {
         css`
             :host {
                 display: grid;
-                grid-template-rows: var(--bar-height) 1fr;
+                grid-template-rows: var(--bar-height) 1fr auto;
                 grid-template-columns: auto 1fr auto;
                 grid-template-areas:
                     "bar bar bar"
-                    "nav main pane";
+                    "nav main pane"
+                    "status status status";
                 height: 100vh;
                 overflow: hidden;
             }
@@ -107,6 +109,23 @@ export class StiloApp extends LitElement {
             aside > * {
                 flex: 1;
             }
+            footer {
+                grid-area: status;
+                display: flex;
+                justify-content: flex-end;
+                align-items: center;
+                gap: 1rem;
+                min-height: 1.75rem;
+                padding: 0 0.75rem;
+                background: var(--surface);
+                border-top: 1px solid var(--border);
+                color: var(--text-muted);
+                font-size: 12px;
+            }
+            footer > .item {
+                display: inline-flex;
+                align-items: center;
+            }
             [hidden] {
                 display: none !important;
             }
@@ -160,8 +179,8 @@ export class StiloApp extends LitElement {
         activateBuiltins(this.stilo);
         this.stilo.ui.setSettle(() => this.updateComplete);
         this._unwatch?.();
-        const { ui, panels, document, tree } = this.stilo;
-        const stops = [ui, panels, document, tree].map((service) => service.on("change", () => this.requestUpdate()));
+        const { ui, panels, status, document, tree } = this.stilo;
+        const stops = [ui, panels, status, document, tree].map((service) => service.on("change", () => this.requestUpdate()));
         this._unwatch = () => stops.forEach((stop) => stop());
     }
 
@@ -272,14 +291,18 @@ export class StiloApp extends LitElement {
     }
 
     render() {
-        const { ui, panels, tree } = this.stilo;
+        const { ui, panels, status, tree } = this.stilo;
         const panel = ui.pane ? panels.get(ui.pane) : null;
+        const items = status.list();
         const moving = tree.moving;
         return html`
             <top-bar></top-bar>
             <nav-pane ?hidden=${!ui.navOpen}></nav-pane>
             <main @click=${this._onLinkClick}>${this._renderMain()}</main>
             <aside ?hidden=${!panel}>${panel?.render(this.stilo) ?? ""}</aside>
+            ${items.length
+                ? html`<footer>${items.map((item) => html`<span class="item" data-id=${item.id}>${item.render(this.stilo)}</span>`)}</footer>`
+                : ""}
             ${moving
                 ? html`<move-dialog
                       .tree=${moving.tree}

@@ -8,6 +8,7 @@ import { Keys } from "./keys.js";
 import { Menus } from "./menus.js";
 import { UI } from "./ui.js";
 import { Panels } from "./panels.js";
+import { TopBar, Status } from "./registry.js";
 import { Errors } from "./errors.js";
 import { Comments } from "./comments.js";
 import { Editor } from "./editor.js";
@@ -23,6 +24,7 @@ export { Keys, isMac, formatKeys, parseKeys, matchesKeys } from "./keys.js";
 export { Menus } from "./menus.js";
 export { UI } from "./ui.js";
 export { Panels } from "./panels.js";
+export { Registry, TopBar, Status } from "./registry.js";
 export { Errors } from "./errors.js";
 export { Comments } from "./comments.js";
 export { Editor } from "./editor.js";
@@ -44,6 +46,8 @@ export function createStilo({ transport = new Transport() } = {}) {
     stilo.menus = new Menus();
     stilo.ui = new UI();
     stilo.panels = new Panels();
+    stilo.topBar = new TopBar();
+    stilo.status = new Status();
     // Each of these listens to the ones before it
     stilo.editor = new Editor(stilo);
     stilo.errors = new Errors(stilo);

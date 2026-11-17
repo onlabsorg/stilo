@@ -389,6 +389,12 @@ accept are not part of Stilo.
   far an extension can add commands, shortcuts, menu entries and right-pane
   panels, and follow what happens in the app; more ways to extend Stilo
   follow in the next steps. Nothing changes for users.
+- 2026-11-17: **extensions, second part**: an extension can also add items
+  to the top bar and to a status line at the bottom of the window (as in
+  Word; the line appears only when an extension puts something in it), and
+  replace one of the right pane's panels with its own. The commands pane
+  lists the active extensions, and those that failed, but only when there
+  are any. Nothing changes for users without extensions.
 
 ## Known limitations
 

@@ -1,5 +1,7 @@
-import { expect } from "@open-wc/testing";
-import { createStilo, API_VERSION, compatible } from "../src/core/index.js";
+import { expect, fixture, html } from "@open-wc/testing";
+import { createStilo, API_VERSION, compatible, Registry } from "../src/core/index.js";
+import "../src/components/top-bar.js";
+import "../src/components/commands-pane.js";
 import { activateBuiltins } from "../src/builtins/index.js";
 import { startStilo } from "../src/start.js";
 
@@ -151,6 +153,103 @@ describe("startStilo", () => {
         } finally {
             console.error = consoleError;
             target.remove();
+        }
+    });
+});
+
+describe("registries: panels, topBar, status", () => {
+    it("list items by order, refuse a taken id, and replace one until disposed", () => {
+        const registry = new Registry();
+        registry.register({ id: "b", order: 20 });
+        const disposeA = registry.register({ id: "a", order: 10, label: "A" });
+        expect(() => registry.register({ id: "a" })).to.throw();
+        expect(() => registry.replace("none", {})).to.throw();
+        const undo = registry.replace("a", { id: "other", order: 10, label: "A2" });
+        expect(registry.get("a").label).to.equal("A2");
+        expect(registry.list().map((i) => i.id)).to.deep.equal(["a", "b"]);
+        undo();
+        expect(registry.get("a").label).to.equal("A");
+        // Disposing the original under a replacement keeps the replacement
+        const undo2 = registry.replace("a", { label: "A3" });
+        disposeA();
+        expect(registry.get("a").label).to.equal("A3");
+        undo2();
+        expect(registry.get("a")).to.be.undefined;
+        expect(registry.list().map((i) => i.id)).to.deep.equal(["b"]);
+    });
+
+    it("let an extension replace a built-in panel, and bring it back on deactivate", async () => {
+        const { stilo, restore } = setUp();
+        try {
+            const original = stilo.panels.get("comments");
+            await stilo.extensions.activate({
+                id: "notes",
+                apiVersion: "1",
+                activate: (s) => s.panels.replace("comments", { label: "Notes", icon: "", order: 20, render: () => "notes" }),
+            });
+            expect(stilo.panels.get("comments").label).to.equal("Notes");
+            stilo.extensions.deactivate("notes");
+            expect(stilo.panels.get("comments")).to.equal(original);
+        } finally {
+            restore();
+        }
+    });
+
+    it("show top-bar items left of the panels' buttons", async () => {
+        const stilo = createStilo();
+        stilo.panels.register({ id: "x.panel", label: "Panel", icon: "P", render: () => "" });
+        stilo.topBar.register({ id: "x.late", order: 2, render: () => html`<b>late</b>` });
+        stilo.topBar.register({ id: "x.user", order: 1, render: () => "Ada" });
+        const el = await fixture(html`<stilo-provider .stilo=${stilo}><top-bar></top-bar></stilo-provider>`);
+        const bar = el.querySelector("top-bar");
+        await bar.updateComplete;
+        const right = bar.renderRoot.querySelector(".right");
+        expect([...right.querySelectorAll(".item")].map((i) => i.textContent.trim())).to.deep.equal(["Ada", "late"]);
+        expect(right.lastElementChild.getAttribute("aria-label")).to.equal("Panel");
+    });
+
+    it("show the status line only while it has items", async () => {
+        const target = document.createElement("div");
+        document.body.append(target);
+        const transport = { readTree: async () => ({ path: "", name: "", type: "folder", children: [] }), documentUrl: (p) => `/${p}` };
+        try {
+            const app = await startStilo({ target, transport });
+            await app.updateComplete;
+            expect(app.shadowRoot.querySelector("footer")).to.be.null;
+            let words = 3;
+            const dispose = app.stilo.status.register({ id: "x.words", render: () => `${words} words` });
+            await app.updateComplete;
+            expect(app.shadowRoot.querySelector("footer").textContent.trim()).to.equal("3 words");
+            words = 4;
+            app.stilo.status.changed();
+            await app.updateComplete;
+            expect(app.shadowRoot.querySelector("footer").textContent.trim()).to.equal("4 words");
+            dispose();
+            await app.updateComplete;
+            expect(app.shadowRoot.querySelector("footer")).to.be.null;
+        } finally {
+            target.remove();
+        }
+    });
+});
+
+describe("the commands pane's Extensions group", () => {
+    it("shows only while an extension is active or failed, the failed ones with why", async () => {
+        const { stilo, restore } = setUp();
+        try {
+            const el = await fixture(html`<stilo-provider .stilo=${stilo}><commands-pane></commands-pane></stilo-provider>`);
+            const pane = el.querySelector("commands-pane");
+            await pane.updateComplete;
+            expect(pane.renderRoot.querySelector("h3.extensions")).to.be.null;
+            await stilo.extensions.activate({ id: "word-count", apiVersion: "1", activate() {} });
+            await stilo.extensions.activate({ id: "broken", apiVersion: "2", activate() {} });
+            await pane.updateComplete;
+            expect(pane.renderRoot.querySelector("h3.extensions")).to.exist;
+            const rows = [...pane.renderRoot.querySelectorAll(".extension")];
+            expect(rows.map((r) => r.textContent.trim())).to.deep.equal(["word-count", "broken: not activated"]);
+            expect(rows[1].title).to.contain("API version 2");
+        } finally {
+            restore();
         }
     });
 });

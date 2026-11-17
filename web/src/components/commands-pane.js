@@ -4,6 +4,10 @@ import { closeIcon, chevronIcon } from "../icons.js";
 import { StiloController } from "../core/context.js";
 import { formatKeys } from "../core/keys.js";
 
+/** The key of the Extensions group among the folded ones, apart from the
+ * commands' groups, which may have any name. */
+const EXTENSIONS = Symbol("extensions");
+
 /**
  * Right pane: every command of the `commands` service, by group, with its
  * shortcut from the `keys` service. A click runs it.
@@ -11,6 +15,10 @@ import { formatKeys } from "../core/keys.js";
  * Groups fold and unfold on a click on their heading.
  *
  * Its close button closes the right pane (`ui`).
+ *
+ * Last, an Extensions group lists the extensions that are active
+ * (`extensions`) and those that could not be activated, with why; only
+ * while there is one.
  */
 export class CommandsPane extends LitElement {
     static properties = {
@@ -85,6 +93,9 @@ export class CommandsPane extends LitElement {
             div.command {
                 color: var(--text-muted);
             }
+            div.command.failed {
+                color: var(--danger);
+            }
             .label {
                 flex: 1;
             }
@@ -103,7 +114,7 @@ export class CommandsPane extends LitElement {
     constructor() {
         super();
         this._collapsed = new Set();
-        this._stilo = new StiloController(this, (stilo) => [stilo.commands, stilo.keys]);
+        this._stilo = new StiloController(this, (stilo) => [stilo.commands, stilo.keys, stilo.extensions]);
     }
 
     _toggle(group) {
@@ -131,6 +142,28 @@ export class CommandsPane extends LitElement {
             : html`<div class="command" title="Use the keyboard shortcut">${content}</div>`;
     }
 
+    /** The Extensions group: the active extensions, then the failed ones. */
+    _renderExtensions() {
+        const extensions = this._stilo.stilo?.extensions;
+        const active = extensions?.list() ?? [];
+        const failed = extensions?.failures ?? [];
+        if (!active.length && !failed.length) return "";
+        const open = !this._collapsed.has(EXTENSIONS);
+        return html`<h3 class="extensions">
+                <button class="group" aria-expanded=${open} @click=${() => this._toggle(EXTENSIONS)}>
+                    <span class="chevron ${open ? "open" : ""}">${chevronIcon}</span>Extensions
+                </button>
+            </h3>
+            ${open
+                ? html`${active.map((e) => html`<div class="command extension"><span class="label">${e.id}</span></div>`)}
+                  ${failed.map(
+                      (f) => html`<div class="command extension failed" title=${f.reason}>
+                          <span class="label">${f.id}: not activated</span>
+                      </div>`,
+                  )}`
+                : ""}`;
+    }
+
     render() {
         const groups = Map.groupBy(this._stilo.stilo?.commands.list() ?? [], (c) => c.group);
         return html`
@@ -142,6 +175,7 @@ export class CommandsPane extends LitElement {
             </div>
             <div class="list">
                 ${[...groups].map(([group, list]) => this._renderGroup(group, list))}
+                ${this._renderExtensions()}
             </div>
         `;
     }

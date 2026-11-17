@@ -11,15 +11,15 @@ its own page: [The editor](editor.md).*
 | `src/main.js`                  | Entry point: loads the theme CSS, the editor and the app; exports `startStilo` and `API_VERSION` |
 | `src/start.js`                 | `startStilo()`: starts the app with extensions ([below](#extensions-startstilo-and-extensions)) |
 | `src/components/stilo-app.js`  | `StiloApp`, `<stilo-app>`: the shell. Creates and provides the services, the layout, link clicks |
-| `src/components/top-bar.js`    | `<top-bar>`: the document's name, the status (`ui`), a button per panel (`panels`) |
+| `src/components/top-bar.js`    | `<top-bar>`: the document's name, the status (`ui`), the items of `topBar`, a button per panel (`panels`) |
 | `src/components/nav-pane.js`   | `<nav-pane>`: the tree of folders and files (`tree`), its menus (`menus`) and keys (`keys`) |
 | `src/components/context-menu.js` | `<context-menu>`: a menu at a point of the window |
 | `src/components/move-dialog.js` | `<move-dialog>`: Move to…, choosing a folder       |
-| `src/components/commands-pane.js` | `<commands-pane>`: the command list, by group, foldable |
+| `src/components/commands-pane.js` | `<commands-pane>`: the command list, by group, foldable; the Extensions group |
 | `src/components/comments-pane.js` | `<comments-pane>`: the comments of each line (`comments`) |
 | `src/components/errors-pane.js` | `<errors-pane>`: the errors of the document (`errors`) |
 | `src/components/shared.js`     | Shared styles (`base`) and icons for the components |
-| `src/core/`                    | The core services (S17): `createStilo()`, `Service`, `StiloController`, `<stilo-provider>`; `commands`, `keys`, `menus`, `ui`, `panels`, `errors`, `comments`, `editor`, `document`, `router`, `tree` |
+| `src/core/`                    | The core services (S17): `createStilo()`, `Service`, `StiloController`, `<stilo-provider>`; `commands`, `keys`, `menus`, `ui`, `panels`, `topBar`, `status` (`registry.js`), `errors`, `comments`, `editor`, `document`, `router`, `tree`, `extensions` |
 | `src/builtins/`                | Stilo's own contributions, registered through the services: `commands.js` (commands, keys, menus), `panels.js` (the right pane's panels), `go-to.js` (going to a place the errors or comments pane points to), `files.js` (the commands on files and folders); `index.js` (`activateBuiltins`) |
 | `src/api.js`                   | The protocol client, `Transport`: the only module that talks to the server |
 | `src/route.js`                 | Browser address ↔ `{root, doc}`                     |
@@ -39,7 +39,8 @@ still few.
 - `createStilo({transport?})` (`core/index.js`) builds the `stilo` object,
   the services of one app: `transport` (a `Transport`, below),
   `commands`, `keys` and `menus` (see [Commands](#commands-keys-and-menus)),
-  `ui` and `panels` (see [The window](#the-window-ui-and-panels)), `errors`
+  `ui`, `panels`, `topBar` and `status` (see
+  [The window](#the-window-ui-panels-topbar-and-status)), `errors`
   (see [Errors](#errors-errors)), `comments` (see
   [Comments](#comments-comments)), `editor`, `document` and `router` (see
   [The document](#the-document-editor-document-and-router)), `tree` (see
@@ -108,16 +109,22 @@ valid or taken, its `apiVersion` does not match (`API_VERSION`, now
 
 `activate` gets a **scoped `stilo`**: the same services, through a proxy
 that records each registration (the table `REGISTRATIONS`: `commands.register`,
-`keys.bind`, `menus.add`, `panels.register`, and every service's `on`),
-so `deactivate(id)` undoes all of them, the latest first; a `dispose()`
-the extension calls itself is not undone twice. The ids of its commands
-and panels must start with `<id>.`; another is refused (and an `activate`
-that does it fails). The object also holds what an element needs, so an
+`keys.bind`, `menus.add`, `register` and `replace` of `panels`, `topBar`
+and `status`, and every service's `on`), so `deactivate(id)` undoes all
+of them, the latest first; a `dispose()` the extension calls itself is not
+undone twice. The ids of its commands, panels and top-bar and status items
+must start with `<id>.`; another is refused (and an `activate` that does
+it fails). `replace` may take the place of one of Stilo's own.
+
+The commands pane ends with an **Extensions** group, listing the active
+extensions and, in the danger colour with the reason as tooltip, those
+not activated; it shows only while there is one, so nothing changes for
+users of Stilo alone. The object also holds what an element needs, so an
 extension imports nothing from Stilo: `html`, `css`, `svg`, `LitElement`,
 `styles.base` (the shared styles of `components/shared.js`) and
 `apiVersion`.
 
-## The window: `ui` and `panels`
+## The window: `ui`, `panels`, `topBar` and `status`
 
 **`ui`** holds what the window shows around the document, each with a
 getter, and changes it in its methods:
@@ -155,6 +162,27 @@ toggles it (`ui.togglePane`). `<stilo-app>` renders the open panel's
 `builtins/panels.js`: errors (10), comments (20), commands (30); the
 errors badge is their count, which `builtins/panels.js` sets whenever
 it changes.
+
+`panels`, `topBar` and `status` are **registries** (`Registry`,
+`core/registry.js`): items by id, listed by `order`, then in the order
+added. `register(item)` refuses a taken id; `replace(id, item)` puts
+another item in the place of one (an extension's panel instead of
+Stilo's comments panel, say). An id holds a stack: the latest shows,
+and the `dispose()` of each registration or replacement takes it out,
+bringing back the one before.
+
+```js
+stilo.topBar.register({ id: "login.user", order: 10, render: (stilo) => html`Ada` });
+stilo.status.register({ id: "word-count.words", render: () => `${words} words` });
+stilo.status.changed();                  // render the items again
+```
+
+**`topBar`** items show in the top bar, left of the panels' buttons.
+**`status`** items show in the **status line** at the bottom of the
+window, right-aligned, as in Word; the line shows only while it has
+items, so without extensions the window is as before. An item's
+`render(stilo)` is called again when its registry changes (`changed()`),
+or it renders an element that follows the services itself.
 
 ## Errors: `errors`
 
@@ -237,7 +265,8 @@ A route whose document is not the open one opens it (`document.load`).
 a `stilo` object set as its property before it connects), provides them by
 context, activates Stilo's own contributions on them (`activateBuiltins`),
 and tells `ui` how to wait for its rendering (`ui.setSettle`). It lays out
-the window in a CSS grid (top bar; navigation, main area, right pane) and
+the window in a CSS grid (top bar; navigation, main area, right pane;
+status line) and
 renders:
 
 - the editor of the open document (its `url` is the document's public
@@ -245,6 +274,7 @@ renders:
   attached to the `editor` service after every rendering, or the source
   view, whose close button runs Show source again;
 - the open panel (`panels`, `ui.pane`) in the right pane;
+- the status line (`status`), only while it has items;
 - `<move-dialog>` while `tree.moving` is set: its `choose` event goes to
   `tree.chooseMove`, `close` to `tree.endMove`.
 

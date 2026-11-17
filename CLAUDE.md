@@ -278,8 +278,11 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
   (`context.js`: the `stilo` object by Lit context); `commands.js`,
   `keys.js` (shortcuts bound to commands, `when` = `global`, `tree` or
   `editor`; `formatKeys`, `isMac`), `menus.js`, `ui.js` (status, navigation
-  pane, open panel, source view, `confirm`), `panels.js` (the right pane's
-  panels, the top bar's buttons, badges), `errors.js` (the open document's
+  pane, open panel, source view, `confirm`), `registry.js` (`Registry`:
+  items by id and order, `register`, `replace`; the `topBar` and `status`
+  services: top-bar items, the status line at the bottom, shown only with
+  items), `panels.js` (the right pane's
+  panels, the top bar's buttons, badges; a `Registry`), `errors.js` (the open document's
   errors, the one pointed out, `go-to`), `comments.js` (its cell comments
   by line, the line pointed out, `go-to`), `editor.js` (the open
   document's `<texl-editor>`, its events passed on), `document.js` (the

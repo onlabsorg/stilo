@@ -11,7 +11,11 @@ change the interfaces.
   web app with extensions, plain objects `{id, apiVersion, activate(stilo),
   deactivate?}`. An extension that cannot be activated is reported and
   skipped; deactivating one undoes everything it registered. The hooks it
-  can use grow in the next versions (S17). Nothing changes for users.
+  can use grow in the next versions (S17). Extensions can add items to
+  the top bar and to a status line at the bottom of the window (shown only
+  when it has items), and replace a panel of the right pane; the commands
+  pane lists active extensions, and those not activated, in an Extensions
+  group. Nothing changes for users without extensions.
 - **Keyboard shortcuts match exactly**: a shortcut no longer runs when
   extra modifier keys are held. Alt+Shift+N used to act as Alt+N (New
   document); likewise Alt+C, Alt+U and Alt+T. The shortcuts as listed in

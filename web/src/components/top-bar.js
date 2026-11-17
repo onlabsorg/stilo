@@ -6,8 +6,9 @@ import { StiloController } from "../core/context.js";
 /**
  * The title/tool bar: navigation toggle on the left; in the middle the open
  * document's name, with • while it has unsaved changes (`document`), or else
- * the navigation root (`router`), and the status (`ui`); on the right one
- * button per panel of the right pane (`panels`), with its badge.
+ * the navigation root (`router`), and the status (`ui`); on the right the
+ * items of the `topBar` service, then one button per panel of the right pane
+ * (`panels`), with its badge.
  */
 export class TopBar extends LitElement {
 
@@ -64,12 +65,16 @@ export class TopBar extends LitElement {
                 font-size: 12px;
                 font-weight: 600;
             }
+            .item {
+                display: inline-flex;
+                align-items: center;
+            }
         `,
     ];
 
     constructor() {
         super();
-        this._stilo = new StiloController(this, (stilo) => [stilo.ui, stilo.panels, stilo.document, stilo.router]);
+        this._stilo = new StiloController(this, (stilo) => [stilo.ui, stilo.panels, stilo.topBar, stilo.document, stilo.router]);
     }
 
     /** The open document's name, or else the navigation root. */
@@ -99,7 +104,7 @@ export class TopBar extends LitElement {
     render() {
         const stilo = this._stilo.stilo;
         if (!stilo) return "";
-        const { ui, panels } = stilo;
+        const { ui, panels, topBar } = stilo;
         return html`
             <div class="left">
                 <button
@@ -117,7 +122,10 @@ export class TopBar extends LitElement {
                 <span>${this._heading(stilo)}</span>
                 ${ui.status ? html`<span class="status">${ui.status}</span>` : ""}
             </div>
-            <div class="right">${panels.list().map((panel) => this._panelButton(panel))}</div>
+            <div class="right">
+                ${topBar.list().map((item) => html`<span class="item" data-id=${item.id}>${item.render(stilo)}</span>`)}
+                ${panels.list().map((panel) => this._panelButton(panel))}
+            </div>
         `;
     }
 }
