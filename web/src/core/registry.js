@@ -80,6 +80,31 @@ export class Registry extends Service {
  *   `changed()`, or render an element that follows the services itself.
  */
 
+/**
+ * @typedef {object} View
+ * @property {string} id - Unique; an extension's are `<extension-id>.<name>`.
+ *   Its address is `/?view=<id>`.
+ * @property {string} label - Its name, shown in the top bar while it is open.
+ * @property {(stilo: object, params: Record<string, string>) => unknown} render -
+ *   Its content, a Lit template or an element, shown in place of the editor;
+ *   `params` are the other parameters of the address.
+ */
+
+/** The `views` service: pages that are not a document, addressed by
+ * `?view=<id>` (`router`), shown in place of the editor. */
+export class Views extends Registry {
+    constructor(stilo) {
+        super();
+        this._stilo = stilo;
+    }
+
+    /** Open a view, with parameters, as a new history entry (`router.go`). */
+    open(id, params = {}) {
+        const { router } = this._stilo;
+        return router.go({ root: router.root ?? "", view: id, params });
+    }
+}
+
 /** The `topBar` service: items in the top bar, left of the panels' buttons. */
 export class TopBar extends Registry {}
 

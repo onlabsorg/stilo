@@ -26,6 +26,11 @@ change the interfaces.
   nothing can be added to a read-only folder. Commands that do not apply
   are greyed out in menus and in the commands pane, with the reason.
   Nothing changes for users without extensions.
+- **Pages of extensions** (extensions): an extension can add pages that are
+  not a document, such as a dashboard, at their own address
+  (`/?view=<id>`), shown in place of the editor; they can be bookmarked,
+  and the back button works. Nothing changes for users without
+  extensions.
 - **Editor component** (for developers): `<texl-editor>` gains a
   read-only mode (`readonly`), a `loader` for the documents it imports,
   and `editorCommands()`, the list of its commands with their labels and

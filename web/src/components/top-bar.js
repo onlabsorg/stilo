@@ -83,11 +83,12 @@ export class TopBar extends LitElement {
 
     constructor() {
         super();
-        this._stilo = new StiloController(this, (stilo) => [stilo.ui, stilo.panels, stilo.topBar, stilo.document, stilo.router, stilo.tree]);
+        this._stilo = new StiloController(this, (stilo) => [stilo.ui, stilo.panels, stilo.topBar, stilo.document, stilo.router, stilo.tree, stilo.views]);
     }
 
-    /** The open document's name, or else the navigation root. */
-    _heading({ document, router }) {
+    /** The open view's label, or the open document's name, or else the navigation root. */
+    _heading({ document, router, views }) {
+        if (router.view) return views.get(router.view)?.label ?? router.view;
         const path = document.path;
         if (!path) return router.root ? `/${router.root}` : "Documents";
         const name = path.slice(path.lastIndexOf("/") + 1).replace(/\.texl$/, "");

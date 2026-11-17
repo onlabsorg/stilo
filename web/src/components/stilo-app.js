@@ -4,6 +4,7 @@ import { ContextProvider } from "@lit/context";
 import { base } from "./shared.js";
 import { closeIcon } from "../icons.js";
 import { createStilo, stiloContext } from "../core/index.js";
+import { readRoute } from "../route.js";
 import { activateBuiltins } from "../builtins/index.js";
 import "./top-bar.js";
 import "./nav-pane.js";
@@ -13,7 +14,7 @@ import "./move-dialog.js";
  * The app shell: top bar, navigation pane, editor, right pane. Creates and
  * provides the services (`stilo`, S17), activates Stilo's own contributions
  * on them, and lays out the window: the editor of the open document (or the
- * source view), the open panel, the status line (`status`, only while it
+ * source view, or a view of `views` addressed by `?view=`), the open panel, the status line (`status`, only while it
  * has items), the Move to… dialog. The state lives in the
  * services; the parts read it through context.
  */
@@ -86,6 +87,18 @@ export class StiloApp extends LitElement {
                 white-space: pre-wrap;
                 overflow-wrap: anywhere;
                 user-select: text;
+            }
+            .view {
+                flex: 1;
+                min-height: 0;
+                width: 100%;
+                max-width: 56rem;
+                margin: 0 auto;
+                overflow: auto;
+                border-radius: var(--radius) var(--radius) 0 0;
+                box-shadow: var(--shadow);
+                background: var(--texl-paper, var(--surface));
+                color: var(--text);
             }
             .placeholder {
                 margin: auto;
@@ -179,8 +192,8 @@ export class StiloApp extends LitElement {
         activateBuiltins(this.stilo);
         this.stilo.ui.setSettle(() => this.updateComplete);
         this._unwatch?.();
-        const { ui, panels, status, document, tree } = this.stilo;
-        const stops = [ui, panels, status, document, tree].map((service) => service.on("change", () => this.requestUpdate()));
+        const { ui, panels, status, document, tree, router, views } = this.stilo;
+        const stops = [ui, panels, status, document, tree, router, views].map((service) => service.on("change", () => this.requestUpdate()));
         this._unwatch = () => stops.forEach((stop) => stop());
     }
 
@@ -241,10 +254,16 @@ export class StiloApp extends LitElement {
     _onLinkClick(e) {
         if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
         const link = e.composedPath().find((node) => node instanceof HTMLAnchorElement && node.hasAttribute("href"));
-        if (!link || link.target || !this._doc) return;
-        const url = new URL(link.getAttribute("href"), this._transport.documentUrl(this._doc));
+        if (!link || link.target) return;
+        // From a view, links resolve from the page's address
+        const base = this._doc ? this._transport.documentUrl(this._doc) : location.href;
+        const url = new URL(link.getAttribute("href"), base);
         const path = this._transport.documentPath(url);
-        if (path) {
+        if (url.origin === new URL(this._transport.origin ?? location.origin).origin && url.searchParams.get("view")) {
+            // A link to a view of this app
+            e.preventDefault();
+            this.stilo.router.go(readRoute(url));
+        } else if (path) {
             e.preventDefault();
             this.stilo.router.go({ root: this.stilo.router.root, doc: path });
         } else if (url.protocol === "http:" || url.protocol === "https:") {
@@ -256,7 +275,16 @@ export class StiloApp extends LitElement {
 
     // -- render --------------------------------------------------------------
 
+    /** A view (`router.view`) in place of the editor. */
+    _renderView() {
+        const { router, views } = this.stilo;
+        const view = views.get(router.view);
+        if (!view) return html`<div class="placeholder error">This page is not available: no view “${router.view}”.</div>`;
+        return html`<div class="view" data-view=${view.id}>${view.render(this.stilo, router.params)}</div>`;
+    }
+
     _renderMain() {
+        if (this.stilo.router.view) return this._renderView();
         const { error } = this.stilo.document;
         if (error) return html`<div class="placeholder error">${error}</div>`;
         if (!this._doc)

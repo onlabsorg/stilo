@@ -19,6 +19,8 @@ export class Router extends Service {
         super();
         this._stilo = stilo;
         this._root = null;
+        this._view = null;
+        this._params = {};
         this._history = history;
         this._location = location;
         this._window = win;
@@ -28,6 +30,21 @@ export class Router extends Service {
     /** The navigation root, a folder path (`""` for the server root). */
     get root() {
         return this._root;
+    }
+
+    /** The id of the view shown in place of a document, or `null`. */
+    get view() {
+        return this._view;
+    }
+
+    /** The parameters of the view shown (`{}` without one). */
+    get params() {
+        return this._params;
+    }
+
+    /** The route shown now: `{root, doc, view, params}`. */
+    get route() {
+        return { root: this._root, doc: this._stilo.document.path, view: this._view, params: this._params };
     }
 
     /** Apply the address, and follow the back and forward buttons. */
@@ -40,11 +57,13 @@ export class Router extends Service {
         this._window.removeEventListener("popstate", this._onPopState);
     }
 
-    /** Show a route (`{root, doc}`), with a new history entry. Leaving a
-     * document with unsaved changes asks first; declined, nothing happens. */
+    /** Show a route (`{root, doc}`, or `{root, view, params}` for a view),
+     * with a new history entry. Leaving a document with unsaved changes
+     * asks first; declined, nothing happens. */
     async go(route) {
         const { document, ui } = this._stilo;
-        if (document.dirty && route.doc !== document.path && !(await ui.confirm("Discard unsaved changes?"))) return;
+        const doc = route.view ? null : (route.doc ?? null);
+        if (document.dirty && doc !== document.path && !(await ui.confirm("Discard unsaved changes?"))) return;
         this._history.pushState(null, "", routeUrl(route));
         return this.apply(route);
     }
@@ -56,12 +75,18 @@ export class Router extends Service {
         return this.apply(route);
     }
 
-    /** Show a route without touching the history. */
-    async apply({ root, doc }) {
-        if (root !== this._root) {
+    /** Show a route without touching the history. A view closes the
+     * document. */
+    async apply({ root, doc, view = null, params = {} }) {
+        view = view || null;
+        params = view ? { ...params } : {};
+        if (view) doc = null;
+        if (root !== this._root || view !== this._view || JSON.stringify(params) !== JSON.stringify(this._params)) {
             this._root = root;
+            this._view = view;
+            this._params = params;
             this.changed();
         }
-        if (doc !== this._stilo.document.path) await this._stilo.document.load(doc);
+        if ((doc ?? null) !== this._stilo.document.path) await this._stilo.document.load(doc ?? null);
     }
 }

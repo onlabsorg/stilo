@@ -411,6 +411,11 @@ accept are not part of Stilo.
   folder. Commands that do not apply at the moment are greyed out in
   menus and in the commands pane, with the reason. Nothing changes for
   users without extensions.
+- 2026-11-17: **extensions, fifth part**: an extension can add pages that
+  are not documents, such as a dashboard, each at its own web address and
+  shown in place of the editor; they can be bookmarked, the back button
+  works, and links to them open them in the app. Nothing changes for users
+  without extensions.
 
 ## Known limitations
 

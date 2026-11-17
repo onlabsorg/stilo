@@ -111,10 +111,10 @@ valid or taken, its `apiVersion` does not match (`API_VERSION`, now
 that records each registration (the table `REGISTRATIONS`: `commands.register`,
 `keys.bind`, `menus.add`, `register` and `replace` of `panels`, `topBar`
 and `status`, `transport.use`, `decorate`, `filter` and `readOnly` of
-`tree`, and every service's `on`), so
+`tree`, `views.register` and `views.replace`, and every service's `on`), so
 `deactivate(id)` undoes all
 of them, the latest first; a `dispose()` the extension calls itself is not
-undone twice. The ids of its commands, panels and top-bar and status items
+undone twice. The ids of its commands, panels, views and top-bar and status items
 must start with `<id>.`; another is refused (and an `activate` that does
 it fails). `replace` may take the place of one of Stilo's own.
 
@@ -264,6 +264,31 @@ confirming if the document is dirty and another one would open;
 a delete, when the old address is gone); `start()`, called by the app when
 it connects, applies the address and follows the back and forward buttons.
 A route whose document is not the open one opens it (`document.load`).
+`view` and `params` are the view shown in place of a document, if any
+(below); `route` is the route shown now, `{root, doc, view, params}`.
+
+**`views`** holds the pages that are not a document (S17): a dashboard, a
+comparison of two versions, a settings page. It is a registry, like
+`panels`:
+
+```js
+stilo.views.register({
+    id: "dash.board",                     // an extension's: "<extension-id>.<name>"
+    label: "Dashboard",                   // shown in the top bar while it is open
+    render: (stilo, params) => html`…`,   // shown in place of the editor
+});                                       // returns dispose()
+stilo.views.open("dash.board", { folder: "projects" }); // router.go, a history entry
+```
+
+A view has an address, `/?view=<id>`, with the navigation root and its
+parameters in the query string ([Routing](#routing-routejs)), so it can
+be bookmarked and the back button works; never a path, since every path
+is a file's public URL. Opening one closes the document, after asking if
+it has unsaved changes. `<stilo-app>` renders the view in the main area,
+on a sheet like the editor's; an address naming a view that is not
+registered (its extension is not installed) shows "This page is not
+available". A link in a view or a document to `?view=` on this server
+opens the view in the app.
 
 ## The shell: `StiloApp`
 
@@ -275,6 +300,7 @@ the window in a CSS grid (top bar; navigation, main area, right pane;
 status line) and
 renders:
 
+- the view of the address, if any (`router.view`, `views`), or else
 - the editor of the open document (its `url` is the document's public
   address, so relative imports resolve from the document's folder),
   attached to the `editor` service after every rendering, or the source
@@ -350,10 +376,13 @@ bookmarked and the back button works (the `router` service):
 /projects/beam/check.texl    root = the server root, check.texl open
 /projects/beam/check.texl?root=projects
                              root = projects, check.texl open
+/?view=dash.board&root=projects&folder=a
+                             the view dash.board, params {folder: "a"}
 ```
 
-`readRoute(url)` returns `{root, doc}` for an address; `routeUrl({root,
-doc})` builds the address. `router.go` pushes a history entry when it
+`readRoute(url)` returns `{root, doc, view, params}` for an address (with
+a view, no document; `params` are the query's other parameters);
+`routeUrl({root, doc, view, params})` builds the address. `router.go` pushes a history entry when it
 opens a document, and the router applies the route again on `popstate`.
 
 The editor's events go to the services directly: an edit makes the

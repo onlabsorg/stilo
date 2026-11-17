@@ -283,13 +283,15 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
   pane, open panel, source view, `confirm`), `registry.js` (`Registry`:
   items by id and order, `register`, `replace`; the `topBar` and `status`
   services: top-bar items, the status line at the bottom, shown only with
-  items), `panels.js` (the right pane's
+  items; `views`: pages that are not a document, at `?view=<id>`, shown in
+  place of the editor), `panels.js` (the right pane's
   panels, the top bar's buttons, badges; a `Registry`), `errors.js` (the open document's
   errors, the one pointed out, `go-to`), `comments.js` (its cell comments
   by line, the line pointed out, `go-to`), `editor.js` (the open
   document's `<texl-editor>`, its events passed on), `document.js` (the
   open document: load, save, reload, dirty), `router.js` (the address:
-  navigation root, `go`, `replace`, back and forward), `tree.js` (the
+  navigation root, the view and its parameters, `go`, `replace`, back and
+  forward), `tree.js` (the
   navigation pane's tree, current item, other files, `askName` through
   the pane, the Move to… dialog; `checkName`; providers: `decorate`,
   `filter`, `readOnly`, read by `decoration`, `shows`, `readOnlyReason`,
@@ -297,7 +299,8 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
   `extensions` service, `API_VERSION`, the scoped `stilo` an extension
   gets). `<stilo-app>` creates and
   provides it. A new command, key or menu entry is registered there.
-- `web/src/route.js` — browser URL ↔ `{root, doc}`. `web/src/api.js` —
+- `web/src/route.js` — browser URL ↔ `{root, doc, view, params}`
+  (`?view=<id>`: a view, no document). `web/src/api.js` —
   the protocol client, `Transport` (`stilo.transport`); every request goes
   through its `fetch`, and its middleware (`use`); `loader`, given to the
   editor, sends Texl imports through it too. `web/src/theme.js`,
