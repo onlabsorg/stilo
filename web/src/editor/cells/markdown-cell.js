@@ -73,6 +73,8 @@ export class MarkdownCell extends TextCell {
 
     static key = "m";
 
+    static commandLabel = "Make it Markdown and edit";
+
     static styles = [TextCell.styles, mathStyles];
 
     static icon = html`<svg viewBox="0 0 24 24">

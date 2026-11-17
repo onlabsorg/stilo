@@ -101,7 +101,7 @@ place:
 | Right-pane panels, top bar, status line | The `panels`, `topBar` and `status` registries (`web/src/core/`), open to extensions, which may also replace a panel; Stilo's own panels in `web/src/builtins/panels.js` | — |
 | Tree markers, filters, read-only items | The `tree` service holds the tree; no markers yet | Providers in the `tree` service; the navigation pane itself stays core |
 | Pages that are not documents | — | The `views` service, addressed by `?view=<id>` |
-| Server access | The `transport` service, a `Transport` (`web/src/api.js`) | Replaceable or wrapped by extensions; imports by Texl go through it too |
+| Server access | The `transport` service, a `Transport` (`web/src/api.js`): replaceable (`startStilo({transport})`), wrapped by middleware (`transport.use`); Texl imports go through it (the editor's `loader`) | — |
 | CLI commands    | The `COMMANDS` list in `src/stilo/cli/commands.py` | Also from other packages, by a Python entry-point group |
 | Server          | `create_app()` in `src/stilo/server/app.py` | `create_app()` takes a storage, routers and middleware; extension endpoints under `/_api/x/<id>/` |
 

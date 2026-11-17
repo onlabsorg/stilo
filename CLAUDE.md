@@ -295,7 +295,8 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
   provides it. A new command, key or menu entry is registered there.
 - `web/src/route.js` — browser URL ↔ `{root, doc}`. `web/src/api.js` —
   the protocol client, `Transport` (`stilo.transport`); every request goes
-  through its `fetch`. `web/src/theme.js`,
+  through its `fetch`, and its middleware (`use`); `loader`, given to the
+  editor, sends Texl imports through it too. `web/src/theme.js`,
   `theme.css` — light/dark theme (default dark), design tokens as CSS custom properties, also mapped onto
   the editor's `--texl-*` properties.
 - `web/src/editor/` — the editor:
@@ -305,11 +306,14 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
     edit mode, and rendering (one `engine.render` of the whole document per
     pass, split into cell outputs at the markers by `outputSpans`, from the
     tags' positions).
-    Public surface: `value`, `url`, `rows`, `rendered`, `errors`, `editing`,
+    Public surface: `value`, `url`, `rows`, `readonly`, `loader`,
+    `rendered`, `errors`, `editing`,
     `runCommand(name)`, `select(line)`, `commands`, events `change`,
     `comments-click`, `errors-change`, `error-click`, `selection-change`,
     `name-conflict`. Keys and `runCommand` share one
-    table of commands (`_commands()`); a new editor action goes there.
+    table of commands (`_commands()`); a new editor action goes there,
+    and in `commands.js` (`editorCommands()`: label, keys, group, whether
+    it changes the document), which Stilo's commands pane lists.
   - `texl-cell.js` — `TexlCell`, base class of all cells: modes, layout,
     commit protocol (`cell-change` with `{texl}`, then `cell-exit`).
   - `cells/` — built-in cell types (`rich`, the default: WYSIWYG, its source

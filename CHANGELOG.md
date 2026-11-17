@@ -15,7 +15,14 @@ change the interfaces.
   the top bar and to a status line at the bottom of the window (shown only
   when it has items), and replace a panel of the right pane; the commands
   pane lists active extensions, and those not activated, in an Extensions
-  group. Nothing changes for users without extensions.
+  group. Extensions can also send every request to the server through
+  their own code (`stilo.transport.use`), Texl imports included.
+  Nothing changes for users without extensions.
+- **Editor component** (for developers): `<texl-editor>` gains a
+  read-only mode (`readonly`), a `loader` for the documents it imports,
+  and `editorCommands()`, the list of its commands with their labels and
+  keys. In Stilo's commands pane the "Make it …" commands now follow the
+  order of the cell type menu.
 - **Keyboard shortcuts match exactly**: a shortcut no longer runs when
   extra modifier keys are held. Alt+Shift+N used to act as Alt+N (New
   document); likewise Alt+C, Alt+U and Alt+T. The shortcuts as listed in

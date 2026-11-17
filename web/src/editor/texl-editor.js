@@ -14,6 +14,7 @@ import {
 } from "./document.js";
 import { cellTagName, cellClass, cellTypes } from "./registry.js";
 import { createEngine } from "./engine.js";
+import { changesDocument } from "./commands.js";
 import { findErrors, markErrors } from "./errors.js";
 import { TexlCell } from "./texl-cell.js";
 
@@ -155,6 +156,8 @@ export class TexlEditor extends LitElement {
     static properties = {
         url: { type: String },
         rows: { type: Number },
+        readonly: { type: Boolean, reflect: true },
+        loader: { attribute: false },
         _cells: { state: true },
         _outputs: { state: true },
         _errors: { state: true },
@@ -404,6 +407,10 @@ export class TexlEditor extends LitElement {
         this._anchor = 0;
         this._selected = 0;
         this._editing = -1;
+        /** Whether the document can only be viewed, not changed. */
+        this.readonly = false;
+        /** The engine's loader of `http` and `https` URIs, or null for Texl's own. */
+        this.loader = null;
         /** The Texl engine, as a promise, created on the first rendering. */
         this._engine = null;
         this._generation = 0;
@@ -447,8 +454,18 @@ export class TexlEditor extends LitElement {
     }
 
     willUpdate(changed) {
-        // The first rendering follows `value`; later, a new URL renders again
-        if (changed.has("url") && this.hasUpdated) this.rendered = this._renderCells();
+        // A new loader needs a new engine
+        if (changed.has("loader") && this._engine) {
+            this._engine.then((engine) => engine.free());
+            this._engine = null;
+        }
+        // The first rendering follows `value`; later, a new URL or loader renders again
+        if ((changed.has("url") || changed.has("loader")) && this.hasUpdated) this.rendered = this._renderCells();
+        // Leaving read-only mode is fine; entering it ends an edit and closes the menu
+        if (changed.has("readonly") && this.readonly) {
+            this._cellElement(this._editing)?.exitEdit(false);
+            this._closeMenu();
+        }
     }
 
     /** The document text. */
@@ -481,7 +498,10 @@ export class TexlEditor extends LitElement {
     async _renderCells() {
         const generation = ++this._generation;
         const cells = this._cells;
-        this._engine ??= createEngine();
+        this._engine ??= createEngine().then((engine) => {
+            if (this.loader) for (const scheme of ["http", "https"]) engine.addLoader(scheme, this.loader);
+            return engine;
+        });
         const engine = await this._engine;
         let doc = null;
         try {
@@ -626,6 +646,8 @@ export class TexlEditor extends LitElement {
             errors: () => this._onErrorClick(this._selected, this._errorPlaces.find(({ line }) => line === this._selected + 1)),
         };
         for (const type of cellTypes()) commands[`make-${type}`] = () => this._editAs(type);
+        // Read-only: the commands that change the document do not apply
+        if (this.readonly) for (const name of Object.keys(commands)) if (changesDocument(name)) commands[name] = () => false;
         return commands;
     }
 
@@ -696,6 +718,7 @@ export class TexlEditor extends LitElement {
      * selection is selected first.
      */
     _openMenu(index) {
+        if (this.readonly) return;
         if (this._menu === index) {
             this._closeMenu();
             return;
@@ -794,6 +817,7 @@ export class TexlEditor extends LitElement {
 
     /** Selects line `index` alone and edits it, unless another line is being edited. */
     _edit(index) {
+        if (this.readonly) return false;
         if (this._editing >= 0 && this._editing !== index) return;
         this._closeMenu();
         this._select(index);
@@ -806,6 +830,7 @@ export class TexlEditor extends LitElement {
         if (this._editing >= 0 || !e.clipboardData || e.target !== this || document.getSelection()?.toString())
             return;
         e.preventDefault();
+        if (this.readonly && e.type !== "copy") return;
         if (e.type === "paste") this._paste(e.clipboardData.getData("text/plain"));
         else {
             e.clipboardData.setData("text/plain", this._copiedText());
@@ -945,6 +970,7 @@ export class TexlEditor extends LitElement {
     }
 
     _onCellChange(index, texl) {
+        if (this.readonly) return;
         const cell = this._cells[index];
         this._spliceCells(index, cell ? 1 : 0, this._cellsAfterEdit(index, texl));
     }

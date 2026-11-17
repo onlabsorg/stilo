@@ -66,6 +66,8 @@ count). It owns the document: set it with `value`, read it back from `value`.
 | `value`   | —          | `string`         | `""`    | The document text. Setting it parses the document, names unnamed cells, resets selection and undo history, and starts a rendering pass. Reading it serialises the current cells. |
 | `url`     | `url`      | `string`         | `"untitled.texl"` | The URL of the document, resolved against the page URL. The document renders as the document at this URL: relative `texl.import` URIs resolve against its folder. It may change at any time: the editor renders again. The default puts an unsaved document in the page's folder. |
 | `rows`    | `rows`     | `number`         | `100`   | Lines on the sheet. The sheet shows more if the document has more cells. |
+| `readonly` | `readonly` (reflected) | `boolean` | `false` | Read-only mode: the document can be viewed, selected, copied, and its comments and errors shown, but not changed. Keys, double clicks, the type menu, paste and cut that would change it do nothing, and the commands that change it (`changes` in `editorCommands()`) resolve to `false`. Setting it ends an edit, discarding it, and closes the type menu. |
+| `loader`  | —          | `function \| null` | `null` | The loader of `http` and `https` URIs for the editor's Texl engine (Texl's `addLoader`): it takes a URL and returns the source, or `{url, source}` with the final URL, or a promise of either. Every `texl.import` goes through it, e.g. to send credentials. `null`: Texl's own, a plain `fetch`. A new one renders again. |
 | `rendered`| —          | `Promise<void>`  | resolved | The current rendering pass. Await it after setting `value` (or after a change) to read the rendered outputs. Read-only by convention. |
 | `errors`  | —          | `DocumentError[]` | `[]`   | The errors of the document, as of the last rendering (see [Errors](#errors)). Read-only. |
 | `editing` | —          | `boolean`        | `false` | Whether a cell is in edit mode. Its edit is not in `value` until committed (the `commit` command). Read-only. |
@@ -120,6 +122,16 @@ before a command runs (`cell-type` toggles it).
 which use the browser's clipboard events. The browser allows it only after
 a user action, such as the click on a menu item that calls `runCommand`,
 and may ask the user before a paste.
+
+`editorCommands()` (exported with the editor) lists the commands as the
+user sees them, in the order a list shows them, for a page that offers them
+in its own menus: `{name, label, keys, group, cell?, changes?}`. `keys` is
+the shortcut in the notation `Mod+Shift+Z` (`Mod` is Ctrl, or ⌘ on macOS),
+`group` is `"Document"` or `"While editing a cell"`, `cell` marks a key of
+a cell's own text editor (Mod+E, Shift+F2), listed for reference, which
+`runCommand` does not take, and `changes` a command that changes the
+document. The `make-<type>` commands follow the cell registry; their label
+is the type's `commandLabel`.
 
 ```js
 toolbar.querySelector("#insert").onclick = () => editor.runCommand("insert-below");
@@ -216,6 +228,7 @@ type; see [Writing a cell type](guide.md#7-write-your-own-cell-type).
 | `label`  | `string`        | The type's name shown in the type menu and tooltips; the type if empty. |
 | `icon`   | Lit `html` template | A 24×24 SVG drawn with strokes (`fill: none; stroke: currentColor` are set by the editor). Shown in the left margin and the type menu. |
 | `key`    | `string`        | The key that changes the selected line to this type and edits it (`"="` for `formula`); empty for none. Not inherited: read as an own property. Shown in the type menu. |
+| `commandLabel` | `string`  | The label of its `make-<type>` command in `editorCommands()`, e.g. `"Make it a formula and edit"`; empty: "Change to *label* and edit". |
 | `needs`  | `string`        | What the type needs of a source, e.g. `"a table"`; empty if it accepts any. Shown as "Needs …" in the type menu and in the commit error. |
 | `requires` | `{url, source}` or `null` | A document the type's cells import: `url`, the imported path, and `source`, the tag that imports it. When a cell of the type is first written with content and no cell's source mentions `url`, the editor adds a formula cell with `source` at the top of the document. `null` by default. |
 | `accepts(source)` | static method → `boolean` | Whether the type can edit and show `source`. The base accepts any source; a type that needs a shape overrides it. White space and HTML comments around the content must not make it return false. The type menu offers the type only for cells whose source it accepts. |

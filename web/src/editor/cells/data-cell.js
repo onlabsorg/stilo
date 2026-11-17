@@ -219,6 +219,8 @@ export class DataCell extends GridCell {
 
     static key = "d";
 
+    static commandLabel = "Make it a data table and edit";
+
     static icon = html`<svg viewBox="0 0 24 24">
         <ellipse cx="12" cy="6" rx="7" ry="3" />
         <path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6" />

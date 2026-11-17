@@ -110,7 +110,8 @@ valid or taken, its `apiVersion` does not match (`API_VERSION`, now
 `activate` gets a **scoped `stilo`**: the same services, through a proxy
 that records each registration (the table `REGISTRATIONS`: `commands.register`,
 `keys.bind`, `menus.add`, `register` and `replace` of `panels`, `topBar`
-and `status`, and every service's `on`), so `deactivate(id)` undoes all
+and `status`, `transport.use`, and every service's `on`), so
+`deactivate(id)` undoes all
 of them, the latest first; a `dispose()` the extension calls itself is not
 undone twice. The ids of its commands, panels and top-bar and status items
 must start with `<id>.`; another is refused (and an `activate` that does
@@ -383,11 +384,15 @@ order})`, returning `dispose()`; `items(menu)` gives the command ids with
 
 Stilo's own commands:
 
-- **Editor commands** have the id of an editor command
-  (`docs/component/api.md`, Commands). Running one calls
-  `editor.runCommand(id)`, back in the editor view.
+- **Editor commands** come from the editor itself, with their labels,
+  keys and groups (`editorCommands()`, `docs/component/api.md`, Commands);
+  their id is the editor command's name. Running one calls
+  `editor.runCommand(id)`, back in the editor view. They are read once,
+  when the built-ins are activated: a cell type registered later gets no
+  `make-<type>` command in the list.
 - Commands without `run` (Mod+E and Shift+F2 inside a cell's text
-  editor) are listed for reference: they belong to the cell.
+  editor, `cell` in `editorCommands()`) are listed for reference: they
+  belong to the cell.
 - **Navigation pane commands** (ids `tree-*`, and New document) act on a
   tree node, the functions of `builtins/files.js`. From a menu or a key of
   `<nav-pane>` the node is the item's (`commands.run(id, {node})`). From
@@ -426,8 +431,23 @@ notation.
 
 `Transport` is the protocol client; the app's one is `stilo.transport`. Its
 `origin` is the server's, the page's by default. Every request goes through
-its `fetch(url, init)`, which throws an `ApiError` for a failed one; its
-methods:
+its `fetch(url, init)`, which throws an `ApiError` for a failed one.
+
+**Middleware.** `use((url, init, next) => response)` adds a function that
+every request goes through, the Texl imports included; it returns
+`dispose()` (an extension's is undone when it is deactivated). It may
+change the request (a header, credentials), call `next(url, init)` and
+change the response, or answer itself (a `401` that sends the user to a
+login page). The one added last is the outermost. `send(url, init)` is the
+request through the middleware, failed or not; `fetch` checks it.
+
+**Imports.** `load(url)` reads a Texl document through the middleware:
+`{url, source}`, the URL being the final one after redirects (a `~` in an
+import's path is a redirect). `loader` is `load` bound to the transport:
+`<stilo-app>` gives it to the editor (`loader`), so every `texl.import` of
+the open document goes through the transport.
+
+Its methods:
 
 | Method                     | Protocol                 | Returns            |
 |----------------------------|--------------------------|--------------------|

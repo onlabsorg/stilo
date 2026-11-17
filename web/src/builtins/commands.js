@@ -9,11 +9,13 @@
 //
 import { isMac } from "../core/keys.js";
 import { toggleTheme } from "../theme.js";
+import { editorCommands } from "../editor/index.js";
 import * as files from "./files.js";
 
-/** A command of the editor, by its name there, which is also its id. */
-function editorCommand(id, label, keys, group = "Document") {
-    return { id, label, keys, when: "editor", group, run: (stilo) => stilo.editor.runCommand(id) };
+/** A command of the editor (`editorCommands`), by its name there, which is
+ * also its id; a key of a cell's own text editor is listed without `run`. */
+function editorCommand({ name, label, keys, group, cell }) {
+    return { id: name, label, keys, when: "editor", group, ...(cell ? {} : { run: (stilo) => stilo.editor.runCommand(name) }) };
 }
 
 /** Show the document's text, as it would be saved, instead of the editor;
@@ -88,35 +90,7 @@ export const definitions = [
     { id: "show-source", label: "Show source", keys: "Alt+U", group: "View", run: toggleSource },
     { id: "toggle-theme", label: "Switch light / dark theme", keys: "Alt+T", group: "View", run: () => toggleTheme() },
 
-    editorCommand("edit", "Edit the selected cell", "Enter"),
-    editorCommand("insert-below", "Insert a cell below", "Alt+Enter"),
-    editorCommand("insert-above", "Insert a cell above", "Alt+Shift+Enter"),
-    editorCommand("move-up", "Move cells up", "Alt+↑"),
-    editorCommand("move-down", "Move cells down", "Alt+↓"),
-    editorCommand("delete", "Delete the selected cells", "Delete"),
-    editorCommand("cell-type", "Change the cell type…", "Mod+/"),
-    editorCommand("hide", "Hide the selected cells", ""),
-    editorCommand("unhide", "Unhide the cells in the selection", ""),
-    editorCommand("show-hidden", "Show or hide the hidden cells", ""),
-    editorCommand("make-formula", "Make it a formula and edit", "="),
-    editorCommand("make-rich", "Make it rich text and edit", "R"),
-    editorCommand("make-text", "Make it text and edit", "T"),
-    editorCommand("make-markdown", "Make it Markdown and edit", "M"),
-    editorCommand("make-table", "Make it a table and edit", "Shift+T"),
-    editorCommand("make-data", "Make it a data table and edit", "D"),
-    editorCommand("make-chart", "Make it a chart and edit", "C"),
-    editorCommand("undo", "Undo", "Mod+Z"),
-    editorCommand("redo", "Redo", "Mod+Shift+Z"),
-    editorCommand("comments", "Show the cell's comments", "Shift+F2"),
-    editorCommand("errors", "Show the cell's errors", ""),
-    editorCommand("copy", "Copy cells", "Mod+C"),
-    editorCommand("cut", "Cut cells", "Mod+X"),
-    editorCommand("paste", "Paste cells", "Mod+V"),
-
-    editorCommand("commit", "Commit the edit", "Mod+Enter", "While editing a cell"),
-    editorCommand("discard", "Discard the edit", "Escape", "While editing a cell"),
-    { id: "insert-tag", label: "Insert a formula tag", keys: "Mod+E", when: "editor", group: "While editing a cell" },
-    { id: "insert-comment", label: "Insert a cell comment", keys: "Shift+F2", when: "editor", group: "While editing a cell" },
+    // The editor's commands follow, from the editor itself (`editorCommands`)
 ];
 
 /**
@@ -138,7 +112,7 @@ export const menus = {
  * removes them all. */
 export function activate(stilo) {
     const disposers = [];
-    for (const { keys, when, ...command } of definitions) {
+    for (const { keys, when, ...command } of [...definitions, ...editorCommands().map(editorCommand)]) {
         disposers.push(stilo.commands.register(command));
         if (keys) disposers.push(stilo.keys.bind(keys, command.id, { when }));
     }

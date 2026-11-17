@@ -23,6 +23,8 @@ export class ChartCell extends FormCell {
 
     static key = "c";
 
+    static commandLabel = "Make it a chart and edit";
+
     static icon = html`<svg viewBox="0 0 24 24">
         <path d="M4 4v16h16" />
         <path d="M7 15l4-5 3 3 5-6" />

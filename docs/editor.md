@@ -52,6 +52,7 @@ exactly the text that is saved.
 | `web/src/editor/cells/formula-cell.js`   | `FormulaCell`: one tag, edited without its delimiters; `parseFormula`, `serializeFormula` | text-cell, swan | [`FormulaCell`](component/api.md#formulacell) |
 | `web/src/editor/math.js`                 | Equations in Markdown: finds `$...$` and `$$...$$`, typesets them, declares the fonts in the document | KaTeX, errors |
 | `web/src/editor/registry.js`             | Maps cell types to custom element tags | — | [Cell registry](component/api.md#cell-registry) |
+| `web/src/editor/commands.js`             | `editorCommands()`: the commands as the user sees them (label, keys, group), `changesDocument` | registry | [Commands](component/api.md#commands) |
 | `web/src/editor/document.js`             | The file format: parse, serialise, names, comments, split a rendering. Pure functions, no DOM | — | [Document functions](component/api.md#document-functions) |
 | `web/src/editor/errors.js`               | The errors of a rendering (`findErrors`), their marks in the output (`markErrors`, `sanitizeOutput`), `excerptAt` | document, `@onlabsorg/texl`, DOMPurify | [Errors](component/api.md#errors) |
 | `web/src/editor/engine.js`               | Loads the Texl WebAssembly module once, creates engines | `@onlabsorg/texl` | [Engine](component/api.md#engine) |
@@ -188,7 +189,7 @@ states, which is cheap because cell arrays are never mutated. Setting
 // TexlEditor._renderCells()
 const generation = ++this._generation;
 const cells = this._cells;
-this._engine ??= createEngine();
+this._engine ??= createEngine(); // with `loader` for http(s), if set
 const engine = await this._engine;
 let outputs = [];
 try {
@@ -280,7 +281,16 @@ closed). A command returns `false` when it does not apply, which
 `navigator.clipboard` (`_writeClipboard`, `_readClipboard`), since a page
 cannot fire trusted clipboard events. `select(line)` sets the selection as
 a click does. A new editor action is added to `_commands()`, so its key
-and `runCommand` stay the same; see [Commands](component/api.md#commands).
+and `runCommand` stay the same, and to `commands.js`, which describes it
+for the user (label, keys, group, whether it changes the document);
+`editorCommands()` lists them, and a test checks that both have the same
+names. See [Commands](component/api.md#commands).
+
+**Read-only mode** (`readonly`): `_commands()` replaces every command that
+changes the document (`changesDocument`) with one that returns `false`;
+`_edit`, `_openMenu`, `_onCellChange` and the paste and cut events do
+nothing. Selecting, copying, showing comments and errors and showing the
+hidden cells still work.
 
 ## Cells: `TexlCell` and its subclasses
 

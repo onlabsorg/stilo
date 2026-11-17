@@ -26,6 +26,7 @@ export { TexlForm } from "./texl-form.js";
 export { parseTable, serializeTable, parseFormula, serializeFormula, parseData, serializeData, parseCall, serializeCall, STILO_IMPORT, STILO_LIBRARY };
 export { expressionError } from "./expression.js";
 export { registerCell, cellTagName, cellClass, cellTypes } from "./registry.js";
+export { editorCommands } from "./commands.js";
 export { parseDocument, serializeDocument, parseMarker, formatMarker, cellComments, isBlank, cellName, nameCells, nameConflicts, tagSpans, cellsFromSource, spanningTag, outputSpans, tagOutputs, splitRendering } from "./document.js";
 export { createEngine } from "./engine.js";
 export { excerptAt } from "./errors.js";

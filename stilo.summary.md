@@ -395,6 +395,14 @@ accept are not part of Stilo.
   replace one of the right pane's panels with its own. The commands pane
   lists the active extensions, and those that failed, but only when there
   are any. Nothing changes for users without extensions.
+- 2026-11-17: **extensions, third part**: an extension can now pass every
+  request to the server through its own code, imports between documents
+  included (for example to add sign-in details, or to send the user to a
+  login page). The editor component gained a read-only mode, in which a
+  document can be viewed, selected and copied but not changed, and it
+  now lists its own commands with their names and keys, which Stilo's
+  commands pane shows. The only visible change: in the commands pane the
+  "Make it …" commands now follow the order of the cell type menu.
 
 ## Known limitations
 

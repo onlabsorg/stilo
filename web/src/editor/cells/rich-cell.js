@@ -123,6 +123,8 @@ export class RichCell extends MarkdownCell {
 
     static key = "r";
 
+    static commandLabel = "Make it rich text and edit";
+
     static needs = "text with simple formatting, without raw HTML or a table";
 
     static icon = html`<svg viewBox="0 0 24 24">

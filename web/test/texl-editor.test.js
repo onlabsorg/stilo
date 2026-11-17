@@ -1538,3 +1538,88 @@ C <% b %>
         });
     });
 });
+
+describe("texl-editor's command list, read-only mode and loader", () => {
+    it("lists every command runCommand takes, with labels and keys, and the cells' own keys", async () => {
+        const { editorCommands } = await import("../src/editor/index.js");
+        const editor = await editorWith(SOURCE);
+        const list = editorCommands();
+        expect(list.filter((c) => !c.cell).map((c) => c.name).sort()).to.deep.equal([...editor.commands].sort());
+        const byName = Object.fromEntries(list.map((c) => [c.name, c]));
+        expect(byName["make-formula"]).to.include({ label: "Make it a formula and edit", keys: "=", group: "Document" });
+        expect(byName["make-table"].keys).to.equal("Shift+T");
+        expect(byName["make-markdown"].keys).to.equal("M");
+        expect(byName.commit.group).to.equal("While editing a cell");
+        expect(byName["insert-tag"].cell).to.be.true;
+    });
+
+    it("in read-only mode, selects and copies but does not change the document", async () => {
+        const editor = await editorWith(SOURCE);
+        editor.readonly = true;
+        await editor.updateComplete;
+        const before = editor.value;
+        const key = (key, init = {}) => {
+            const event = new KeyboardEvent("keydown", { key, cancelable: true, ...init });
+            editor.dispatchEvent(event);
+            return event;
+        };
+        key("ArrowDown");
+        await editor.updateComplete;
+        expect(cells(editor)[1].selected).to.be.true;
+        key("Enter");
+        key("Delete");
+        key("Enter", { altKey: true });
+        key("=");
+        await editor.updateComplete;
+        expect(editor.editing).to.be.false;
+        cells(editor)[1].dispatchEvent(new MouseEvent("dblclick"));
+        await editor.updateComplete;
+        expect(editor.editing).to.be.false;
+        for (const name of ["edit", "insert-below", "delete", "move-up", "cut", "undo", "cell-type", "hide", "make-text"])
+            expect(await editor.runCommand(name), name).to.be.false;
+        expect(await editor.runCommand("show-hidden")).to.be.true;
+        const clipboard = (type, text) => {
+            const clipboardData = new DataTransfer();
+            if (text !== undefined) clipboardData.setData("text/plain", text);
+            const event = new ClipboardEvent(type, { clipboardData, cancelable: true });
+            editor.dispatchEvent(event);
+            return event;
+        };
+        expect(clipboard("copy").clipboardData.getData("text/plain")).to.contain("q * L ^ 2 / 8");
+        clipboard("paste", "Pasted");
+        clipboard("cut");
+        expect(editor.value).to.equal(before);
+        expect(editor.hasAttribute("readonly")).to.be.true;
+        // Out of read-only mode it edits again
+        editor.readonly = false;
+        await editor.updateComplete;
+        expect(await editor.runCommand("edit")).to.be.true;
+        expect(editor.editing).to.be.true;
+    });
+
+    it("ends an edit when it becomes read-only", async () => {
+        const editor = await editorWith(SOURCE);
+        await editor.runCommand("edit");
+        expect(editor.editing).to.be.true;
+        editor.readonly = true;
+        await editor.updateComplete;
+        expect(editor.editing).to.be.false;
+    });
+
+    it("loads imports with its loader, and renders again with a new one", async () => {
+        const editor = await fixture(html`<texl-editor url="https://example.com/a/doc.texl"></texl-editor>`);
+        const asked = [];
+        editor.loader = (url) => (asked.push(url), { url, source: "<% x = 42 %>" });
+        await editor.updateComplete;
+        editor.value = `<!--{ aaaa : text }-->\n<% texl.import "other.texl" ~> (d -> d.data.x) %>\n`;
+        await editor.rendered;
+        await editor.updateComplete;
+        expect(asked).to.deep.equal(["https://example.com/a/other.texl"]);
+        expect(cells(editor)[0].output.trim()).to.equal("42");
+        editor.loader = async (url) => ({ url, source: "<% x = 7 %>" });
+        await editor.updateComplete;
+        await editor.rendered;
+        await editor.updateComplete;
+        expect(cells(editor)[0].output.trim()).to.equal("7");
+    });
+});

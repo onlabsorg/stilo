@@ -48,6 +48,13 @@ export class TexlCell extends LitElement {
      */
     static key = "";
 
+    /**
+     * The label of the command that changes the selected cell to this type
+     * and edits it (`make-<type>`), e.g. "Make it a formula and edit"; if
+     * empty, "Change to <label> and edit".
+     */
+    static commandLabel = "";
+
     /** What the type needs of a source, e.g. "a table"; empty if it accepts any. */
     static needs = "";
 

@@ -253,3 +253,49 @@ describe("the commands pane's Extensions group", () => {
         }
     });
 });
+
+describe("transport middleware and loader", () => {
+    it("send every request through the middleware, the last added outermost, until disposed", async () => {
+        const { Transport } = await import("../src/api.js");
+        const transport = new Transport({ origin: "https://example.com" });
+        const seen = [];
+        const realFetch = window.fetch;
+        window.fetch = async (url, init) => {
+            seen.push(["fetch", url, init?.headers?.Authorization]);
+            return new Response("<% x = 1 %>", { status: 200 });
+        };
+        try {
+            const disposeAuth = transport.use((url, init, next) => {
+                seen.push(["auth"]);
+                return next(url, { ...init, headers: { ...init?.headers, Authorization: "Bearer t" } });
+            });
+            transport.use(async (url, init, next) => {
+                seen.push(["log"]);
+                return next(url, init);
+            });
+            const { source } = await transport.loader("https://example.com/a.texl");
+            expect(source).to.equal("<% x = 1 %>");
+            expect(seen).to.deep.equal([["log"], ["auth"], ["fetch", "https://example.com/a.texl", "Bearer t"]]);
+            seen.length = 0;
+            disposeAuth();
+            await transport.readFile("a.texl");
+            expect(seen.map((s) => s[0])).to.deep.equal(["log", "fetch"]);
+            // A middleware may answer itself, e.g. a 401
+            transport.use(async () => new Response(JSON.stringify({ error: "sign in" }), { status: 401 }));
+            let error;
+            await transport.readFile("a.texl").catch((e) => (error = e));
+            expect(error.status).to.equal(401);
+        } finally {
+            window.fetch = realFetch;
+        }
+    });
+
+    it("undo an extension's middleware on deactivate", async () => {
+        const { Transport } = await import("../src/api.js");
+        const stilo = createStilo({ transport: new Transport({ origin: "https://example.com" }) });
+        await stilo.extensions.activate({ id: "auth", apiVersion: "1", activate: (s) => s.transport.use((u, i, next) => next(u, i)) });
+        expect(stilo.transport._middleware.length).to.equal(1);
+        stilo.extensions.deactivate("auth");
+        expect(stilo.transport._middleware.length).to.equal(0);
+    });
+});

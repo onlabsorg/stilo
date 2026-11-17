@@ -37,11 +37,51 @@ export class Transport {
      */
     constructor({ origin = location.origin } = {}) {
         this.origin = origin;
+        /** The middleware, outermost last. */
+        this._middleware = [];
+        /** The loader of Texl imports for the editor's engine (`load`, bound). */
+        this.loader = (url) => this.load(url);
+    }
+
+    /**
+     * Add a middleware, which every request goes through: a function
+     * `(url, init, next) => Response` (or a promise of it) that may change
+     * the request, call `next(url, init)` for the response, change it, or
+     * answer itself. The one added last is the outermost. Returns the function
+     * that removes it.
+     * @param {(url: string, init: RequestInit | undefined, next: (url: string, init?: RequestInit) => Promise<Response>) => Response | Promise<Response>} middleware
+     * @returns {() => void}
+     */
+    use(middleware) {
+        const entry = { middleware };
+        this._middleware.push(entry);
+        return () => {
+            const i = this._middleware.indexOf(entry);
+            if (i >= 0) this._middleware.splice(i, 1);
+        };
+    }
+
+    /** Send a request through the middleware; the response as it comes,
+     * failed or not. */
+    send(url, init) {
+        const chain = [...this._middleware];
+        const call = (i, url, init) => (i < 0 ? fetch(url, init) : Promise.resolve(chain[i].middleware(url, init, (u, n) => call(i - 1, u, n))));
+        return call(chain.length - 1, url, init);
     }
 
     /** Send a request to the server; throws an `ApiError` if it fails. */
     async fetch(url, init) {
-        return check(await fetch(url, init));
+        return check(await this.send(url, init));
+    }
+
+    /**
+     * Load a Texl document for the engine's `texl.import`, through the
+     * middleware: `{url, source}`, the URL being the final one after
+     * redirects (a `~` in the path, for one). Throws if it cannot be read.
+     */
+    async load(url) {
+        const response = await this.fetch(url);
+        return { url: response.url || url, source: await response.text() };
     }
 
     /**

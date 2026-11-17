@@ -28,6 +28,7 @@ const REGISTRATIONS = {
     panels: { register: "id", replace: null },
     topBar: { register: "id", replace: null },
     status: { register: "id", replace: null },
+    transport: { use: null },
 };
 
 /**
