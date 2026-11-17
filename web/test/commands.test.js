@@ -194,3 +194,54 @@ describe("top bar", () => {
         expect(buttons[1].getAttribute("aria-pressed")).to.equal("true");
     });
 });
+
+describe("errors service and pane", () => {
+    const error = (key, count, line) => ({
+        key,
+        count,
+        lines: [line],
+        description: "`x` is not defined",
+        location: { uri: null, local: true, line, textLine: 0, source: "x", pos: 0 },
+        causes: [],
+    });
+
+    it("counts the values, points one out and opens the panel", async () => {
+        const stilo = createStilo();
+        stilo.errors.set([error("a", 2, 1), error("b", 1, 3)]);
+        expect(stilo.errors.count).to.equal(3);
+        stilo.errors.show("b");
+        expect(stilo.errors.current).to.equal("b");
+        expect(stilo.ui.pane).to.equal("errors");
+        stilo.errors.clear();
+        expect([stilo.errors.count, stilo.errors.current]).to.deep.equal([0, null]);
+    });
+
+    it("puts their number on the errors panel's button", () => {
+        const stilo = createStilo();
+        activateBuiltins(stilo);
+        stilo.errors.set([error("a", 2, 1)]);
+        expect(stilo.panels.badge("errors")).to.include({ text: "2", label: "2 errors", tone: "danger" });
+        stilo.errors.set([]);
+        expect(stilo.panels.badge("errors")).to.equal(undefined);
+    });
+
+    it("lists them, highlights the one pointed out, and goes to a place on a click", async () => {
+        const { fixture, html } = await import("@open-wc/testing");
+        await import("../src/components/errors-pane.js");
+        const stilo = createStilo();
+        stilo.errors.set([error("a", 1, 1), error("b", 1, 3)]);
+        stilo.errors.show("b");
+        const places = [];
+        stilo.errors.on("go-to", (place) => places.push(place));
+        const el = await fixture(html`<stilo-provider .stilo=${stilo}><errors-pane></errors-pane></stilo-provider>`);
+        const pane = el.querySelector("errors-pane");
+        await pane.updateComplete;
+        const entries = [...pane.renderRoot.querySelectorAll(".entry")];
+        expect(entries).to.have.length(2);
+        expect(entries[1].classList.contains("current")).to.equal(true);
+        entries[1].click();
+        expect(places).to.deep.equal([{ line: 3 }]);
+        pane.renderRoot.querySelector("[aria-label=Close]").click();
+        expect(stilo.ui.pane).to.equal(null);
+    });
+});

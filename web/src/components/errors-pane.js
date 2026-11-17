@@ -2,13 +2,7 @@ import { LitElement, html, css } from "lit";
 import { base } from "./shared.js";
 import { closeIcon } from "../icons.js";
 import { excerptAt } from "../editor/index.js";
-import { documentPath } from "../api.js";
-
-/** A document's name for the pane: its path on this server, or its URL. */
-function documentName(uri) {
-    if (uri === null) return "Parsed code";
-    return documentPath(new URL(uri)) ?? uri;
-}
+import { StiloController } from "../core/context.js";
 
 /** A description, with the parts between backticks as code. */
 function describe(description) {
@@ -16,17 +10,12 @@ function describe(description) {
 }
 
 /**
- * Right pane: the errors of the open document. `errors` are the editor's
- * (`DocumentError`); `current` is the key of the one to highlight.
- *
- * Fires `close-pane`, and `go-to` with `{line}` (in the open document) or
- * `{uri, line}` (in another document) when an error or a location is clicked.
+ * Right pane: the errors of the open document, from the `errors` service
+ * (the editor's `DocumentError`s), the one it points out highlighted. A click
+ * on an error or a location goes there (`errors.goTo`): `{line}` in the open
+ * document, `{uri, line}` in another document.
  */
 export class ErrorsPane extends LitElement {
-    static properties = {
-        errors: { attribute: false },
-        current: { type: String },
-    };
 
     static styles = [
         base,
@@ -111,16 +100,25 @@ export class ErrorsPane extends LitElement {
 
     constructor() {
         super();
-        this.errors = [];
-        this.current = null;
+        this._stilo = new StiloController(this, (stilo) => [stilo.errors]);
+        this._shown = null;
     }
 
-    updated(changed) {
-        if (changed.has("current") && this.current) this.renderRoot.querySelector(".current")?.scrollIntoView({ block: "nearest" });
+    updated() {
+        // Scroll to the error pointed out, when it changes
+        const current = this._stilo.stilo?.errors.current ?? null;
+        if (current !== this._shown && current) this.renderRoot.querySelector(".current")?.scrollIntoView({ block: "nearest" });
+        this._shown = current;
     }
 
-    _goTo(target) {
-        this.dispatchEvent(new CustomEvent("go-to", { detail: target, bubbles: true, composed: true }));
+    _goTo(place) {
+        this._stilo.stilo.errors.goTo(place);
+    }
+
+    /** A document's name for the pane: its path on this server, or its URL. */
+    _documentName(uri) {
+        if (uri === null) return "Parsed code";
+        return this._stilo.stilo.transport.documentPath(new URL(uri)) ?? uri;
     }
 
     /** A link to a cell of the open document, by its number. */
@@ -138,7 +136,7 @@ export class ErrorsPane extends LitElement {
 
     /** Where an error was made, as a link if the place can be opened. */
     _location({ uri, local, line, textLine }) {
-        const name = documentName(uri);
+        const name = this._documentName(uri);
         if (uri === null || (!local && name === uri)) return name;
         const cell = `ell ${line}${textLine ? `, line ${textLine}` : ""}`;
         return html`<button
@@ -165,7 +163,7 @@ export class ErrorsPane extends LitElement {
     _renderError(error) {
         const { before, at, after } = excerptAt(error.location.source, error.location.pos);
         return html`<div
-            class="entry ${error.key === this.current ? "current" : ""}"
+            class="entry ${error.key === this._stilo.stilo.errors.current ? "current" : ""}"
             title="Go to cell ${error.lines[0]}"
             @click=${() => this._goTo({ line: error.lines[0] })}
         >
@@ -184,6 +182,7 @@ export class ErrorsPane extends LitElement {
     }
 
     render() {
+        const errors = this._stilo.stilo?.errors.list ?? [];
         return html`
             <div class="pane-header">
                 <span>Errors</span><span class="spacer"></span>
@@ -191,14 +190,14 @@ export class ErrorsPane extends LitElement {
                     class="icon-button"
                     aria-label="Close"
                     title="Close"
-                    @click=${() => this.dispatchEvent(new CustomEvent("close-pane", { bubbles: true, composed: true }))}
+                    @click=${() => this._stilo.stilo?.ui.openPane(null)}
                 >
                     ${closeIcon}
                 </button>
             </div>
             <div class="list">
-                ${this.errors.length
-                    ? this.errors.map((error) => this._renderError(error))
+                ${errors.length
+                    ? errors.map((error) => this._renderError(error))
                     : html`<div class="empty">No errors in this document.</div>`}
             </div>
         `;

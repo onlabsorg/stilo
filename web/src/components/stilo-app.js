@@ -65,8 +65,6 @@ export class StiloApp extends LitElement {
         _docError: { state: true },
         _dirty: { state: true },
         _comments: { state: true },
-        _errors: { state: true },
-        _currentError: { state: true },
         _commentLine: { state: true },
     };
 
@@ -201,8 +199,6 @@ export class StiloApp extends LitElement {
         this._dirty = false;
         this._comments = [];
         this._commentLine = null;
-        this._errors = [];
-        this._currentError = null;
         this._etag = null;
         this._onKeyDown = this._onKeyDown.bind(this);
         this._onPopState = () => this._applyRoute(readRoute());
@@ -226,6 +222,8 @@ export class StiloApp extends LitElement {
         activateBuiltins(this.stilo);
         this._unwatch?.();
         const stops = [this.stilo.ui, this.stilo.panels].map((service) => service.on("change", () => this.requestUpdate()));
+        // Going to an error's place needs the open document, still the app's
+        stops.push(this.stilo.errors.on("go-to", (place) => this._onErrorGoTo(place)));
         this._unwatch = () => stops.forEach((stop) => stop());
     }
 
@@ -295,8 +293,7 @@ export class StiloApp extends LitElement {
         this._ui.notify("");
         this._comments = [];
         this._commentLine = null;
-        this._errors = [];
-        this._currentError = null;
+        this.stilo.errors.clear();
         this._ui.setSource(null);
         if (!path) return;
         try {
@@ -724,21 +721,16 @@ export class StiloApp extends LitElement {
     }
 
     _onErrorsChange(e) {
-        this._errors = e.detail.errors;
-        const count = this._errors.reduce((sum, error) => sum + error.count, 0);
-        const label = count === 1 ? "1 error" : `${count} errors`;
-        this.stilo.panels.setBadge("errors", count ? { text: String(count), label, tone: "danger" } : null);
+        this.stilo.errors.set(e.detail.errors);
     }
 
     /** A highlighted value or a margin icon was clicked: show its error. */
     _onErrorClick(e) {
-        this._currentError = e.detail.error?.key ?? null;
-        this._ui.openPane("errors");
+        this.stilo.errors.show(e.detail.error?.key ?? null);
     }
 
     /** A place in the errors pane was clicked: go there, in another document if needed. */
-    async _onErrorGoTo(e) {
-        const { uri, line } = e.detail;
+    async _onErrorGoTo({ uri, line }) {
         const path = uri ? this._transport.documentPath(new URL(uri)) : this._doc;
         if (!path) return;
         if (path !== this._doc) await this._go({ root: this._root, doc: path });
@@ -802,11 +794,6 @@ export class StiloApp extends LitElement {
     /** The comments pane, until the comments service (phase 2 of S17). */
     _renderCommentsPane() {
         return html`<comments-pane .comments=${this._comments} .line=${this._commentLine} @comment-click=${this._onCommentClick}></comments-pane>`;
-    }
-
-    /** The errors pane, until the errors service (phase 2 of S17). */
-    _renderErrorsPane() {
-        return html`<errors-pane .errors=${this._errors} .current=${this._currentError} @go-to=${this._onErrorGoTo}></errors-pane>`;
     }
 
     render() {

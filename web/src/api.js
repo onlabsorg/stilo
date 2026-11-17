@@ -132,8 +132,7 @@ export class Transport {
     }
 }
 
-// Until the panes read the transport from the services (phase 2 of S17):
-// the public URLs of the page's own server.
+// Until the navigation pane reads the transport from the services (phase 2
+// of S17): the public URLs of the page's own server.
 const pageTransport = new Transport();
 export const documentUrl = (path) => pageTransport.documentUrl(path);
-export const documentPath = (url) => pageTransport.documentPath(url);

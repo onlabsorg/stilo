@@ -16,9 +16,9 @@ its own page: [The editor](editor.md).*
 | `src/components/move-dialog.js` | `<move-dialog>`: Move to…, choosing a folder       |
 | `src/components/commands-pane.js` | `<commands-pane>`: the command list, by group, foldable |
 | `src/components/comments-pane.js` | `<comments-pane>`: the comments of each line     |
-| `src/components/errors-pane.js` | `<errors-pane>`: the errors of the document       |
+| `src/components/errors-pane.js` | `<errors-pane>`: the errors of the document (`errors`) |
 | `src/components/shared.js`     | Shared styles (`base`) and icons for the components |
-| `src/core/`                    | The core services (S17), being built: `createStilo()`, `Service`, `StiloController`, `<stilo-provider>`; `commands`, `keys`, `menus`, `ui`, `panels` |
+| `src/core/`                    | The core services (S17), being built: `createStilo()`, `Service`, `StiloController`, `<stilo-provider>`; `commands`, `keys`, `menus`, `ui`, `panels`, `errors` |
 | `src/builtins/`                | Stilo's own contributions, registered through the services: `commands.js` (commands, keys, menus), `panels.js` (the right pane's panels); `index.js` (`activateBuiltins`) |
 | `src/api.js`                   | The protocol client, `Transport`: the only module that talks to the server |
 | `src/route.js`                 | Browser address ↔ `{root, doc}`                     |
@@ -33,7 +33,8 @@ that work is done, most state is still in `StiloApp` (below).
 - `createStilo({transport?})` (`core/index.js`) builds the `stilo` object,
   the services of one app. So far: `transport` (a `Transport`, below),
   `commands`, `keys` and `menus` (see [Commands](#commands-keys-and-menus)),
-  `ui` and `panels` (see [The window](#the-window-ui-and-panels)).
+  `ui` and `panels` (see [The window](#the-window-ui-and-panels)), `errors`
+  (see [Errors](#errors-errors)).
 - Stilo's own contributions are in `src/builtins/`, as `activate(stilo)`
   functions that register them through the services, as an extension
   would; `<stilo-app>` runs them once on its `stilo` object
@@ -89,7 +90,27 @@ stilo.panels.setBadge("errors", { text: "2", label: "2 errors", tone: "danger" }
 toggles it (`ui.togglePane`). `<stilo-app>` renders the open panel's
 `render(stilo)` in the right pane. Stilo's panels are registered by
 `builtins/panels.js`: errors (10), comments (20), commands (30); the
-errors badge is their count, set by the app on every rendering.
+errors badge is their count, which `builtins/panels.js` sets whenever
+it changes.
+
+## Errors: `errors`
+
+The `errors` service holds the errors of the open document's latest
+rendering, the editor's `DocumentError`s ([API](component/api.md)):
+
+| Member          | Is or does                                             |
+|-----------------|--------------------------------------------------------|
+| `list`          | The errors, as the editor gives them                   |
+| `count`         | How many undefined values were returned, all together  |
+| `current`       | The key of the error pointed out, or `null`            |
+| `set(list)`     | Takes the errors of a new rendering (the editor's `errors-change`) |
+| `clear()`       | Forgets them, when another document opens               |
+| `show(key)`     | Points one out and opens the errors panel (the editor's `error-click`) |
+| `goTo(place)`   | Fires `go-to` with `{line}` in the open document, or `{uri, line}` in another |
+
+`<errors-pane>` shows `list`, highlights and scrolls to `current`, and calls
+`goTo` on a click. The app handles `go-to` (it holds the open document, for
+now): it selects that line, opening the other document first if needed.
 
 ## The shell: `StiloApp`
 
@@ -106,7 +127,6 @@ group, a collapsed folder).
 | `_doc`, `_etag`, `_dirty` | The open document's path, its ETag from the last read or write, and whether it has unsaved changes |
 | `_moving`                | The item being moved, with the whole tree, while `<move-dialog>` is open |
 | `_comments`, `_commentLine` | The comments of every line, and the line shown in the comments pane |
-| `_errors`, `_currentError` | The errors of the document, and the key of the one highlighted in the errors pane |
 
 The editor is created anew for every document (Lit's `keyed`), so value,
 undo history and selection start fresh. Its `url` is the document's public
@@ -143,14 +163,14 @@ The commands call these public methods:
 |-----------------|-----------------------------|------------------------------------------|
 | `<texl-editor>` | `change`                    | Sets `_dirty`, updates the comments      |
 | `<texl-editor>` | `comments-click`            | Opens the comments pane on that line     |
-| `<texl-editor>` | `errors-change`             | Updates the errors and the count in the top bar |
-| `<texl-editor>` | `error-click`               | Opens the errors pane on that error      |
+| `<texl-editor>` | `errors-change`             | `errors.set` (the badge follows)         |
+| `<texl-editor>` | `error-click`               | `errors.show`: the errors pane on that error |
 | `<nav-pane>`    | `open-document`, `navigate` | Opens a document, changes the root       |
 | `<nav-pane>`    | `tree-command`              | Runs a command on a tree node (`runCommand(id, node)`) |
 | `<move-dialog>` | `choose`, `close`           | Moves the item to that folder, or closes the dialog; a name already there shows in the dialog |
-| comments, errors pane | `close-pane`          | Closes the right pane (the commands pane calls `ui` itself) |
+| `<comments-pane>` | `close-pane`              | Closes the right pane (the other panes call `ui` themselves) |
 | `<comments-pane>` | `comment-click`           | Selects that line in the editor (`select(line)`) and focuses it |
-| `<errors-pane>` | `go-to`                     | Selects that line, opening another document first if the error was made there |
+| `errors` service | `go-to`                    | Selects that line, opening another document first if the error was made there |
 | main area       | click on a link             | Resolves the link from the open document's address. A `.texl` document on this server opens in the app; anything else over HTTP, another file or another site, opens in a new tab; other schemes (`mailto:`) stay with the browser |
 
 ## Routing: `route.js`
