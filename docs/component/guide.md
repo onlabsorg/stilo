@@ -41,52 +41,40 @@ language.
 
 ## 1. Install
 
-The editor is part of Stilo's web app, in `web/src/editor/`, and is not
-published as a package of its own. Use it from a checkout of Stilo, next to
-your app, and install the libraries it imports, together with Vite as dev
-server and bundler:
+The editor is part of Stilo's web app, published on npm as
+`@onlabsorg/stilo-web`; the editor is its entry point
+`@onlabsorg/stilo-web/editor`. Install it, together with Vite as dev server
+and bundler:
 
 ```sh
-git clone https://github.com/onlabsorg/stilo.git
 mkdir my-app && cd my-app
 npm init -y
 npm pkg set type=module
-npm install lit dompurify marked katex @onlabsorg/texl \
-    @codemirror/state @codemirror/view @codemirror/commands \
-    @codemirror/language @codemirror/lang-markdown
+npm install @onlabsorg/stilo-web
 npm install --save-dev vite
 ```
 
 You need Node.js 22 or later. Any bundler that resolves bare module imports,
 serves `.wasm` files and gives a stylesheet as text for an import ending in
 `.css?inline` works (the Markdown cell needs KaTeX's styles in its shadow
-root); this guide uses Vite. Take the versions from
-`web/package.json` in the checkout if a newer one does not work.
+root); this guide uses Vite.
+
+The package is the web app's source, as plain ES modules. Its interface is
+its entry points, `@onlabsorg/stilo-web/editor` here; other files inside it
+may change without notice. Before 1.0, any version may change the
+interface too (see the changelog).
 
 ## 2. Configure Vite
 
-Two settings. The alias `stilo-editor` points to the editor's folder in the
-checkout, so the examples below can import it by name; `dedupe` makes the
-editor's imports resolve to your app's copy of the libraries. And Texl runs as WebAssembly:
-its JavaScript glue loads the `.wasm` file by a URL relative to itself.
-Vite's dependency pre-bundling would move the glue away from the file, so
-exclude Texl from it. Create `vite.config.js`:
+One setting. Texl runs as WebAssembly: its JavaScript glue loads the
+`.wasm` file by a URL relative to itself. Vite's dependency pre-bundling
+would move the glue away from the file, so exclude Texl from it. Create
+`vite.config.js`:
 
 ```js
 import { defineConfig } from "vite";
-import { fileURLToPath } from "node:url";
 
 export default defineConfig({
-    resolve: {
-        alias: {
-            "stilo-editor": fileURLToPath(new URL("../stilo/web/src/editor", import.meta.url)),
-        },
-        // Resolve the editor's imports from this app's node_modules
-        dedupe: [
-            "lit", "dompurify", "marked", "katex", "@onlabsorg/texl", "@codemirror/state", "@codemirror/view",
-            "@codemirror/commands", "@codemirror/language", "@codemirror/lang-markdown",
-        ],
-    },
     optimizeDeps: {
         exclude: ["@onlabsorg/texl"],
     },
@@ -131,7 +119,7 @@ Create `index.html`:
 and `main.js`:
 
 ```js
-import "stilo-editor/index.js";
+import "@onlabsorg/stilo-web/editor";
 
 const editor = document.getElementById("editor");
 
@@ -175,7 +163,7 @@ loads a document from a URL and saves it back with a delay, so that a burst
 of changes makes one request:
 
 ```js
-import "stilo-editor/index.js";
+import "@onlabsorg/stilo-web/editor";
 
 const editor = document.getElementById("editor");
 const url = "/api/documents/beam.texl";
@@ -321,7 +309,7 @@ Create `quantity-cell.js`:
 
 ```js
 import { html, css } from "lit";
-import { TexlCell } from "stilo-editor/index.js";
+import { TexlCell } from "@onlabsorg/stilo-web/editor";
 
 // `<% L = 6 %>L = <% L %> m`: the name, the value and the unit
 const QUANTITY = /^<% (\w+) = (.*?) %>\1 = <% \1 %> ?(.*?)\r?\n?$/;
@@ -379,7 +367,7 @@ export class QuantityCell extends TexlCell {
 Register it in `main.js`, before setting `value`:
 
 ```js
-import { registerCell } from "stilo-editor/index.js";
+import { registerCell } from "@onlabsorg/stilo-web/editor";
 import { QuantityCell } from "./quantity-cell.js";
 
 registerCell(QuantityCell);         // defines <texl-cell-quantity>
@@ -459,7 +447,7 @@ to list comments, render a read-only preview or check a document, without
 showing an editor:
 
 ```js
-import { parseDocument, serializeDocument, cellComments, splitRendering, createEngine } from "stilo-editor/index.js";
+import { parseDocument, serializeDocument, cellComments, splitRendering, createEngine } from "@onlabsorg/stilo-web/editor";
 
 const cells = parseDocument(text);
 
@@ -478,7 +466,7 @@ const outputs = splitRendering(doc, cells);
 change a document programmatically, e.g. append a cell:
 
 ```js
-import { parseDocument, serializeDocument, nameCells } from "stilo-editor/index.js";
+import { parseDocument, serializeDocument, nameCells } from "@onlabsorg/stilo-web/editor";
 
 const cells = parseDocument(text);
 cells.push({ type: "markdown", texl: "Checked by Anna.\n" });
@@ -496,7 +484,7 @@ React 19:
 
 ```jsx
 import { useEffect, useRef } from "react";
-import "stilo-editor/index.js";
+import "@onlabsorg/stilo-web/editor";
 
 export function TexlEditor({ documentText, onChange }) {
     const ref = useRef(null);

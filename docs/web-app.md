@@ -10,7 +10,7 @@ its own page: [The editor](editor.md).*
 |--------------------------------|------------------------------------------------------|
 | `src/main.js`                  | Entry point: loads the theme CSS, the editor and the app |
 | `src/components/stilo-app.js`  | `StiloApp`, `<stilo-app>`: the shell. Layout, state, routing, commands, editor events |
-| `src/components/top-bar.js`    | `<top-bar>`: the document's name, the status, the pane buttons |
+| `src/components/top-bar.js`    | `<top-bar>`: the document's name, the status (`ui`), a button per panel (`panels`) |
 | `src/components/nav-pane.js`   | `<nav-pane>`: the tree of folders and files, its menus and keys |
 | `src/components/context-menu.js` | `<context-menu>`: a menu at a point of the window |
 | `src/components/move-dialog.js` | `<move-dialog>`: Move to…, choosing a folder       |
@@ -18,10 +18,78 @@ its own page: [The editor](editor.md).*
 | `src/components/comments-pane.js` | `<comments-pane>`: the comments of each line     |
 | `src/components/errors-pane.js` | `<errors-pane>`: the errors of the document       |
 | `src/components/shared.js`     | Shared styles (`base`) and icons for the components |
-| `src/commands.js`              | The command list, with shortcuts                    |
-| `src/api.js`                   | The protocol client: the only module that talks to the server |
+| `src/core/`                    | The core services (S17), being built: `createStilo()`, `Service`, `StiloController`, `<stilo-provider>`; `commands`, `keys`, `menus`, `ui`, `panels` |
+| `src/builtins/`                | Stilo's own contributions, registered through the services: `commands.js` (commands, keys, menus), `panels.js` (the right pane's panels); `index.js` (`activateBuiltins`) |
+| `src/api.js`                   | The protocol client, `Transport`: the only module that talks to the server |
 | `src/route.js`                 | Browser address ↔ `{root, doc}`                     |
 | `src/theme.js`, `src/theme.css` | Light and dark theme, design tokens               |
+
+## The core: `src/core/`
+
+The app's state and behaviour are moving out of `StiloApp` into **core
+services** ([S17](../DECISIONS.md)), which the panes only show. Until
+that work is done, most state is still in `StiloApp` (below).
+
+- `createStilo({transport?})` (`core/index.js`) builds the `stilo` object,
+  the services of one app. So far: `transport` (a `Transport`, below),
+  `commands`, `keys` and `menus` (see [Commands](#commands-keys-and-menus)),
+  `ui` and `panels` (see [The window](#the-window-ui-and-panels)).
+- Stilo's own contributions are in `src/builtins/`, as `activate(stilo)`
+  functions that register them through the services, as an extension
+  would; `<stilo-app>` runs them once on its `stilo` object
+  (`activateBuiltins`). Until the state has moved, the commands reach the
+  app through `stilo._app`, a temporary bridge.
+- `Service` (`core/service.js`) is their base: an `EventTarget` with
+  `on(name, listener)`, which returns a function that stops listening,
+  `emit(name, detail)`, and `changed()`, which fires `change` after every
+  change of state.
+- `<stilo-app>` creates the `stilo` object (or takes one set as its `stilo`
+  property before it connects) and provides it by Lit context
+  (`@lit/context`, `stiloContext` in `core/context.js`). An element inside,
+  at any depth and through shadow roots, gets it with a `StiloController`:
+
+  ```js
+  this._stilo = new StiloController(this, (stilo) => [stilo.errors]);
+  // this._stilo.stilo is the object; a change of stilo.errors renders again
+  ```
+
+- `<stilo-provider .stilo=${stilo}>` provides a `stilo` object to what is
+  inside it, without the app: for tests and for front ends composed of
+  Stilo's components.
+
+## The window: `ui` and `panels`
+
+**`ui`** holds what the window shows around the document, each with a
+getter, and changes it in its methods:
+
+| State     | Meaning                                   | Changed by |
+|-----------|-------------------------------------------|------------|
+| `status`  | The message in the top bar ("Saved", an error), or `""` | `notify(message)` |
+| `navOpen` | Whether the navigation pane is open       | `setNavOpen(open)`, `toggleNav()` |
+| `pane`    | The id of the panel open in the right pane, or `null` | `openPane(id)`, `togglePane(id)` |
+| `source`  | The document's text shown read-only in place of the editor (Show source), or `null` | `setSource(text)` |
+
+`confirm(message)` asks the user and resolves to the answer (the browser's
+dialog for now; asynchronous, so a dialog of Stilo's own can replace it).
+
+**`panels`** holds the panels of the right pane:
+
+```js
+stilo.panels.register({
+    id: "comments",                      // an extension's: "<extension-id>.<name>"
+    label: "Comments",                   // the button's name
+    icon: commentsIcon,                  // a Lit template (SVG)
+    order: 20,                           // buttons left to right
+    render: (stilo) => html`<comments-pane></comments-pane>`,
+});                                      // returns dispose(); a taken id throws
+stilo.panels.setBadge("errors", { text: "2", label: "2 errors", tone: "danger" });
+```
+
+`<top-bar>` shows a button per panel, with its badge, in `order`; a click
+toggles it (`ui.togglePane`). `<stilo-app>` renders the open panel's
+`render(stilo)` in the right pane. Stilo's panels are registered by
+`builtins/panels.js`: errors (10), comments (20), commands (30); the
+errors badge is their count, set by the app on every rendering.
 
 ## The shell: `StiloApp`
 
@@ -36,12 +104,9 @@ group, a collapsed folder).
 | `_root`, `_tree`         | The navigation root (a folder path) and its tree |
 | `_showOther`             | Whether the tree shows other files, and folders holding only other files (default on, remembered per browser) |
 | `_doc`, `_etag`, `_dirty` | The open document's path, its ETag from the last read or write, and whether it has unsaved changes |
-| `_status`                | The message in the top bar ("Saved", an error)  |
 | `_moving`                | The item being moved, with the whole tree, while `<move-dialog>` is open |
-| `_navOpen`, `_pane`      | Whether the navigation pane is open; which right pane is open (`"commands"`, `"comments"`, `"errors"` or `null`) |
 | `_comments`, `_commentLine` | The comments of every line, and the line shown in the comments pane |
 | `_errors`, `_currentError` | The errors of the document, and the key of the one highlighted in the errors pane |
-| `_source`                | The document's text shown read-only in place of the editor (Show source), or `null` |
 
 The editor is created anew for every document (Lit's `keyed`), so value,
 undo history and selection start fresh. Its `url` is the document's public
@@ -67,9 +132,9 @@ The commands call these public methods:
 | `openAsRoot(node)`     | Makes the folder, or the document's folder, the navigation root |
 | `refreshTree()`        | Reads the tree again; the old one stays until the new one is there |
 | `toggleOtherFiles()`   | Shows or hides other files, and folders holding only other files |
-| `toggleNav()`, `togglePane(pane)`, `toggleTheme()` | The view commands |
+| `toggleTheme()`        | Switches the light and dark theme                     |
 | `toggleSource()`       | Shows the editor's value read-only in place of the editor (which stays, hidden), or goes back to it |
-| `runCommand(id, node?)` | Runs a command of `commands.js` by its id, on a tree node if given |
+| `runCommand(id, node?)` | Runs a command of the `commands` service by its id, on a tree node if given |
 | `runEditorCommand(name)` | Runs a command of the editor (`editor.runCommand(name)`) and focuses it |
 
 ### Events
@@ -83,8 +148,7 @@ The commands call these public methods:
 | `<nav-pane>`    | `open-document`, `navigate` | Opens a document, changes the root       |
 | `<nav-pane>`    | `tree-command`              | Runs a command on a tree node (`runCommand(id, node)`) |
 | `<move-dialog>` | `choose`, `close`           | Moves the item to that folder, or closes the dialog; a name already there shows in the dialog |
-| `<top-bar>`     | `toggle-nav`, `toggle-pane` | Toggles a pane                           |
-| right pane      | `run-command`, `close-pane` | Runs a command, closes the pane          |
+| comments, errors pane | `close-pane`          | Closes the right pane (the commands pane calls `ui` itself) |
 | `<comments-pane>` | `comment-click`           | Selects that line in the editor (`select(line)`) and focuses it |
 | `<errors-pane>` | `go-to`                     | Selects that line, opening another document first if the error was made there |
 | main area       | click on a link             | Resolves the link from the open document's address. A `.texl` document on this server opens in the app; anything else over HTTP, another file or another site, opens in a new tab; other schemes (`mailto:`) stay with the browser |
@@ -105,37 +169,62 @@ bookmarked and the back button works:
 doc})` builds the address. The app pushes a history entry when it opens a
 document (`_go`) and applies the route again on `popstate`.
 
-## Commands: `commands.js`
+## Commands, keys and menus
 
-`commands` is the list shown in the commands pane:
+Three services (`src/core/`); Stilo's own entries are registered by
+`src/builtins/commands.js`.
+
+**`commands`** holds every command, by id:
 
 ```js
-{
-    id: "save",
+stilo.commands.register({
+    id: "save",                         // unique; an extension's: "<extension-id>.<name>"
     label: "Save",
-    keys: "Mod+S",            // shown as Ctrl+S, or ⌘S on macOS
-    group: "File",
-    match: (e) => ...,         // the app's shortcut, if it has one
-    run: (app) => app.save(),
-}
+    group: "File",                      // its heading in the commands pane
+    run: (stilo, { node }) => ...,      // node: the tree item, if called on one
+    checked: (stilo) => ...,            // for an option: on or off, in menus
+});                                     // returns dispose(); a taken id throws
+stilo.commands.run("save", { node });
+stilo.commands.list();                  // in the order added: the commands pane
 ```
 
-- **App commands** have `run` and `match`: the app's `keydown` listener
-  finds them with `matchCommand(e)`.
+**`keys`** binds shortcuts to commands:
+`bind("Mod+S", "save", {when, show})`, which returns `dispose()`. `Mod` is
+Ctrl, or ⌘ on macOS (`formatKeys` shows it). `when` says where it applies:
+
+- `global`, the default: the app's `keydown` listener on the window runs
+  it (`match(e, "global")`), unless something inside, such as the editor,
+  already handled the key (`defaultPrevented`).
+- `tree`: when an item of the navigation pane has the focus (F2 and
+  Delete, since Delete also deletes cells in the editor).
+- `editor`: the editor's own keys. The editor handles them itself, before
+  anyone else; they are bound only to be listed.
+
+A letter with Alt matches by its place on the keyboard (`e.code`), since
+Alt changes the character on macOS. Modifiers must match exactly. For the
+same keys and place the last binding wins, with a warning in the console;
+disposing it brings back the one before. `keysFor(id)` is the shortcut
+shown for a command; `show: false` keeps a binding out of the lists (⌫ as
+Delete on macOS).
+
+**`menus`** says what each menu offers: `add(menu, commandId, {group,
+order})`, returning `dispose()`; `items(menu)` gives the command ids with
+`"-"` between groups. The navigation pane's menus are `tree/document`,
+`tree/other`, `tree/folder` and `tree/pane`.
+
+Stilo's own commands:
+
 - **Editor commands** have the id of an editor command
-  (`docs/component/api.md`, Commands) and its key as shortcut. Clicking
-  one runs `app.runEditorCommand(id)`, which calls the editor's
-  `runCommand`; the editor handles the key itself.
+  (`docs/component/api.md`, Commands). Running one calls
+  `app.runEditorCommand(id)`, which calls the editor's `runCommand`.
 - Commands without `run` (Mod+E and Shift+F2 inside a cell's text
   editor) are listed for reference: they belong to the cell.
 - **Navigation pane commands** (ids `tree-*`) act on a tree node. From a
   menu or a key of `<nav-pane>` the node comes with the `tree-command`
   event. From the commands pane they act on the app's `treeTarget`: the
   item last focused or right-clicked in the tree, or else the open
-  document. Their keys, F2 and Delete, have no `match`: `<nav-pane>`
-  handles them, only when one of its items has the focus, because Delete
-  also deletes cells in the editor. `treeMenus` lists which commands each
-  menu shows (on a document, on another file, on a folder, on the pane).
+  document. `<nav-pane>` still handles F2 and Delete itself, and reads
+  its menus from `builtins/commands.js`, until it reads the services.
 
 **Other files.** The tree lists every file. Files that are not documents
 (`isDocument`) are muted (`--text-faint`, their own icon), and so are
@@ -158,11 +247,17 @@ command. Afterwards `_afterMove` follows the item with the open document and the
 navigation root, replacing the history entry, since the old address is gone. The
 document is read again in a new editor, so its undo history starts afresh.
 
-`formatKeys(keys)` turns `Mod+S` into the platform's notation.
+`formatKeys(keys)` (`core/keys.js`) turns `Mod+S` into the platform's
+notation.
 
 ## The protocol client: `api.js`
 
-| Function                   | Protocol                 | Returns            |
+`Transport` is the protocol client; the app's one is `stilo.transport`. Its
+`origin` is the server's, the page's by default. Every request goes through
+its `fetch(url, init)`, which throws an `ApiError` for a failed one; its
+methods:
+
+| Method                     | Protocol                 | Returns            |
 |----------------------------|--------------------------|--------------------|
 | `readFile(path)`           | GET a file               | `{text, etag}`     |
 | `createFile(path, text)`   | CREATE                   | the ETag           |
@@ -174,12 +269,14 @@ document is read again in a new editor, so its undo history starts afresh.
 | `deleteFile(path)`         | DELETE a file            | —                  |
 | `deleteFolder(path)`       | DELETE a folder          | `{deleted}`        |
 | `documentUrl(path)`        | —                        | the public address |
-| `documentPath(url)`        | —                        | the path of a public address, or `null` |
-| `isDocument(path)`         | —                        | whether the path ends in `.texl` |
+| `documentPath(url)`        | —                        | the path of a public address on this server, or `null` |
+| `contentUrl(path)`, `treeUrl(path)` | —               | a file's or a folder's address in the API |
 
-Failed requests throw an `ApiError`, whose `status` is the HTTP status, and
-whose message is the server's `error`. Paths are relative to the server
-root, without a leading `/`.
+`ApiError`'s `status` is the HTTP status, and its message the server's
+`error`. Paths are relative to the server root, without a leading `/`.
+`isDocument(path)`, whether a path ends in `.texl`, is a plain function of
+the module. So are `documentUrl` and `documentPath` for the page's own
+server, kept only until the panes read the transport from the services.
 
 ## Theme: `theme.css` and `theme.js`
 
@@ -207,5 +304,6 @@ so the server serves it at `/_app/favicon.svg`.
   JavaScript, class fields hide Lit's accessors.
 - Components fire events (`bubbles: true, composed: true`); the app holds
   the state.
-- The app talks to the server only through `api.js`.
+- The app talks to the server only through the transport (`api.js`,
+  `stilo.transport`).
 - Colors only through the tokens of `theme.css`; check both themes.

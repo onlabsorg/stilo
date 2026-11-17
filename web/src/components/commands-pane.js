@@ -1,14 +1,16 @@
 import { LitElement, html, css } from "lit";
 import { base } from "./shared.js";
 import { closeIcon, chevronIcon } from "../icons.js";
-import { commands, formatKeys } from "../commands.js";
+import { StiloController } from "../core/context.js";
+import { formatKeys } from "../core/keys.js";
 
 /**
- * Right pane: every user command, grouped, with its shortcut.
+ * Right pane: every command of the `commands` service, by group, with its
+ * shortcut from the `keys` service. A click runs it.
  *
  * Groups fold and unfold on a click on their heading.
  *
- * Fires `run-command` ({id}) when a command is clicked, `close-pane`.
+ * Its close button closes the right pane (`ui`).
  */
 export class CommandsPane extends LitElement {
     static properties = {
@@ -101,10 +103,7 @@ export class CommandsPane extends LitElement {
     constructor() {
         super();
         this._collapsed = new Set();
-    }
-
-    _fire(name, detail) {
-        this.dispatchEvent(new CustomEvent(name, { detail, bubbles: true, composed: true }));
+        this._stilo = new StiloController(this, (stilo) => [stilo.commands, stilo.keys]);
     }
 
     _toggle(group) {
@@ -124,20 +123,20 @@ export class CommandsPane extends LitElement {
     }
 
     _renderCommand(command) {
-        const content = html`<span class="label">${command.label}</span>${command.keys
-                ? html`<kbd>${formatKeys(command.keys)}</kbd>`
-                : ""}`;
+        const { commands, keys } = this._stilo.stilo;
+        const shortcut = keys.keysFor(command.id);
+        const content = html`<span class="label">${command.label}</span>${shortcut ? html`<kbd>${formatKeys(shortcut)}</kbd>` : ""}`;
         return command.run
-            ? html`<button class="command" @click=${() => this._fire("run-command", { id: command.id })}>${content}</button>`
+            ? html`<button class="command" @click=${() => commands.run(command.id)}>${content}</button>`
             : html`<div class="command" title="Use the keyboard shortcut">${content}</div>`;
     }
 
     render() {
-        const groups = Map.groupBy(commands, (c) => c.group);
+        const groups = Map.groupBy(this._stilo.stilo?.commands.list() ?? [], (c) => c.group);
         return html`
             <div class="pane-header">
                 <span>Commands</span><span class="spacer"></span>
-                <button class="icon-button" aria-label="Close" title="Close" @click=${() => this._fire("close-pane")}>
+                <button class="icon-button" aria-label="Close" title="Close" @click=${() => this._stilo.stilo?.ui.openPane(null)}>
                     ${closeIcon}
                 </button>
             </div>

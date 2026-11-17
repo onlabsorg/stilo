@@ -47,7 +47,7 @@ thus the document's identity for Texl (final URLs, Texl 0.8; S11). More
 than 16 `~` segments are refused, a safeguard.
 
 **One package, one Python project.** `pyproject.toml` at the root is the
-only Python project and builds the only published package, `stilo`
+only Python project and builds the only Python package, `stilo`
 (distribution name `stilo-cli` on PyPI, which refuses `stilo` as too close
 to `stl10`; the command and the import name stay `stilo`)
 (sources in `src/stilo/`, tests in `tests/`, one `uv.lock`). The web app's
@@ -56,7 +56,12 @@ into the package, `src/stilo/web/` (git-ignored), so a checkout and an
 install have the same layout. The server never locates the web app: the
 CLI passes it to `create_app()` (`WEB_DIST` = `stilo/web`). The server
 must not import the rest of the package (`tests/test_layout.py` checks
-it), and neither imports the web app's code. A future part (e.g. a
+it), and neither imports the web app's code. The web app's source is
+also published on npm as `@onlabsorg/stilo-web` (S16): `web/` as it is,
+`files` = `src/`, public API = the `exports` map (`.` → `src/main.js`,
+`./editor` → `src/editor/index.js`, `./theme.css`); a new entry point is
+added only by a decision. `web/package-check/` checks it as a consumer
+gets it. A future part (e.g. a
 desktop window around the web app) goes in as another subpackage of
 `stilo`, as a client of the server, with its dependencies as an extra.
 
@@ -68,12 +73,20 @@ web app and server. Change it there first, then in `src/stilo/server/` and
 app must use only it, and a server in another language (e.g. Node.js) must
 be able to replace the Python one.
 
-**Plugins later.** There is no plugin system yet, but there will be (custom
-cells, CLI commands, loaders). Keep the extension points in one place each,
-so a plugin system can be added without refactoring: cell types only through
-the registry (`web/src/editor/registry.js`), CLI commands only through
-`COMMANDS` (`src/stilo/cli/commands.py`), the server only through
-`create_app()`.
+**Extensions** (S16, S17; being built in phases). Anything beyond a
+single-user editor is built outside Stilo, as an extension that uses Stilo
+as a dependency; a missing hook is added to Stilo in general terms, never
+for one consumer. The web app is published on npm as `@onlabsorg/stilo-web`
+(S16): its public API is the `exports` map of `web/package.json`, nothing
+else. The design (S17): core services hold the state and behaviour, panes
+only show them, through Lit context; visible contributions go through
+registries (no slots); Stilo's own panes and commands use the same API,
+except the navigation pane, which is core and extended through the `tree`
+and `menus` services. Until that is in place, keep each extension point in
+one place: cell types only through the registry
+(`web/src/editor/registry.js`), CLI commands only through `COMMANDS`
+(`src/stilo/cli/commands.py`), the server only through `create_app()`.
+Never shape a hook around one known consumer.
 
 ## Summary for OnLabs.org (`stilo.summary.md`)
 
@@ -124,7 +137,8 @@ uv build                              # after npm run build: dist/stilo_cli-*.wh
 
 **Web** (app and editor): plain JavaScript (ES modules, JSDoc types, no
 TypeScript, no build step for the source) with Lit 3 web components, built
-with Vite. Texl runs in the browser as WebAssembly (`@onlabsorg/texl`).
+with Vite; services reach the panes by `@lit/context`. Texl runs in the
+browser as WebAssembly (`@onlabsorg/texl`).
 Cell output is sanitised with DOMPurify; Markdown cells convert it with
 `marked` first, typesetting LaTeX equations with KaTeX (`math.js`). Source text is edited with CodeMirror 6 (`@codemirror/*`), rich text with ProseMirror (`prosemirror-*`). The document font
 (Atkinson Hyperlegible Next) comes from `@fontsource-variable/*`, imported in
@@ -142,6 +156,8 @@ npm run smoke        # after the build: smoke/*.test.js, node --test + puppeteer
                      # against `uv run stilo serve` on a copy of examples/ ($STILO)
 npm run dev          # Vite on :5173 with hot reload; proxies to the server on :8000
                      # (STILO_SERVER=http://127.0.0.1:8765 npm run dev for another port)
+npm run check-package  # packs @onlabsorg/stilo-web, installs it in package-check/consumer/
+                       # (a small Vite project), builds it (--out=<dir> keeps the tarball)
 ```
 
 Two ways to run it:
@@ -157,13 +173,14 @@ The app shell has only smoke tests (`web/smoke/app-shell.test.js`: open,
 edit and save, reload, open from the navigation pane; any page error fails
 them); a new main path of the shell gets one there. To check other UI
 behaviour, run the server and drive it with a headless browser
-(puppeteer-core with the local Chrome works). CI: `.github/workflows/stilo.yml` (tests, web build, and
+(puppeteer-core with the local Chrome works). CI: `.github/workflows/stilo.yml` (tests, web build, the npm package check, and
 the `package` job: builds the wheel, installs it, smoke-tests `render` and
 `serve`, and runs the app-shell smoke tests against the installed
 `stilo`). Release: `.github/workflows/release.yml`, at a pushed tag
-`vX.Y.Z` matching `pyproject.toml` and a `CHANGELOG.md` entry: tests,
-builds, publishes on PyPI (Trusted Publishing, environment `pypi`) and
-creates the GitHub release. Bump the version in `pyproject.toml`,
+`vX.Y.Z` matching `pyproject.toml`, `web/package.json` and a
+`CHANGELOG.md` entry: tests, builds, checks the npm package, publishes on
+PyPI and npm (Trusted Publishing, environments `pypi` and `npm`; npm gets
+the tarball the check packed) and creates the GitHub release. Bump the version in `pyproject.toml`,
 `web/package.json` and `src/stilo/server/app.py`.
 
 ## Code layout
@@ -228,20 +245,36 @@ creates the GitHub release. Bump the version in `pyproject.toml`,
   `web/public/` — files copied into the build as they are
   (`favicon.svg`, the tab icon, linked from `web/index.html`).
 - `web/src/components/stilo-app.js` — the shell: layout, state (navigation
-  root and tree, open document, ETag, dirty flag, open pane), routing,
+  root and tree, open document, ETag, dirty flag), routing,
   commands (save, new, …), editor events.
 - `web/src/components/top-bar.js`, `nav-pane.js`, `commands-pane.js`,
-  `comments-pane.js`, `errors-pane.js` — the parts of the layout. They fire events; the app
-  holds the state. `context-menu.js` — the menu `nav-pane.js` opens.
+  `comments-pane.js`, `errors-pane.js` — the parts of the layout. The top
+  bar and the commands pane read the services through context; the others
+  still fire events to the app, which holds their state, until phase 2 of
+  S17 moves it. `context-menu.js` — the menu `nav-pane.js` opens.
   `move-dialog.js` — the Move to… dialog. The tree lists every file (S15):
   documents open in the editor; other files (`isDocument` in `api.js`) are
   muted, open by their public URL in a new tab and hide with Show other
   files; Upload files… adds files with the browser's file dialog.
-- `web/src/commands.js` — the command list shown in the commands pane, with
-  shortcuts, and the navigation pane's menus (`treeMenus`). Editor commands
-  call the editor's `runCommand(name)`; tree commands have ids `tree-*`.
+- `web/src/builtins/` — Stilo's own contributions, registered through the
+  services as extensions will be: `commands.js` (the commands, their keys,
+  the navigation pane's menus; editor commands call the editor's
+  `runCommand(name)`, tree commands have ids `tree-*`), `panels.js` (the
+  errors, comments and commands panels), `index.js`
+  (`activateBuiltins`, run by `<stilo-app>`). Until phase 2 of S17 is done
+  they reach the app through `stilo._app`.
+- `web/src/core/` — the core services (S17, being built): `createStilo()`
+  (`index.js`, the `stilo` object), `Service` (`service.js`: an
+  `EventTarget` firing `change`), `StiloController` and `<stilo-provider>`
+  (`context.js`: the `stilo` object by Lit context); `commands.js`,
+  `keys.js` (shortcuts bound to commands, `when` = `global`, `tree` or
+  `editor`; `formatKeys`, `isMac`), `menus.js`, `ui.js` (status, navigation
+  pane, open panel, source view, `confirm`), `panels.js` (the right pane's
+  panels, the top bar's buttons, badges). `<stilo-app>` creates and
+  provides it. A new command, key or menu entry is registered there.
 - `web/src/route.js` — browser URL ↔ `{root, doc}`. `web/src/api.js` —
-  protocol client. `web/src/theme.js`,
+  the protocol client, `Transport` (`stilo.transport`); every request goes
+  through its `fetch`. `web/src/theme.js`,
   `theme.css` — light/dark theme (default dark), design tokens as CSS custom properties, also mapped onto
   the editor's `--texl-*` properties.
 - `web/src/editor/` — the editor:
@@ -291,6 +324,9 @@ creates the GitHub release. Bump the version in `pyproject.toml`,
     (`tagSpans`, `spanningTag`, `cellsFromSource`), cell names, comments, `outputSpans`, `splitRendering`. `swan.js` — Swan highlighting. `engine.js`
     — loads the wasm module once, creates engines.
 - `web/test/` — the editor's browser tests.
+- `web/package-check/` — `check.js` (`npm run check-package`) and
+  `consumer/`, the small Vite project that imports every entry point of
+  the npm package. `web/README.md` — the package's page on npm.
 - `examples/` — sample documents: `library/steel.texl`, `sample.texl`,
   and the project `projects/beam/`: `beam-check.texl`, a short design
   report that links to and imports `basis-of-design.texl` (design data,

@@ -95,7 +95,7 @@ them back. The round trip is exact, so opening and saving a file without
 edits leaves it byte for byte the same.
 
 ```js
-import { parseDocument, serializeDocument } from "stilo-editor/index.js";
+import { parseDocument, serializeDocument } from "@onlabsorg/stilo-web/editor";
 
 const cells = parseDocument(`Notes
 <!--{ bek4 : markdown }-->
@@ -406,7 +406,7 @@ does not know still opens, shows its source and keeps its type on save.
 `cellTypes()` and `cellClass(type)` feed the type menu (labels and icons).
 
 ```js
-import { registerCell, cellTagName, cellTypes } from "stilo-editor/index.js";
+import { registerCell, cellTagName, cellTypes } from "@onlabsorg/stilo-web/editor";
 
 registerCell(QuantityCell);
 cellTagName("quantity");   // "texl-cell-quantity"

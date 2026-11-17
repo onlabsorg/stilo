@@ -1,6 +1,7 @@
 # Releases Stilo: at a pushed tag vX.Y.Z, tests and builds the package
-# `stilo` (web app included), publishes it on PyPI by Trusted Publishing (no
-# token: PyPI trusts this workflow in the environment `pypi`), and creates
+# `stilo` (web app included) and the npm package @onlabsorg/stilo-web,
+# publishes them on PyPI and npm by Trusted Publishing (no tokens: PyPI and
+# npm trust this workflow, in the environments `pypi` and `npm`), and creates
 # the GitHub release with the changelog entry and the built files.
 
 name: release
@@ -28,11 +29,17 @@ jobs:
           version=$(grep -m1 '^version = ' pyproject.toml | cut -d'"' -f2)
           test "v$version" = "$GITHUB_REF_NAME" || {
             echo "tag $GITHUB_REF_NAME, but pyproject.toml has version $version"; exit 1; }
+          web_version=$(node -p 'require("./web/package.json").version')
+          test "$web_version" = "$version" || {
+            echo "pyproject.toml has version $version, but web/package.json has $web_version"; exit 1; }
           grep -q "^## $version " CHANGELOG.md || {
             echo "CHANGELOG.md has no entry for $version"; exit 1; }
       - name: Test and build the web app
         working-directory: web
         run: npm ci && npm test && npm run build
+      - name: Pack the npm package and build a project that uses it
+        working-directory: web
+        run: npm run check-package -- --out="$GITHUB_WORKSPACE/npm"
       - name: Test the Python package
         run: uv run pytest
       - name: Build the package
@@ -50,6 +57,10 @@ jobs:
         with:
           name: dist
           path: dist/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: npm
+          path: npm/
 
   pypi:
     needs: build
@@ -66,8 +77,29 @@ jobs:
           path: dist/
       - uses: pypa/gh-action-pypi-publish@release/v1
 
+  # Publishes the very tarball the build job checked. Trusted Publishing needs
+  # npm 11.5.1 or later, which Node 24 brings; it adds provenance by itself.
+  npm:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: npm
+      url: https://www.npmjs.com/package/@onlabsorg/stilo-web
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      - uses: actions/download-artifact@v4
+        with:
+          name: npm
+          path: npm/
+      - run: npm publish npm/*.tgz --access public
+
   github-release:
-    needs: pypi
+    needs: [pypi, npm]
     runs-on: ubuntu-latest
     permissions:
       contents: write

@@ -10,7 +10,7 @@ So you can use the editor in another web page or app, with your own storage:
 ```html
 <texl-editor id="editor" url="https://example.com/docs/report.texl"></texl-editor>
 <script type="module">
-    import "stilo-editor/index.js";
+    import "@onlabsorg/stilo-web/editor";
 
     const editor = document.getElementById("editor");
     editor.value = await (await fetch(editor.url)).text();
@@ -26,6 +26,8 @@ the user's input into Texl and back.
   type of its own.
 - [API reference](api.md) lists every property, event, class and function.
 
-The editor is not yet published as a package of its own: you use it from
-a copy of Stilo's source code, where it is the folder `web/src/editor/`.
-For how it works inside, see [The editor](../editor.md).
+The editor is published on npm with Stilo's web app, as the entry point
+`@onlabsorg/stilo-web/editor` of the package `@onlabsorg/stilo-web`
+(`npm install @onlabsorg/stilo-web`); in Stilo's source code it is the
+folder `web/src/editor/`. For how it works inside, see
+[The editor](../editor.md).

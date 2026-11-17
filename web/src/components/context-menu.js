@@ -1,13 +1,13 @@
 import { LitElement, html, css } from "lit";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { base } from "./shared.js";
-import { formatKeys } from "../commands.js";
+import { formatKeys } from "../core/keys.js";
 
 /**
  * A menu at a point of the window, kept inside it. Takes the focus; arrow
  * keys move through the items.
  *
- * `items` holds commands of `commands.js` and `"-"` for a separator. An item
+ * `items` holds commands (`{id, label, keys?}`) and `"-"` for a separator. An item
  * with a boolean `checked` is an option, with a check mark when on.
  *
  * Fires `pick` ({id}) when an item is chosen, `close` on Escape, Tab, a press

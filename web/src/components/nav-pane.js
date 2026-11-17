@@ -1,7 +1,11 @@
 import { LitElement, html, css } from "lit";
 import { base } from "./shared.js";
 import { folderIcon, fileIcon, otherFileIcon, chevronIcon, upIcon, moreIcon, newFileIcon, newFolderIcon } from "../icons.js";
-import { commands, treeMenus, isMac } from "../commands.js";
+import { isMac } from "../core/keys.js";
+// Until the pane reads the services (phase 2 of S17)
+import { definitions, menus } from "../builtins/commands.js";
+
+const MENUS = { file: "tree/document", other: "tree/other", folder: "tree/folder", pane: "tree/pane" };
 import { isDocument, documentUrl } from "../api.js";
 import "./context-menu.js";
 
@@ -45,7 +49,7 @@ function focusedElement() {
  * row of the tree: a new one, or in place of the item being renamed.
  *
  * Fires `open-document` ({path}), `navigate` ({root}) to move the root, and
- * `tree-command` ({id, node}) to run a command of `commands.js` on a tree node.
+ * `tree-command` ({id, node}) to run a command on a tree node.
  */
 export class NavPane extends LitElement {
     static properties = {
@@ -240,12 +244,13 @@ export class NavPane extends LitElement {
         this._collapsed = collapsed;
     }
 
-    /** Open the menu `kind` (of `treeMenus`) on `node`, at a point or below `origin`. */
+    /** Open the menu `kind` (`file`, `other`, `folder`, `pane`) on `node`, at a point or below `origin`. */
     _openMenu(kind, node, origin, point) {
         const box = origin.getBoundingClientRect();
-        const items = treeMenus[kind].map((id) => {
+        const ids = Object.values(menus[MENUS[kind]]).flatMap((group, i) => (i ? ["-", ...group] : group));
+        const items = ids.map((id) => {
             if (id === "-") return id;
-            const command = commands.find((c) => c.id === id);
+            const command = definitions.find((c) => c.id === id);
             return id === "tree-show-other" ? { ...command, checked: this.showOther } : command;
         });
         this._menu = { items, node, origin, x: point?.x ?? box.left, y: point?.y ?? box.bottom };

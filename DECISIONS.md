@@ -326,3 +326,122 @@ simpler rule, a folder goes with everything in it, is safe and what Word and
 Excel users expect from a file manager. Keeping the document/other-file
 distinction fixed through renames keeps the editor from opening, or losing,
 a file by surprise.
+
+## S16 — 2026-11-17 — The web app is published on npm as `@onlabsorg/stilo-web`
+
+Extends S5.
+
+- **Two outputs, one repository, one version.** `stilo-cli` on PyPI (the
+  server, the CLI and the *built* web app, as today) and
+  `@onlabsorg/stilo-web` on npm (the web app's source, `web/src/`, as ES
+  modules). Both are published by the release workflow from the same `v*`
+  tag, with the same version; the workflow checks that `pyproject.toml`
+  and `web/package.json` both match the tag. The Python package does not
+  depend on the npm package.
+- **The public API is the `exports` map**; everything else is internal and
+  may change without notice. At first it exposes only what exists: the app
+  (`.`, what `main.js` does: fonts, theme, `<stilo-app>`), the editor
+  (`./editor`: `<texl-editor>`, `TexlCell`, `registerCell`, the document
+  functions) and `./theme.css`. The panes are not exported until the
+  core services (S17) have settled their shape.
+- **Consumers build with Vite** (or a bundler that understands the same
+  imports: `?inline` CSS, assets by `new URL(…, import.meta.url)`), with
+  `@onlabsorg/texl` excluded from dependency pre-bundling. The
+  documentation gives the configuration, and CI builds a small consumer
+  project with exactly that configuration. A consumer brings its own
+  `index.html` (tab icon, early theme script).
+- **0.x is unstable.** Until 1.0 any version may change the API, as the
+  changelog already says for the whole of Stilo.
+
+*Reason:* extensions and other front ends (S17) need Stilo's components as
+a dependency, not a fork. Publishing the source rather than a bundle keeps
+one copy of Lit and the editor in a consumer's build and needs no second
+build. Same version for both keeps a single release; a Python-only fix
+publishing an unchanged npm package is a small price. Exporting little at
+first keeps the promise small while the panes are being rewritten.
+
+## S17 — 2026-11-17 — Extensions: core services, registries and Lit context
+
+Extends S5; the cell registry, `COMMANDS` and `create_app()` stay the
+places named there, and become part of this system.
+
+Stilo stays a single-user editor of one folder. Anything beyond it is
+built outside Stilo as an **extension**, which uses Stilo as a dependency
+and plugs into public hooks; a hook Stilo lacks is added to Stilo in
+general terms, never for one consumer. The system is general: the test is
+a list of example extensions (word count, checker, version history,
+read-only folders, a server behind a login, outside comments, export to
+PDF, a dashboard page, a custom cell type, a replaced panel) that must be
+writable with the public API alone (`docs/extensions.md`, when written).
+
+- **Core services hold the data and behaviour**; panes only show them. What
+  `StiloApp` holds today moves into services (`commands`, `keys`, `menus`,
+  `tree`, `document`, `editor`, `comments`, `errors`, `views`, `panels`,
+  `topBar`, `status`, `transport`, `ui`, `settings`, `info`). Each service
+  is an `EventTarget` that fires `change`; panes re-render through one
+  Lit controller that watches services. `<stilo-app>` keeps the layout.
+- **Lit context.** `<stilo-app>` provides the `stilo` object with
+  `@lit/context`; any element inside, at any depth, gets the services from
+  it.
+- **Registries, not slots.** Visible contributions (right-pane panels,
+  top-bar and status items) are added through the registries and rendered
+  by `<stilo-app>`. A front end built differently composes the exported
+  components itself.
+- **An extension** is a plain object `{id, apiVersion, activate(stilo),
+  deactivate?}`. Every registration returns a `dispose()`. The `stilo`
+  object is complete on its own: services plus what an element needs
+  (`html`, `css`, `LitElement`, the shared styles), so an extension that
+  imports nothing from Stilo works bundled into a front end or loaded at
+  run time. An extension whose `activate` throws, or whose `apiVersion`
+  does not match, is reported and skipped.
+- **Stilo uses its own API**: the commands pane, the comments pane, the
+  errors pane and Stilo's own commands are registered like extensions.
+  The **navigation pane is part of the core**, not an extension: it is
+  extended through the `tree` and `menus` services (markers, filters,
+  read-only items, menu entries), not replaced.
+- **Ids and keys.** Commands, panels and views of an extension are named
+  `<extension-id>.<name>`; Stilo's own keep their names. A duplicate id
+  is refused at registration. Key bindings have a context (`global`,
+  `tree`, `editor`); the editor's own keys always come first; for the same
+  key and context the last binding wins, with a warning, and disposing it
+  brings back the one before. The editor owns the labels and keys of its
+  commands; the commands pane reads them from it.
+- **Read-only items.** A provider in the `tree` service can mark paths as
+  read-only. Such a document can be opened and viewed, but not changed:
+  it opens in the editor's read-only mode, and save, rename, move and
+  delete are disabled, with the reason. The editor gains a read-only mode.
+- **Views** (pages that are not a document) are addressed in the query
+  string (`?view=<id>`, like `?root=`), never by a path: every path is a
+  file's public URL, owned by the server.
+- **Comments from other sources** are anchored to cells by name, not to
+  lines, and are read-only unless their provider handles edits.
+- **The transport** wraps every request to the server, imports by Texl
+  included (the editor takes a loader for its engine; Texl's `addLoader`).
+- **Settings** of extensions are kept per browser, namespaced by
+  extension. Settings stored in the folder are left for later.
+- **No veto on save**: extensions hear `save` after the fact; refusing a
+  change is done by read-only items, and by the server.
+- **Server**: `create_app()` takes a storage (any object with the methods
+  of `Storage`) and extra routers and middleware as arguments, mounted
+  under `/_api/x/<extension-id>/` before the catch-all routes. CLI
+  commands can come from other packages through a Python entry-point
+  group. Protocol additions (`/_api/info`, access-control answers,
+  read-only items) go to `docs/protocol.md` first (S3).
+- **Nothing visible changes** for users until an extension is installed;
+  the list of active extensions shows only when there is a third-party one.
+
+The work goes in phases, each leaving Stilo releasable: publish the
+package (S16); move the state into services with no change for users;
+the extension API; the protocol; the Python side; plugins installed with
+`pip` and loaded at run time, later.
+
+*Reason:* S5 kept the extension points together so that a plugin system
+would be cheap; the platform and other tools now need to change Stilo
+deeply without forking it, while Stilo itself stays single-user and
+simple. Services with views make the API complete because Stilo's own
+panes depend on it. Registries are one route where slots and registries
+would be two; context is the standard Lit way to reach shared services
+across shadow roots. The navigation pane is too tied to the commands that
+ask for names and to the tree's keys to be worth making replaceable; its
+hooks cover what extensions need. Cell names are the only stable anchor in
+a document; a path-based view would collide with files.

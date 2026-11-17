@@ -93,6 +93,32 @@ To try the wheel as a user would, install it outside the checkout:
 of the continuous integration builds it, installs it, renders a sample
 document and serves the samples.
 
+## The npm package `@onlabsorg/stilo-web`
+
+The web app's source is also published on npm, as `@onlabsorg/stilo-web`
+(S16), for developers who build their own front end or embed the editor.
+It is `web/` as it is, no build: `files` in `web/package.json` ships
+`src/`, with `README.md` and the repository's `LICENSE` (copied in by the
+`prepack` script, removed by `postpack`). Its interface is the `exports`
+map, nothing else:
+
+| Entry point                      | Module                 |
+|----------------------------------|------------------------|
+| `@onlabsorg/stilo-web`           | `src/main.js`: fonts, theme, `<stilo-app>` |
+| `@onlabsorg/stilo-web/editor`    | `src/editor/index.js`  |
+| `@onlabsorg/stilo-web/theme.css` | `src/theme.css`        |
+
+A new entry point is a promise to keep it; add one only by a decision.
+Consumers build with Vite and exclude `@onlabsorg/texl` from
+`optimizeDeps` ([the guide](component/guide.md#2-configure-vite)).
+
+`npm run check-package` in `web/` checks the package as a consumer gets
+it: it packs it, installs the tarball in a copy of `web/package-check/consumer/`
+(a small Vite project importing every entry point, with the configuration
+the guide gives), builds that, and checks that the build has the script,
+the Texl `.wasm` module and the document font. `--out=<folder>` keeps the
+tarball there; `--keep` keeps the consumer project.
+
 ## Tests
 
 | Part    | Tests                        | Run with                 |
@@ -104,6 +130,7 @@ document and serves the samples.
 | Tutorial | `tests/tutorial/`: every lesson renders, `solutions.json` turns every check to ✓ Done; `web/test/tutorial.test.js`: every cell fits its type | `uv run pytest`, `npm test` in `web/` |
 | Editor  | `web/test/`: `document.test.js` (file format), `cells.test.js` (cells), `rich-cell.test.js` and `rich-markdown.test.js` (rich text), `data-cell.test.js`, `chart-cell.test.js`, `math.test.js` (equations), `errors.test.js` (errors), `texl-editor.test.js` (editing, keys, clipboard, undo), `nav-pane.test.js` (navigation pane), `examples.test.js` (every example's cells fit their types) | `npm test` in `web/` |
 | App shell | `web/smoke/app-shell.test.js`: smoke tests (open, edit and save, reload, open from the navigation pane) | `npm run smoke` in `web/`, after `npm run build` |
+| npm package | `web/package-check/`: the package packed, installed in a small Vite project and built | `npm run check-package` in `web/` |
 
 The editor tests run in a real browser, because cells are custom elements
 and Texl is WebAssembly. Synthetic key events in tests need
@@ -123,11 +150,14 @@ tests, the web build and the package build on every push and pull request.
 
 A release is a tag. `.github/workflows/release.yml` runs at every pushed
 tag `vX.Y.Z`: it checks that the tag matches the version in
-`pyproject.toml` and that `CHANGELOG.md` has an entry `## X.Y.Z`, runs the
-tests, builds the package, publishes it on
-[PyPI](https://pypi.org/project/stilo-cli/) and creates the GitHub release with
-the changelog entry and the built files. PyPI trusts the workflow by
-Trusted Publishing, in the GitHub environment `pypi`: there is no token.
+`pyproject.toml` and in `web/package.json` and that `CHANGELOG.md` has an
+entry `## X.Y.Z`, runs the tests, builds the Python package and checks the
+npm package (`npm run check-package`), publishes them on
+[PyPI](https://pypi.org/project/stilo-cli/) and
+[npm](https://www.npmjs.com/package/@onlabsorg/stilo-web) (the very tarball
+that was checked), and creates the GitHub release with the changelog entry
+and the built files. PyPI and npm trust the workflow by Trusted Publishing,
+in the GitHub environments `pypi` and `npm`: there are no tokens.
 
 To release:
 

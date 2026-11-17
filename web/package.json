@@ -1,10 +1,31 @@
 {
   "name": "@onlabsorg/stilo-web",
   "version": "0.4.0",
-  "private": true,
-  "description": "Stilo web app: navigation, the Texl editor (src/editor), side panes",
+  "description": "Stilo, the editor of Texl documents: the web app and the <texl-editor> component, as ES modules",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/onlabsorg/stilo.git",
+    "directory": "web"
+  },
+  "homepage": "https://www.onlabs.org/",
+  "bugs": "https://github.com/onlabsorg/stilo/issues",
+  "keywords": [
+    "texl",
+    "editor",
+    "lit",
+    "web-components"
+  ],
   "type": "module",
+  "exports": {
+    ".": "./src/main.js",
+    "./editor": "./src/editor/index.js",
+    "./theme.css": "./src/theme.css",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src"
+  ],
   "engines": {
     "node": ">=22"
   },
@@ -14,7 +35,10 @@
     "preview": "vite preview",
     "test": "web-test-runner",
     "test:watch": "web-test-runner --watch",
-    "smoke": "node --test smoke/*.test.js"
+    "smoke": "node --test smoke/*.test.js",
+    "prepack": "node -e \"require('fs').copyFileSync('../LICENSE', 'LICENSE')\"",
+    "postpack": "node -e \"require('fs').rmSync('LICENSE', {force: true})\"",
+    "check-package": "node package-check/check.js"
   },
   "dependencies": {
     "@codemirror/commands": "^6.11.1",
@@ -23,6 +47,7 @@
     "@codemirror/state": "^6.7.6",
     "@codemirror/view": "^6.43.15",
     "@fontsource-variable/atkinson-hyperlegible-next": "^5.3.0",
+    "@lit/context": "^1.1.6",
     "@onlabsorg/texl": "^0.10.0",
     "dompurify": "^3.4.17",
     "katex": "^0.19.1",

@@ -29,6 +29,9 @@ jobs:
       # The runner image has Chrome, which @web/test-runner-chrome finds
       - run: npm test
       - run: npm run build
+      # Packs @onlabsorg/stilo-web, installs it in a small Vite project and
+      # builds that (package-check/)
+      - run: npm run check-package
 
   python:
     runs-on: ubuntu-latest

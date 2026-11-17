@@ -2,10 +2,9 @@
 
 *The public API of the editor (`web/src/editor/`), for developers who embed
 the editor in a page or app, or write their own cell types. Everything below
-is exported by the entry point (`web/src/editor/index.js`) unless noted. The
-API is young and will change before 1.0. The examples import the editor as
-`stilo-editor`, an alias for that folder (see
-[the guide](guide.md#2-configure-vite)).*
+is exported by the entry point (`web/src/editor/index.js`, published as
+`@onlabsorg/stilo-web/editor`) unless noted. The API is young and will
+change before 1.0.*
 
 - [Importing](#importing)
 - [`<texl-editor>`](#texl-editor) — the editor element
@@ -30,18 +29,18 @@ See also: [the guide](guide.md) for a step-by-step introduction and
 ## Importing
 
 ```js
-import "stilo-editor/index.js";            // defines <texl-editor> and the built-in cells
-import { TexlCell, registerCell } from "stilo-editor/index.js";
+import "@onlabsorg/stilo-web/editor";  // defines <texl-editor> and the built-in cells
+import { TexlCell, registerCell } from "@onlabsorg/stilo-web/editor";
 ```
+
+The editor is the entry point `@onlabsorg/stilo-web/editor` of the npm
+package `@onlabsorg/stilo-web` (`npm install @onlabsorg/stilo-web`). Only
+the package's entry points are its interface; the files inside it may
+change without notice.
 
 Importing the entry point has side effects: it registers the built-in cells and defines the custom element `texl-editor` (unless already
-defined). The cell modules are also exported on their own, without side
-effects:
-
-```js
-import { TextCell } from "stilo-editor/cells/text-cell.js";
-import { MarkdownCell } from "stilo-editor/cells/markdown-cell.js";
-```
+defined). It also exports the built-in cell classes (`TextCell`,
+`MarkdownCell`, …), to extend them.
 
 The package is plain ES modules. Use it with a bundler or dev server that
 resolves bare imports (e.g. Vite) and serve the page over HTTP: Texl loads a
@@ -292,7 +291,7 @@ is kept on save.
 | `editorExtensions()`   | All CodeMirror extensions of the view: history, selection drawing, line wrapping, `languageExtensions()`, the default keymap (without Mod+Enter and Escape) and the listener that updates `input`. Override rarely. |
 
 ```js
-import { TextCell, registerCell } from "stilo-editor/index.js";
+import { TextCell, registerCell } from "@onlabsorg/stilo-web/editor";
 import { html as htmlLanguage } from "@codemirror/lang-html";  // npm install @codemirror/lang-html
 
 class HtmlCell extends TextCell {
@@ -579,7 +578,7 @@ its imports again. Use it to render documents outside the editor with the
 same module the editor loaded:
 
 ```js
-import { createEngine, parseDocument, serializeDocument, splitRendering } from "stilo-editor/index.js";
+import { createEngine, parseDocument, serializeDocument, splitRendering } from "@onlabsorg/stilo-web/editor";
 
 const engine = await createEngine();
 const cells = parseDocument(source);
@@ -602,7 +601,8 @@ From `web/src/editor/swan.js`, for cells that use CodeMirror.
 | `insertComment(view)` | CodeMirror command: wraps each selection (or the cursor) in `<!--[  ]-->`. |
 
 `swanTokens`, `findTags`, `TAG_OPEN` and `TAG_CLOSE` are exported by
-`web/src/editor/swan.js` but not by the package entry point.
+`web/src/editor/swan.js` but not by the package entry point, so they are
+not part of the published interface.
 
 ## Styling
 

@@ -6,6 +6,13 @@ change the interfaces.
 
 ## Unreleased
 
+- **The web app on npm**: Stilo's web app and its editor component are
+  published as the npm package `@onlabsorg/stilo-web`, for developers who
+  build their own front end or embed the editor
+  (`import "@onlabsorg/stilo-web/editor"`). It replaces using the editor
+  from a copy of Stilo's source code; the guide in `docs/component/` shows
+  how to install and configure it. Nothing changes for users of the
+  `stilo` command.
 - **Texl 0.10**: Stilo now requires `pytexl` 0.10 and `@onlabsorg/texl`
   0.10. Formulas are stricter: a syntax error anywhere in a formula, also
   inside brackets, makes the whole formula undefined (before, part of it

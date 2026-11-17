@@ -35,6 +35,13 @@ stilo-cli`), because PyPI refuses `stilo` as too similar to an existing
 project; the command is still `stilo`. The server stays independent of the CLI (a test
 checks it), so it can be reused or replaced on its own.
 
+The web app's source, the editor included, is also prepared as an **npm
+package**, `@onlabsorg/stilo-web`, for developers who build their own front
+end or embed the editor. It is not published yet. It has the same version
+as the Python package; only its three entry points (the whole app, the
+editor and the theme) are its public interface, and before 1.0 any version
+may change them.
+
 Each document has one URL, `/path/to/doc.texl`: a browser gets the web app,
 `texl.import` gets the file. Any other file in the folder, such as an image or
 a PDF, has its URL too and is served as itself. A link in a document to another
@@ -356,15 +363,31 @@ accept are not part of Stilo.
   or a list could silently lose an item), and endless recursion shows an
   error instead of crashing. Data tables already check each value as it is
   typed, so they are not affected.
+- 2026-11-17: **npm package prepared**: the web app and its editor are set up
+  as the npm package `@onlabsorg/stilo-web`, with the editor's guide now
+  installing it from npm instead of a copy of the source. An automatic check
+  packs the package, installs it in a small test project and builds it, on
+  every push. The release workflow will publish it on npm together with the
+  PyPI package at the next version tag, once npm has been set up for it
+  (a one-time step); nothing is published yet.
+- 2026-11-17: **web app reorganised inside**, the first part of a larger
+  rework: the commands, keyboard shortcuts, menus, the status message, the
+  open pane and the right pane's panels are now kept in shared building
+  blocks ("services") that the top bar and the commands pane read, instead
+  of in the app shell. Nothing visible changes, except that a shortcut no
+  longer runs when extra modifier keys are held (Alt+Shift+N used to act as
+  Alt+N).
 
 ## Known limitations
 
 - No authentication: serve to localhost, or behind your own access control.
 - Editor: autocompletion of names must be redesigned; plain text cannot hold a literal `<%` above a later formula, as
   the formula's `%>` would close it (the editor refuses this, and says why).
-- The editor is not published as a package of its own: pages that embed it
-  use it from a copy of the source code. On a page whose address differs from
-  its document's, links in rendered text resolve against the page.
+- The npm package `@onlabsorg/stilo-web` is prepared but not published yet;
+  until it is, pages that embed the editor use it from a copy of the source
+  code. It needs Vite (or a similar bundler) to build. On a page whose
+  address differs from its document's, links in rendered text resolve
+  against the page.
 - Links: a link to a file that does not exist opens an empty Stilo in the new
   tab, not a "file not found" page.
 - Files and folders: renaming or moving does not update links to the item;

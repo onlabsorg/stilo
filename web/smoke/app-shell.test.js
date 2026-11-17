@@ -126,8 +126,11 @@ async function waitForText(text, timeout = 30000) {
 const renderErrors = () =>
     page.evaluate(() => document.querySelector("stilo-app").shadowRoot.querySelector("texl-editor").errors.length);
 
-const status = () =>
-    page.evaluate(() => document.querySelector("stilo-app").shadowRoot.querySelector("top-bar").status);
+/** The status message shown in the top bar, or "". */
+const topBarStatus = () =>
+    document.querySelector("stilo-app").shadowRoot.querySelector("top-bar").shadowRoot.querySelector(".status")?.textContent ?? "";
+
+const status = () => page.evaluate(topBarStatus);
 
 /** Clicks the item of the navigation pane whose path is `path`. */
 async function clickTreeItem(path) {
@@ -167,10 +170,7 @@ test("edits a cell and saves it", async () => {
     await page.keyboard.down("Control");
     await page.keyboard.press("s");
     await page.keyboard.up("Control");
-    await page.waitForFunction(
-        () => document.querySelector("stilo-app").shadowRoot.querySelector("top-bar").status === "Saved",
-        { timeout: 10000 },
-    );
+    await page.waitForFunction(`(${topBarStatus})() === "Saved"`, { timeout: 10000 });
     assert.match(await readFile(join(folder, "sample.texl"), "utf8"), new RegExp(EDIT));
     assertNoPageErrors();
 });

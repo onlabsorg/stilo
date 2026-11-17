@@ -1,20 +1,16 @@
 import { LitElement, html, css } from "lit";
 import { base } from "./shared.js";
-import { menuIcon, commandsIcon, commentsIcon, errorsIcon } from "../icons.js";
+import { menuIcon } from "../icons.js";
+import { StiloController } from "../core/context.js";
 
 /**
- * The title/tool bar: navigation toggle on the left, title in the middle,
- * one button per right-pane type on the right.
- *
- * Fires `toggle-nav` and `toggle-pane` ({pane}).
+ * The title/tool bar: navigation toggle on the left, title and status (`ui`)
+ * in the middle, one button per panel of the right pane (`panels`), with its
+ * badge, on the right.
  */
 export class TopBar extends LitElement {
     static properties = {
         heading: { type: String },
-        status: { type: String },
-        navOpen: { type: Boolean, attribute: "nav-open" },
-        pane: { type: String },
-        errorCount: { type: Number },
     };
 
     static styles = [
@@ -58,10 +54,12 @@ export class TopBar extends LitElement {
                 font-size: 12px;
                 color: var(--text-muted);
             }
-            button.icon-button.has-errors {
+            button.icon-button.has-badge {
                 width: auto;
                 gap: 0.25rem;
                 padding: 0 0.375rem;
+            }
+            button.icon-button.danger {
                 color: var(--danger);
             }
             .count {
@@ -74,52 +72,37 @@ export class TopBar extends LitElement {
     constructor() {
         super();
         this.heading = "";
-        this.status = "";
-        this.navOpen = true;
-        this.pane = null;
-        this.errorCount = 0;
+        this._stilo = new StiloController(this, (stilo) => [stilo.ui, stilo.panels]);
     }
 
-    _fire(name, detail) {
-        this.dispatchEvent(new CustomEvent(name, { detail, bubbles: true, composed: true }));
-    }
-
-    _paneButton(pane, label, icon) {
+    /** The button of a panel, with its badge if it has one. */
+    _panelButton(panel) {
+        const { ui, panels } = this._stilo.stilo;
+        const badge = panels.badge(panel.id);
+        const label = badge?.label ?? panel.label;
         return html`<button
-            class="icon-button"
+            class="icon-button ${badge ? "has-badge" : ""} ${badge?.tone ?? ""}"
             title=${label}
             aria-label=${label}
-            aria-pressed=${this.pane === pane}
-            @click=${() => this._fire("toggle-pane", { pane })}
+            aria-pressed=${ui.pane === panel.id}
+            @click=${() => ui.togglePane(panel.id)}
         >
-            ${icon}
-        </button>`;
-    }
-
-    /** The button of the errors pane, with their number if there are any. */
-    _errorsButton() {
-        const count = this.errorCount;
-        const label = count === 1 ? "1 error" : count ? `${count} errors` : "Errors";
-        return html`<button
-            class="icon-button ${count ? "has-errors" : ""}"
-            title=${label}
-            aria-label=${label}
-            aria-pressed=${this.pane === "errors"}
-            @click=${() => this._fire("toggle-pane", { pane: "errors" })}
-        >
-            ${errorsIcon}${count ? html`<span class="count">${count}</span>` : ""}
+            ${panel.icon}${badge ? html`<span class="count">${badge.text}</span>` : ""}
         </button>`;
     }
 
     render() {
+        const stilo = this._stilo.stilo;
+        if (!stilo) return "";
+        const { ui, panels } = stilo;
         return html`
             <div class="left">
                 <button
                     class="icon-button"
                     title="Navigation"
                     aria-label="Toggle navigation"
-                    aria-pressed=${this.navOpen}
-                    @click=${() => this._fire("toggle-nav")}
+                    aria-pressed=${ui.navOpen}
+                    @click=${() => ui.toggleNav()}
                 >
                     ${menuIcon}
                 </button>
@@ -127,13 +110,9 @@ export class TopBar extends LitElement {
             </div>
             <div class="title">
                 <span>${this.heading}</span>
-                ${this.status ? html`<span class="status">${this.status}</span>` : ""}
+                ${ui.status ? html`<span class="status">${ui.status}</span>` : ""}
             </div>
-            <div class="right">
-                ${this._errorsButton()}
-                ${this._paneButton("comments", "Comments", commentsIcon)}
-                ${this._paneButton("commands", "Commands", commandsIcon)}
-            </div>
+            <div class="right">${panels.list().map((panel) => this._panelButton(panel))}</div>
         `;
     }
 }

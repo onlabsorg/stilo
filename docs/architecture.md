@@ -10,13 +10,15 @@ Stilo is one repository with three parts, kept strictly apart:
 
 | Folder             | Part     | Language                  |
 |--------------------|----------|---------------------------|
-| `web/`             | Web app, with the editor in `web/src/editor/` | JavaScript (Lit web components, Vite), Node project `@onlabsorg/stilo-web` (private) |
+| `web/`             | Web app, with the editor in `web/src/editor/` | JavaScript (Lit web components, Vite), Node project `@onlabsorg/stilo-web`, published on npm (S16) |
 | `src/stilo/server/`| Server   | Python (FastAPI), module `stilo.server` |
 | `src/stilo/cli/`   | Command line | Python, module `stilo.cli` |
 
-The server and the CLI are one Python package, `stilo`, and the only
-published one; the web app is built into it, as `src/stilo/web/` (see
-[Development setup](setup.md#the-package-stilo)). The server never imports
+The server and the CLI are one Python package, `stilo`; the web app is
+built into it, as `src/stilo/web/` (see
+[Development setup](setup.md#the-package-stilo)). The web app's source is
+also published on npm, as `@onlabsorg/stilo-web`
+([setup](setup.md#the-npm-package-onlabsorgstilo-web)). The server never imports
 the CLI. A third source folder, `texl-lib/`, is not code but Texl: the
 library `stilo init` copies into projects, shipped in the package as
 `stilo/texl-lib` ([Projects](projects.md)).
@@ -79,15 +81,31 @@ When a user opens `http://127.0.0.1:8000/projects/beam/beam-check.texl`:
 
 ## Extension points
 
-There is no plugin system yet, but there will be: custom cell types, CLI
-commands, loaders. Each extension point lives in one place, so a plugin
-system can be added without restructuring:
+Stilo is getting an extension system, built in phases
+([S16, S17](../DECISIONS.md)): anything beyond a single-user editor is built
+outside Stilo, as an extension that uses it as a dependency and plugs into
+public hooks. Until the system is in place, each extension point lives in
+one place:
 
-| Extension       | The one place                              |
-|-----------------|--------------------------------------------|
-| Cell types      | The registry, `registerCell()` in `web/src/editor/registry.js` |
-| CLI commands    | The `COMMANDS` list in `src/stilo/cli/commands.py` |
-| Server          | `create_app()` in `src/stilo/server/app.py` |
+| Extension       | The one place today                        | Planned (S17) |
+|-----------------|--------------------------------------------|---------------|
+| Cell types      | The registry, `registerCell()` in `web/src/editor/registry.js` | Also `stilo.cells.register()` |
+| Web app as a dependency | — | The npm package `@onlabsorg/stilo-web`; its public API is the `exports` map of `web/package.json` (S16) |
+| Commands, keys, menus | The `commands`, `keys` and `menus` services (`web/src/core/`); Stilo's own in `web/src/builtins/commands.js` | Open to extensions |
+| Right-pane panels | The `panels` service (`web/src/core/`); Stilo's own in `web/src/builtins/panels.js` | Open to extensions |
+| Top bar, status line | `<top-bar>` | The `topBar` and `status` registries |
+| Tree markers, filters, read-only items | — | The `tree` service; the navigation pane itself stays core |
+| Pages that are not documents | — | The `views` service, addressed by `?view=<id>` |
+| Server access | `web/src/api.js` | The `transport`, which imports by Texl go through too |
+| CLI commands    | The `COMMANDS` list in `src/stilo/cli/commands.py` | Also from other packages, by a Python entry-point group |
+| Server          | `create_app()` in `src/stilo/server/app.py` | `create_app()` takes a storage, routers and middleware; extension endpoints under `/_api/x/<id>/` |
+
+How it fits together, in short: core services hold the state and the
+behaviour, and panes only show them, reaching the services through Lit
+context. An extension is an object with `activate(stilo)`, which registers
+its contributions; each registration returns a `dispose()`. Stilo's own
+panes and commands are registered the same way, so the API stays complete.
+A guide, `docs/extensions.md`, comes with the extension API.
 
 ## Conventions that apply everywhere
 
