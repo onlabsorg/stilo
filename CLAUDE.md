@@ -83,8 +83,12 @@ only show them, through Lit context; visible contributions go through
 registries (no slots); Stilo's own panes and commands use the same API,
 except the navigation pane, which is core and extended through the `tree`
 and `menus` services. The core services are in place (`web/src/core/`,
-phase 2); the extension API that opens them to others is not yet. Until
-then, keep each extension point in one place: cell types only through the registry
+phase 2). The extension API (phase 3) is being built step by step:
+`startStilo({target, extensions, transport})` (`web/src/start.js`) and the
+`extensions` service (`web/src/core/extensions.js`) activate extensions,
+each through a scoped `stilo` that records its registrations (the table
+`REGISTRATIONS` there: a new hook returning `dispose()` is added to it).
+Keep each extension point in one place: cell types only through the registry
 (`web/src/editor/registry.js`), CLI commands only through `COMMANDS`
 (`src/stilo/cli/commands.py`), the server only through `create_app()`.
 Never shape a hook around one known consumer.
@@ -242,7 +246,10 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
   builds the parser from them (the `stilo` script, `python -m stilo`).
 - `src/stilo/cli/errors.py` — finds the undefined values a document returned
   and formats the report of `stilo render`.
-- `web/src/main.js` — entry: theme CSS, the editor, the app.
+- `web/src/main.js` — entry: theme CSS, the editor, the app; exports
+  `startStilo` and `API_VERSION`. `web/index.html` calls `startStilo()`.
+  `web/src/start.js` — `startStilo()`: services, built-ins, extensions,
+  then a `<stilo-app>` in the target.
   `web/public/` — files copied into the build as they are
   (`favicon.svg`, the tab icon, linked from `web/index.html`).
 - `web/src/components/stilo-app.js` — the shell, with no state of its
@@ -279,7 +286,9 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
   open document: load, save, reload, dirty), `router.js` (the address:
   navigation root, `go`, `replace`, back and forward), `tree.js` (the
   navigation pane's tree, current item, other files, `askName` through
-  the pane, the Move to… dialog; `checkName`). `<stilo-app>` creates and
+  the pane, the Move to… dialog; `checkName`), `extensions.js` (the
+  `extensions` service, `API_VERSION`, the scoped `stilo` an extension
+  gets). `<stilo-app>` creates and
   provides it. A new command, key or menu entry is registered there.
 - `web/src/route.js` — browser URL ↔ `{root, doc}`. `web/src/api.js` —
   the protocol client, `Transport` (`stilo.transport`); every request goes

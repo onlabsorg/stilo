@@ -8,7 +8,8 @@ its own page: [The editor](editor.md).*
 
 | Module                         | Role                                                 |
 |--------------------------------|------------------------------------------------------|
-| `src/main.js`                  | Entry point: loads the theme CSS, the editor and the app |
+| `src/main.js`                  | Entry point: loads the theme CSS, the editor and the app; exports `startStilo` and `API_VERSION` |
+| `src/start.js`                 | `startStilo()`: starts the app with extensions ([below](#extensions-startstilo-and-extensions)) |
 | `src/components/stilo-app.js`  | `StiloApp`, `<stilo-app>`: the shell. Creates and provides the services, the layout, link clicks |
 | `src/components/top-bar.js`    | `<top-bar>`: the document's name, the status (`ui`), a button per panel (`panels`) |
 | `src/components/nav-pane.js`   | `<nav-pane>`: the tree of folders and files (`tree`), its menus (`menus`) and keys (`keys`) |
@@ -30,8 +31,10 @@ The app's state and behaviour live in **core services**
 ([S17](../DECISIONS.md)); the components only show them and call them.
 Stilo's own commands and panels are registered through the services, as
 an extension's will be, so the services are complete: nothing of Stilo
-goes around them. They are internal for now: the npm package does not
-export them, and there is no way yet to give the app extensions.
+goes around them. Extensions reach them through `startStilo` and the
+`extensions` service ([below](#extensions-startstilo-and-extensions)); the
+extension API is being built (phase 3), so the hooks open to extensions are
+still few.
 
 - `createStilo({transport?})` (`core/index.js`) builds the `stilo` object,
   the services of one app: `transport` (a `Transport`, below),
@@ -40,7 +43,9 @@ export them, and there is no way yet to give the app extensions.
   (see [Errors](#errors-errors)), `comments` (see
   [Comments](#comments-comments)), `editor`, `document` and `router` (see
   [The document](#the-document-editor-document-and-router)), `tree` (see
-  [The tree](#the-tree-tree)). Some listen
+  [The tree](#the-tree-tree)), `extensions` (see
+  [Extensions](#extensions-startstilo-and-extensions)), and `apiVersion`.
+  Some listen
   to others (the errors to the editor, for instance), so `createStilo`
   makes them in order.
 - Stilo's own contributions are in `src/builtins/`, as `activate(stilo)`
@@ -64,6 +69,53 @@ export them, and there is no way yet to give the app extensions.
 - `<stilo-provider .stilo=${stilo}>` provides a `stilo` object to what is
   inside it, without the app: for tests and for front ends composed of
   Stilo's components.
+
+## Extensions: `startStilo` and `extensions`
+
+An **extension** is a plain object (S17):
+
+```js
+export default {
+    id: "word-count",          // lowercase letters, digits, dashes
+    apiVersion: "1.0",         // the API version it was written for
+    activate(stilo) {          // may be async
+        stilo.commands.register({ id: "word-count.count", label: "Count words", group: "Document", run: () => {} });
+    },
+    deactivate() {},           // optional: what dispose() does not undo
+};
+```
+
+`startStilo({target, extensions, transport})` (`src/start.js`, exported by
+the package) creates the services (`createStilo`), activates Stilo's own
+contributions, then the extensions in order, and appends a `<stilo-app>`
+to `target` (`document.body` by default); it resolves to the app. Stilo's
+own `index.html` calls `startStilo()`.
+
+The **`extensions`** service (`core/extensions.js`) does the work:
+
+| Member             | Is or does                                          |
+|--------------------|-----------------------------------------------------|
+| `activate(ext)`    | Checks and activates an extension; resolves to whether it was |
+| `deactivate(id)`   | Its `deactivate()`, then undoes every registration it made |
+| `list()`, `get(id)` | The active extensions (Stilo's own contributions are not listed) |
+| `failures`         | `{id, reason}` of each extension not activated     |
+
+An extension is skipped, reported in the console and the status, with
+whatever it registered undone, when it has no `activate`, its id is not
+valid or taken, its `apiVersion` does not match (`API_VERSION`, now
+`"1.0"`: the same major version, a minor version up to this one), or its
+`activate` throws.
+
+`activate` gets a **scoped `stilo`**: the same services, through a proxy
+that records each registration (the table `REGISTRATIONS`: `commands.register`,
+`keys.bind`, `menus.add`, `panels.register`, and every service's `on`),
+so `deactivate(id)` undoes all of them, the latest first; a `dispose()`
+the extension calls itself is not undone twice. The ids of its commands
+and panels must start with `<id>.`; another is refused (and an `activate`
+that does it fails). The object also holds what an element needs, so an
+extension imports nothing from Stilo: `html`, `css`, `svg`, `LitElement`,
+`styles.base` (the shared styles of `components/shared.js`) and
+`apiVersion`.
 
 ## The window: `ui` and `panels`
 

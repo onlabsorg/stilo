@@ -381,6 +381,14 @@ accept are not part of Stilo.
   folders, use only these services. Nothing visible changes, except that a shortcut no
   longer runs when extra modifier keys are held (Alt+Shift+N used to act as
   Alt+N).
+- 2026-11-17: **extensions, first part** (for developers): the web app can
+  be started with extensions, small add-ons written by others that plug
+  into the services above without changing Stilo's code. An extension
+  that is broken or written for another version is skipped and reported,
+  and the app goes on; switching one off removes everything it added. So
+  far an extension can add commands, shortcuts, menu entries and right-pane
+  panels, and follow what happens in the app; more ways to extend Stilo
+  follow in the next steps. Nothing changes for users.
 
 ## Known limitations
 

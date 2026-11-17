@@ -6,6 +6,12 @@ change the interfaces.
 
 ## Unreleased
 
+- **Extensions, first part** (for developers): `startStilo({target,
+  extensions, transport})`, exported by `@onlabsorg/stilo-web`, starts the
+  web app with extensions, plain objects `{id, apiVersion, activate(stilo),
+  deactivate?}`. An extension that cannot be activated is reported and
+  skipped; deactivating one undoes everything it registered. The hooks it
+  can use grow in the next versions (S17). Nothing changes for users.
 - **Keyboard shortcuts match exactly**: a shortcut no longer runs when
   extra modifier keys are held. Alt+Shift+N used to act as Alt+N (New
   document); likewise Alt+C, Alt+U and Alt+T. The shortcuts as listed in

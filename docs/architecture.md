@@ -86,11 +86,15 @@ Stilo is getting an extension system, built in phases
 outside Stilo, as an extension that uses it as a dependency and plugs into
 public hooks. The core services are in place (the web app's state and
 behaviour, which Stilo's own panes and commands use); the extension API
-that opens them to others comes next. Until then, each extension point
-lives in one place:
+that opens them to others is being built: `startStilo()` and the
+`extensions` service activate extensions
+([The web app](web-app.md#extensions-startstilo-and-extensions)), and the
+hooks open to them grow step by step. Each extension point lives in one
+place:
 
 | Extension       | The one place today                        | Planned (S17) |
 |-----------------|--------------------------------------------|---------------|
+| Extensions of the web app | `startStilo()` (`web/src/start.js`) and the `extensions` service (`web/src/core/extensions.js`) | More hooks; exports for front ends |
 | Cell types      | The registry, `registerCell()` in `web/src/editor/registry.js` | Also `stilo.cells.register()` |
 | Web app as a dependency | — | The npm package `@onlabsorg/stilo-web`; its public API is the `exports` map of `web/package.json` (S16) |
 | Commands, keys, menus | The `commands`, `keys` and `menus` services (`web/src/core/`); Stilo's own in `web/src/builtins/commands.js` | Open to extensions |

@@ -104,7 +104,7 @@ map, nothing else:
 
 | Entry point                      | Module                 |
 |----------------------------------|------------------------|
-| `@onlabsorg/stilo-web`           | `src/main.js`: fonts, theme, `<stilo-app>` |
+| `@onlabsorg/stilo-web`           | `src/main.js`: fonts, theme, `<stilo-app>`; `startStilo`, `API_VERSION` |
 | `@onlabsorg/stilo-web/editor`    | `src/editor/index.js`  |
 | `@onlabsorg/stilo-web/theme.css` | `src/theme.css`        |
 

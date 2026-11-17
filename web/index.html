@@ -12,9 +12,10 @@
                 if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
             } catch {}
         </script>
-        <script type="module" src="/src/main.js"></script>
+        <script type="module">
+            import { startStilo } from "/src/main.js";
+            startStilo();
+        </script>
     </head>
-    <body>
-        <stilo-app></stilo-app>
-    </body>
+    <body></body>
 </html>
