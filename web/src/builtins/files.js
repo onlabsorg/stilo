@@ -46,7 +46,7 @@ const askForItem = ({ ui }) => ui.notify("Choose an item in the navigation pane 
  * its unsaved changes. Returns whether to go on. */
 async function saveFirst({ document, ui }, node) {
     if (!document.path || !isIn(document.path, node.path) || !document.unsaved) return true;
-    if (!(await ui.confirm("The open document has unsaved changes. Save them first?"))) return false;
+    if (!(await ui.confirm("The open document has unsaved changes. Save them first?", { ok: "Save" }))) return false;
     await document.save();
     return !document.unsaved;
 }
@@ -183,7 +183,7 @@ export async function rename(stilo, node) {
             if (problem) return problem;
             if (name === old) return false;
             const what = isFile ? "it" : "the files in it";
-            if (!(await ui.confirm(`Links from other documents to ${what} will stop working. Rename ${old} to ${name}?`))) return false;
+            if (!(await ui.confirm(`Links from other documents to ${what} will stop working. Rename ${old} to ${name}?`, { ok: "Rename" }))) return false;
             to = join(folder, type === "file" ? `${name}.texl` : name);
             try {
                 await transport.moveItem(node.path, to);
@@ -239,7 +239,7 @@ export async function deleteItem(stilo, node) {
             : `Delete the empty folder ${name}?`;
     }
     const lost = closes && document.unsaved ? " Unsaved changes will be lost." : "";
-    if (!(await ui.confirm(question + lost))) return;
+    if (!(await ui.confirm(question + lost, { ok: "Delete", danger: true }))) return;
     try {
         await (isFile ? transport.deleteFile(node.path) : transport.deleteFolder(node.path));
     } catch (error) {

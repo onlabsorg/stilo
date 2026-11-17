@@ -54,6 +54,12 @@ export class TopBar extends LitElement {
                 font-size: 12px;
                 color: var(--text-muted);
             }
+            .status.warning {
+                color: var(--warning);
+            }
+            .status.error {
+                color: var(--danger);
+            }
             .read-only {
                 padding: 0 0.375rem;
                 border: 1px solid var(--border);
@@ -133,7 +139,7 @@ export class TopBar extends LitElement {
                 ${stilo.document.readOnly !== null
                     ? html`<span class="read-only" title=${stilo.document.readOnly}>Read-only</span>`
                     : ""}
-                ${ui.status ? html`<span class="status">${ui.status}</span>` : ""}
+                ${ui.status ? html`<span class="status ${ui.level}">${ui.status}</span>` : ""}
             </div>
             <div class="right">
                 ${topBar.list().map((item) => html`<span class="item" data-id=${item.id}>${item.render(stilo)}</span>`)}

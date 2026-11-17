@@ -71,7 +71,7 @@ document, on that line. Try it below the last line of this lesson.
 ## Save
 
 Press **Ctrl+S** to save. If you try to leave a document with unsaved
-changes, the browser asks you first. Save now, so that the
+changes, Stilo asks you first. Save now, so that the
 [index](index.texl) counts your checks.
 
 More in the manual: [Lines and cells](https://www.onlabs.org/manual/editor/lines.html).

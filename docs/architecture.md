@@ -101,6 +101,7 @@ place:
 | Right-pane panels, top bar, status line | The `panels`, `topBar` and `status` registries (`web/src/core/`), open to extensions, which may also replace a panel; Stilo's own panels in `web/src/builtins/panels.js` | — |
 | Tree markers, filters, read-only items | Providers in the `tree` service (`decorate`, `filter`, `readOnly`); read-only documents open in the editor's read-only mode; commands say when they do not apply (`enabled`). The navigation pane itself stays core | — |
 | Comments from elsewhere, marks on cells | Comment providers in the `comments` service (`addProvider`) and mark providers in the `editor` service (`decorate`), anchored to cells by name | — |
+| Dialogs, settings | `ui.dialog`, `confirm`, `prompt` (shown by `<stilo-app>`), `notify` with a level; `settings`, per browser, one namespace per extension | Settings stored in the folder |
 | Pages that are not documents | The `views` service (`web/src/core/registry.js`), addressed by `?view=<id>` (`route.js`, `router`) | — |
 | Server access | The `transport` service, a `Transport` (`web/src/api.js`): replaceable (`startStilo({transport})`), wrapped by middleware (`transport.use`); Texl imports go through it (the editor's `loader`) | — |
 | CLI commands    | The `COMMANDS` list in `src/stilo/cli/commands.py` | Also from other packages, by a Python entry-point group |

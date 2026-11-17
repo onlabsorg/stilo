@@ -6,6 +6,11 @@ change the interfaces.
 
 ## Unreleased
 
+- **Questions in Stilo's own dialogs**: Stilo now asks before deleting,
+  discarding unsaved changes, renaming or saving first in a dialog of its
+  own, in the colours of the app, with buttons that say what they do
+  (Delete, Discard, Save, Rename) instead of OK. Enter answers yes, Escape
+  no. Leaving the page with unsaved changes is still asked by the browser.
 - **Extensions, first part** (for developers): `startStilo({target,
   extensions, transport})`, exported by `@onlabsorg/stilo-web`, starts the
   web app with extensions, plain objects `{id, apiVersion, activate(stilo),
@@ -37,6 +42,9 @@ change the interfaces.
   author and date, and counted in the margin, on the cells they belong
   to; and put short marks on cells (a checker's findings) in the right
   margin. Nothing changes for users without extensions.
+- **Dialogs and settings for extensions**: an extension can show dialogs,
+  ask questions and texts in Stilo's own dialogs, show a status message
+  as a warning or an error, and keep its settings in the browser.
 - **Editor component** (for developers): `<texl-editor>` gains a
   read-only mode (`readonly`), a `loader` for the documents it imports,
   comments from outside counted in its margin (`extraComments`), marks on

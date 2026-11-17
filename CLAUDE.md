@@ -260,7 +260,8 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
 - `web/src/components/top-bar.js`, `nav-pane.js`, `commands-pane.js`,
   `comments-pane.js`, `errors-pane.js` — the parts of the layout, views of
   the services: they read them through context and call them. `context-menu.js` — the menu `nav-pane.js` opens.
-  `move-dialog.js` — the Move to… dialog. The tree lists every file (S15):
+  `move-dialog.js` — the Move to… dialog. `stilo-dialog.js` — the
+  modal dialog of `ui.dialog`, `confirm`, `prompt`. The tree lists every file (S15):
   documents open in the editor; other files (`isDocument` in `api.js`) are
   muted, open by their public URL in a new tab and hide with Show other
   files; Upload files… adds files with the browser's file dialog.
@@ -279,8 +280,10 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
   (`enabled`, `disabledReason`: a command that does not apply is greyed
   out with the reason, and does not run),
   `keys.js` (shortcuts bound to commands, `when` = `global`, `tree` or
-  `editor`; `formatKeys`, `isMac`), `menus.js`, `ui.js` (status, navigation
-  pane, open panel, source view, `confirm`), `registry.js` (`Registry`:
+  `editor`; `formatKeys`, `isMac`), `menus.js`, `ui.js` (status and its level, navigation
+  pane, open panel, source view, dialogs: `dialog`, `confirm`, `prompt`,
+  shown by `<stilo-app>`), `settings.js` (per browser, by namespace; an
+  extension's own), `registry.js` (`Registry`:
   items by id and order, `register`, `replace`; the `topBar` and `status`
   services: top-bar items, the status line at the bottom, shown only with
   items; `views`: pages that are not a document, at `?view=<id>`, shown in

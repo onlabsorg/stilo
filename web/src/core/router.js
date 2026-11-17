@@ -63,7 +63,7 @@ export class Router extends Service {
     async go(route) {
         const { document, ui } = this._stilo;
         const doc = route.view ? null : (route.doc ?? null);
-        if (document.dirty && doc !== document.path && !(await ui.confirm("Discard unsaved changes?"))) return;
+        if (document.dirty && doc !== document.path && !(await ui.confirm("Discard unsaved changes?", { ok: "Discard", danger: true }))) return;
         this._history.pushState(null, "", routeUrl(route));
         return this.apply(route);
     }

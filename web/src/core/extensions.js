@@ -70,6 +70,8 @@ class Scope {
             LitElement,
             styles: { base },
         };
+        // Its own settings, named by its id
+        if (stilo.settings) this.stilo.settings = this._wrap("settings", stilo.settings.scope(id));
         for (const [name, service] of Object.entries(stilo)) {
             if (name in this.stilo) continue;
             this.stilo[name] = service && typeof service === "object" ? this._wrap(name, service) : service;

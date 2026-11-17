@@ -423,6 +423,14 @@ accept are not part of Stilo.
   the cells they belong to; they stay with their cell when it moves. It
   can also put short marks on cells, such as a checker's findings.
   Nothing changes for users without extensions.
+- 2026-11-17: **questions in Stilo's own dialogs**: Stilo now asks before
+  deleting, discarding unsaved changes, renaming or saving first in a
+  dialog of its own, in the app's colours, with buttons that say what they
+  do (Delete, Discard, Save, Rename); Enter answers yes, Escape no. Leaving
+  the page with unsaved changes is still asked by the browser. The
+  tutorial says so. **Extensions, seventh part**: an extension can show
+  dialogs and ask questions in the same style, show a status message as a
+  warning or an error, and keep its own settings in the browser.
 
 ## Known limitations
 

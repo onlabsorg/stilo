@@ -16,6 +16,7 @@ import { Document } from "./document.js";
 import { Router } from "./router.js";
 import { Tree } from "./tree.js";
 import { Extensions, API_VERSION } from "./extensions.js";
+import { Settings } from "./settings.js";
 
 export { Service } from "./service.js";
 export { stiloContext, StiloController, StiloProvider } from "./context.js";
@@ -31,6 +32,7 @@ export { Editor } from "./editor.js";
 export { Document } from "./document.js";
 export { Router } from "./router.js";
 export { Extensions, API_VERSION, compatible } from "./extensions.js";
+export { Settings } from "./settings.js";
 export { Tree, findNode, checkName, parentFolder, baseName } from "./tree.js";
 
 /**
@@ -45,6 +47,7 @@ export function createStilo({ transport = new Transport() } = {}) {
     stilo.keys = new Keys();
     stilo.menus = new Menus();
     stilo.ui = new UI();
+    stilo.settings = new Settings();
     stilo.panels = new Panels();
     stilo.topBar = new TopBar();
     stilo.status = new Status();

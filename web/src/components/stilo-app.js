@@ -9,13 +9,14 @@ import { activateBuiltins } from "../builtins/index.js";
 import "./top-bar.js";
 import "./nav-pane.js";
 import "./move-dialog.js";
+import "./stilo-dialog.js";
 
 /**
  * The app shell: top bar, navigation pane, editor, right pane. Creates and
  * provides the services (`stilo`, S17), activates Stilo's own contributions
  * on them, and lays out the window: the editor of the open document (or the
  * source view, or a view of `views` addressed by `?view=`), the open panel, the status line (`status`, only while it
- * has items), the Move to… dialog. The state lives in the
+ * has items), the Move to… dialog and the dialogs of `ui`. The state lives in the
  * services; the parts read it through context.
  */
 export class StiloApp extends LitElement {
@@ -191,6 +192,7 @@ export class StiloApp extends LitElement {
     _useStilo() {
         activateBuiltins(this.stilo);
         this.stilo.ui.setSettle(() => this.updateComplete);
+        this.stilo.ui.setDialogView(this);
         this._unwatch?.();
         const { ui, panels, status, document, tree, router, views } = this.stilo;
         const stops = [ui, panels, status, document, tree, router, views].map((service) => service.on("change", () => this.requestUpdate()));
@@ -217,6 +219,7 @@ export class StiloApp extends LitElement {
     }
 
     disconnectedCallback() {
+        if (this.stilo.ui.dialogView === this) this.stilo.ui.setDialogView(null);
         window.removeEventListener("keydown", this._onKeyDown);
         window.removeEventListener("beforeunload", this._onBeforeUnload);
         this.stilo.router.stop();
@@ -232,7 +235,7 @@ export class StiloApp extends LitElement {
     /** The shortcuts bound anywhere in the window (`keys`, `when: "global"`),
      * unless something inside handled the key, or a dialog is open. */
     _onKeyDown(e) {
-        if (e.defaultPrevented || this.stilo.tree.moving) return;
+        if (e.defaultPrevented || this.stilo.tree.moving || this.stilo.ui.currentDialog) return;
         const id = this.stilo.keys.match(e, "global");
         if (!this.stilo.commands.get(id)?.run) return;
         e.preventDefault();
@@ -323,6 +326,7 @@ export class StiloApp extends LitElement {
     render() {
         const { ui, panels, status, tree } = this.stilo;
         const panel = ui.pane ? panels.get(ui.pane) : null;
+        const dialog = ui.currentDialog;
         const items = status.list();
         const moving = tree.moving;
         return html`
@@ -341,6 +345,9 @@ export class StiloApp extends LitElement {
                       @choose=${(e) => tree.chooseMove(e.detail.folder)}
                       @close=${() => tree.endMove()}
                   ></move-dialog>`
+                : ""}
+            ${dialog
+                ? keyed(dialog, html`<stilo-dialog .content=${dialog.render()} @cancel=${() => dialog.close(undefined)}></stilo-dialog>`)
                 : ""}
         `;
     }

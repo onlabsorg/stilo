@@ -117,7 +117,7 @@ export class Document extends Service {
     /** Read the document again, after confirming if it has unsaved changes. */
     async reload() {
         if (!this._path) return;
-        if (this._dirty && !(await this._stilo.ui.confirm("Discard unsaved changes?"))) return;
+        if (this._dirty && !(await this._stilo.ui.confirm("Discard unsaved changes?", { ok: "Discard", danger: true }))) return;
         await this.load(this._path);
     }
 

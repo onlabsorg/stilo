@@ -15,6 +15,7 @@ its own page: [The editor](editor.md).*
 | `src/components/nav-pane.js`   | `<nav-pane>`: the tree of folders and files (`tree`), its menus (`menus`) and keys (`keys`) |
 | `src/components/context-menu.js` | `<context-menu>`: a menu at a point of the window |
 | `src/components/move-dialog.js` | `<move-dialog>`: Move to…, choosing a folder       |
+| `src/components/stilo-dialog.js` | `<stilo-dialog>`: a modal dialog (the `ui` service's `dialog`, `confirm`, `prompt`) |
 | `src/components/commands-pane.js` | `<commands-pane>`: the command list, by group, foldable; the Extensions group |
 | `src/components/comments-pane.js` | `<comments-pane>`: the comments of each line (`comments`) |
 | `src/components/errors-pane.js` | `<errors-pane>`: the errors of the document (`errors`) |
@@ -111,7 +112,8 @@ valid or taken, its `apiVersion` does not match (`API_VERSION`, now
 that records each registration (the table `REGISTRATIONS`: `commands.register`,
 `keys.bind`, `menus.add`, `register` and `replace` of `panels`, `topBar`
 and `status`, `transport.use`, `decorate`, `filter` and `readOnly` of
-`tree`, `editor.decorate`, `comments.addProvider`, `views.register` and `views.replace`, and every service's `on`), so
+`tree`, `editor.decorate`, `comments.addProvider`, the listeners of its
+`settings`, `views.register` and `views.replace`, and every service's `on`), so
 `deactivate(id)` undoes all
 of them, the latest first; a `dispose()` the extension calls itself is not
 undone twice. The ids of its commands, panels, views, comment providers and top-bar
@@ -134,13 +136,30 @@ getter, and changes it in its methods:
 
 | State     | Meaning                                   | Changed by |
 |-----------|-------------------------------------------|------------|
-| `status`  | The message in the top bar ("Saved", an error), or `""` | `notify(message)` |
+| `status`, `level` | The message in the top bar ("Saved", an error), or `""`; how it reads, `info`, `warning` or `error` (coloured) | `notify(message, {level})` |
 | `navOpen` | Whether the navigation pane is open       | `setNavOpen(open)`, `toggleNav()` |
 | `pane`    | The id of the panel open in the right pane, or `null` | `openPane(id)`, `togglePane(id)` |
 | `source`  | The document's text shown read-only in place of the editor (Show source), or `null` | `setSource(text)` |
 
-`confirm(message)` asks the user and resolves to the answer (the browser's
-dialog for now; asynchronous, so a dialog of Stilo's own can replace it).
+**Dialogs.** `<stilo-app>` shows the dialogs of `ui` (it is their view,
+`setDialogView`), modal, over the window, one at a time (the latest on
+top, `currentDialog`); the window's shortcuts are off while one is open,
+and closing it gives the focus back.
+
+- `dialog(render)` shows `render(close)`, a Lit template, and resolves to
+  the value given to `close(value)`; Escape closes it with `undefined`.
+  Without a view for dialogs, it rejects.
+- `confirm(message, {ok, cancel, danger})` asks a question with two
+  buttons ("OK" and "Cancel" unless named; `danger` colours OK) and
+  resolves to whether the user agreed; Enter agrees, Escape does not.
+  Stilo's own: "Discard", "Delete" (danger), "Save", "Rename".
+- `prompt(message, value, {ok, cancel})` asks for a text and resolves to
+  it, or `null`.
+
+Without a view for dialogs (a front end that shows none), `confirm` and
+`prompt` use the browser's. The dialogs' forms take the styles of
+`<stilo-dialog>`: `.message`, an input, `.buttons` with `button.primary`
+(`.danger`) and `button.secondary`.
 `settled()` resolves when the window shows the latest state, e.g. the
 navigation pane after `setNavOpen(true)` or the editor after
 `setSource(null)`; the app that renders the window sets how
@@ -186,6 +205,17 @@ window, right-aligned, as in Word; the line shows only while it has
 items, so without extensions the window is as before. An item's
 `render(stilo)` is called again when its registry changes (`changed()`),
 or it renders an element that follows the services itself.
+
+## Settings: `settings`
+
+`settings` keeps settings in the browser (`localStorage`), as JSON, by
+namespace: `get(key, fallback)`, `set(key, value)`, `remove(key)`,
+`keys()`; `change` (`{key, value}`) after a change, also one made in
+another tab. The app's is the namespace `stilo`; an extension's
+`stilo.settings` is its own, named by its id (`scope(id)`; stored as
+`stilo.ext.<id>.<key>`), and its listeners stop when it is deactivated.
+Where the browser keeps nothing, settings last as long as the page.
+Settings stored in the folder are left for later (S17).
 
 ## Errors: `errors`
 
