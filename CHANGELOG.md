@@ -4,7 +4,7 @@ All notable changes to Stilo are listed here, newest first. Versions follow
 [semantic versioning](https://semver.org/); before 1.0, any version may
 change the interfaces.
 
-## Unreleased
+## 0.6.0 — 2026-11-18
 
 - **Projects are now packages**: a folder with a `package.texl` (was
   `project.texl`) is a *package*, and `~` in imports stands for it.

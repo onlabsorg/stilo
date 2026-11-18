@@ -1,6 +1,6 @@
 {
   "name": "@onlabsorg/stilo-web",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "description": "Stilo, the editor of Texl documents: the web app and the <texl-editor> component, as ES modules",
   "license": "MIT",
   "repository": {

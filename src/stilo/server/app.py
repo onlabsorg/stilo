@@ -20,7 +20,7 @@ from .storage import BadRequest, FolderStorage, NotFound, Storage, StorageError
 TEXT = "text/plain; charset=utf-8"
 
 # The server's version, as published (bumped with pyproject.toml).
-VERSION = "0.5.1"
+VERSION = "0.6.0"
 
 # The version of the protocol it speaks, and what it can do (GET /_api/info).
 PROTOCOL = 1
