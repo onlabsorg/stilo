@@ -5,11 +5,15 @@ from __future__ import annotations
 import mimetypes
 import os
 from pathlib import Path
+from typing import Sequence
 from urllib.parse import quote
 
 from fastapi import FastAPI, Query, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware import Middleware
+
+from .extensions import ServerExtension, check_extensions
 
 from .home import has_home
 from .storage import BadRequest, FolderStorage, NotFound, Storage, StorageError, is_document
@@ -50,15 +54,27 @@ def other_file_response(path: str, content: bytes, tag: str) -> Response:
     return Response(content, media_type=media_type, headers=headers)
 
 
-def create_app(storage: Storage | Path | str, web_dist: Path | str | None = None) -> FastAPI:
+def create_app(storage: Storage | Path | str, web_dist: Path | str | None = None, *,
+               extensions: Sequence[ServerExtension] = (),
+               middleware: Sequence[Middleware] = ()) -> FastAPI:
     """The server app for the documents in `storage`: any object with the
     methods of `Storage`, or the path of a folder (a `FolderStorage`).
     `web_dist` is the built web app (`stilo/web` in the CLI); without it, app
-    pages show a notice."""
+    pages show a notice. `extensions` are server extensions, in order: each
+    one's storage wrapper wraps the storage (the last outermost), its router
+    is mounted under `/_api/x/<id>/`, and `/_api/info` lists it.
+    `middleware` (Starlette's `Middleware` entries) wraps the whole app."""
+    extensions = list(extensions)
+    check_extensions(extensions)
     if isinstance(storage, (str, os.PathLike)):
         storage = FolderStorage(storage)
-    app = FastAPI(title="Stilo server", version=VERSION)
+    for extension in extensions:
+        if extension.wrap_storage is not None:
+            storage = extension.wrap_storage(storage)
+    app = FastAPI(title="Stilo server", version=VERSION, middleware=list(middleware))
     app.state.storage = storage
+    app.state.extensions = extensions
+    extension_ids = {extension.id for extension in extensions}
 
     @app.exception_handler(StorageError)
     async def storage_error(request: Request, error: StorageError):
@@ -127,13 +143,22 @@ def create_app(storage: Storage | Path | str, web_dist: Path | str | None = None
     async def info():
         """What the server is and can do (docs/protocol.md)."""
         return {"protocol": PROTOCOL, "server": {"name": "stilo", "version": VERSION},
-                "capabilities": CAPABILITIES, "extensions": []}
+                "capabilities": CAPABILITIES,
+                "extensions": [extension.info() for extension in extensions]}
+
+    # The extensions' endpoints, before the catch-all routes below
+    for extension in extensions:
+        if extension.router is not None:
+            app.include_router(extension.router, prefix=f"/_api/x/{extension.id}")
 
     @app.api_route("/_api/x/{extension}/{path:path}", methods=["GET", "HEAD", "POST", "PUT", "DELETE", "PATCH"])
     @app.api_route("/_api/x/{extension}", methods=["GET", "HEAD", "POST", "PUT", "DELETE", "PATCH"])
     async def no_extension(extension: str, path: str = ""):
-        """The space of server extensions (docs/protocol.md): this server has
-        none yet."""
+        """The space of server extensions (docs/protocol.md): an extension
+        this server does not have, or an endpoint its extension lacks."""
+        if extension in extension_ids:
+            return JSONResponse({"error": f"unknown endpoint of extension {extension}: /{path}"},
+                                status_code=404)
         return JSONResponse({"error": f"no extension {extension}"}, status_code=404)
 
     @app.api_route("/_api/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])

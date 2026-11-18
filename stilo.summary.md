@@ -471,6 +471,13 @@ accept are not part of Stilo.
   on disk, and can wrap the folder to act on every change (for example,
   record a version after each save). The folder on disk stays the
   default. Nothing changes for users.
+- 2026-11-18: **server extensions**: a developer can now add to Stilo's
+  server, without changing it, an extension with its own addresses (for
+  example, one that lists a document's earlier versions or returns a PDF),
+  that can also act on every change to the documents; the server lists
+  its extensions when asked what it can do. Something can also be put in
+  front of the whole server, such as a sign-in check. Stilo's own `stilo
+  serve` has no extensions; nothing changes for users.
 
 ## Known limitations
 

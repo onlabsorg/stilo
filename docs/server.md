@@ -7,8 +7,9 @@ built web app. FastAPI and uvicorn.*
 | Module                          | Role                                           |
 |---------------------------------|------------------------------------------------|
 | `stilo/server/storage.py`       | `Storage`, the interface of a storage; `FolderStorage`, the default, the folder on disk (path validation, read, create, update, move, delete, tree, ETags); `StorageWrapper`. No HTTP. |
-| `stilo/server/app.py`           | `create_app()`: the HTTP routes, mapped onto a `Storage` |
-| `stilo/server/__init__.py`      | Exports `create_app` |
+| `stilo/server/app.py`           | `create_app()`: the HTTP routes, mapped onto a `Storage`, and the extensions' |
+| `stilo/server/extensions.py`    | `ServerExtension`, `get_storage`: server extensions (S17, phase 5) |
+| `stilo/server/__init__.py`      | Exports `create_app`, `ServerExtension`, `get_storage`, `Storage`, `FolderStorage`, `StorageWrapper` |
 
 The server imports nothing from the rest of the package (the CLI starts it
 with `stilo serve`); `tests/test_layout.py` checks it.
@@ -253,14 +254,27 @@ and the body `{"error": "<message>"}`.
 ## `create_app`
 
 ```python
-def create_app(storage: Storage | Path | str, web_dist: Path | str | None = None) -> FastAPI
+def create_app(storage: Storage | Path | str, web_dist: Path | str | None = None, *,
+               extensions: Sequence[ServerExtension] = (),
+               middleware: Sequence[Middleware] = ()) -> FastAPI
 ```
 
 Creates the server app for the documents in `storage`: any object with the
 methods of [`Storage`](#storage-the-interface), or the path of a folder,
-for a `FolderStorage`. The app keeps it as `app.state.storage`. `web_dist` is the
+for a `FolderStorage`. `web_dist` is the
 built web app (`src/stilo/web` in a checkout); without it, or if it is not built, pages show a
 notice that says how to build it.
+
+- `extensions`: [server extensions](#serverextension), in order. Each
+  one's `wrap_storage` wraps the storage, the last one outermost; the
+  result is the storage of every route, Stilo's and the extensions', kept
+  as `app.state.storage`. Each one's router is mounted under
+  `/_api/x/<id>/`, and `/_api/info` lists it. A bad or repeated id, or
+  capabilities that are not a list of strings, raise at once
+  (`ValueError`), before anything is served.
+- `middleware`: Starlette `Middleware` entries, wrapping the whole app,
+  Stilo's routes included: for example a login in front of everything,
+  answering `401` with a `login` address (protocol: Login and refusals).
 
 ```python
 import uvicorn
@@ -281,15 +295,66 @@ The routes, in the order they match:
 | `/_api/tree/{path}`                | POST         | `Storage.create_folder`; `201`, `Location` |
 | `/_api/tree/{path}`                | DELETE       | `Storage.delete_folder`; `{deleted, removed}` |
 | `/_api/tree/{path}`                | GET          | `Storage.tree`, with `?depth=` (1 or more) |
-| `/_api/info`                       | GET          | `{protocol, server, capabilities, extensions}`: `PROTOCOL` (1), `VERSION`, `CAPABILITIES`, no extensions yet |
-| `/_api/x/{extension}/{path}`       | any          | `404` "no extension …": the space of server extensions, reserved (S17 phase 5) |
+| `/_api/info`                       | GET          | `{protocol, server, capabilities, extensions}`: `PROTOCOL` (1), `VERSION`, `CAPABILITIES`, and an entry per extension (`id`, `capabilities`, `version` if given) |
+| `/_api/x/{id}/...`                 | as the router says | The endpoints of the extension `id`, from its router |
+| `/_api/x/{extension}/{path}`       | any          | `404`: "no extension …" for an extension the server does not have, "unknown endpoint of extension …" for a path its router lacks |
 | `/_api/{path}`                     | any          | `404`: unknown endpoint                  |
 | `/_app/...`                        | GET          | The web app's static files (`web_dist`)  |
 | `/{path}`                          | GET, HEAD    | The public address. A path with `~`: `307` to the real path, for every client (`home_redirect`). A file that is not a document: itself, for every client, with its real type and the safety headers of the protocol (`other_file_response`). Otherwise the web app for a browser (`Accept` includes `text/html`), the file for anything else. `Vary: Accept` |
 
 `create_app()` is the server's extension point: Stilo's own new endpoints
 go under `/_api/`, added here, without changing the existing ones; those of
-server extensions go under `/_api/x/<id>/` (S17, phase 5).
+server extensions go under `/_api/x/<id>/`, given as `ServerExtension`s.
+
+## `ServerExtension`
+
+```python
+@dataclass(frozen=True)
+class ServerExtension:
+    id: str
+    router: APIRouter | None = None
+    wrap_storage: Callable[[Storage], Storage] | None = None
+    capabilities: Sequence[str] = ()
+    version: str | None = None
+
+def get_storage(request: Request) -> Storage
+```
+
+What a package adds to the server, as one value (`extensions.py`):
+
+- `id`: lowercase letters, digits and dashes; the space of its endpoints,
+  `/_api/x/<id>/`, and its entry in `/_api/info`. The same id as its web
+  extension, if it has one, so the web part can ask
+  `info.hasExtension(id)`.
+- `router`: a FastAPI `APIRouter` with its endpoints, paths relative to
+  its space (`@router.get("/versions/{path:path}")` answers
+  `/_api/x/<id>/versions/...`). A `StorageError` raised in an endpoint
+  gets the same JSON answer as in Stilo's own routes.
+- `wrap_storage`: given the storage, returns the one to use instead,
+  usually a [`StorageWrapper`](#storagewrapper).
+- `capabilities`, `version`: listed in its entry of `/_api/info`.
+
+An endpoint reaches the storage, as wrapped by all the extensions, with
+the dependency `get_storage`:
+
+```python
+from fastapi import APIRouter, Depends
+from stilo.server import ServerExtension, Storage, get_storage
+
+router = APIRouter()
+
+@router.get("/size/{path:path}")
+async def size(path: str, storage: Storage = Depends(get_storage)):
+    content, _ = storage.read(path)
+    return {"size": len(content)}
+
+app = create_app("docs", web_dist, extensions=[
+    ServerExtension("sizes", router=router, capabilities=["size"], version="0.1.0"),
+])
+```
+
+A later loader of installed packages (S17, phase 6) is meant to take
+`ServerExtension`s from an entry point as they are.
 `VERSION` in `app.py` is the server's version, bumped with
 `pyproject.toml`.
 
@@ -307,6 +372,10 @@ with a test there.
 `tests/server/test_storage_interface.py` covers the storage interface: the
 app on a storage held in memory (the interface is enough), a
 `StorageWrapper` that sees every write, `create_app()` given a path.
+`tests/server/test_extensions.py` covers server extensions: routers under
+`/_api/x/<id>/`, errors, unknown extensions and endpoints, entries in
+`/_api/info`, storage wrappers and their order, refused ids, and
+middleware in front of everything.
 
 ```sh
 uv run pytest tests/server

@@ -96,9 +96,10 @@ to `docs/extensions.md` and to the contract test,
 server's side: `/_api/info`, `/_api/x/<id>/` reserved, read-only items,
 `401` with a login address and `403` with a reason. Phase 5 (the Python
 side) is under way: `create_app()` takes any storage (`Storage`, the
-interface; `FolderStorage`, the default; `StorageWrapper`); routers of
-server extensions, exported helpers and CLI commands from other packages
-are not built yet.
+interface; `FolderStorage`, the default; `StorageWrapper`), server
+extensions (`ServerExtension`: a router mounted under `/_api/x/<id>/`, a
+storage wrapper, listed in `/_api/info`) and middleware; exported helpers
+and CLI commands from other packages are not built yet.
 Keep each extension point in one place: cell types only through the registry
 (`web/src/editor/registry.js`), CLI commands only through `COMMANDS`
 (`src/stilo/cli/commands.py`), the server only through `create_app()`.
@@ -235,11 +236,16 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
   `read_only` (what the server cannot write, from the file system's
   permissions: `readOnly` in the tree, `Forbidden` (403) on writing it).
   Raises `StorageError` subclasses carrying the HTTP status.
-- `src/stilo/server/app.py` — `create_app(storage | root, web_dist)`
-  (a path is a `FolderStorage`; kept as `app.state.storage`): the
+- `src/stilo/server/app.py` — `create_app(storage | root, web_dist, *,
+  extensions, middleware)` (a path is a `FolderStorage`; the storage, as
+  wrapped by the extensions, kept as `app.state.storage`): the
   `/_api/` routes (`/_api/info` from `PROTOCOL`, `VERSION`,
-  `CAPABILITIES`; `/_api/x/` reserved, `404`), `/_app/` static bundle,
+  `CAPABILITIES` and the extensions; the extensions' routers under
+  `/_api/x/<id>/`, then a `404` catch-all there), `/_app/` static bundle,
   and `/<path>` (web app for browsers, the file for other clients).
+- `src/stilo/server/extensions.py` — `ServerExtension` (`id`, `router`,
+  `wrap_storage`, `capabilities`, `version`), `check_extensions`,
+  `get_storage` (the FastAPI dependency an extension's endpoint uses).
 - `src/stilo/cli/project.py` — `create_engine()` (the one place an engine
   is made; its file loader resolves `~`, top: `$HOME` or `/`), `TEXL_LIB`,
   the text of a new `project.texl`.

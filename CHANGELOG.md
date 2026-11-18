@@ -6,6 +6,11 @@ change the interfaces.
 
 ## Unreleased
 
+- **Server extensions** (for developers; `docs/server.md`): `create_app()`
+  takes `extensions`, each a `ServerExtension` (an id, a router mounted
+  under `/_api/x/<id>/`, a storage wrapper, capabilities, a version),
+  listed in `/_api/info`, and `middleware` for the whole app. Endpoints
+  reach the storage with the dependency `get_storage`.
 - **Any storage for the server** (for developers; `docs/server.md`):
   `create_app()` takes any object with the methods of `Storage`, now an
   interface, or a folder's path as before. The folder on disk is
