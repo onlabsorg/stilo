@@ -1,9 +1,10 @@
 # Extensions
 
-*Writing an extension for Stilo's web app: a guide, the reference of every
-hook, and a sketch of the extensions the API is checked against. The design
-is in [S17](../DECISIONS.md) and [S18](../DECISIONS.md); the services are
-described in [The web app](web-app.md).*
+*Writing an extension for Stilo: a guide, the reference of every hook of
+the web app, the server's and the CLI's, and a sketch of the extensions
+the API is checked against. The design is in [S17](../DECISIONS.md),
+[S18](../DECISIONS.md) (the web app) and [S20](../DECISIONS.md) (the
+Python side); the services are described in [The web app](web-app.md).*
 
 Stilo stays a single-user editor of one folder. Anything beyond that is
 built outside Stilo, as an **extension**: trusted code, installed by
@@ -11,10 +12,13 @@ whoever runs Stilo, that uses Stilo as a dependency and plugs into public
 hooks. Documents never load extensions. A hook Stilo lacks is added to
 Stilo in general terms ("put a mark on a cell"), never for one consumer.
 
-This page covers the web app. The protocol has a place for the endpoints
-of server extensions (`/_api/x/<id>/`, listed by `/_api/info`); adding them
-to `create_app()`, a `Storage` of one's own and CLI commands from other
-packages are planned (S17, phase 5) and not there yet.
+An extension can have up to three parts, each optional: a **web
+extension** (most of this page), a **server extension** and **CLI
+commands**, the last two in Python ([Server and CLI
+extensions](#server-and-cli-extensions)). Give them one id: the web part
+asks `info.hasExtension(id)` whether the server part is there. Loading
+them from installed packages at run time, without building a front end,
+is for later (S17, phase 6).
 
 ## A first extension
 
@@ -169,10 +173,66 @@ itself: `createStilo({transport})`, the services without an app;
 inside; `stiloContext` and `StiloController`. The panes are not exported
 yet (S16).
 
+## Server and CLI extensions
+
+The Python side has two public APIs, `stilo.server.__all__`
+([The server](server.md#the-public-api)) and `stilo.cli.__all__`
+([The CLI](cli.md#the-public-api)); a package written against them alone
+keeps working as Stilo changes.
+
+**A server extension** is a `ServerExtension` given to `create_app()`:
+
+```python
+from fastapi import APIRouter, Depends
+from stilo.server import ServerExtension, Storage, StorageWrapper, create_app, get_storage
+
+class Recording(StorageWrapper):
+    def update(self, path, content, if_match=None):
+        tag = super().update(path, content, if_match)   # raises if refused
+        record(path, content)                           # after a save only
+        return tag
+
+router = APIRouter()
+
+@router.get("/versions/{path:path}")                    # /_api/x/history/versions/...
+async def versions(path: str, storage: Storage = Depends(get_storage)):
+    storage.read(path)                                  # 404 if there is no such document
+    return {"versions": list_versions(path)}
+
+history = ServerExtension("history", router=router, wrap_storage=Recording,
+                          capabilities=["versions"], version="0.1.0")
+app = create_app("docs", web_dist, extensions=[history])
+```
+
+- Its **router** is mounted under `/_api/x/<id>/`; `StorageError`s
+  (`NotFound`, `Forbidden`, …) raised there are answered as in the rest
+  of the API, `{"error": …}` with their status.
+- Its **storage wrapper** wraps the storage every route uses, Stilo's
+  own included: an action after every save, a check before it (raise
+  `Forbidden` with a reason), or a storage of another kind under it. Any
+  object with the methods of `Storage` is a storage.
+- `/_api/info` lists it with its **capabilities** and **version**.
+- `middleware` of `create_app()` wraps the whole app, e.g. a login.
+
+**CLI commands** are `Command`s in the entry-point group
+`stilo.commands` of the package's `pyproject.toml`; `stilo --help` lists
+them after Stilo's own ([The CLI](cli.md#commands-from-other-packages)).
+A command renders with `create_engine()` as `stilo render` does, and
+serves a folder with its server extensions with
+`run_server(create_app(folder, WEB_DIST, extensions=[...]), host, port)`.
+
+Until phase 6, `stilo serve` has no server extensions: a package that
+has one offers its own command to serve (`stilo history serve`), and
+its web part comes in a front end built with `startStilo({extensions})`
+(passed to `create_app()` as `web_dist`).
+
+`tests/test_extension_contract.py` writes Validation 3 and 7 below as two
+such packages, importing only public names (it checks that from its own
+source); a change that breaks one of these hooks breaks it.
+
 ## Validation: the extensions the API must allow
 
-Each sketch uses the public API alone. Parts that need the server or the
-CLI wait for phases 4 and 5 of S17.
+Each sketch uses the public API alone.
 
 1. **Word count.** The example above: `status`, `panels`, `editor`'s
    `edit`, `document`'s `open`.
@@ -186,9 +246,14 @@ CLI wait for phases 4 and 5 of S17.
    puts "Show history" on documents; a panel lists versions; a view
    `history.version` (`?view=history.version&path=…&rev=…`) renders
    `<texl-editor readonly>` with the old text, and `history.compare` two
-   of them side by side; `document.on("save")` records a version. Reading
-   versions needs a server endpoint (`/_api/x/history/`) and the folder's
-   history a `Storage` wrapper or a CLI command (phase 5).
+   of them side by side; `document.on("save")` refreshes the panel. On
+   the server, a `StorageWrapper` records a
+   version after every save (whoever saves: the web app or another
+   client), and a router serves them, `/_api/x/history/versions/<path>`
+   and `/_api/x/history/version/<n>/<path>`, which the panel and the
+   views read through `transport.fetch`; a CLI command `stilo history`
+   lists them, and `stilo history serve` serves a folder with the
+   extension. All in one `ServerExtension("history", …)`.
 4. **Read-only folders.** `tree.readOnly(path => path.startsWith("lib/") &&
    "a third-party library")`, and `tree.decorate` for a mark on a library
    changed anyway.
@@ -203,10 +268,12 @@ CLI wait for phases 4 and 5 of S17.
    `comments(path)` fetching an issue tracker (through `transport.fetch`
    or the tracker's own API); `panels.setBadge("comments", …)` or a
    `topBar` item for new notifications.
-7. **Export to PDF.** A command and a menu entry on documents that
-   download from a server endpoint (`/_api/x/pdf/`, offered only when
-   `info.hasExtension("pdf")`; the endpoint itself comes with phase 5); a
-   CLI command (phase 5).
+7. **Export to PDF.** A command and a menu entry on documents, offered
+   only when `info.hasExtension("pdf")`, post the editor's rendered HTML
+   to `/_api/x/pdf/<path>` and download the answer, `application/pdf`
+   with `Content-Disposition: attachment` (the server never runs a
+   document itself). A CLI command `stilo pdf <file>` renders it with
+   `create_engine()` and converts it.
 8. **A dashboard page.** `views.register({id: "dash.board", …})`, its
    content from `tree.tree` and `transport.readFile` for each document;
    links in it to `?view=` or to documents open in the app.

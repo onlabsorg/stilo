@@ -94,14 +94,19 @@ each through a scoped `stilo` that records its registrations (the table
 to `docs/extensions.md` and to the contract test,
 `web/test/contract.test.js`). Protocol v1 (S17 phase 4, S19) gives the
 server's side: `/_api/info`, `/_api/x/<id>/` reserved, read-only items,
-`401` with a login address and `403` with a reason. Phase 5 (the Python
-side) is under way: `create_app()` takes any storage (`Storage`, the
+`401` with a login address and `403` with a reason. Phase 5 (S20) gives
+the Python side: `create_app()` takes any storage (`Storage`, the
 interface; `FolderStorage`, the default; `StorageWrapper`), server
 extensions (`ServerExtension`: a router mounted under `/_api/x/<id>/`, a
 storage wrapper, listed in `/_api/info`) and middleware; its public API
 is `stilo.server.__all__`. CLI commands come also from other packages,
 through the entry-point group `stilo.commands` (each a `Command`); the
-CLI's public API is `stilo.cli.__all__`.
+CLI's public API is `stilo.cli.__all__`. A change to either list, or to
+a hook of the Python side, updates `docs/extensions.md` ("Server and CLI
+extensions") and the Python contract test,
+`tests/test_extension_contract.py` (Validation 3 and 7 as separate
+packages, public names only). Phase 6 (plugins loaded at run time from
+`pip`, `stilo serve` taking their server extensions) is not built.
 Keep each extension point in one place: cell types only through the registry
 (`web/src/editor/registry.js`), CLI commands only through `COMMANDS`
 (`src/stilo/cli/commands.py`) and the `stilo.commands` entry points, the
@@ -147,7 +152,8 @@ Rules:
 for rendering, managed with `uv`. All commands at the root.
 
 ```bash
-uv sync && uv run pytest              # tests/: server/, cli/, texl_lib/, tutorial/, test_layout.py
+uv sync && uv run pytest              # tests/: server/, cli/, texl_lib/, tutorial/, test_layout.py,
+                                      #   test_extension_contract.py
 uv run stilo serve examples           # http://127.0.0.1:8000
 uv run stilo render examples/projects/beam/beam-check.texl
 uv run stilo init path/to/project     # project.texl, lib/stilo/

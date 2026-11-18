@@ -41,8 +41,9 @@ end or embed the editor. It is not published yet. It has the same version
 as the Python package; only its three entry points (the whole app, the
 editor and the theme) are its public interface, and before 1.0 any version
 may change them. The web app can be extended without changing its
-code: extensions add commands, panels, pages, marks, comments and more
-(see Status).
+code: extensions add commands, panels, pages, marks, comments and more;
+the server and the `stilo` command can be extended too, by separate
+Python packages (see Status).
 
 Each document has one URL, `/path/to/doc.texl`: a browser gets the web app,
 `texl.import` gets the file. Any other file in the folder, such as an image or
@@ -491,12 +492,22 @@ accept are not part of Stilo.
   command, is skipped with a warning, and Stilo's own commands always
   keep their names. The command line also lists the parts add-ons may
   rely on. Nothing changes for users without add-ons.
+- 2026-11-18: **extensions on every side, documented and tested**: the
+  developer guide now covers the server and command-line sides of
+  extensions as well as the web app, and an automatic test writes two of
+  the example extensions (version history, export to PDF) as separate
+  add-on packages that use only the parts Stilo names as public. Add-ons
+  for the server still have to be started by their own command: `stilo
+  serve` does not pick them up by itself yet.
 
 ## Known limitations
 
 - No authentication: serve to localhost, or behind your own access control.
 - Editor: autocompletion of names must be redesigned; plain text cannot hold a literal `<%` above a later formula, as
   the formula's `%>` would close it (the editor refuses this, and says why).
+- Server extensions are not loaded by `stilo serve` from installed
+  packages: an add-on with a server part comes with its own command to
+  serve a folder, and its web part in a front end built for it.
 - The npm package `@onlabsorg/stilo-web` is prepared but not published yet;
   until it is, pages that embed the editor use it from a copy of the source
   code. It needs Vite (or a similar bundler) to build. On a page whose

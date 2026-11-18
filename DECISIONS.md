@@ -524,3 +524,45 @@ D18), without changing; describing the server and marking items in the
 tree keeps the protocol plain HTTP, and reusing the read-only machinery of
 phase 3 gives one behaviour whatever says an item is read-only. The client
 adds `next` because it alone knows where the user was.
+
+## S20 — 2026-11-18 — The Python side of extensions: storage, server extensions, CLI plugins
+
+Refines S17 with what phase 5 settled; S17 stays in force.
+
+- **`Storage` is an interface**, a `typing.Protocol` with the nine methods
+  `create_app()` uses; the folder on disk is `FolderStorage`, the default,
+  and `StorageWrapper` passes every call to another storage, so a wrapper
+  overrides only what it changes. A storage refuses by raising the
+  `StorageError` subclasses, which carry the HTTP status.
+- **One value per server extension**: `ServerExtension(id, router,
+  wrap_storage, capabilities, version)`, given to `create_app(storage,
+  web_dist, extensions=…, middleware=…)`. Routers go under
+  `/_api/x/<id>/`; wrappers wrap in order, the last outermost, and every
+  route, Stilo's too, uses the result (`get_storage`); middleware wraps the
+  whole app. A later loader of installed packages (phase 6) takes the same
+  value from an entry point.
+- **An extension's capabilities stay in its own entry** of `/_api/info`
+  (`{id, version?, capabilities?}`), never in the protocol's list, so
+  names cannot collide. Still protocol 1.
+- **CLI commands from other packages** through the entry-point group
+  `stilo.commands`, each a `Command`, listed after Stilo's own, sorted by
+  name. Stilo's own commands win a name clash; a broken plugin, or one that
+  loses a clash, is skipped with a warning, never stops `stilo`.
+- **Public APIs are named and pinned**: `stilo.server.__all__` (the app,
+  server extensions, storages, errors, the helpers another server reuses:
+  file types and safety headers, ETags, the `~` rule) and
+  `stilo.cli.__all__` (`Command`, `COMMANDS`, `main`, `create_engine`,
+  `WEB_DIST`, `run_server`); anything else may change. A contract test
+  writes Validation 3 and 7 with these names alone.
+- **`stilo serve` takes no server extensions yet**: until phase 6, a
+  package with one offers its own command to serve, built on
+  `create_app()` and `run_server()`.
+
+*Reason:* each point is the smallest design that lets the Validation
+extensions be written as separate Python packages with the public API
+alone. A protocol rather than a base class lets a storage of any kind
+plug in without inheriting from Stilo; one value per extension keeps its
+parts together and makes run-time loading a loader only; a plugin that
+cannot break `stilo` or take its commands' names keeps installing one
+safe. Pinned lists make the public API a deliberate choice, as the
+`exports` map is for the npm package (S16).

@@ -6,6 +6,11 @@ change the interfaces.
 
 ## Unreleased
 
+- **Server and CLI extensions documented** (for developers): the guide
+  `docs/extensions.md` covers the Python side (server extensions, storage
+  wrappers, CLI commands), and a contract test writes the version-history
+  and PDF-export examples as separate packages with the public API alone.
+  Decision S20.
 - **`stilo` commands from other packages** (for developers;
   `docs/cli.md`): an installed package can add commands to `stilo`
   through the entry-point group `stilo.commands`; `stilo --help` lists

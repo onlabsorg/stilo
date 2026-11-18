@@ -90,9 +90,14 @@ API of the web app opens them to extensions: `startStilo()` activates
 them, each with a `stilo` object that records its registrations
 ([Extensions](extensions.md), [S18](../DECISIONS.md)). Protocol v1 has the
 server's side of it (`/_api/info`, `/_api/x/`, read-only items, login;
-[S19](../DECISIONS.md)); the server's and the CLI's own extension points
-follow (S17, phase 5). Each extension point lives in one
-place:
+[S19](../DECISIONS.md)), and the server and the CLI have their own
+extension points: a storage interface, server extensions given to
+`create_app()`, CLI commands from other packages, and named public APIs
+([S20](../DECISIONS.md); [Server and CLI
+extensions](extensions.md#server-and-cli-extensions); contract test
+`tests/test_extension_contract.py`). Loading extensions from installed
+packages at run time is for later (S17, phase 6). Each extension point
+lives in one place:
 
 | Extension       | The one place today                        | Planned (S17) |
 |-----------------|--------------------------------------------|---------------|
