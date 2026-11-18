@@ -12,16 +12,15 @@ maps to a status code.
 
 from __future__ import annotations
 
-import hashlib
 import os
 import shutil
 from datetime import datetime, timezone
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 from typing import Protocol
 
+from .files import DOCUMENT_SUFFIX, etag, is_document  # noqa: F401 (is_document: also from here)
 from .home import HOME, HomeCycle, expand_home, has_home
 
-DOCUMENT_SUFFIX = ".texl"
 TRASH = ".trash"
 
 
@@ -49,16 +48,6 @@ class Conflict(StorageError):
 
 class PreconditionFailed(StorageError):
     status = 412
-
-
-def etag(content: bytes) -> str:
-    """Strong ETag of a file's content, quoted as HTTP requires."""
-    return '"' + hashlib.sha256(content).hexdigest() + '"'
-
-
-def is_document(path: str) -> bool:
-    """Whether `path` names a Texl document (by its suffix, `.texl`)."""
-    return PurePosixPath(path.strip("/") or "/").suffix == DOCUMENT_SUFFIX
 
 
 class Storage(Protocol):

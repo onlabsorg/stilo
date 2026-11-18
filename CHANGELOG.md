@@ -6,6 +6,11 @@ change the interfaces.
 
 ## Unreleased
 
+- **The server's public API** (for developers; `docs/server.md`):
+  `stilo.server` lists in `__all__` what extensions and other servers may
+  use, among them the helpers that make another server answer as Stilo's:
+  file types and safety headers (`media_type`, `other_file_response`, in
+  the new `files.py`), ETags, and the project-home rule.
 - **Server extensions** (for developers; `docs/server.md`): `create_app()`
   takes `extensions`, each a `ServerExtension` (an id, a router mounted
   under `/_api/x/<id>/`, a storage wrapper, capabilities, a version),

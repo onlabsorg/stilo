@@ -478,6 +478,12 @@ accept are not part of Stilo.
   its extensions when asked what it can do. Something can also be put in
   front of the whole server, such as a sign-in check. Stilo's own `stilo
   serve` has no extensions; nothing changes for users.
+- 2026-11-18: **the server's public parts named**: the server now lists
+  the parts other developers may rely on (for extensions, other kinds of
+  storage, or another server that must behave like Stilo's: how files are
+  typed and kept from running scripts, and how `~` is resolved), and an
+  automatic test keeps that list from changing by accident. Nothing
+  changes for users.
 
 ## Known limitations
 

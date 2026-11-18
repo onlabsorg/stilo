@@ -9,7 +9,9 @@ built web app. FastAPI and uvicorn.*
 | `stilo/server/storage.py`       | `Storage`, the interface of a storage; `FolderStorage`, the default, the folder on disk (path validation, read, create, update, move, delete, tree, ETags); `StorageWrapper`. No HTTP. |
 | `stilo/server/app.py`           | `create_app()`: the HTTP routes, mapped onto a `Storage`, and the extensions' |
 | `stilo/server/extensions.py`    | `ServerExtension`, `get_storage`: server extensions (S17, phase 5) |
-| `stilo/server/__init__.py`      | Exports `create_app`, `ServerExtension`, `get_storage`, `Storage`, `FolderStorage`, `StorageWrapper` |
+| `stilo/server/files.py`         | Files by their public URL: `is_document`, `etag`, `media_type`, `other_file_response` (types and safety headers), `NO_CACHE` |
+| `stilo/server/home.py`          | The project home rule, `~` in paths; shared with the CLI |
+| `stilo/server/__init__.py`      | The [public API](#the-public-api), `__all__` |
 
 The server imports nothing from the rest of the package (the CLI starts it
 with `stilo serve`); `tests/test_layout.py` checks it.
@@ -225,16 +227,7 @@ files, hidden entries and links (as links, not followed), and returns
 `{"deleted": <number of files in it>}`. A folder with no files at all, at any
 depth, is removed and makes no trash folder (S15).
 
-### `etag`, `is_document`
-
-```python
-def etag(content: bytes) -> str
-def is_document(path: str) -> bool
-```
-
-`etag` returns the strong ETag of a content: its SHA-256, in quotes as HTTP
-requires. `is_document` says whether a path names a Texl document, by its
-suffix (`.texl`).
+`etag` and `is_document` are in `files.py` (below).
 
 ### Errors
 
@@ -250,6 +243,35 @@ StorageError (500)
 Each `StorageError` subclass carries the HTTP status in its `status`
 attribute. The HTTP layer turns any of them into a response with that status
 and the body `{"error": "<message>"}`.
+
+## Files by their public URL (`files.py`)
+
+```python
+DOCUMENT_SUFFIX = ".texl"
+NO_CACHE = {"Cache-Control": "no-cache"}
+FILE_TYPES: mimetypes.MimeTypes
+def is_document(path: str) -> bool
+def etag(content: bytes) -> str
+def media_type(path: str) -> str
+def other_file_response(path: str, content: bytes, tag: str) -> Response
+```
+
+The rules of the protocol for files, kept apart from the routes so that a
+server extension, or another Python server that speaks the protocol,
+answers the same:
+
+- `is_document` says whether a path names a Texl document, by its suffix.
+- `etag` returns the strong ETag of a content: its SHA-256, in quotes as
+  HTTP requires.
+- `media_type` is the type a file that is not a document is served with,
+  from Python's own table (`FILE_TYPES`, not the machine's, so every
+  installation answers the same; WebP added), and
+  `application/octet-stream` when unknown or compressed.
+- `other_file_response` answers such a file by its public URL: its type,
+  `ETag`, `X-Content-Type-Options: nosniff`, `NO_CACHE`, `Vary: Accept`,
+  and `Content-Security-Policy: sandbox` for HTML and XML, so it cannot
+  run scripts on the server's origin (protocol: [URL space](protocol.md#url-space)).
+- `NO_CACHE` is the header every document and file is served with.
 
 ## `create_app`
 
@@ -358,6 +380,25 @@ A later loader of installed packages (S17, phase 6) is meant to take
 `VERSION` in `app.py` is the server's version, bumped with
 `pyproject.toml`.
 
+## The public API
+
+`stilo.server.__all__` lists what a server extension, a storage of
+another kind or another server that speaks the protocol may use:
+
+| Group | Names |
+|-------|-------|
+| The app | `create_app`, `PROTOCOL`, `VERSION`, `CAPABILITIES` |
+| Server extensions | `ServerExtension`, `get_storage` |
+| Storages | `Storage`, `FolderStorage`, `StorageWrapper` |
+| Errors | `StorageError`, `BadRequest`, `Forbidden`, `NotFound`, `Conflict`, `PreconditionFailed` |
+| Files | `DOCUMENT_SUFFIX`, `is_document`, `etag`, `FILE_TYPES`, `media_type`, `other_file_response`, `NO_CACHE` |
+| The project home | `MANIFEST`, `HOME`, `MAX_HOMES`, `HomeCycle`, `home_of`, `expand_home`, `has_home` |
+
+Anything else in the modules may change without notice.
+`tests/server/test_public_api.py` pins the list: a change to it is
+deliberate, made with this table and the changelog, as the `exports` map
+of the npm package is on the web side (S16).
+
 ## Tests
 
 `tests/server/test_api.py` tests the app through FastAPI's `TestClient`,
@@ -375,7 +416,8 @@ app on a storage held in memory (the interface is enough), a
 `tests/server/test_extensions.py` covers server extensions: routers under
 `/_api/x/<id>/`, errors, unknown extensions and endpoints, entries in
 `/_api/info`, storage wrappers and their order, refused ids, and
-middleware in front of everything.
+middleware in front of everything. `tests/server/test_public_api.py`
+pins the public API and checks that the helpers answer as the server does.
 
 ```sh
 uv run pytest tests/server

@@ -98,8 +98,9 @@ server's side: `/_api/info`, `/_api/x/<id>/` reserved, read-only items,
 side) is under way: `create_app()` takes any storage (`Storage`, the
 interface; `FolderStorage`, the default; `StorageWrapper`), server
 extensions (`ServerExtension`: a router mounted under `/_api/x/<id>/`, a
-storage wrapper, listed in `/_api/info`) and middleware; exported helpers
-and CLI commands from other packages are not built yet.
+storage wrapper, listed in `/_api/info`) and middleware; its public API
+is `stilo.server.__all__`. CLI commands from other packages are not built
+yet.
 Keep each extension point in one place: cell types only through the registry
 (`web/src/editor/registry.js`), CLI commands only through `COMMANDS`
 (`src/stilo/cli/commands.py`), the server only through `create_app()`.
@@ -243,6 +244,13 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
   `CAPABILITIES` and the extensions; the extensions' routers under
   `/_api/x/<id>/`, then a `404` catch-all there), `/_app/` static bundle,
   and `/<path>` (web app for browsers, the file for other clients).
+- `src/stilo/server/files.py` — files by their public URL:
+  `DOCUMENT_SUFFIX`, `is_document`, `etag`, `FILE_TYPES`, `media_type`,
+  `other_file_response` (type and safety headers), `NO_CACHE`.
+- `src/stilo/server/__init__.py` — the server's public API, `__all__`
+  (the app, server extensions, storages, errors, files helpers, the home
+  rule), pinned by `tests/server/test_public_api.py`; anything else may
+  change.
 - `src/stilo/server/extensions.py` — `ServerExtension` (`id`, `router`,
   `wrap_storage`, `capabilities`, `version`), `check_extensions`,
   `get_storage` (the FastAPI dependency an extension's endpoint uses).

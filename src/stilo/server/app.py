@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import mimetypes
 import os
 from pathlib import Path
 from typing import Sequence
@@ -14,9 +13,9 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware import Middleware
 
 from .extensions import ServerExtension, check_extensions
-
+from .files import NO_CACHE, is_document, other_file_response
 from .home import has_home
-from .storage import BadRequest, FolderStorage, NotFound, Storage, StorageError, is_document
+from .storage import BadRequest, FolderStorage, NotFound, Storage, StorageError
 
 TEXT = "text/plain; charset=utf-8"
 
@@ -27,31 +26,9 @@ VERSION = "0.4.0"
 PROTOCOL = 1
 CAPABILITIES = ["files", "tree", "folders", "move", "upload", "trash", "home"]
 
-# Document contents change and the editor fetches imports on every rendering:
-# browsers must not reuse a stored copy without asking the server again.
-NO_CACHE = {"Cache-Control": "no-cache"}
-
-# Python's own table of types, not the machine's, so that every installation
-# answers the same. WebP is missing from the table of Python 3.11.
-FILE_TYPES = mimetypes.MimeTypes()
-FILE_TYPES.add_type("image/webp", ".webp")
-
 NO_BUILD = """<!doctype html><meta charset="utf-8"><title>Stilo</title>
 <p>The web app is not built. Run <code>npm run build</code> in <code>web/</code>
 of the Stilo checkout, or use the Vite dev server (<code>npm run dev</code>).</p>"""
-
-
-def other_file_response(path: str, content: bytes, tag: str) -> Response:
-    """A file that is not a Texl document, by its public URL. Files are
-    untrusted: one opened by its URL must not run scripts on this origin, which
-    can write to every document (docs/protocol.md)."""
-    media_type, encoding = FILE_TYPES.guess_type(path)
-    if media_type is None or encoding is not None:
-        media_type = "application/octet-stream"
-    headers = {"ETag": tag, "X-Content-Type-Options": "nosniff", **NO_CACHE, "Vary": "Accept"}
-    if media_type.endswith(("/html", "/xml", "+xml")):
-        headers["Content-Security-Policy"] = "sandbox"
-    return Response(content, media_type=media_type, headers=headers)
 
 
 def create_app(storage: Storage | Path | str, web_dist: Path | str | None = None, *,
