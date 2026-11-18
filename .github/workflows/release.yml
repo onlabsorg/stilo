@@ -96,7 +96,8 @@ jobs:
         with:
           name: npm
           path: npm/
-      - run: npm publish npm/*.tgz --access public
+      # ./ makes npm read a file: npm/x.tgz alone is taken for a GitHub repository
+      - run: npm publish ./npm/*.tgz --access public
 
   github-release:
     needs: [pypi, npm]
