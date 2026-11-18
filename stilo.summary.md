@@ -460,6 +460,11 @@ accept are not part of Stilo.
   greys out what a server cannot do, shows the reason when a server
   refuses a change, and when a server asks for a login, offers to go to
   its sign-in page.
+- 2026-11-18: **protocol: server extensions describe themselves**: in
+  what a server says about itself, each server extension can give its
+  version and what it can do, and its addresses answer errors the same
+  way as the rest of the server. Groundwork for the server and
+  command-line sides of extensions; nothing changes for users.
 
 ## Known limitations
 

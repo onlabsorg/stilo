@@ -19,7 +19,8 @@ change the interfaces.
   the user to sign in.
 - **Protocol v1** (for developers; `docs/protocol.md`): adds to v0, which
   still works, `GET /_api/info` (the server, its capabilities and
-  extensions), the `/_api/x/<id>/` space for server extensions, read-only
+  extensions, each with its id and, optionally, its version and its own
+  capabilities), the `/_api/x/<id>/` space for server extensions, read-only
   items (`readOnly` in the tree, `403` on writing them), and `401` with a
   login page and `403` with a reason, for servers that need a signed-in
   user.

@@ -1,6 +1,6 @@
 # Protocol v1 — documents over HTTP
 
-*The contract between the web app and the server, as of 2026-11-17. Plain
+*The contract between the web app and the server, as of 2026-11-18. Plain
 HTTP, close to how the web already serves files, so that `texl.import` can
 fetch documents by URL with no special client. Version 1: no accounts and no
 versions in Stilo's own server; a server can describe itself
@@ -119,7 +119,8 @@ server and the web app do not rewrite them.
 extension adds, under the extension's id (lowercase letters, digits and
 dashes); `/_api/info` lists the extensions a server has. Stilo's own
 endpoints never use it. A request for an extension the server does not have
-gets `404`.
+gets `404`. What an extension's endpoints do is up to the extension, but
+they answer errors as the rest of the API does ([Errors](#errors)).
 
 ## Interactions
 
@@ -152,7 +153,17 @@ the software. `capabilities` lists what it can do:
 
 A request for something the server cannot do gets `501 Not Implemented`;
 a client hides what the server lacks. `extensions` lists the server's
-extensions, `{"id": "<id>"}` each, with their endpoints under `/_api/x/<id>/`.
+extensions, one entry each, with their endpoints under `/_api/x/<id>/`:
+
+```json
+{ "id": "history", "version": "1.2.0", "capabilities": ["versions"] }
+```
+
+`id` is always there; `version` (the extension's own) and `capabilities`
+(what the extension can do, in names of its own) are optional, an empty
+list when missing. An extension's capabilities belong to its entry, never
+to the top-level `capabilities`, so their names cannot collide with the
+protocol's.
 A client ignores members, capabilities and fields it does not know.
 
 A server that answers `404` here speaks version 0: a client treats it as
@@ -357,7 +368,8 @@ Error responses have a JSON body `{"error": "<message>"}` and the status
 codes above: `400` for a request the protocol refuses, `401` and `403` (see
 [Login and refusals](#login-and-refusals)), `404` for an item that does not
 exist, `409` for an item in the way, `412` for a document changed since it
-was read, `501` for something the server cannot do.
+was read, `501` for something the server cannot do. The endpoints of server
+extensions (`/_api/x/<id>/`) answer errors the same way.
 
 ## Why plain HTTP (and not something else)
 
@@ -383,7 +395,8 @@ version 0 client still works with a version 1 server:
 
 - `GET /_api/info`: the protocol version, the server, its capabilities and
   extensions; `501` for what a server cannot do.
-- `/_api/x/<id>/`, reserved for server extensions.
+- `/_api/x/<id>/`, reserved for server extensions; each listed in `info`
+  with its id and, optionally, its version and capabilities.
 - Read-only items: `readOnly` in the tree, `403` on writing them.
 - `401` with `login`, and `403` with a reason, for servers that need a
   signed-in user or refuse a request.
