@@ -4,7 +4,7 @@ All notable changes to Stilo are listed here, newest first. Versions follow
 [semantic versioning](https://semver.org/); before 1.0, any version may
 change the interfaces.
 
-## Unreleased
+## 0.5.0 — 2026-11-18 
 
 - **Server and CLI extensions documented** (for developers): the guide
   `docs/extensions.md` covers the Python side (server extensions, storage
