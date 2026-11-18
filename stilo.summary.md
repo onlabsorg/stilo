@@ -465,6 +465,12 @@ accept are not part of Stilo.
   version and what it can do, and its addresses answer errors the same
   way as the rest of the server. Groundwork for the server and
   command-line sides of extensions; nothing changes for users.
+- 2026-11-18: **the server can keep documents anywhere**: a developer can
+  give Stilo's server any store of documents that answers the same few
+  operations (read, save, create, move, delete, list), not only a folder
+  on disk, and can wrap the folder to act on every change (for example,
+  record a version after each save). The folder on disk stays the
+  default. Nothing changes for users.
 
 ## Known limitations
 

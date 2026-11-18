@@ -107,7 +107,7 @@ place:
 | Pages that are not documents | The `views` service (`web/src/core/registry.js`), addressed by `?view=<id>` (`route.js`, `router`) | — |
 | Server access | The `transport` service, a `Transport` (`web/src/api.js`): replaceable (`startStilo({transport})`), wrapped by middleware (`transport.use`); Texl imports go through it (the editor's `loader`). The `info` service: what the server can do. A `401` with a login address asks the user to sign in (`web/src/builtins/server.js`) | — |
 | CLI commands    | The `COMMANDS` list in `src/stilo/cli/commands.py` | Also from other packages, by a Python entry-point group |
-| Server          | `create_app()` in `src/stilo/server/app.py`; `/_api/info` says what it can do, `/_api/x/<id>/` is reserved for extensions (protocol v1) | `create_app()` takes a storage, routers and middleware, mounted under `/_api/x/<id>/` (phase 5) |
+| Server          | `create_app()` in `src/stilo/server/app.py`; `/_api/info` says what it can do, `/_api/x/<id>/` is reserved for extensions (protocol v1); it takes any storage (`Storage`, the interface, in `src/stilo/server/storage.py`; `FolderStorage`, the default; `StorageWrapper` to add behaviour) | `create_app()` takes routers and middleware, mounted under `/_api/x/<id>/` (phase 5) |
 
 How it fits together, in short: core services hold the state and the
 behaviour, and panes only show them, reaching the services through Lit
@@ -133,7 +133,7 @@ A guide, `docs/extensions.md`, comes with the extension API.
 ## In this guide
 
 - [Development setup](setup.md): build, run and test everything.
-- [The server](server.md): `Storage` and `create_app()`.
+- [The server](server.md): `Storage` (the interface), `FolderStorage`, `StorageWrapper` and `create_app()`.
 - [The CLI](cli.md): `Command` and `COMMANDS`.
 - [Projects and the Stilo library](projects.md): `project.texl`, `~`,
   `lib/`.

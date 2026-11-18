@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import mimetypes
+import os
 from pathlib import Path
 from urllib.parse import quote
 
@@ -11,7 +12,7 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Redirect
 from fastapi.staticfiles import StaticFiles
 
 from .home import has_home
-from .storage import BadRequest, Storage, StorageError
+from .storage import BadRequest, FolderStorage, NotFound, Storage, StorageError, is_document
 
 TEXT = "text/plain; charset=utf-8"
 
@@ -49,11 +50,15 @@ def other_file_response(path: str, content: bytes, tag: str) -> Response:
     return Response(content, media_type=media_type, headers=headers)
 
 
-def create_app(root: Path | str, web_dist: Path | str | None = None) -> FastAPI:
-    """The server app for the documents under `root`. `web_dist` is the built
-    web app (`stilo/web` in the CLI); without it, app pages show a notice."""
-    storage = Storage(root)
+def create_app(storage: Storage | Path | str, web_dist: Path | str | None = None) -> FastAPI:
+    """The server app for the documents in `storage`: any object with the
+    methods of `Storage`, or the path of a folder (a `FolderStorage`).
+    `web_dist` is the built web app (`stilo/web` in the CLI); without it, app
+    pages show a notice."""
+    if isinstance(storage, (str, os.PathLike)):
+        storage = FolderStorage(storage)
     app = FastAPI(title="Stilo server", version=VERSION)
+    app.state.storage = storage
 
     @app.exception_handler(StorageError)
     async def storage_error(request: Request, error: StorageError):
@@ -140,6 +145,17 @@ def create_app(root: Path | str, web_dist: Path | str | None = None) -> FastAPI:
         # The bundle is built with base "/_app/" (web/vite.config.js).
         app.mount("/_app", StaticFiles(directory=dist), name="app")
 
+    def other_file(path: str) -> tuple[bytes, str] | None:
+        """The content and ETag of `path` if it is a file that is not a
+        document; None for a document, a folder, a missing file or a path the
+        protocol refuses."""
+        if is_document(path):
+            return None
+        try:
+            return storage.read(path)
+        except (NotFound, BadRequest):
+            return None
+
     # Every other path is a public URL. A file that is not a document is served
     # as itself to everyone. For the rest, browsers asking for HTML get the web
     # app, which reads the open document from the URL path (and the navigation
@@ -149,8 +165,8 @@ def create_app(root: Path | str, web_dist: Path | str | None = None) -> FastAPI:
         if redirect := home_redirect("/", path, request):
             return redirect
         vary = {"Vary": "Accept"}
-        if storage.is_other_file(path):
-            return other_file_response(path, *storage.read(path))
+        if file := other_file(path):
+            return other_file_response(path, *file)
         if "text/html" not in request.headers.get("accept", ""):
             content, tag = storage.read(path)
             return Response(content, media_type=TEXT,

@@ -6,26 +6,79 @@ built web app. FastAPI and uvicorn.*
 
 | Module                          | Role                                           |
 |---------------------------------|------------------------------------------------|
-| `stilo/server/storage.py`       | `Storage`: the folder on disk. Path validation, read, create, update, move, delete, tree, ETags. No HTTP. |
-| `stilo/server/app.py`           | `create_app()`: the HTTP routes, mapped onto `Storage` |
+| `stilo/server/storage.py`       | `Storage`, the interface of a storage; `FolderStorage`, the default, the folder on disk (path validation, read, create, update, move, delete, tree, ETags); `StorageWrapper`. No HTTP. |
+| `stilo/server/app.py`           | `create_app()`: the HTTP routes, mapped onto a `Storage` |
 | `stilo/server/__init__.py`      | Exports `create_app` |
 
 The server imports nothing from the rest of the package (the CLI starts it
 with `stilo serve`); `tests/test_layout.py` checks it.
 
-The two layers are separate on purpose: `Storage` knows nothing about HTTP,
-and `app.py` contains no file-system logic. A server in another language
-replaces both, and passes the same tests.
+The two layers are separate on purpose: a storage knows nothing about
+HTTP, and `app.py` contains no file-system logic. `create_app()` takes any
+object with the methods of `Storage`, so the documents can live elsewhere
+than in a folder, and a wrapper can add behaviour to the folder (S17). A
+server in another language replaces both, and passes the same tests.
 
-## `Storage`
+## `Storage`, the interface
 
 ```python
-class Storage:
+class Storage(Protocol):
+    def read(self, path: str) -> tuple[bytes, str]
+    def create(self, path: str, content: bytes) -> str
+    def update(self, path: str, content: bytes, if_match: str | None = None) -> str
+    def delete_file(self, path: str) -> None
+    def delete_folder(self, path: str) -> dict
+    def move(self, path: str, to: str) -> str
+    def create_folder(self, path: str) -> None
+    def tree(self, path: str, depth: int | None = None) -> dict
+    def expand_home(self, path: str) -> str
+```
+
+What `create_app()` needs from a storage, and nothing more: a
+`typing.Protocol`, so an object needs the methods, not a base class. Each
+method does what the method of the same name of `FolderStorage` does
+(below), with the same arguments and results; a storage refuses a request
+by raising one of the [errors](#errors), whose status the HTTP layer
+answers. `tree` returns the protocol's QUERY body; `expand_home` returns
+its argument unchanged if the storage has no project homes. Whether a
+public address is a document or another file, `create_app()` decides from
+the suffix (`is_document`) and a `read`, so a storage needs no method for
+it. `tests/server/test_storage_interface.py` runs the app on a storage
+held in memory.
+
+## `StorageWrapper`
+
+```python
+class StorageWrapper:
+    def __init__(self, inner: Storage)
+```
+
+A storage that passes every call to `inner`. A wrapper subclasses it,
+overrides what it changes and calls `super()` for the rest; any other
+attribute (`root`, `read_only` of a `FolderStorage`) is read from `inner`.
+For example, a wrapper that acts after every save:
+
+```python
+class Committing(StorageWrapper):
+    def update(self, path, content, if_match=None):
+        tag = super().update(path, content, if_match)
+        commit(path)          # only after the write succeeded
+        return tag
+
+app = create_app(Committing(FolderStorage("docs")), web_dist)
+```
+
+A write that is refused raises before the code after `super()` runs.
+
+## `FolderStorage`
+
+```python
+class FolderStorage:
     def __init__(self, root: Path | str)
 ```
 
-Gives access to the documents under `root`, a folder. Raises `ValueError`
-if `root` is not a folder.
+The default storage: gives access to the documents under `root`, a folder.
+Raises `ValueError` if `root` is not a folder.
 
 Paths are strings relative to the root, with `/` separators: `""` is the
 root, `"projects/beam/check.texl"` a file. Every public method validates
@@ -56,8 +109,7 @@ project home of the folder before it: the nearest folder holding a
 `project.texl`, or the root (protocol: [URL space](protocol.md#url-space)).
 Raises `BadRequest` for malformed segments and for more than 16 `~`
 segments. The app calls it to redirect a read with `~` to the real path
-(`home_redirect` in `app.py`); `read` and `is_other_file` call it too, for
-other callers of `Storage`. A write never expands `~`. The rule itself is in `home.py` (`expand_home`, `home_of`), shared
+(`home_redirect` in `app.py`); `read` calls it too, for other callers. A write never expands `~`. The rule itself is in `home.py` (`expand_home`, `home_of`), shared
 with the CLI, which imports it from there.
 
 ### `read`
@@ -172,14 +224,16 @@ files, hidden entries and links (as links, not followed), and returns
 `{"deleted": <number of files in it>}`. A folder with no files at all, at any
 depth, is removed and makes no trash folder (S15).
 
-### `etag`
+### `etag`, `is_document`
 
 ```python
 def etag(content: bytes) -> str
+def is_document(path: str) -> bool
 ```
 
-Returns the strong ETag of a content: its SHA-256, in quotes as HTTP
-requires.
+`etag` returns the strong ETag of a content: its SHA-256, in quotes as HTTP
+requires. `is_document` says whether a path names a Texl document, by its
+suffix (`.texl`).
 
 ### Errors
 
@@ -199,10 +253,12 @@ and the body `{"error": "<message>"}`.
 ## `create_app`
 
 ```python
-def create_app(root: Path | str, web_dist: Path | str | None = None) -> FastAPI
+def create_app(storage: Storage | Path | str, web_dist: Path | str | None = None) -> FastAPI
 ```
 
-Creates the server app for the documents under `root`. `web_dist` is the
+Creates the server app for the documents in `storage`: any object with the
+methods of [`Storage`](#storage-the-interface), or the path of a folder,
+for a `FolderStorage`. The app keeps it as `app.state.storage`. `web_dist` is the
 built web app (`src/stilo/web` in a checkout); without it, or if it is not built, pages show a
 notice that says how to build it.
 
@@ -248,6 +304,9 @@ run as root or on Windows, where they do not apply).
 fallback to the root, several `~`, libraries with and without their own
 manifest, cycles, and `~` refused as a name. A change to the protocol starts
 with a test there.
+`tests/server/test_storage_interface.py` covers the storage interface: the
+app on a storage held in memory (the interface is enough), a
+`StorageWrapper` that sees every write, `create_app()` given a path.
 
 ```sh
 uv run pytest tests/server

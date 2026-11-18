@@ -6,6 +6,11 @@ change the interfaces.
 
 ## Unreleased
 
+- **Any storage for the server** (for developers; `docs/server.md`):
+  `create_app()` takes any object with the methods of `Storage`, now an
+  interface, or a folder's path as before. The folder on disk is
+  `FolderStorage` (was `Storage`); `StorageWrapper` passes every call to
+  another storage, so a wrapper can act on every write.
 - **Files the server cannot write are read-only**: a file or folder that
   Stilo's server has no permission to write on its computer now shows a
   lock in the navigation pane; such a document opens read-only, with the

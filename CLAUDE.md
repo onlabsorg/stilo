@@ -94,8 +94,10 @@ each through a scoped `stilo` that records its registrations (the table
 to `docs/extensions.md` and to the contract test,
 `web/test/contract.test.js`). Protocol v1 (S17 phase 4, S19) gives the
 server's side: `/_api/info`, `/_api/x/<id>/` reserved, read-only items,
-`401` with a login address and `403` with a reason. `create_app()` taking
-routers and a storage, and CLI commands from other packages (phase 5),
+`401` with a login address and `403` with a reason. Phase 5 (the Python
+side) is under way: `create_app()` takes any storage (`Storage`, the
+interface; `FolderStorage`, the default; `StorageWrapper`); routers of
+server extensions, exported helpers and CLI commands from other packages
 are not built yet.
 Keep each extension point in one place: cell types only through the registry
 (`web/src/editor/registry.js`), CLI commands only through `COMMANDS`
@@ -222,14 +224,19 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
 - `src/stilo/server/home.py` — the project home rule: `MANIFEST`
   (`project.texl`), `home_of`, `expand_home` (left to right, `MAX_HOMES`),
   shared by the server and the CLI.
-- `src/stilo/server/storage.py` — `Storage`: path validation (no `..`,
+- `src/stilo/server/storage.py` — `Storage`, the interface of a storage
+  (a `typing.Protocol`: the nine methods `create_app()` uses; S17 phase
+  5); `StorageWrapper` (passes every call to another storage; a wrapper
+  overrides what it changes); `is_document`; `FolderStorage`, the default:
+  path validation (no `..`,
   no hidden segments, no `~` names, no `_` names at the root, no escape
   through symlinks), `expand_home` on reads,
   read / create / update / move / delete (to `.trash`) / tree, ETags (sha256);
   `read_only` (what the server cannot write, from the file system's
   permissions: `readOnly` in the tree, `Forbidden` (403) on writing it).
   Raises `StorageError` subclasses carrying the HTTP status.
-- `src/stilo/server/app.py` — `create_app(root, web_dist)`: the
+- `src/stilo/server/app.py` — `create_app(storage | root, web_dist)`
+  (a path is a `FolderStorage`; kept as `app.state.storage`): the
   `/_api/` routes (`/_api/info` from `PROTOCOL`, `VERSION`,
   `CAPABILITIES`; `/_api/x/` reserved, `404`), `/_app/` static bundle,
   and `/<path>` (web app for browsers, the file for other clients).

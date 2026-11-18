@@ -12,7 +12,7 @@ from the repository's [README](../README.md).
 - [Architecture](architecture.md): the three parts, the contract between
   them, what runs where, the extension points. Start here.
 - [Development setup](setup.md): build, run, test and release.
-- [The server](server.md): `Storage` and `create_app()`.
+- [The server](server.md): `Storage` (the interface), `FolderStorage`, `StorageWrapper` and `create_app()`.
 - [The CLI](cli.md): `Command` and `COMMANDS`.
 - [The tutorial](tutorial.md): `tutorial/`, the lessons `stilo tutor`
   serves, how they check exercises and how they are tested.

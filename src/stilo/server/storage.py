@@ -1,8 +1,13 @@
-"""File-system storage of Texl documents (protocol v1, see docs/protocol.md).
+"""Storage of Texl documents (protocol v1, see docs/protocol.md).
 
-Paths are relative to the storage root, with "/" separators. Every public
-method validates its path and raises a StorageError subclass that the HTTP
-layer maps to a status code.
+`Storage` is the interface the HTTP layer (`create_app`) uses: any object
+with its methods can hold the documents. `FolderStorage` is the default, a
+folder on disk; `StorageWrapper` passes every call to another storage, so a
+wrapper overrides only what it changes (e.g. reacting to every write).
+
+Paths are relative to the storage root, with "/" separators. Every method
+validates its path and raises a StorageError subclass that the HTTP layer
+maps to a status code.
 """
 
 from __future__ import annotations
@@ -11,7 +16,8 @@ import hashlib
 import os
 import shutil
 from datetime import datetime, timezone
-from pathlib import Path
+from pathlib import Path, PurePosixPath
+from typing import Protocol
 
 from .home import HOME, HomeCycle, expand_home, has_home
 
@@ -50,7 +56,98 @@ def etag(content: bytes) -> str:
     return '"' + hashlib.sha256(content).hexdigest() + '"'
 
 
-class Storage:
+def is_document(path: str) -> bool:
+    """Whether `path` names a Texl document (by its suffix, `.texl`)."""
+    return PurePosixPath(path.strip("/") or "/").suffix == DOCUMENT_SUFFIX
+
+
+class Storage(Protocol):
+    """What `create_app()` needs from a storage (docs/server.md). Paths are
+    relative to the root, "/"-separated, `""` the root. Failures are raised
+    as `StorageError` subclasses, which carry the HTTP status."""
+
+    def read(self, path: str) -> tuple[bytes, str]:
+        """A file's content and its ETag; `~` segments expanded."""
+        ...
+
+    def create(self, path: str, content: bytes) -> str:
+        """A new file, with its missing folders; returns its ETag."""
+        ...
+
+    def update(self, path: str, content: bytes, if_match: str | None = None) -> str:
+        """A document's new content, if it still has the ETag `if_match`;
+        returns the new ETag."""
+        ...
+
+    def delete_file(self, path: str) -> None:
+        """Delete a file."""
+        ...
+
+    def delete_folder(self, path: str) -> dict:
+        """Delete a folder with all it holds; returns `{"deleted": <files>}`."""
+        ...
+
+    def move(self, path: str, to: str) -> str:
+        """Move or rename a file or a folder; returns its new path."""
+        ...
+
+    def create_folder(self, path: str) -> None:
+        """Create a folder, and its missing parents."""
+        ...
+
+    def tree(self, path: str, depth: int | None = None) -> dict:
+        """The tree of a folder, as the protocol's QUERY answers it."""
+        ...
+
+    def expand_home(self, path: str) -> str:
+        """`path` with its `~` segments replaced by the real path."""
+        ...
+
+
+class StorageWrapper:
+    """A storage that passes every call to `inner`. Subclass it and override
+    what changes, calling `super()` for the rest; any other attribute (e.g.
+    `root` of a `FolderStorage`) is read from `inner` too."""
+
+    def __init__(self, inner: Storage):
+        self.inner = inner
+
+    def __getattr__(self, name):
+        if name == "inner":  # not set yet: no recursion through __getattr__
+            raise AttributeError(name)
+        return getattr(self.inner, name)
+
+    def read(self, path: str) -> tuple[bytes, str]:
+        return self.inner.read(path)
+
+    def create(self, path: str, content: bytes) -> str:
+        return self.inner.create(path, content)
+
+    def update(self, path: str, content: bytes, if_match: str | None = None) -> str:
+        return self.inner.update(path, content, if_match)
+
+    def delete_file(self, path: str) -> None:
+        return self.inner.delete_file(path)
+
+    def delete_folder(self, path: str) -> dict:
+        return self.inner.delete_folder(path)
+
+    def move(self, path: str, to: str) -> str:
+        return self.inner.move(path, to)
+
+    def create_folder(self, path: str) -> None:
+        return self.inner.create_folder(path)
+
+    def tree(self, path: str, depth: int | None = None) -> dict:
+        return self.inner.tree(path, depth)
+
+    def expand_home(self, path: str) -> str:
+        return self.inner.expand_home(path)
+
+
+class FolderStorage:
+    """The default storage: the documents in a folder on disk."""
+
     def __init__(self, root: Path | str):
         self.root = Path(root).resolve()
         if not self.root.is_dir():
@@ -143,15 +240,6 @@ class Storage:
             raise NotFound(f"no such file: {path!r}")
         content = target.read_bytes()
         return content, etag(content)
-
-    def is_other_file(self, path: str) -> bool:
-        """Whether `path` is an existing file that is not a Texl document. A
-        path the protocol refuses is not one."""
-        try:
-            target = self.resolve(self.expand_home(path))
-        except BadRequest:
-            return False
-        return target.is_file() and target.suffix != DOCUMENT_SUFFIX
 
     def create(self, path: str, content: bytes) -> str:
         """Create a file, a document or any other, and its missing folders."""

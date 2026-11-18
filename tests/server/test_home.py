@@ -4,7 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from stilo.server import create_app
-from stilo.server.storage import BadRequest, Storage
+from stilo.server.storage import BadRequest, FolderStorage
 
 
 @pytest.fixture
@@ -36,7 +36,7 @@ def root(tmp_path):
 
 @pytest.fixture
 def storage(root):
-    return Storage(root)
+    return FolderStorage(root)
 
 
 @pytest.fixture
