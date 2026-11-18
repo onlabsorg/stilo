@@ -1,4 +1,5 @@
 import os
+from importlib.metadata import version
 
 import pytest
 from fastapi.testclient import TestClient
@@ -459,7 +460,8 @@ def test_trash_is_out_of_reach(client, root):
 def test_info(client):
     info = client.get("/_api/info").json()
     assert info["protocol"] == 1
-    assert info["server"] == {"name": "stilo", "version": "0.4.0"}
+    # The version published in pyproject.toml, so a release can't forget app.py
+    assert info["server"] == {"name": "stilo", "version": version("stilo-cli")}
     assert info["capabilities"] == ["files", "tree", "folders", "move", "upload", "trash", "home"]
     assert info["extensions"] == []
 
