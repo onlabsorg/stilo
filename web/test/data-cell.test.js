@@ -197,7 +197,7 @@ describe("data cell in the editor", () => {
     const FETCH = window.fetch;
     afterEach(() => (window.fetch = FETCH));
 
-    /** Serves the Stilo library from texl-lib/ where a project would have it, under lib/stilo/. */
+    /** Serves the Stilo library from texl-lib/ where a package would have it, under lib/stilo/. */
     async function serveLibrary() {
         const files = {};
         for (const name of ["index.texl", "dataframe.texl", "charts.texl"])

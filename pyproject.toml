@@ -6,7 +6,7 @@
 #   src/stilo/web      the built web app, written by `npm run build` in web/
 #                      (git-ignored; built into the package when present —
 #                      the release workflow checks that the wheel has it)
-#   texl-lib/          the Texl library `stilo init` copies into projects,
+#   texl-lib/          the Texl library `stilo init` copies into packages,
 #                      shipped in the wheel as stilo/texl-lib
 #   tutorial/          the lessons `stilo tutor` copies and serves, shipped
 #                      in the wheel as stilo/tutorial
@@ -55,7 +55,7 @@ only-include = ["src/stilo", "texl-lib", "tutorial", "README.md", "LICENSE"]
 packages = ["src/stilo"]
 
 # In a checkout the CLI reads texl-lib/ and tutorial/ where they are
-# (stilo/cli/project.py, stilo/cli/tutor.py).
+# (stilo/cli/package.py, stilo/cli/tutor.py).
 [tool.hatch.build.targets.wheel.force-include]
 "texl-lib" = "stilo/texl-lib"
 "tutorial" = "stilo/tutorial"

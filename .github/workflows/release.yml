@@ -52,7 +52,7 @@ jobs:
           uv pip install --python "$RUNNER_TEMP/venv/bin/python" dist/*.whl
           cp -r examples "$RUNNER_TEMP/examples"
           cd "$RUNNER_TEMP"
-          venv/bin/stilo render examples/projects/beam/beam-check.texl > /dev/null
+          venv/bin/stilo render examples/packages/beam/beam-check.texl > /dev/null
       - uses: actions/upload-artifact@v4
         with:
           name: dist

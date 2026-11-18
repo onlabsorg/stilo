@@ -99,8 +99,8 @@ a hidden line at the top that imports it. This lesson has that line already.
 To see it, open the commands (**F1**) and choose **Show or hide the hidden
 cells**; choose it again to hide it.
 
-The library is found in the *project* the document belongs to. This tutorial
-is a project; lesson 12 shows how to make your own folder one.
+The library is found in the *package* the document belongs to. This tutorial
+is a package; lesson 12 shows how to make your own folder one.
 
 More in the manual: [Data table cells](https://www.onlabs.org/manual/editor/cell-types.html#data-table-cells).
 <!--{ da14 : rich }-->

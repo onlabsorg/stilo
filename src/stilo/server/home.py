@@ -1,6 +1,6 @@
-"""The project home and the `~` segment of import paths (DECISIONS.md S10).
+"""The package home and the `~` segment of import paths (DECISIONS.md S10, S21).
 
-A project is a folder holding a manifest, `project.texl`. The home of a
+A package is a folder holding a manifest, `package.texl`. The home of a
 folder is the nearest folder at or above it that holds one, or, without
 one, the top: the highest folder the caller lets the search reach (the
 served folder for the server; the user's home directory, or the file-system
@@ -12,7 +12,7 @@ asks for `/p/docs/~/lib/x.texl`; `expand_home` turns that into the real
 path, one `~` at a time from the left. Several `~` occur naturally: a
 library loaded as `.../~/lib/a/a.texl` that imports `~/lib/b/b.texl` asks
 for `.../~/lib/a/~/lib/b/b.texl`, whose second `~` is the home of `lib/a`
-(the library's own, if it has a manifest, else the project's).
+(the library's own, if it has a manifest, else the package's).
 
 Hosts give Texl the real path as the document's final URL (Texl 0.8): the
 server redirects, the CLI's loader returns it. So a library is the document
@@ -31,7 +31,7 @@ from __future__ import annotations
 from pathlib import Path, PurePath
 from typing import Callable, Iterable
 
-MANIFEST = "project.texl"
+MANIFEST = "package.texl"
 HOME = "~"
 MAX_HOMES = 16
 

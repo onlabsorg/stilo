@@ -17,7 +17,7 @@ import pytest
 
 from stilo.cli import main
 from stilo.cli.errors import count_returned, find_errors
-from stilo.cli.project import create_engine
+from stilo.cli.package import create_engine
 from stilo.cli.tutor import TUTORIAL, create_copy
 
 SOLUTIONS = json.loads((Path(__file__).parent / "solutions.json").read_text(encoding="utf-8"))

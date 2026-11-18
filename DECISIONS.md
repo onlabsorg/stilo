@@ -566,3 +566,20 @@ parts together and makes run-time loading a loader only; a plugin that
 cannot break `stilo` or take its commands' names keeps installing one
 safe. Pinned lists make the public API a deliberate choice, as the
 `exports` map is for the npm package (S16).
+
+## S21 — 2026-11-18 — A folder with `package.texl` is a package; "project" is left to OnLabs
+The folder unit of S10 is renamed: a **package** is a folder with a
+manifest, `package.texl`, which is its home (`~`). Everything else in S10 and
+S11 is unchanged. The binding `project_name` becomes `package_name`; the
+example moves to `examples/packages/beam/`, the guide to `docs/packages.md`,
+the module to `stilo.cli.package`. `project.texl` is no longer read: a clean
+rename, with no fallback, because two manifest names would blur the one home
+rule. Only `stilo tutor` still recognises a tutorial copy made with
+`project.texl`, so that it can propose `--reset`. This supersedes the name
+"project" in S10.
+*Reason:* the founder keeps the word *project* for planned work done with
+Texl over a finite time, for a particular purpose, which may consist of one
+or more packages: an OnLabs concept (`../CONCEPTS.md`), not a Stilo one.
+"Package" is neutral: it names what the folder is, a bundle of Texl files
+with its own `lib/`, nestable like npm or Cargo packages, without suggesting
+a purpose. It is done before 1.0, while few folders have a manifest.

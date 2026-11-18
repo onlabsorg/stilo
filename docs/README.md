@@ -18,7 +18,7 @@ from the repository's [README](../README.md).
   the public API.
 - [The tutorial](tutorial.md): `tutorial/`, the lessons `stilo tutor`
   serves, how they check exercises and how they are tested.
-- [Projects and the Stilo library](projects.md): `project.texl`, the home
+- [Packages and the Stilo library](packages.md): `package.texl`, the home
   `~`, `lib/`, `stilo init`, and `texl-lib/`.
 - [The web app](web-app.md): the shell around the editor.
 - [Extensions](extensions.md): writing an extension for the web app, the

@@ -13,7 +13,7 @@ lessons you have just edited. About five minutes.
 Leave the terminal where the tutorial runs as it is, and open a second one.
 Your copy of the tutorial is in this folder:
 
-<% texl.import "~/project.texl" ~> (project -> "`" + project.data.tutorial_folder + "`") %>
+<% texl.import "~/package.texl" ~> (package -> "`" + package.data.tutorial_folder + "`") %>
 
 Go there with `cd` followed by the folder, in double quotes:
 `cd "…"`. Type `stilo --help` to see the commands, and
@@ -78,4 +78,4 @@ it again.
 More in the manual: [The stilo command](https://www.onlabs.org/manual/cli/index.html)
 and [stilo render](https://www.onlabs.org/manual/cli/render.html).
 <!--{ cl08 : rich }-->
-Next: [12. Your first project](12-your-first-project.texl) · Back to the [index](index.texl)
+Next: [12. Your first package](12-your-first-package.texl) · Back to the [index](index.texl)

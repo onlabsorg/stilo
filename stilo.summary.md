@@ -23,9 +23,9 @@ to Word and Excel users, and renders them from the command line.
 | Web app | The user interface (Lit web components, Vite): top bar, navigation pane with all the folder's files (documents, and other files greyed out) and commands to manage and upload them, the editor, right pane with commands, cell comments and errors. Light and dark theme. |
 | Editor | Inside the web app: `<texl-editor>`, a document as a stack of typed cells (rich text, the default; text, Markdown, table, formula, data table and chart; formulas as `<% %>` tags; LaTeX equations in Markdown and tables), live rendering, cell comments, errors shown where they happen. Until 2026-10-26 the separate `texl-editor` package. |
 | Server | Python (FastAPI): serves one folder of documents and the web app, for one user. |
-| CLI    | The `stilo` command: `stilo init [folder]` makes a folder a project, with the Stilo library in it; `stilo render <file>` prints a rendered document (or writes it to a file), says how many errors it has and can explain them; `stilo serve [folder]` starts the server on a folder; `stilo tutor` opens the tutorial. |
-| Stilo library | A folder of Texl documents (`texl-lib/`) that `stilo init` copies into each project, for documents to import. `stilo.dataframe` makes a table of data, which the data table cell writes; `stilo.charts.line` draws a line chart as an image, which the chart cell writes. Tested on both Texl engines, the browser's and Python's, with the same cases. |
-| Tutorial | A guided tutorial for new users (`tutorial/`), Texl documents shipped in the package and served by `stilo tutor` in the web app: twelve short lessons (30–45 minutes) on the editor and the command line, from the first edit to one's own project, and two advanced ones. Many exercises check themselves and show "✓ Done"; an index shows the progress. The lessons link to the OnLabs.org manual instead of repeating it. Tested automatically, exercises included. |
+| CLI    | The `stilo` command: `stilo init [folder]` makes a folder a package, with the Stilo library in it; `stilo render <file>` prints a rendered document (or writes it to a file), says how many errors it has and can explain them; `stilo serve [folder]` starts the server on a folder; `stilo tutor` opens the tutorial. |
+| Stilo library | A folder of Texl documents (`texl-lib/`) that `stilo init` copies into each package, for documents to import. `stilo.dataframe` makes a table of data, which the data table cell writes; `stilo.charts.line` draws a line chart as an image, which the chart cell writes. Tested on both Texl engines, the browser's and Python's, with the same cases. |
+| Tutorial | A guided tutorial for new users (`tutorial/`), Texl documents shipped in the package and served by `stilo tutor` in the web app: twelve short lessons (30–45 minutes) on the editor and the command line, from the first edit to one's own package, and two advanced ones. Many exercises check themselves and show "✓ Done"; an index shows the progress. The lessons link to the OnLabs.org manual instead of repeating it. Tested automatically, exercises included. |
 | Protocol | Plain HTTP between web app and server: GET a file, CREATE (POST), UPDATE (PUT, with an ETag so concurrent saves don't overwrite each other), QUERY a folder's tree (every file), create a folder, move or rename a file or folder, delete a file or folder. Any file can be created, so files can be uploaded; only documents can be updated. |
 | Documentation | Developer documentation only, as plain Markdown in `docs/`, read on GitHub: architecture, setup, server, CLI, web app, editor, the protocol, the editor component and its API. No site is built. Users read the OnLabs.org manual instead. |
 
@@ -37,7 +37,7 @@ checks it), so it can be reused or replaced on its own.
 
 The web app's source, the editor included, is also prepared as an **npm
 package**, `@onlabsorg/stilo-web`, for developers who build their own front
-end or embed the editor. It is not published yet. It has the same version
+end or embed the editor, published on npm since 0.5.0. It has the same version
 as the Python package; only its three entry points (the whole app, the
 editor and the theme) are its public interface, and before 1.0 any version
 may change them. The web app can be extended without changing its
@@ -54,11 +54,13 @@ same in the browser and on the command line, and are fetched again at every
 rendering. Relative links in text shown from an imported document resolve from
 the document showing it.
 
-A **project** is a folder with a `project.texl` file (the project's name and
-the Stilo version that created it). Its libraries live in its `lib/` folder,
-so the project works as a whole wherever it is copied. In an import, `~`
-stands for the project's folder, so `~/lib/stilo/index.texl` works from any
-document of the project, in the browser and on the command line. There is no
+A **package** is a folder with a `package.texl` file (the package's name and
+the Stilo version that created it): a bundle of Texl files that belong
+together. Until 2026-11-18 it was called a project, with a `project.texl`.
+Its libraries live in its `lib/` folder, so the package works as a whole
+wherever it is copied. In an import, `~` stands for the package's folder, so
+`~/lib/stilo/index.texl` works from any document of the package, in the
+browser and on the command line. There is no
 package manager: libraries are copied or cloned in by hand.
 
 Single-user by design: no accounts or permissions. Revisions, release and
@@ -499,6 +501,20 @@ accept are not part of Stilo.
   add-on packages that use only the parts Stilo names as public. Add-ons
   for the server still have to be started by their own command: `stilo
   serve` does not pick them up by itself yet.
+- 2026-11-18: **0.5.0 released**: tagged `v0.5.0`, published on PyPI as
+  `stilo-cli` and, for the first time, on npm as `@onlabsorg/stilo-web`
+  (by hand), with all the changes since 0.4.0 listed above.
+- 2026-11-18: **0.5.1 released**: tagged `v0.5.1`. Releases now publish
+  the npm package automatically, and PyPI only after npm, so a failed
+  publish leaves no half-released version. A test checks that the
+  server reports the package's version. Nothing changes for users.
+- 2026-11-18: **projects renamed packages**: a folder with a `package.texl`
+  is now a *package* (it was a *project*, with a `project.texl`); `~` in
+  imports stands for it, and `stilo init` writes `package.texl`. An
+  existing `project.texl` is no longer read and must be renamed by hand.
+  `stilo tutor` still recognises an old copy of the tutorial and proposes
+  starting again. The example moved to `examples/packages/beam/`, and
+  lesson 12 of the tutorial is now "Your first package". Not released yet.
 
 ## Known limitations
 
@@ -508,11 +524,9 @@ accept are not part of Stilo.
 - Server extensions are not loaded by `stilo serve` from installed
   packages: an add-on with a server part comes with its own command to
   serve a folder, and its web part in a front end built for it.
-- The npm package `@onlabsorg/stilo-web` is prepared but not published yet;
-  until it is, pages that embed the editor use it from a copy of the source
-  code. It needs Vite (or a similar bundler) to build. On a page whose
-  address differs from its document's, links in rendered text resolve
-  against the page.
+- The npm package `@onlabsorg/stilo-web` needs Vite (or a similar bundler)
+  to build. On a page whose address differs from its document's, links in
+  rendered text resolve against the page.
 - Links: a link to a file that does not exist opens an empty Stilo in the new
   tab, not a "file not found" page.
 - Files and folders: renaming or moving does not update links to the item;
@@ -523,7 +537,7 @@ accept are not part of Stilo.
   caption (only a Markdown line can).
 - Data table cell: a value or column name cannot contain `"` or `%>`; a
   wrong value inside a table is shown but not listed in the Errors pane;
-  outside a project the table shows `[[Undefined]]`.
+  outside a package the table shows `[[Undefined]]`.
 - Chart cell: line charts only, one line per chart; its text grows and
   shrinks with the page width; a label or title cannot contain `"` or `%>`.
 - Hidden cells: no keys for hiding and unhiding, only commands.
@@ -537,7 +551,7 @@ accept are not part of Stilo.
   `\vert`). Only the editor typesets them: other outputs show the LaTeX as text.
 - Tutorial: the index counts only saved lessons; changed lessons reach an
   existing copy only after `stilo tutor --reset`; no reset from the web app.
-- Projects: other Texl programs do not understand `~` in imports.
+- Packages: other Texl programs do not understand `~` in imports.
 - Errors: a value inside a link's address or another HTML attribute counts but
   cannot be highlighted. The failing place is marked in the Errors pane, not
   in the source while editing.

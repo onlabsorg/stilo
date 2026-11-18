@@ -5,7 +5,7 @@ import { TAG_CLOSE } from "../swan.js";
 import { isBlank } from "../document.js";
 import { expressionError } from "../expression.js";
 
-/** The import path of the Stilo library, in a project (docs/projects.md). */
+/** The import path of the Stilo library, in a package (docs/packages.md). */
 export const STILO_LIBRARY = "~/lib/stilo/index.texl";
 
 /** The tag that imports the Stilo library and binds it as `stilo`. */

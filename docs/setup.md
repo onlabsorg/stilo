@@ -42,7 +42,7 @@ Two ways:
     uv run stilo serve examples
     ```
 
-    and open <http://127.0.0.1:8000/projects/beam/beam-check.texl>.
+    and open <http://127.0.0.1:8000/packages/beam/beam-check.texl>.
 
 - **With hot reload**, while you work on the web app. Run the server and
   Vite side by side:
@@ -52,7 +52,7 @@ Two ways:
     cd web && npm run dev              # Vite, on :5173
     ```
 
-    and open <http://localhost:5173/projects/beam/beam-check.texl>. Vite
+    and open <http://localhost:5173/packages/beam/beam-check.texl>. Vite
     serves the pages and forwards to the server the protocol (`/_api`)
     and the public URLs of files: imports, images, PDFs.
     For a server on another port: `STILO_SERVER=http://127.0.0.1:8765 npm
@@ -80,7 +80,7 @@ there, and leaves it out silently when it is not (so that `uv run` works
 without a web build). The release workflow checks that the wheel has it.
 The Texl library in `texl-lib/` needs no build: the wheel takes it as it
 is, and in a checkout the CLI reads it at the root
-([Projects](projects.md#the-stilo-library-texl-lib)).
+([Packages](packages.md#the-stilo-library-texl-lib)).
 
 ```sh
 cd web && npm ci && npm run build && cd ..
@@ -123,8 +123,8 @@ tarball there; `--keep` keeps the consumer project.
 
 | Part    | Tests                        | Run with                 |
 |---------|------------------------------|--------------------------|
-| Server  | `tests/server/test_api.py`: every interaction of the protocol, path validation, errors; `test_home.py`: the project home `~` | `uv run pytest` |
-| CLI     | `tests/cli/`: `test_render.py` (`stilo render`, every example renders), `test_errors.py` (the error report), `test_project.py` (`stilo init`, `~`), `test_tutor.py` (`stilo tutor`), `test_web.py` (stopping with Ctrl+C) | `uv run pytest` |
+| Server  | `tests/server/test_api.py`: every interaction of the protocol, path validation, errors; `test_home.py`: the package home `~` | `uv run pytest` |
+| CLI     | `tests/cli/`: `test_render.py` (`stilo render`, every example renders), `test_errors.py` (the error report), `test_package.py` (`stilo init`, `~`), `test_tutor.py` (`stilo tutor`), `test_web.py` (stopping with Ctrl+C) | `uv run pytest` |
 | Layout  | `tests/test_layout.py`: the server does not import the rest of the package | `uv run pytest` |
 | Stilo library | `tests/texl_lib/`: the cases in `<function>-cases.json`, run on pytexl; `web/test/texl-lib.test.js` runs the same cases in the browser | `uv run pytest`, `npm test` in `web/` |
 | Tutorial | `tests/tutorial/`: every lesson renders, `solutions.json` turns every check to ✓ Done; `web/test/tutorial.test.js`: every cell fits its type | `uv run pytest`, `npm test` in `web/` |

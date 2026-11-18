@@ -12,10 +12,10 @@ DOC = "<!--{ bek4 : markdown }-->\n# Title\n"
 
 @pytest.fixture
 def root(tmp_path):
-    (tmp_path / "projects" / "beam").mkdir(parents=True)
-    (tmp_path / "projects" / "beam" / "check.texl").write_text(DOC)
-    (tmp_path / "projects" / "beam" / "notes.txt").write_text("notes")
-    (tmp_path / "projects" / ".hidden").mkdir()
+    (tmp_path / "packages" / "beam").mkdir(parents=True)
+    (tmp_path / "packages" / "beam" / "check.texl").write_text(DOC)
+    (tmp_path / "packages" / "beam" / "notes.txt").write_text("notes")
+    (tmp_path / "packages" / ".hidden").mkdir()
     (tmp_path / "library").mkdir()
     (tmp_path / "library" / "steel.texl").write_text("steel")
     return tmp_path
@@ -29,7 +29,7 @@ def client(root):
 # -- GET -----------------------------------------------------------------------
 
 def test_get_file(client):
-    response = client.get("/_api/files/projects/beam/check.texl")
+    response = client.get("/_api/files/packages/beam/check.texl")
     assert response.status_code == 200
     assert response.text == DOC
     assert response.headers["etag"] == etag(DOC.encode())
@@ -38,27 +38,27 @@ def test_get_file(client):
 
 
 def test_get_any_file(client):
-    assert client.get("/_api/files/projects/beam/notes.txt").text == "notes"
+    assert client.get("/_api/files/packages/beam/notes.txt").text == "notes"
 
 
 def test_get_missing(client):
-    response = client.get("/_api/files/projects/nope.texl")
+    response = client.get("/_api/files/packages/nope.texl")
     assert response.status_code == 404
     assert "error" in response.json()
 
 
 def test_get_folder_is_bad_request(client):
-    assert client.get("/_api/files/projects").status_code == 400
+    assert client.get("/_api/files/packages").status_code == 400
 
 
-@pytest.mark.parametrize("path", ["projects/.hidden/x.texl", "_api/x.texl", "projects//x.texl"])
+@pytest.mark.parametrize("path", ["packages/.hidden/x.texl", "_api/x.texl", "packages//x.texl"])
 def test_invalid_paths(client, path):
     assert client.get(f"/_api/files/{path}").status_code == 400
 
 
 def test_traversal_refused(client):
     # Encoded so the HTTP client does not normalise the dots away.
-    assert client.get("/_api/files/projects/%2E%2E/%2E%2E/etc/passwd").status_code in (400, 404)
+    assert client.get("/_api/files/packages/%2E%2E/%2E%2E/etc/passwd").status_code in (400, 404)
 
 
 def test_symlink_outside_root_refused(client, root, tmp_path_factory):
@@ -79,19 +79,19 @@ def test_create(client, root):
 
 
 def test_create_existing_conflicts(client, root):
-    response = client.post("/_api/files/projects/beam/check.texl", content="x")
+    response = client.post("/_api/files/packages/beam/check.texl", content="x")
     assert response.status_code == 409
-    assert (root / "projects" / "beam" / "check.texl").read_text() == DOC
+    assert (root / "packages" / "beam" / "check.texl").read_text() == DOC
 
 
 def test_create_any_file(client, root):
     data = bytes(range(256))
-    response = client.post("/_api/files/projects/photo.png", content=data)
+    response = client.post("/_api/files/packages/photo.png", content=data)
     assert response.status_code == 201
-    assert (root / "projects" / "photo.png").read_bytes() == data
+    assert (root / "packages" / "photo.png").read_bytes() == data
 
 
-@pytest.mark.parametrize("path", ["projects", "projects/beam"])
+@pytest.mark.parametrize("path", ["packages", "packages/beam"])
 def test_create_refuses_a_folder(client, path):
     assert client.post(f"/_api/files/{path}", content="x").status_code == 409
 
@@ -108,34 +108,34 @@ def test_create_refuses_a_file_in_the_way(client):
 # -- UPDATE --------------------------------------------------------------------
 
 def test_update_with_matching_etag(client, root):
-    tag = client.get("/_api/files/projects/beam/check.texl").headers["etag"]
-    response = client.put("/_api/files/projects/beam/check.texl", content="new",
+    tag = client.get("/_api/files/packages/beam/check.texl").headers["etag"]
+    response = client.put("/_api/files/packages/beam/check.texl", content="new",
                           headers={"If-Match": tag})
     assert response.status_code == 200
     assert response.headers["etag"] == etag(b"new")
-    assert (root / "projects" / "beam" / "check.texl").read_text() == "new"
+    assert (root / "packages" / "beam" / "check.texl").read_text() == "new"
 
 
 def test_update_with_stale_etag(client, root):
-    response = client.put("/_api/files/projects/beam/check.texl", content="new",
+    response = client.put("/_api/files/packages/beam/check.texl", content="new",
                           headers={"If-Match": etag(b"something else")})
     assert response.status_code == 412
-    assert (root / "projects" / "beam" / "check.texl").read_text() == DOC
+    assert (root / "packages" / "beam" / "check.texl").read_text() == DOC
 
 
 def test_update_without_etag(client, root):
-    assert client.put("/_api/files/projects/beam/check.texl", content="new").status_code == 200
+    assert client.put("/_api/files/packages/beam/check.texl", content="new").status_code == 200
 
 
 def test_update_only_documents(client, root):
-    response = client.put("/_api/files/projects/beam/notes.txt", content="new")
+    response = client.put("/_api/files/packages/beam/notes.txt", content="new")
     assert response.status_code == 400
-    assert (root / "projects" / "beam" / "notes.txt").read_text() == "notes"
+    assert (root / "packages" / "beam" / "notes.txt").read_text() == "notes"
 
 
 def test_update_missing(client, root):
-    assert client.put("/_api/files/projects/nope.texl", content="x").status_code == 404
-    assert not (root / "projects" / "nope.texl").exists()
+    assert client.put("/_api/files/packages/nope.texl", content="x").status_code == 404
+    assert not (root / "packages" / "nope.texl").exists()
 
 
 # -- QUERY tree ----------------------------------------------------------------
@@ -143,17 +143,17 @@ def test_update_missing(client, root):
 def test_tree_root(client):
     tree = client.get("/_api/tree/").json()
     assert tree["path"] == "" and tree["type"] == "folder"
-    assert [c["name"] for c in tree["children"]] == ["library", "projects"]
+    assert [c["name"] for c in tree["children"]] == ["library", "packages"]
     beam = tree["children"][1]["children"][0]
-    assert beam["path"] == "projects/beam"
+    assert beam["path"] == "packages/beam"
     # Every file; hidden folders skipped.
     assert [c["name"] for c in beam["children"]] == ["check.texl", "notes.txt"]
     assert [c["type"] for c in beam["children"]] == ["file", "file"]
 
 
 def test_tree_subfolder_and_depth(client):
-    tree = client.get("/_api/tree/projects?depth=1").json()
-    assert tree["name"] == "projects"
+    tree = client.get("/_api/tree/packages?depth=1").json()
+    assert tree["name"] == "packages"
     assert tree["children"][0]["name"] == "beam"
     assert "children" not in tree["children"][0]
 
@@ -173,7 +173,7 @@ HTML = {"Accept": "text/html,application/xhtml+xml,*/*;q=0.8"}
 
 
 def test_pages_without_build(client):
-    response = client.get("/projects/beam", headers=HTML)
+    response = client.get("/packages/beam", headers=HTML)
     assert response.status_code == 200
     assert "not built" in response.text
 
@@ -184,10 +184,10 @@ def test_pages_with_build(root, tmp_path_factory):
     (dist / "assets").mkdir()
     (dist / "assets" / "main.js").write_text("console.log(1)")
     client = TestClient(create_app(root, dist))
-    response = client.get("/projects/beam/check.texl", headers=HTML)
+    response = client.get("/packages/beam/check.texl", headers=HTML)
     assert response.text == "<html>app</html>"
     assert response.headers["vary"] == "Accept"
-    assert client.get("/projects/beam", headers=HTML).text == "<html>app</html>"
+    assert client.get("/packages/beam", headers=HTML).text == "<html>app</html>"
     assert client.get("/_app/assets/main.js").text == "console.log(1)"
 
 
@@ -243,10 +243,10 @@ def test_public_url_head_of_another_file(client, root):
 
 
 def test_public_url_of_a_refused_path_serves_no_file(client, root):
-    (root / "projects" / ".hidden" / "secret.pdf").write_bytes(b"secret")
+    (root / "packages" / ".hidden" / "secret.pdf").write_bytes(b"secret")
     (root / "library" / "outside.pdf").symlink_to(root.parent / "outside.pdf")
     (root.parent / "outside.pdf").write_bytes(b"secret")
-    for path in ("/projects/.hidden/secret.pdf", "/library/outside.pdf"):
+    for path in ("/packages/.hidden/secret.pdf", "/library/outside.pdf"):
         assert b"secret" not in client.get(path, headers=HTML).content
         assert client.get(path).status_code == 400
 
@@ -265,10 +265,10 @@ def test_api_serves_other_files_as_plain_text(client, root):
 # -- CREATE a folder -----------------------------------------------------------
 
 def test_create_folder(client, root):
-    response = client.post("/_api/tree/projects/bridge")
+    response = client.post("/_api/tree/packages/bridge")
     assert response.status_code == 201
-    assert response.headers["location"] == "/_api/tree/projects/bridge"
-    assert (root / "projects" / "bridge").is_dir()
+    assert response.headers["location"] == "/_api/tree/packages/bridge"
+    assert (root / "packages" / "bridge").is_dir()
 
 
 def test_create_folder_makes_parents(client, root):
@@ -282,7 +282,7 @@ def test_create_folder_refuses_what_exists(client, path):
 
 
 def test_create_folder_refuses_a_file_in_the_way(client):
-    assert client.post("/_api/tree/projects/beam/notes.txt/inner").status_code == 409
+    assert client.post("/_api/tree/packages/beam/notes.txt/inner").status_code == 409
 
 
 @pytest.mark.parametrize("path", ["new.texl", ".hidden", "_reserved", ""])
@@ -310,18 +310,18 @@ def test_move_document_makes_parents(client, root):
 
 
 def test_rename_other_file(client, root):
-    assert move(client, "projects/beam/notes.txt", "library/notes.md").status_code == 200
+    assert move(client, "packages/beam/notes.txt", "library/notes.md").status_code == 200
     assert (root / "library" / "notes.md").read_text() == "notes"
 
 
 def test_move_folder_takes_everything(client, root):
-    assert move(client, "projects/beam", "library/beam").status_code == 200
+    assert move(client, "packages/beam", "library/beam").status_code == 200
     assert (root / "library" / "beam" / "check.texl").is_file()
     assert (root / "library" / "beam" / "notes.txt").is_file()
-    assert not (root / "projects" / "beam").exists()
+    assert not (root / "packages" / "beam").exists()
 
 
-@pytest.mark.parametrize("to", ["library/steel.texl", "projects/beam/check.texl"])
+@pytest.mark.parametrize("to", ["library/steel.texl", "packages/beam/check.texl"])
 def test_move_never_overwrites(client, root, to):
     (root / "library" / "other.texl").write_text("other")
     assert move(client, "library/other.texl", to).status_code == 409
@@ -329,7 +329,7 @@ def test_move_never_overwrites(client, root, to):
 
 
 def test_move_folder_never_overwrites(client):
-    assert move(client, "library", "projects").status_code == 409
+    assert move(client, "library", "packages").status_code == 409
 
 
 def test_move_to_the_same_path_changes_nothing(client, root):
@@ -343,9 +343,9 @@ def test_move_missing(client):
 
 
 @pytest.mark.parametrize("path, to", [
-    ("projects", "projects/beam/inner"),            # inside itself
+    ("packages", "packages/beam/inner"),            # inside itself
     ("library/steel.texl", "library/steel.txt"),    # no longer a document
-    ("projects/beam/notes.txt", "library/n.texl"),  # becomes a document
+    ("packages/beam/notes.txt", "library/n.texl"),  # becomes a document
     ("library", "library.texl"),                    # a folder named as a document
     ("library/steel.texl", ".trash/steel.texl"),    # hidden
     ("library/steel.texl", "_app/steel.texl"),      # reserved
@@ -403,8 +403,8 @@ def test_delete_document_missing(client):
 
 
 def test_delete_other_file(client, root):
-    assert client.delete("/_api/files/projects/beam/notes.txt").status_code == 204
-    assert trashed(root) == ["projects/beam/notes.txt"]
+    assert client.delete("/_api/files/packages/beam/notes.txt").status_code == 204
+    assert trashed(root) == ["packages/beam/notes.txt"]
 
 
 @pytest.mark.parametrize("path", ["library", "", ".trash/x.texl"])
@@ -413,15 +413,15 @@ def test_delete_document_refuses(client, path):
 
 
 def test_delete_folder_takes_everything(client, root):
-    (root / "projects" / "beam" / "sub" / "empty").mkdir(parents=True)
-    (root / "projects" / "beam" / "sub" / "deep.texl").write_text("deep")
-    (root / "projects" / "beam" / ".gitkeep").write_text("")
-    response = client.delete("/_api/tree/projects")
+    (root / "packages" / "beam" / "sub" / "empty").mkdir(parents=True)
+    (root / "packages" / "beam" / "sub" / "deep.texl").write_text("deep")
+    (root / "packages" / "beam" / ".gitkeep").write_text("")
+    response = client.delete("/_api/tree/packages")
     assert response.status_code == 200
     assert response.json() == {"deleted": 4}
-    assert not (root / "projects").exists()
-    assert trashed(root) == ["projects/beam/.gitkeep", "projects/beam/check.texl",
-                             "projects/beam/notes.txt", "projects/beam/sub/deep.texl"]
+    assert not (root / "packages").exists()
+    assert trashed(root) == ["packages/beam/.gitkeep", "packages/beam/check.texl",
+                             "packages/beam/notes.txt", "packages/beam/sub/deep.texl"]
 
 
 def test_delete_folder_without_files_makes_no_trash(client, root):
@@ -484,10 +484,10 @@ needs_permissions = pytest.mark.skipif(
 
 @pytest.fixture
 def locked(root):
-    """`library/` that the server cannot write, and `projects/beam/check.texl`
+    """`library/` that the server cannot write, and `packages/beam/check.texl`
     that it cannot write; restored afterwards so the folder can be removed."""
     library = root / "library"
-    check = root / "projects" / "beam" / "check.texl"
+    check = root / "packages" / "beam" / "check.texl"
     library.chmod(0o555)
     check.chmod(0o444)
     yield root
@@ -508,9 +508,9 @@ def test_tree_marks_what_cannot_be_written(client, locked):
     tree = client.get("/_api/tree/").json()
     assert node(tree, "library")["readOnly"] == "The folder cannot be written on the server"
     assert node(tree, "library/steel.texl")["readOnly"] == "Its folder cannot be written on the server"
-    assert node(tree, "projects/beam/check.texl")["readOnly"] == "The file cannot be written on the server"
-    assert "readOnly" not in node(tree, "projects/beam/notes.txt")
-    assert "readOnly" not in node(tree, "projects")
+    assert node(tree, "packages/beam/check.texl")["readOnly"] == "The file cannot be written on the server"
+    assert "readOnly" not in node(tree, "packages/beam/notes.txt")
+    assert "readOnly" not in node(tree, "packages")
 
 
 @needs_permissions
@@ -520,18 +520,18 @@ def test_writes_to_read_only_items_are_forbidden(client, locked):
         assert response.json()["error"]
         return response.json()["error"]
 
-    assert forbidden(client.put("/_api/files/projects/beam/check.texl", content="x")) == "The file cannot be written on the server"
+    assert forbidden(client.put("/_api/files/packages/beam/check.texl", content="x")) == "The file cannot be written on the server"
     forbidden(client.put("/_api/files/library/steel.texl", content="x"))
     forbidden(client.post("/_api/files/library/new.texl", content=""))
     forbidden(client.post("/_api/files/library/deep/new.texl", content=""))
     forbidden(client.post("/_api/tree/library/sub"))
     forbidden(client.delete("/_api/files/library/steel.texl"))
-    forbidden(client.delete("/_api/files/projects/beam/check.texl"))
+    forbidden(client.delete("/_api/files/packages/beam/check.texl"))
     forbidden(client.delete("/_api/tree/library"))
     forbidden(client.post("/_api/move/library/steel.texl", json={"to": "steel.texl"}))
-    forbidden(client.post("/_api/move/projects/beam/notes.txt", json={"to": "library/notes.txt"}))
-    assert forbidden(client.delete("/_api/tree/projects")) == "It holds items that cannot be written on the server"
+    forbidden(client.post("/_api/move/packages/beam/notes.txt", json={"to": "library/notes.txt"}))
+    assert forbidden(client.delete("/_api/tree/packages")) == "It holds items that cannot be written on the server"
     # Reading still works, and the rest can be written
     assert client.get("/_api/files/library/steel.texl").text == "steel"
-    assert client.post("/_api/files/projects/new.texl", content="").status_code == 201
+    assert client.post("/_api/files/packages/new.texl", content="").status_code == 201
     assert (locked / "library" / "steel.texl").read_text() == "steel"

@@ -17,7 +17,7 @@ import pytexl
 from stilo.server import create_app
 
 from .errors import count_returned, find_errors, format_report, numbered_text
-from .project import LIB, LIBRARY_NAME, MANIFEST, create_engine, make_project
+from .package import LIB, LIBRARY_NAME, MANIFEST, create_engine, make_package
 from .tutor import tutor, tutor_arguments
 from .web import WEB_DIST, run_server
 
@@ -98,30 +98,30 @@ def serve(args) -> int:
 
 def init_arguments(parser):
     parser.add_argument("folder", type=Path, nargs="?", default=Path("."),
-                        help="folder of the project, created if missing (default: the current folder)")
-    parser.add_argument("--name", help="project name (default: the folder's name)")
+                        help="folder of the package, created if missing (default: the current folder)")
+    parser.add_argument("--name", help="package name (default: the folder's name)")
 
 
 def init(args) -> int:
-    """Makes a folder a Stilo project: writes project.texl, creates lib/ and
+    """Makes a folder a Stilo package: writes package.texl, creates lib/ and
     copies the bundled library into lib/stilo/, never over an existing one."""
     folder = args.folder.resolve()
     if (folder / MANIFEST).exists():
-        print(f"stilo: {args.folder}: already a project ({MANIFEST} exists)", file=sys.stderr)
+        print(f"stilo: {args.folder}: already a package ({MANIFEST} exists)", file=sys.stderr)
         return 1
     try:
-        kept = make_project(folder, args.name or folder.name)
+        kept = make_package(folder, args.name or folder.name)
     except OSError as e:
         print(f"stilo: {args.folder}: {e}", file=sys.stderr)
         return 1
-    print(f"Stilo: {folder} is a project: {MANIFEST}, {LIB}/")
+    print(f"Stilo: {folder} is a package: {MANIFEST}, {LIB}/")
     if kept:
         print(f"Stilo: {LIB}/{LIBRARY_NAME}/ already exists: left as it is")
     return 0
 
 
 COMMANDS = [
-    Command("init", "make a folder a Stilo project, with the Stilo library", init_arguments, init),
+    Command("init", "make a folder a Stilo package, with the Stilo library", init_arguments, init),
     Command("render", "render a Texl document", render_arguments, render),
     Command("serve", "serve a folder of Texl documents with the web app", serve_arguments, serve),
     Command("tutor", "learn Stilo: open the tutorial in the web app", tutor_arguments, tutor),

@@ -1,18 +1,20 @@
-# Projects and the Stilo library
+# Packages and the Stilo library
 
-*How a document finds the libraries of its project: `project.texl`, the
+*How a document finds the libraries of its package: `package.texl`, the
 home `~`, `lib/`, `stilo init`, and Stilo's own library in `texl-lib/`.
-Decision: [S10](../DECISIONS.md).*
+Decisions: [S10](../DECISIONS.md), [S21](../DECISIONS.md) (the name).*
 
-## A project and its home
+## A package and its home
 
-A **project** is a folder that holds a `project.texl`. The project is the
+A **package** is a folder that holds a `package.texl` (a *project* with a
+`project.texl` up to Stilo 0.5; S21). Here the word always means this
+bundle of Texl files, never Stilo's own Python or npm package. The package is the
 self-contained unit: its documents import each other and the libraries in
 its `lib/` folder, so the folder works as a whole, wherever it is copied.
 
 ```text
 beam/
-├─ project.texl          the manifest: this folder is the home
+├─ package.texl          the manifest: this folder is the home
 ├─ lib/
 │  └─ stilo/index.texl   a library: a folder of Texl files
 └─ docs/checks/
@@ -20,13 +22,13 @@ beam/
 ```
 
 The **home** of a folder is the nearest folder at or above it that holds a
-`project.texl`. In an import, a path segment `~` stands for the home:
+`package.texl`. In an import, a path segment `~` stands for the home:
 
 ```texl
 <% texl.import "~/lib/stilo/index.texl" ~> (lib -> bind "stilo" lib.data.stilo) %>
 ```
 
-The same line works in every document of the project, at any depth.
+The same line works in every document of the package, at any depth.
 
 ## How `~` resolves
 
@@ -47,7 +49,7 @@ document at its real path, wherever it was imported from: its `uri` and
 the base of its relative imports are its real path, and within one
 rendering, imports of it by different paths share one document.
 
-The **top** is where the search stops, and the home when no `project.texl`
+The **top** is where the search stops, and the home when no `package.texl`
 is found. So without a manifest the two can disagree: in the web `~/lib` is
 the served folder's `lib/`, on the command line `$HOME/lib`. Run
 `stilo init` to make them agree.
@@ -56,8 +58,8 @@ Rules worth knowing:
 
 - **A library's own `~`.** A library at `lib/a/a.texl` that imports
   `~/lib/b/b.texl` asks for `lib/a/~/lib/b/b.texl`, so its `~` resolves
-  from `lib/a/`: to the library's own home if it has a `project.texl`,
-  else to the project's. A library meant to import its sibling libraries
+  from `lib/a/`: to the library's own home if it has a `package.texl`,
+  else to the package's. A library meant to import its sibling libraries
   has no manifest; one that brings its own `lib/` has one. A path may hold
   several `~` (a client that does not follow redirects asks for them);
   they resolve from the left.
@@ -72,34 +74,34 @@ Rules worth knowing:
 - **A folder named `~`** is hidden by the server and cannot be created
   through it: in a path, `~` always means the home.
 - **A missing library** is an ordinary failed import: the tag's value is
-  undefined. Documents and the editor work without a project.
+  undefined. Documents and the editor work without a package.
 
-## `project.texl`
+## `package.texl`
 
 A Texl document, written by `stilo init`: its text is notes, its tags bind
-the project's configuration.
+the package's configuration.
 
 ```texl
 # beam
 
-This folder is a Stilo project. ...
+This folder is a Stilo package. ...
 
-<% project_name = "beam" %>
+<% package_name = "beam" %>
 <% stilo_version = "0.3.0" %>
 ```
 
-`stilo_version` is the version that created the project, not one it
+`stilo_version` is the version that created the package, not one it
 requires. The server only checks that the file exists; it never renders it.
 
 ## `lib/` and `stilo init`
 
 A library is a folder of Texl files under `lib/`, nothing more. There is no
 package manager: copy a library in, or clone it with git. Versions and
-clashes are the project's business.
+clashes are the package's business.
 
-`stilo init [folder] [--name NAME]` writes `project.texl`, creates `lib/`,
+`stilo init [folder] [--name NAME]` writes `package.texl`, creates `lib/`,
 and copies the library Stilo bundles into `lib/stilo/`. It refuses to run
-where a `project.texl` exists and never overwrites `lib/stilo/`.
+where a `package.texl` exists and never overwrites `lib/stilo/`.
 
 ## The Stilo library, `texl-lib/`
 
@@ -120,7 +122,7 @@ code blocks included.
 
 The wheel ships the folder as `stilo/texl-lib` (`force-include` in
 `pyproject.toml`); in a checkout the CLI reads `texl-lib/` where it is.
-Both paths end in one constant, `TEXL_LIB` (`src/stilo/cli/project.py`).
+Both paths end in one constant, `TEXL_LIB` (`src/stilo/cli/package.py`).
 
 To add a function: write it in a new document of `texl-lib/`, describe it
 in that document's text, and add it to the namespace `index.texl` binds.

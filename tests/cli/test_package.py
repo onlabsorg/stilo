@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from stilo.cli import main
-from stilo.cli.project import TEXL_LIB, resolve_file
+from stilo.cli.package import TEXL_LIB, resolve_file
 
 IMPORT = '<% texl.import "~/lib/stilo/index.texl" ~> (lib -> bind "stilo" lib.data.stilo) %>'
 
@@ -25,26 +25,26 @@ def test_bundled_library_exists():
 
 
 def test_init(home, capsys):
-    project = home / "beam"
-    assert main(["init", str(project)]) == 0
-    manifest = (project / "project.texl").read_text()
-    assert 'project_name = "beam"' in manifest
+    package = home / "beam"
+    assert main(["init", str(package)]) == 0
+    manifest = (package / "package.texl").read_text()
+    assert 'package_name = "beam"' in manifest
     assert "stilo_version" in manifest
     for name in ("index.texl", "dataframe.texl"):
-        assert (project / "lib" / "stilo" / name).read_text() == (TEXL_LIB / name).read_text()
+        assert (package / "lib" / "stilo" / name).read_text() == (TEXL_LIB / name).read_text()
 
 
 def test_init_name_cannot_break_the_manifest(home, capsys):
     assert main(["init", str(home / "p"), "--name", 'A "quoted" %> name']) == 0
-    assert 'project_name = "A quoted  name"' in (home / "p" / "project.texl").read_text()
-    assert main(["render", "--strict", str(home / "p" / "project.texl")]) == 0
+    assert 'package_name = "A quoted  name"' in (home / "p" / "package.texl").read_text()
+    assert main(["render", "--strict", str(home / "p" / "package.texl")]) == 0
 
 
-def test_init_refuses_an_existing_project(home, capsys):
-    (home / "project.texl").write_text("mine")
+def test_init_refuses_an_existing_package(home, capsys):
+    (home / "package.texl").write_text("mine")
     assert main(["init", str(home)]) == 1
-    assert "already a project" in capsys.readouterr().err
-    assert (home / "project.texl").read_text() == "mine"
+    assert "already a package" in capsys.readouterr().err
+    assert (home / "package.texl").read_text() == "mine"
 
 
 def test_init_keeps_an_existing_library(home, capsys):
@@ -81,10 +81,10 @@ def test_home_falls_back_to_the_root_outside_the_user_home(home, tmp_path):
 
 def test_nearest_manifest_and_several_homes(home):
     (home / "p" / "lib" / "own").mkdir(parents=True)
-    (home / "p" / "project.texl").write_text("")
+    (home / "p" / "package.texl").write_text("")
     path = home / "p" / "docs" / "~" / "lib" / "plain" / "~" / "lib" / "x.texl"
     assert resolve_file(str(path)) == home / "p" / "lib" / "x.texl"
-    (home / "p" / "lib" / "own" / "project.texl").write_text("")
+    (home / "p" / "lib" / "own" / "package.texl").write_text("")
     path = home / "p" / "docs" / "~" / "lib" / "own" / "~" / "lib" / "x.texl"
     assert resolve_file(str(path)) == home / "p" / "lib" / "own" / "lib" / "x.texl"
 
@@ -99,7 +99,7 @@ def test_a_library_importing_itself_through_home_ends(home, capsys):
 
 def test_a_document_through_home_is_the_real_file(home, capsys):
     (home / "p" / "lib").mkdir(parents=True)
-    (home / "p" / "project.texl").write_text("")
+    (home / "p" / "package.texl").write_text("")
     (home / "p" / "lib" / "x.texl").write_text("x")
     doc = home / "p" / "docs" / "a.texl"
     doc.parent.mkdir()

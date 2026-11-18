@@ -29,17 +29,18 @@ A monorepo with three parts, kept strictly modular:
 - **Server** (`src/stilo/server/`, module `stilo.server`) — Python, serves
   the documents of one folder over HTTP, and the built web app.
 - **CLI** (`src/stilo/cli/`, module `stilo.cli`) — the `stilo` command:
-  `init` a project, `render` a document, `serve` a folder, `tutor` (the
+  `init` a package, `render` a document, `serve` a folder, `tutor` (the
   tutorial). It is the only Texl command line (D19).
 
 Beside them, `texl-lib/` (root) is the **Stilo Texl library**: Texl
-documents, not code, that `stilo init` copies into a project's
+documents, not code, that `stilo init` copies into a package's
 `lib/stilo/`; shipped in the wheel as `stilo/texl-lib` (hatch
 `force-include`), read in place in a checkout (`TEXL_LIB` in
-`src/stilo/cli/project.py`); `tutorial/` (root, S14) is shipped and read the
-same way. **Projects** (S10, `docs/projects.md`): a
-folder with `project.texl` is a project, its *home*; in an import path a
-`~` segment stands for the home of the folder before it, resolved left to
+`src/stilo/cli/package.py`); `tutorial/` (root, S14) is shipped and read the
+same way. **Packages** (S10, S21, `docs/packages.md`): a
+folder with `package.texl` is a package (of Texl files, not the Python
+package; a "project" until 0.5), its *home*; in an import path a `~`
+segment stands for the home of the folder before it, resolved left to
 right, by the server on reads (a protocol rule: a `307` redirect to the real
 path) and by the CLI's file loader (which returns the real file as the final
 URL), with one shared rule in `src/stilo/server/home.py`. The real path is
@@ -155,8 +156,8 @@ for rendering, managed with `uv`. All commands at the root.
 uv sync && uv run pytest              # tests/: server/, cli/, texl_lib/, tutorial/, test_layout.py,
                                       #   test_extension_contract.py
 uv run stilo serve examples           # http://127.0.0.1:8000
-uv run stilo render examples/projects/beam/beam-check.texl
-uv run stilo init path/to/project     # project.texl, lib/stilo/
+uv run stilo render examples/packages/beam/beam-check.texl
+uv run stilo init path/to/package     # package.texl, lib/stilo/
 uv run stilo tutor --dir /tmp/t       # copies tutorial/ there, serves it
 uv build                              # after npm run build: dist/stilo_cli-*.whl
 ```
@@ -189,9 +190,9 @@ npm run check-package  # packs @onlabsorg/stilo-web, installs it in package-chec
 Two ways to run it:
 
 - **One process:** `npm run build`, then `uv run stilo serve examples`
-  at the root; open <http://127.0.0.1:8000/projects/beam/beam-check.texl>.
+  at the root; open <http://127.0.0.1:8000/packages/beam/beam-check.texl>.
 - **Development:** `uv run stilo serve examples` and `npm run dev` side
-  by side; open <http://localhost:5173/projects/beam/beam-check.texl>.
+  by side; open <http://localhost:5173/packages/beam/beam-check.texl>.
   Vite serves the pages and forwards `/_api` and the public URLs of files
   (imports, images, PDFs).
 
@@ -216,7 +217,7 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
 - `docs/` — the developer documentation, plain Markdown read on GitHub
   (no build, no site; relative links only). Index: `docs/README.md`;
   style guide: `docs/STYLE.md`. `architecture.md`, `setup.md`,
-  `server.md`, `cli.md`, `projects.md` (projects, `~`, `texl-lib/`), `web-app.md`, `editor.md`, `editor-design.md`
+  `server.md`, `cli.md`, `packages.md` (packages, `~`, `texl-lib/`), `web-app.md`, `editor.md`, `editor-design.md`
   (editing model, open points), `texl-primer.md`, `tutorial.md` (how the
   tutorial is built and kept current), `protocol.md` (protocol
   v1: URL space, `/_api/info`, `/_api/x/`, the interactions, read-only
@@ -231,8 +232,8 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
   `README.md` links to it.
 - `CONTRIBUTING.md`, `CHANGELOG.md` — at the root.
 - `DECISIONS.md` — Stilo's decision log (S1, S2, …), at the root.
-- `src/stilo/server/home.py` — the project home rule: `MANIFEST`
-  (`project.texl`), `home_of`, `expand_home` (left to right, `MAX_HOMES`),
+- `src/stilo/server/home.py` — the package home rule: `MANIFEST`
+  (`package.texl`), `home_of`, `expand_home` (left to right, `MAX_HOMES`),
   shared by the server and the CLI.
 - `src/stilo/server/storage.py` — `Storage`, the interface of a storage
   (a `typing.Protocol`: the nine methods `create_app()` uses; S17 phase
@@ -262,9 +263,9 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
 - `src/stilo/server/extensions.py` — `ServerExtension` (`id`, `router`,
   `wrap_storage`, `capabilities`, `version`), `check_extensions`,
   `get_storage` (the FastAPI dependency an extension's endpoint uses).
-- `src/stilo/cli/project.py` — `create_engine()` (the one place an engine
+- `src/stilo/cli/package.py` — `create_engine()` (the one place an engine
   is made; its file loader resolves `~`, top: `$HOME` or `/`), `TEXL_LIB`,
-  the text of a new `project.texl`.
+  the text of a new `package.texl`.
 - `texl-lib/` — the Stilo Texl library: `index.texl` binds `stilo`,
   gathering one document per function (`dataframe.texl`:
   `stilo.dataframe`; `charts.texl`: `stilo.charts.line`, an SVG line
@@ -277,7 +278,7 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
   lessons `NN-name.texl`, `files/`, `lib/tutorial/` (the checks:
   `tutorial.check`, `.progress`, `.tag`) and `lib/steel/`. Shipped in the
   wheel as `stilo/tutorial`; `stilo tutor` (`src/stilo/cli/tutor.py`)
-  copies it into a working folder made a project with `make_project`, the
+  copies it into a working folder made a package with `make_package`, the
   code of `stilo init`, reuses an existing copy, and moves it aside on
   `--reset`. Tested in `tests/tutorial/` (every document renders strictly
   or with its `expected_errors`; `solutions.json` turns every check to ✓
@@ -418,7 +419,7 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
   `consumer/`, the small Vite project that imports every entry point of
   the npm package. `web/README.md` — the package's page on npm.
 - `examples/` — sample documents: `library/steel.texl`, `sample.texl`,
-  and the project `projects/beam/`: `beam-check.texl`, a short design
+  and the package `packages/beam/`: `beam-check.texl`, a short design
   report that links to and imports `basis-of-design.texl` (design data,
   imports the steel library) and `analysis.texl` (the checks). Every
   example renders with `stilo render --strict` (`tests/cli/test_render.py`)
@@ -437,8 +438,8 @@ hides the cell in the editor (it still renders; S13); unknown options are
 kept. Cell comments are
 `<!--[ ... ]-->`; other HTML comments are ignored. The file must stay a
 valid Texl document that renders without the editor (`stilo render`,
-`pytexl`, `texl.import`). Imports may use `~` for the project home
-(`docs/projects.md`); other Texl hosts do not resolve it.
+`pytexl`, `texl.import`). Imports may use `~` for the package home
+(`docs/packages.md`); other Texl hosts do not resolve it.
 
 ## Conventions
 

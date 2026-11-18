@@ -10,7 +10,7 @@ built web app. FastAPI and uvicorn.*
 | `stilo/server/app.py`           | `create_app()`: the HTTP routes, mapped onto a `Storage`, and the extensions' |
 | `stilo/server/extensions.py`    | `ServerExtension`, `get_storage`: server extensions (S17, phase 5) |
 | `stilo/server/files.py`         | Files by their public URL: `is_document`, `etag`, `media_type`, `other_file_response` (types and safety headers), `NO_CACHE` |
-| `stilo/server/home.py`          | The project home rule, `~` in paths; shared with the CLI |
+| `stilo/server/home.py`          | The package home rule, `~` in paths; shared with the CLI |
 | `stilo/server/__init__.py`      | The [public API](#the-public-api), `__all__` |
 
 The server imports nothing from the rest of the package (the CLI starts it
@@ -43,7 +43,7 @@ method does what the method of the same name of `FolderStorage` does
 (below), with the same arguments and results; a storage refuses a request
 by raising one of the [errors](#errors), whose status the HTTP layer
 answers. `tree` returns the protocol's QUERY body; `expand_home` returns
-its argument unchanged if the storage has no project homes. Whether a
+its argument unchanged if the storage has no package homes. Whether a
 public address is a document or another file, `create_app()` decides from
 the suffix (`is_document`) and a `read`, so a storage needs no method for
 it. `tests/server/test_storage_interface.py` runs the app on a storage
@@ -84,7 +84,7 @@ The default storage: gives access to the documents under `root`, a folder.
 Raises `ValueError` if `root` is not a folder.
 
 Paths are strings relative to the root, with `/` separators: `""` is the
-root, `"projects/beam/check.texl"` a file. Every public method validates
+root, `"packages/beam/check.texl"` a file. Every public method validates
 its path first.
 
 ### `resolve`
@@ -99,7 +99,7 @@ the path is malformed or not allowed:
 - a segment that is empty, `.` or `..`, or starts with `.` (hidden);
 - a first segment that starts with `_` (reserved for `/_api` and `/_app`);
 - a path that leads out of the root, also through a symbolic link;
-- a segment `~`, which stands for the project home and is never a name.
+- a segment `~`, which stands for the package home and is never a name.
 
 ### `expand_home`
 
@@ -108,8 +108,8 @@ def expand_home(self, path: str) -> str
 ```
 
 Returns `path` with each `~` segment, from the left, replaced by the
-project home of the folder before it: the nearest folder holding a
-`project.texl`, or the root (protocol: [URL space](protocol.md#url-space)).
+package home of the folder before it: the nearest folder holding a
+`package.texl`, or the root (protocol: [URL space](protocol.md#url-space)).
 Raises `BadRequest` for malformed segments and for more than 16 `~`
 segments. The app calls it to redirect a read with `~` to the real path
 (`home_redirect` in `app.py`); `read` calls it too, for other callers. A write never expands `~`. The rule itself is in `home.py` (`expand_home`, `home_of`), shared
@@ -392,7 +392,7 @@ another kind or another server that speaks the protocol may use:
 | Storages | `Storage`, `FolderStorage`, `StorageWrapper` |
 | Errors | `StorageError`, `BadRequest`, `Forbidden`, `NotFound`, `Conflict`, `PreconditionFailed` |
 | Files | `DOCUMENT_SUFFIX`, `is_document`, `etag`, `FILE_TYPES`, `media_type`, `other_file_response`, `NO_CACHE` |
-| The project home | `MANIFEST`, `HOME`, `MAX_HOMES`, `HomeCycle`, `home_of`, `expand_home`, `has_home` |
+| The package home | `MANIFEST`, `HOME`, `MAX_HOMES`, `HomeCycle`, `home_of`, `expand_home`, `has_home` |
 
 Anything else in the modules may change without notice.
 `tests/server/test_public_api.py` pins the list: a change to it is
@@ -406,7 +406,7 @@ on a temporary folder: every interaction of the protocol, the errors, path
 validation, content negotiation on public addresses, `/_api/info`,
 `/_api/x/`, and read-only items (with real file permissions; skipped when
 run as root or on Windows, where they do not apply).
-`tests/server/test_home.py` covers the project home: nearest manifest,
+`tests/server/test_home.py` covers the package home: nearest manifest,
 fallback to the root, several `~`, libraries with and without their own
 manifest, cycles, and `~` refused as a name. A change to the protocol starts
 with a test there.

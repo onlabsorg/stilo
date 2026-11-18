@@ -1,4 +1,4 @@
-"""Projects in the CLI (DECISIONS.md S10): the engine that resolves `~` in
+"""Packages in the CLI (DECISIONS.md S10): the engine that resolves `~` in
 file paths, and what `stilo init` (and `stilo tutor`, S14) writes.
 
 The rule itself is in `stilo.server.home`, shared with the server.
@@ -16,19 +16,19 @@ from pytexl.loaders import file_path, load_file
 
 from stilo.server.home import MANIFEST, expand_home, has_home
 
-# The Texl library Stilo bundles, copied into a project's lib/stilo/ by
+# The Texl library Stilo bundles, copied into a package's lib/stilo/ by
 # `stilo init`. Its source is `texl-lib/` at the root of the checkout; the
 # wheel ships it as `stilo/texl-lib` (pyproject.toml).
-PACKAGE = Path(__file__).resolve().parents[1]
-_INSTALLED_LIB = PACKAGE / "texl-lib"
-TEXL_LIB = _INSTALLED_LIB if _INSTALLED_LIB.is_dir() else PACKAGE.parents[1] / "texl-lib"
+STILO_DIR = Path(__file__).resolve().parents[1]
+_INSTALLED_LIB = STILO_DIR / "texl-lib"
+TEXL_LIB = _INSTALLED_LIB if _INSTALLED_LIB.is_dir() else STILO_DIR.parents[1] / "texl-lib"
 
 LIB = "lib"
 LIBRARY_NAME = "stilo"
 
 
-def make_project(folder: Path, name: str) -> bool:
-    """Makes `folder` a project: creates it if missing, writes `project.texl`
+def make_package(folder: Path, name: str) -> bool:
+    """Makes `folder` a package: creates it if missing, writes `package.texl`
     (never over an existing one: `FileExistsError`), creates `lib/` and
     copies the bundled library into `lib/stilo/`. Returns whether a
     `lib/stilo/` was already there, which is then left as it is."""
@@ -66,7 +66,7 @@ def resolve_file(uri: str) -> Path:
     return expand_home(Path(path.anchor), path.parts[1:], top_of)
 
 
-async def load_project_file(uri: str) -> str | tuple[str, str]:
+async def load_package_file(uri: str) -> str | tuple[str, str]:
     """pytexl's file loader, with `~` resolved. A path with `~` gives the
     real file as the document's final URL (Texl 0.8): its identity, so
     imports of one library by different paths share it, and a cycle
@@ -80,8 +80,8 @@ async def load_project_file(uri: str) -> str | tuple[str, str]:
 def create_engine() -> pytexl.Engine:
     """The engine of every CLI command that renders."""
     engine = pytexl.Engine()
-    engine.add_loader("file", load_project_file)
-    engine.set_default_loader(load_project_file)
+    engine.add_loader("file", load_package_file)
+    engine.set_default_loader(load_package_file)
     return engine
 
 
@@ -92,14 +92,14 @@ def swan_text(value: str) -> str:
 
 
 def manifest(name: str) -> str:
-    """The text of a new `project.texl`."""
-    name = swan_text(name) or "project"
+    """The text of a new `package.texl`."""
+    name = swan_text(name) or "package"
     return f"""# {name}
 
-This folder is a Stilo project. This file marks its home folder: in an
+This folder is a Stilo package. This file marks its home folder: in an
 import, `~` stands for it, as in `~/lib/stilo/index.texl`. The values below
-configure the project.
+configure the package.
 
-<% project_name = "{name}" %>
+<% package_name = "{name}" %>
 <% stilo_version = "{stilo_version()}" %>
 """

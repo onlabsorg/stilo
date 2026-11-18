@@ -1,55 +1,55 @@
 <!--{ pr00 : formula | hidden }-->
 <% texl.import "~/lib/tutorial/index.texl" ~> (lib -> bind "tutorial" lib.data) %>
 <!--{ pr01 : rich }-->
-# 12. Your first project
+# 12. Your first package
 
 The last lesson of the core path: a folder of your own, for your own
-documents. This lesson has no checks, since your project is outside the
+documents. This lesson has no checks, since your package is outside the
 tutorial. About five minutes.
 <!--{ pr02 : rich }-->
-## Make a project
+## Make a package
 
-A **project** is a folder of documents that belong together, such as the
+A **package** is a folder of documents that belong together, such as the
 calculations for one structure, with the libraries they use. Everything it
 needs is inside its folder, so it works as a whole wherever you copy it: to
 a colleague, to a server, into a backup.
 
-In the second terminal, make one, for example in a folder `first-project`
+In the second terminal, make one, for example in a folder `first-package`
 of your home folder:
 
 ```
 cd ~
-stilo init first-project
+stilo init first-package
 ```
 
-`stilo init` creates the folder if needed, writes `project.texl`, which marks
-it as a project, and copies the Stilo library into `lib/stilo`, which data
+`stilo init` creates the folder if needed, writes `package.texl`, which marks
+it as a package, and copies the Stilo library into `lib/stilo`, which data
 tables need (lesson 7). On Windows, write the folder as you usually do, as
-`stilo init C:\Users\you\first-project`.
+`stilo init C:\Users\you\first-package`.
 <!--{ pr03 : rich }-->
 ## Serve it
 
 `stilo serve` opens a folder in the editor, as `stilo tutor` opens this
-tutorial. The tutorial already uses the port 8000, so give your project
+tutorial. The tutorial already uses the port 8000, so give your package
 another one:
 
 ```
-stilo serve first-project --port 8001
+stilo serve first-package --port 8001
 ```
 
 Open `http://127.0.0.1:8001/` in your browser, press **Alt+N** for a new
 document, and write. Everything from the lessons works there. Press **Ctrl+C**
 in the terminal to stop it.
 
-Next time, stop the tutorial first and run `stilo serve first-project`,
+Next time, stop the tutorial first and run `stilo serve first-package`,
 which uses the port 8000.
 <!--{ pr04 : rich }-->
 ## Libraries
 
-In an import, `~` stands for the project folder, so every document of the
-project imports the Stilo library as `~/lib/stilo/index.texl`, however deep
+In an import, `~` stands for the package folder, so every document of the
+package imports the Stilo library as `~/lib/stilo/index.texl`, however deep
 in its folders it is. Your own libraries go in `lib` too: copy the folder
-`lib/steel` of this tutorial into your project, and every document of it
+`lib/steel` of this tutorial into your package, and every document of it
 can import `~/lib/steel/sections.texl`, as in lesson 8.
 
 ## Serving to others
@@ -59,7 +59,7 @@ change every document of the folder. By default it accepts connections from
 your own computer only. Keep it that way, unless you put your own access
 control in front of it.
 
-More in the manual: [Projects and libraries](https://www.onlabs.org/manual/editor/projects.html),
+More in the manual: [Packages and libraries](https://www.onlabs.org/manual/editor/projects.html),
 [stilo init](https://www.onlabs.org/manual/cli/init.html) and
 [stilo serve](https://www.onlabs.org/manual/cli/serve.html).
 <!--{ pr05 : rich }-->

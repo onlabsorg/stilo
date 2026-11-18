@@ -24,8 +24,8 @@ tutorial/
 ```
 
 The user never edits this folder: `stilo tutor` copies it and makes the copy
-a project (`project.texl`, `lib/stilo/`), so `~` and data tables work. The
-source alone is not a project: open lessons through a copy
+a package (`package.texl`, `lib/stilo/`), so `~` and data tables work. The
+source alone is not a package: open lessons through a copy
 (`uv run stilo tutor --dir /tmp/t`), not with `stilo serve tutorial`.
 
 ## Lessons

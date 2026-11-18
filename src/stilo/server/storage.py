@@ -153,7 +153,7 @@ class FolderStorage:
         return segments
 
     def expand_home(self, path: str) -> str:
-        """`path` with its `~` segments replaced by the project home they
+        """`path` with its `~` segments replaced by the package home they
         stand for (home.py); the search never leaves the root. Only reads
         expand `~`: as a name it is refused."""
         if not has_home(path):
@@ -169,7 +169,7 @@ class FolderStorage:
         malformed, hidden, reserved or outside the root."""
         segments = self._segments(path)
         if HOME in segments:
-            raise BadRequest(f"{HOME} stands for the project home and cannot be a name: {path!r}")
+            raise BadRequest(f"{HOME} stands for the package home and cannot be a name: {path!r}")
         if segments and segments[0].startswith("_"):
             raise BadRequest(f"reserved path: {path!r}")
         target = self.root.joinpath(*segments).resolve()
@@ -395,7 +395,7 @@ class FolderStorage:
     @staticmethod
     def _hidden(name: str) -> bool:
         """Entries the protocol never shows: hidden ones, and `~`, which in a
-        path stands for the project home."""
+        path stands for the package home."""
         return name.startswith(".") or name == HOME
 
     def tree(self, path: str, depth: int | None = None) -> dict:

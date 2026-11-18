@@ -15,7 +15,7 @@
 <% texl.import "09-errors.texl" ~> (d -> bind "l09" d) %>
 <% texl.import "10-organising.texl" ~> (d -> bind "l10" d) %>
 <% texl.import "11-command-line.texl" ~> (d -> bind "l11" d) %>
-<% texl.import "12-your-first-project.texl" ~> (d -> bind "l12" d) %>
+<% texl.import "12-your-first-package.texl" ~> (d -> bind "l12" d) %>
 <% texl.import "13-formula-language.texl" ~> (d -> bind "l13" d) %>
 <% texl.import "14-libraries.texl" ~> (d -> bind "l14" d) %>
 <!--{ in02 : markdown }-->
@@ -40,7 +40,7 @@ have saved.
 | 9  | [Errors](09-errors.texl) | Finding and fixing errors, the Errors pane | <% tutorial.progress l09 %> |
 | 10 | [Organising](10-organising.texl) | Comments, hidden lines, the text, files and folders | <% tutorial.progress l10 %> |
 | 11 | [The command line](11-command-line.texl) | `stilo render` on your own edits, `--debug`, `--strict` | <% tutorial.progress l11 %> |
-| 12 | [Your first project](12-your-first-project.texl) | `stilo init` and `stilo serve` on your own folder | <% tutorial.progress l12 %> |
+| 12 | [Your first package](12-your-first-package.texl) | `stilo init` and `stilo serve` on your own folder | <% tutorial.progress l12 %> |
 <!--{ in04 : markdown }-->
 ## Advanced lessons
 

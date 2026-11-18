@@ -38,7 +38,7 @@ cd web && npm install && npm run build && cd ..
 uv run stilo serve examples
 ```
 
-Open <http://127.0.0.1:8000/projects/beam/beam-check.texl>.
+Open <http://127.0.0.1:8000/packages/beam/beam-check.texl>.
 
 ## Parts
 

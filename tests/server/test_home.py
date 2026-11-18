@@ -1,4 +1,4 @@
-"""The project home `~` (DECISIONS.md S10, docs/protocol.md)."""
+"""The package home `~` (DECISIONS.md S10, docs/protocol.md)."""
 
 import pytest
 from fastapi.testclient import TestClient
@@ -12,18 +12,18 @@ def root(tmp_path):
     """
     root/
       lib/x.texl                      "root lib"
-      proj/project.texl
+      proj/package.texl
       proj/lib/x.texl                 "proj lib"
-      proj/lib/own/project.texl       a library with its own home
+      proj/lib/own/package.texl       a library with its own home
       proj/lib/own/lib/x.texl         "own lib"
       proj/lib/plain/plain.texl       a library without one
       proj/docs/sub/a.texl
     """
     files = {
         "lib/x.texl": "root lib",
-        "proj/project.texl": "<% project_name = \"proj\" %>",
+        "proj/package.texl": "<% package_name = \"proj\" %>",
         "proj/lib/x.texl": "proj lib",
-        "proj/lib/own/project.texl": "",
+        "proj/lib/own/package.texl": "",
         "proj/lib/own/lib/x.texl": "own lib",
         "proj/lib/plain/plain.texl": "plain",
         "proj/docs/sub/a.texl": "a",

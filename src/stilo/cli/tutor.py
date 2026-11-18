@@ -2,7 +2,7 @@
 
 The tutorial's source is `tutorial/` at the root of the checkout, shipped in
 the wheel as `stilo/tutorial` (pyproject.toml). The user never edits it:
-`stilo tutor` copies it into a working folder, makes the copy a project with
+`stilo tutor` copies it into a working folder, makes the copy a package with
 the code of `stilo init`, and serves it. An existing copy is reused, so
 progress is kept; `--reset` moves it aside first, never deleting it.
 """
@@ -19,19 +19,22 @@ import platformdirs
 
 from stilo.server import create_app
 
-from .project import MANIFEST, PACKAGE, make_project, stilo_version, swan_text
+from .package import MANIFEST, STILO_DIR, make_package, stilo_version, swan_text
 from .web import WEB_DIST, run_server
 
-_INSTALLED_TUTORIAL = PACKAGE / "tutorial"
-TUTORIAL = _INSTALLED_TUTORIAL if _INSTALLED_TUTORIAL.is_dir() else PACKAGE.parents[1] / "tutorial"
+_INSTALLED_TUTORIAL = STILO_DIR / "tutorial"
+TUTORIAL = _INSTALLED_TUTORIAL if _INSTALLED_TUTORIAL.is_dir() else STILO_DIR.parents[1] / "tutorial"
 
-PROJECT_NAME = "Stilo tutorial"
+PACKAGE_NAME = "Stilo tutorial"
 INDEX = "index.texl"
 
-# The value `stilo tutor` adds to the copy's project.texl: the folder of the
+# The value `stilo tutor` adds to the copy's package.texl: the folder of the
 # copy, shown by the command-line lessons. It also tells a copy from any
 # other folder.
 FOLDER_NAME = "tutorial_folder"
+# The manifest's name before Stilo 0.6 (S21): a copy made then still counts
+# as a copy, and reads as made by an older Stilo.
+OLD_MANIFEST = "project.texl"
 _FOLDER_VALUE = re.compile(rf"<%\s*{FOLDER_NAME}\s*=")
 _VERSION_VALUE = re.compile(r'stilo_version\s*=\s*"([^"]*)"')
 
@@ -41,12 +44,20 @@ def default_folder() -> Path:
     return platformdirs.user_data_path("stilo", appauthor=False) / "tutorial"
 
 
+def manifest_text(folder: Path) -> str | None:
+    """The text of the copy's manifest, `package.texl` or the old
+    `project.texl`, if any."""
+    for name in (MANIFEST, OLD_MANIFEST):
+        try:
+            return (folder / name).read_text(encoding="utf-8")
+        except OSError:
+            continue
+    return None
+
+
 def is_copy(folder: Path) -> bool:
     """Whether `folder` is a working copy of the tutorial."""
-    try:
-        return bool(_FOLDER_VALUE.search((folder / MANIFEST).read_text(encoding="utf-8")))
-    except OSError:
-        return False
+    return bool(_FOLDER_VALUE.search(manifest_text(folder) or ""))
 
 
 def is_empty(folder: Path) -> bool:
@@ -54,9 +65,9 @@ def is_empty(folder: Path) -> bool:
 
 
 def create_copy(folder: Path):
-    """Copies the tutorial into `folder` (missing or empty) and makes it a project."""
+    """Copies the tutorial into `folder` (missing or empty) and makes it a package."""
     shutil.copytree(TUTORIAL, folder, dirs_exist_ok=True)
-    make_project(folder, PROJECT_NAME)
+    make_package(folder, PACKAGE_NAME)
     with open(folder / MANIFEST, "a", encoding="utf-8") as file:
         file.write(f'<% {FOLDER_NAME} = "{swan_text(str(folder))}" %>\n')
 
@@ -74,11 +85,11 @@ def move_aside(folder: Path) -> Path:
 
 
 def copy_version(folder: Path) -> str | None:
-    """The `stilo_version` written in the copy's project.texl, if any."""
-    try:
-        match = _VERSION_VALUE.search((folder / MANIFEST).read_text(encoding="utf-8"))
-    except OSError:
+    """The `stilo_version` written in the copy's manifest, if any; a copy
+    with the old manifest reads as older than 0.6, whatever it says."""
+    if not (folder / MANIFEST).is_file() and (folder / OLD_MANIFEST).is_file():
         return None
+    match = _VERSION_VALUE.search(manifest_text(folder) or "")
     return match.group(1) if match else None
 
 

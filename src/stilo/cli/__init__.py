@@ -10,7 +10,7 @@ import sys
 from importlib.metadata import entry_points
 
 from .commands import COMMANDS, Command
-from .project import create_engine
+from .package import create_engine
 from .web import WEB_DIST, run_server
 
 __all__ = ["Command", "COMMANDS", "main", "create_engine", "WEB_DIST", "run_server"]

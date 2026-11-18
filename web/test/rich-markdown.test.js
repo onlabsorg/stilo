@@ -257,7 +257,7 @@ describe("rich text: the example documents", () => {
         return parseDocument(await response.text());
     };
 
-    for (const path of ["/examples/projects/beam/beam-check.texl", "/examples/sample.texl"]) {
+    for (const path of ["/examples/packages/beam/beam-check.texl", "/examples/sample.texl"]) {
         it(`round-trips every cell it accepts in ${path}, unchanged`, async () => {
             const cells = await cellsOf(path);
             expect(cells.length).to.be.greaterThan(1);
@@ -269,7 +269,7 @@ describe("rich text: the example documents", () => {
     }
 
     it("accepts the Markdown cells of the beam example, except those with a table or a caption", async () => {
-        const cells = await cellsOf("/examples/projects/beam/beam-check.texl");
+        const cells = await cellsOf("/examples/packages/beam/beam-check.texl");
         const markdown = cells.filter(({ type }) => type === "markdown");
         const refused = markdown.filter(({ texl }) => !acceptsRich(texl));
         expect(markdown.length).to.be.greaterThan(2);

@@ -28,12 +28,12 @@ root; document folders and files cannot use them there.
 `<path>` is a path relative to the server root, with `/` separators.
 Segments must not be empty, `.`, `..`, or start with `.` (no hidden files).
 Paths that leave the root (also through symbolic links) are refused. A
-segment `~` is never a name: it stands for the project home (below), so no
+segment `~` is never a name: it stands for the package home (below), so no
 file or folder can be created or moved under that name, and a folder named
 `~` on disk is hidden like a hidden one.
 
-**Project home (`~`).** A folder that holds a file named `project.texl` is
-a *project*. The *home* of a folder is the nearest folder at or above it
+**Package home (`~`).** A folder that holds a file named `package.texl` is
+a *package*. The *home* of a folder is the nearest folder at or above it
 that holds one; without one, the server root. In the path of a read (`GET`
 and `HEAD`, public URL or `/_api/files/`), each `~` segment, from the left,
 stands for the home of the folder before it, and the server answers with a
@@ -41,27 +41,27 @@ redirect to the real path, `307 Temporary Redirect` (the query kept,
 `Cache-Control: no-cache`):
 
 ```
-project.texl in /projects/beam/
+package.texl in /packages/beam/
 
-GET /projects/beam/docs/~/lib/stilo/index.texl
+GET /packages/beam/docs/~/lib/stilo/index.texl
 → 307 Temporary Redirect
-  Location: /projects/beam/lib/stilo/index.texl
-GET /projects/beam/docs/~/lib/a/~/lib/b/b.texl
-  → /projects/beam/lib/a/ has no project.texl: /projects/beam/lib/b/b.texl
+  Location: /packages/beam/lib/stilo/index.texl
+GET /packages/beam/docs/~/lib/a/~/lib/b/b.texl
+  → /packages/beam/lib/a/ has no package.texl: /packages/beam/lib/b/b.texl
 ```
 
-This is how a document imports from its project's libraries wherever it is
-in the project: Texl gives `~` no meaning, so `texl.import "~/lib/x.texl"`
-in `/projects/beam/docs/a.texl` asks for `/projects/beam/docs/~/lib/x.texl`,
-and the server redirects it to `/projects/beam/lib/x.texl`. A redirect, not
+This is how a document imports from its package's libraries wherever it is
+in the package: Texl gives `~` no meaning, so `texl.import "~/lib/x.texl"`
+in `/packages/beam/docs/a.texl` asks for `/packages/beam/docs/~/lib/x.texl`,
+and the server redirects it to `/packages/beam/lib/x.texl`. A redirect, not
 the file itself, because Texl takes a document's identity from the URL it
 was finally fetched from (its *final URL*, Texl 0.8): the library is the
 document at its real path, its relative imports resolve from there, imports
 of it by different paths share one document, and a library importing itself
 through `~` is an import cycle. A library importing `~/...` itself, from its
 real path, asks for a path with one `~`, which resolves from the library's
-folder: to the library's own home if it has a `project.texl`, else to the
-project's. The search for a home never leaves the server root, and the
+folder: to the library's own home if it has a `package.texl`, else to the
+package's. The search for a home never leaves the server root, and the
 server never reads the manifest, it only checks that it exists; nor does
 it check that the target exists before redirecting (the target answers
 `404`). The redirect is temporary because the home depends on manifests
@@ -149,7 +149,7 @@ the software. `capabilities` lists what it can do:
 | `move`     | MOVE files and folders |
 | `upload`   | CREATE files that are not documents |
 | `trash`    | A deleted item can be got back on the server (not through the protocol) |
-| `home`     | The project home, `~` in paths |
+| `home`     | The package home, `~` in paths |
 
 A request for something the server cannot do gets `501 Not Implemented`;
 a client hides what the server lacks. `extensions` lists the server's
@@ -173,7 +173,7 @@ promise), and no extensions.
 ### GET a resource
 
 ```
-GET /_api/files/projects/beam/beam-check.texl
+GET /_api/files/packages/beam/beam-check.texl
 → 200 OK
   Content-Type: text/plain; charset=utf-8
   ETag: "<sha256 of the content>"
@@ -189,11 +189,11 @@ to the real path first (see [URL space](#url-space)).
 ### CREATE a new file
 
 ```
-POST /_api/files/projects/beam/new-check.texl
+POST /_api/files/packages/beam/new-check.texl
   Content-Type: text/plain; charset=utf-8
   <initial text, may be empty>
 → 201 Created
-  Location: /_api/files/projects/beam/new-check.texl
+  Location: /_api/files/packages/beam/new-check.texl
   ETag: "<sha256>"
 ```
 
@@ -206,7 +206,7 @@ folder. `400` for a path the protocol refuses, and for the root.
 ### UPDATE an existing file
 
 ```
-PUT /_api/files/projects/beam/beam-check.texl
+PUT /_api/files/packages/beam/beam-check.texl
   If-Match: "<ETag from the last GET or write>"
   Content-Type: text/plain; charset=utf-8
   <full new text>
@@ -224,15 +224,15 @@ Without `If-Match` the write is unconditional; the web app always sends it.
 ### QUERY the tree of a folder
 
 ```
-GET /_api/tree/projects?depth=2
+GET /_api/tree/packages?depth=2
 → 200 OK
   Content-Type: application/json
   {
-    "name": "projects", "path": "projects", "type": "folder",
+    "name": "packages", "path": "packages", "type": "folder",
     "children": [
-      { "name": "beam", "path": "projects/beam", "type": "folder",
+      { "name": "beam", "path": "packages/beam", "type": "folder",
         "children": [
-          { "name": "beam-check.texl", "path": "projects/beam/beam-check.texl",
+          { "name": "beam-check.texl", "path": "packages/beam/beam-check.texl",
             "type": "file", "size": 1834, "modified": "2026-10-24T09:12:03Z" }
         ] }
     ]
@@ -252,9 +252,9 @@ beyond the depth has no `children` key. `404` if the folder does not exist;
 ### CREATE a folder
 
 ```
-POST /_api/tree/projects/bridge
+POST /_api/tree/packages/bridge
 → 201 Created
-  Location: /_api/tree/projects/bridge
+  Location: /_api/tree/packages/bridge
 ```
 
 Missing parent folders are created. `409 Conflict` if the path already exists,
@@ -263,11 +263,11 @@ as a folder or a file. A folder's name cannot end in `.texl` (`400`).
 ### MOVE a file or a folder
 
 ```
-POST /_api/move/projects/beam/check.texl
+POST /_api/move/packages/beam/check.texl
   Content-Type: application/json
-  {"to": "projects/beam/bending-check.texl"}
+  {"to": "packages/beam/bending-check.texl"}
 → 200 OK
-  {"path": "projects/beam/bending-check.texl"}
+  {"path": "packages/beam/bending-check.texl"}
 ```
 
 Moving and renaming are one operation: `to` is the item's whole new path.
@@ -285,7 +285,7 @@ already has changes nothing.
 ### DELETE a file
 
 ```
-DELETE /_api/files/projects/beam/check.texl
+DELETE /_api/files/packages/beam/check.texl
 → 204 No Content
 ```
 
@@ -296,7 +296,7 @@ if the path is a folder.
 ### DELETE a folder
 
 ```
-DELETE /_api/tree/projects/beam
+DELETE /_api/tree/packages/beam
 → 200 OK
   {"deleted": 3}
 ```

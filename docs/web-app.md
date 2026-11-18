@@ -360,7 +360,7 @@ stilo.views.register({
     label: "Dashboard",                   // shown in the top bar while it is open
     render: (stilo, params) => html`…`,   // shown in place of the editor
 });                                       // returns dispose()
-stilo.views.open("dash.board", { folder: "projects" }); // router.go, a history entry
+stilo.views.open("dash.board", { folder: "packages" }); // router.go, a history entry
 ```
 
 A view has an address, `/?view=<id>`, with the navigation root and its
@@ -456,10 +456,10 @@ bookmarked and the back button works (the `router` service):
 
 ```text
 /                            root = the server root, no document open
-/projects/beam/check.texl    root = the server root, check.texl open
-/projects/beam/check.texl?root=projects
-                             root = projects, check.texl open
-/?view=dash.board&root=projects&folder=a
+/packages/beam/check.texl    root = the server root, check.texl open
+/packages/beam/check.texl?root=packages
+                             root = packages, check.texl open
+/?view=dash.board&root=packages&folder=a
                              the view dash.board, params {folder: "a"}
 ```
 

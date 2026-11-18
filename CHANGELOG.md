@@ -4,6 +4,17 @@ All notable changes to Stilo are listed here, newest first. Versions follow
 [semantic versioning](https://semver.org/); before 1.0, any version may
 change the interfaces.
 
+## Unreleased
+
+- **Projects are now packages**: a folder with a `package.texl` (was
+  `project.texl`) is a *package*, and `~` in imports stands for it.
+  `stilo init` writes `package.texl`, binding `package_name` (was
+  `project_name`). `project.texl` is no longer read: in an existing
+  folder, rename it to `package.texl` (and `project_name` inside it).
+  `stilo tutor` still recognises an old copy of the tutorial and proposes
+  `stilo tutor --reset`. The tutorial's lesson 12 is now "Your first
+  package". Decision S21.
+
 ## 0.5.1 — 2026-11-18
 
 - **Releases publish the npm package automatically**: the release

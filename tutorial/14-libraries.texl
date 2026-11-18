@@ -6,7 +6,7 @@
 *Advanced.* A library is a document that gives names to values and
 functions for other documents to use: material properties, load factors,
 the checks of a design code. You write it once, and every document of the
-project imports it. About six minutes.
+package imports it. About six minutes.
 <!--{ lb02 : rich }-->
 ## Write a library
 
@@ -40,14 +40,14 @@ With your library, a load of 12.5 kN/m on a span of 6 m gives a moment of
   your document, so they never clash with yours: `beams.moment`.
 - The library is read again every time your document is computed. Change
   it, save, and every document that imports it follows.
-- In a project, keep libraries in `lib`, one folder each, and import them
+- In a package, keep libraries in `lib`, one folder each, and import them
   with `~`. To give a library to a colleague, give them its folder: they
-  copy it into their project's `lib`.
+  copy it into their package's `lib`.
 - An address can also be a full web address, `https://…`, of a document on
   another server that allows it.
 
 More in the manual: [Documents and imports](https://www.onlabs.org/manual/templates/documents.html)
-and [Projects and libraries](https://www.onlabs.org/manual/editor/projects.html).
+and [Packages and libraries](https://www.onlabs.org/manual/editor/projects.html).
 <!--{ lb08 : rich }-->
 ## The end
 

@@ -26,6 +26,6 @@ __all__ = [
     # Files by their public URL
     "DOCUMENT_SUFFIX", "is_document", "etag", "FILE_TYPES", "media_type",
     "other_file_response", "NO_CACHE",
-    # The project home, `~` in paths
+    # The package home, `~` in paths
     "MANIFEST", "HOME", "MAX_HOMES", "HomeCycle", "home_of", "expand_home", "has_home",
 ]

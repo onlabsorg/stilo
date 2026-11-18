@@ -30,14 +30,14 @@ def test_default_folder_is_in_the_user_data_folder():
     assert default_folder().parent.name == "stilo"
 
 
-def test_tutor_makes_a_project_copy(tmp_path, served, capsys):
+def test_tutor_makes_a_package_copy(tmp_path, served, capsys):
     folder = tmp_path / "copy"
     assert main(["tutor", "--dir", str(folder), "--no-browser", "--port", "8123"]) == 0
     assert (folder / "index.texl").read_text() == (TUTORIAL / "index.texl").read_text()
     assert (folder / "lib" / "stilo" / "index.texl").is_file()  # as stilo init
     assert (folder / "lib" / "tutorial" / "index.texl").is_file()
-    manifest = (folder / "project.texl").read_text()
-    assert 'project_name = "Stilo tutorial"' in manifest
+    manifest = (folder / "package.texl").read_text()
+    assert 'package_name = "Stilo tutorial"' in manifest
     assert f'tutorial_folder = "{folder}"' in manifest
     assert is_copy(folder)
     assert served == [(folder, 8123, None)]
@@ -98,7 +98,7 @@ def test_tutor_refuses_a_file(tmp_path, served, capsys):
 def test_an_older_copy_proposes_reset(tmp_path, served, capsys, monkeypatch):
     folder = tmp_path / "copy"
     main(["tutor", "--dir", str(folder), "--no-browser"])
-    manifest = folder / "project.texl"
+    manifest = folder / "package.texl"
     version = copy_version(folder)
     manifest.write_text(manifest.read_text().replace(f'"{version}"', '"0.1.0"'))
     (folder / "01-welcome.texl").write_text("my progress")
@@ -108,6 +108,19 @@ def test_an_older_copy_proposes_reset(tmp_path, served, capsys, monkeypatch):
     assert "Stilo 0.1.0" in out and "stilo tutor --reset" in out
     assert (folder / "01-welcome.texl").read_text() == "my progress"  # never overwritten
     assert served
+
+
+def test_a_copy_with_the_old_manifest_proposes_reset(tmp_path, served, capsys):
+    """A copy made before 0.6 has `project.texl` (S21): still a copy, reused,
+    and reset is proposed."""
+    folder = tmp_path / "copy"
+    main(["tutor", "--dir", str(folder), "--no-browser"])
+    (folder / "package.texl").rename(folder / "project.texl")
+    capsys.readouterr()
+    assert main(["tutor", "--dir", str(folder), "--no-browser"]) == 0
+    out = capsys.readouterr().out
+    assert "your copy of the tutorial is in" in out and "stilo tutor --reset" in out
+    assert not (folder / "package.texl").exists()
 
 
 @pytest.mark.parametrize("version, installed, older", [

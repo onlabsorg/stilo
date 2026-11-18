@@ -20,8 +20,8 @@ built into it, as `src/stilo/web/` (see
 also published on npm, as `@onlabsorg/stilo-web`
 ([setup](setup.md#the-npm-package-onlabsorgstilo-web)). The server never imports
 the CLI. A third source folder, `texl-lib/`, is not code but Texl: the
-library `stilo init` copies into projects, shipped in the package as
-`stilo/texl-lib` ([Projects](projects.md)).
+library `stilo init` copies into packages, shipped in the package as
+`stilo/texl-lib` ([Packages](packages.md)).
 
 ```text
         browser                                  your computer or server
@@ -56,25 +56,25 @@ never renders a document: it only reads and writes files.
 
 ## What runs where
 
-When a user opens `http://127.0.0.1:8000/projects/beam/beam-check.texl`:
+When a user opens `http://127.0.0.1:8000/packages/beam/beam-check.texl`:
 
 1. The browser asks for the address with `Accept: text/html`, so the server
    answers with the web app's `index.html`, and then its bundle from
    `/_app/`.
 2. The app's router reads the path from the address (`web/src/route.js`);
    the services ask for the folder tree (`GET /_api/tree/`) and the
-   document (`GET /_api/files/projects/beam/beam-check.texl`), and give the
+   document (`GET /_api/files/packages/beam/beam-check.texl`), and give the
    text to `<texl-editor>` ([The web app](web-app.md#the-core-srccore)).
 3. The editor parses the text into cells, renders the whole document with
    Texl, as the document at its public address, and splits the rendering
    into the cells' outputs.
 4. An import, `texl.import("../../library/steel.texl")`, is fetched by Texl
    from the public address `/library/steel.texl`, without `text/html`, so the
-   server returns the file. An import from the project's libraries,
+   server returns the file. An import from the package's libraries,
    `texl.import("~/lib/stilo/index.texl")`, is fetched as
-   `/projects/beam/~/lib/stilo/index.texl`, and the server redirects it to
-   the file under the project home, `/projects/beam/lib/stilo/index.texl`,
-   which Texl takes as the library's URL ([Projects](projects.md)).
+   `/packages/beam/~/lib/stilo/index.texl`, and the server redirects it to
+   the file under the package home, `/packages/beam/lib/stilo/index.texl`,
+   which Texl takes as the library's URL ([Packages](packages.md)).
 5. Ctrl+S commits the cell being edited and sends the text back with
    `PUT /_api/files/...` and the ETag of the last read, so a file changed
    meanwhile is not overwritten.
@@ -140,7 +140,7 @@ A guide, `docs/extensions.md`, comes with the extension API.
 - [Development setup](setup.md): build, run and test everything.
 - [The server](server.md): `Storage` (the interface), `FolderStorage`, `StorageWrapper` and `create_app()`.
 - [The CLI](cli.md): `Command` and `COMMANDS`.
-- [Projects and the Stilo library](projects.md): `project.texl`, `~`,
+- [Packages and the Stilo library](packages.md): `package.texl`, `~`,
   `lib/`.
 - [The web app](web-app.md): the shell around the editor.
 - [The editor](editor.md): `<texl-editor>`, cells, rendering;

@@ -8,7 +8,7 @@ documentation is in the OnLabs.org user manual.*
 | `stilo/cli/__init__.py` | `main()`: builds the argument parser from `COMMANDS` and the commands of other packages (`plugin_commands`), and runs the chosen command. The `stilo` script and `python -m stilo` (`stilo/__main__.py`) both call it. The [public API](#the-public-api), `__all__` |
 | `stilo/cli/commands.py` | The subcommands, as `Command` entries in `COMMANDS` |
 | `stilo/cli/web.py`      | `WEB_DIST`, `run_server(app, host, port, open_url)` |
-| `stilo/cli/project.py`  | Projects: `create_engine()` (the engine every command renders with, `~` resolved), `TEXL_LIB`, the text of a new `project.texl` |
+| `stilo/cli/package.py`  | Packages: `create_engine()` (the engine every command renders with, `~` resolved), `TEXL_LIB`, the text of a new `package.texl` |
 
 ## `Command`
 
@@ -29,7 +29,7 @@ function that runs it with the parsed arguments and returns the exit status.
 
 ```python
 COMMANDS = [
-    Command("init", "make a folder a Stilo project, with the Stilo library", init_arguments, init),
+    Command("init", "make a folder a Stilo package, with the Stilo library", init_arguments, init),
     Command("render", "render a Texl document", render_arguments, render),
     Command("serve", "serve a folder of Texl documents with the web app", serve_arguments, serve),
 ]
@@ -73,7 +73,7 @@ def render(args) -> int
 
 Renders `args.file` with the engine of `create_engine()`, loading it by its
 `file:` URI so that relative imports resolve from its folder and `~` from
-its project home ([Projects](projects.md)), and writes the
+its package home ([Packages](packages.md)), and writes the
 rendering to standard output or to `args.output`. Returns 1 if the document
 cannot be loaded (`pytexl.LoadError`; the message says why) or the output
 cannot be written.
@@ -119,12 +119,12 @@ def init(args) -> int
 ```
 
 Makes `args.folder` (default: the current folder, created if missing) a
-project: writes `project.texl`, binding `project_name` (`--name`, default
+package: writes `package.texl`, binding `package_name` (`--name`, default
 the folder's name) and `stilo_version` (the installed package's version),
 creates `lib/`, and copies `TEXL_LIB` into `lib/stilo/`. Returns 1 if
-`project.texl` already exists. An existing `lib/stilo/` is left as it is.
-The work is done by `make_project(folder, name)` in `project.py`, which
-`stilo tutor` shares. See [Projects and the Stilo library](projects.md).
+`package.texl` already exists. An existing `lib/stilo/` is left as it is.
+The work is done by `make_package(folder, name)` in `package.py`, which
+`stilo tutor` shares. See [Packages and the Stilo library](packages.md).
 
 ## `create_engine`
 
@@ -132,11 +132,11 @@ The work is done by `make_project(folder, name)` in `project.py`, which
 def create_engine() -> pytexl.Engine
 ```
 
-In `project.py`: a `pytexl.Engine` whose loader for `file:` URLs and plain
+In `package.py`: a `pytexl.Engine` whose loader for `file:` URLs and plain
 paths resolves `~` segments before reading (`resolve_file`), with the rule
 of the server's `home.py`, and for a path with `~` returns the real file as
 the document's final URL, `(final_url, source)`, as the server's redirect
-does ([Projects](projects.md#how--resolves)). Its top, the highest folder
+does ([Packages](packages.md#how--resolves)). Its top, the highest folder
 the search for a home may reach, is the user's home directory, or the
 file-system root for a document outside it. A command that renders creates its engine here.
 
@@ -173,9 +173,9 @@ the root of the checkout, shipped in the wheel as `stilo/tutorial`
 the working folder (`--dir`, default `default_folder()`:
 `platformdirs.user_data_path("stilo")/tutorial`) holds a copy:
 
-- missing or empty: `create_copy` copies `TUTORIAL`, runs `make_project`
+- missing or empty: `create_copy` copies `TUTORIAL`, runs `make_package`
   (as `stilo init`, name "Stilo tutorial") and appends
-  `tutorial_folder = "<path>"` to `project.texl`. That value marks a copy
+  `tutorial_folder = "<path>"` to `package.texl`. That value marks a copy
   (`is_copy`), and lesson 1 and 11 show it;
 - a copy: reused. If its `stilo_version` is older than the installed one
   (`is_older`, numeric parts only), a message proposes `--reset`;
@@ -252,7 +252,7 @@ list. The server's own public API is `stilo.server.__all__`
 `tests/cli/test_render.py` runs `main()` on the sample documents in
 `examples/`: rendering with imports, writing to a file, a missing file, and
 every example rendered with `--strict`.
-`tests/cli/test_project.py` covers `stilo init` and `~` in `render`, with
+`tests/cli/test_package.py` covers `stilo init` and `~` in `render`, with
 `Path.home()` moved into a temporary folder.
 `tests/cli/test_errors.py` covers the report of undefined values, on documents
 it writes to a temporary folder. `tests/cli/test_tutor.py` covers `stilo

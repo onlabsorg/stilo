@@ -6,7 +6,7 @@
 Welcome to Stilo. This tutorial teaches you by doing: each lesson asks you to
 try something on its own lines, and many lessons check your work and show
 **✓ Done** when it is right. Twelve short lessons, 30 to 45 minutes in all,
-take you from your first edit to your own project.
+take you from your first edit to your own package.
 
 The [OnLabs.org manual](https://www.onlabs.org/manual/) is the reference:
 the lessons link to it instead of repeating it.
@@ -60,7 +60,7 @@ My name is **<% student: "Your name" %>**.
 These lessons are *your* copy of the tutorial, made by `stilo tutor` in this
 folder of your computer:
 
-<% texl.import "~/project.texl" ~> (project -> "`" + project.data.tutorial_folder + "`") %>
+<% texl.import "~/package.texl" ~> (package -> "`" + package.data.tutorial_folder + "`") %>
 
 Change them as you like: the next time you run `stilo tutor`, they open as
 you left them. **Save** your changes (Ctrl+S): the [index](index.texl) counts

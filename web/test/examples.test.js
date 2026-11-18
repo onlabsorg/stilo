@@ -9,9 +9,9 @@ import { cellClass, nameConflicts, parseDocument, serializeDocument, spanningTag
 const documents = [
     "sample.texl",
     "library/steel.texl",
-    "projects/beam/beam-check.texl",
-    "projects/beam/basis-of-design.texl",
-    "projects/beam/analysis.texl",
+    "packages/beam/beam-check.texl",
+    "packages/beam/basis-of-design.texl",
+    "packages/beam/analysis.texl",
 ];
 
 describe("the example documents", () => {

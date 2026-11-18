@@ -184,9 +184,9 @@ test("shows the saved change after a reload", async () => {
 
 test("opens another document from the navigation pane", async () => {
     // Folders start open; a click on a document opens it in the app
-    await clickTreeItem("projects/beam/beam-check.texl");
-    await page.waitForFunction(() => location.pathname === "/projects/beam/beam-check.texl", { timeout: 10000 });
-    // Its figures come from the documents it imports, through the project home
+    await clickTreeItem("packages/beam/beam-check.texl");
+    await page.waitForFunction(() => location.pathname === "/packages/beam/beam-check.texl", { timeout: 10000 });
+    // Its figures come from the documents it imports, through the package home
     const text = await waitForText("Mezzanine floor beam");
     assert.match(text, /S355/);
     assert.equal(await renderErrors(), 0);

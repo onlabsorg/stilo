@@ -6,7 +6,7 @@ EXAMPLES = Path(__file__).resolve().parents[2] / "examples"
 
 
 def test_render_resolves_relative_imports(capsys):
-    assert main(["render", str(EXAMPLES / "projects/beam/beam-check.texl")]) == 0
+    assert main(["render", str(EXAMPLES / "packages/beam/beam-check.texl")]) == 0
     out = capsys.readouterr().out
     assert "IPE" in out
     assert "<%" not in out
