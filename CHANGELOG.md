@@ -4,7 +4,16 @@ All notable changes to Stilo are listed here, newest first. Versions follow
 [semantic versioning](https://semver.org/); before 1.0, any version may
 change the interfaces.
 
-## 0.5.0 — 2026-11-18 
+## 0.5.1 — 2026-11-18
+
+- **Releases publish the npm package automatically**: the release
+  workflow publishes `@onlabsorg/stilo-web` by Trusted Publishing (0.5.0
+  was published by hand), and PyPI waits for npm, so a failed publish
+  leaves no half-released version.
+- The server's version is tested against the package's, so a release
+  can't forget to bump it.
+
+## 0.5.0 — 2026-11-18
 
 - **Server and CLI extensions documented** (for developers): the guide
   `docs/extensions.md` covers the Python side (server extensions, storage

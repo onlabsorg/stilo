@@ -62,8 +62,10 @@ jobs:
           name: npm
           path: npm/
 
+  # Waits for npm, so a failed npm publish stops the release before PyPI has
+  # the version: fixed, it can be tagged again with the same number.
   pypi:
-    needs: build
+    needs: [build, npm]
     runs-on: ubuntu-latest
     environment:
       name: pypi
