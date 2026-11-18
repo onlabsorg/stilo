@@ -56,7 +56,7 @@
     "replace": [
       [
         "<!--{ li04 : rich }-->\n\n",
-        "<!--{ li04 : formula }-->\n<% texl.import \"~/lib/steel/sections.texl\" ~> (lib -> bind \"steel\" lib.data) %>\n"
+        "<!--{ li04 : formula }-->\n<% texl.import \"~/references/steel/sections.texl\" ~> (lib -> bind \"steel\" lib.data) %>\n"
       ]
     ]
   },
@@ -109,14 +109,14 @@
       ]
     ]
   },
-  "14-libraries.texl": {
+  "14-references.texl": {
     "files": {
-      "lib/beams/index.texl": "<!--{ bf01 : rich }-->\nBeam formulas\n<!--{ bf02 : formula }-->\n<% moment = (q, L) -> q * L ^ 2 / 8 %>\n"
+      "references/beams/index.texl": "<!--{ bf01 : rich }-->\nBeam formulas\n<!--{ bf02 : formula }-->\n<% moment = (q, L) -> q * L ^ 2 / 8 %>\n"
     },
     "replace": [
       [
         "<!--{ lb04 : rich }-->\n\n",
-        "<!--{ lb04 : formula }-->\n<% texl.import \"~/lib/beams/index.texl\" ~> (lib -> bind \"beams\" lib.data) %>\n"
+        "<!--{ lb04 : formula }-->\n<% texl.import \"~/references/beams/index.texl\" ~> (lib -> bind \"beams\" lib.data) %>\n"
       ]
     ]
   }

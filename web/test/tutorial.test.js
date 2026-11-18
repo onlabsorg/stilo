@@ -15,7 +15,7 @@ const read = async (path) => {
 
 const index = await read("index.texl");
 const lessons = [...new Set(index.match(/\d\d-[a-z-]+\.texl/g))];
-const documents = ["index.texl", ...lessons, "files/report.texl", "lib/steel/sections.texl"];
+const documents = ["index.texl", ...lessons, "files/report.texl", "references/steel/sections.texl"];
 
 describe("the tutorial's documents", () => {
     it("include the lessons of the index", () => {

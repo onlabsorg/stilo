@@ -7,7 +7,7 @@ import pytest
 from stilo.cli import main
 from stilo.cli.package import TEXL_LIB, resolve_file
 
-IMPORT = '<% texl.import "~/lib/stilo/index.texl" ~> (lib -> bind "stilo" lib.data.stilo) %>'
+IMPORT = '<% texl.import "~/references/stilo/index.texl" ~> (lib -> bind "stilo" lib.data.stilo) %>'
 
 
 @pytest.fixture
@@ -31,7 +31,7 @@ def test_init(home, capsys):
     assert 'package_name = "beam"' in manifest
     assert "stilo_version" in manifest
     for name in ("index.texl", "dataframe.texl"):
-        assert (package / "lib" / "stilo" / name).read_text() == (TEXL_LIB / name).read_text()
+        assert (package / "references" / "stilo" / name).read_text() == (TEXL_LIB / name).read_text()
 
 
 def test_init_name_cannot_break_the_manifest(home, capsys):
@@ -48,10 +48,10 @@ def test_init_refuses_an_existing_package(home, capsys):
 
 
 def test_init_keeps_an_existing_library(home, capsys):
-    (home / "lib" / "stilo").mkdir(parents=True)
-    (home / "lib" / "stilo" / "index.texl").write_text("my copy")
+    (home / "references" / "stilo").mkdir(parents=True)
+    (home / "references" / "stilo" / "index.texl").write_text("my copy")
     assert main(["init", str(home)]) == 0
-    assert (home / "lib" / "stilo" / "index.texl").read_text() == "my copy"
+    assert (home / "references" / "stilo" / "index.texl").read_text() == "my copy"
     assert "left as it is" in capsys.readouterr().out
 
 
@@ -70,39 +70,39 @@ def test_render_without_library_is_an_undefined_value(home, capsys):
 
 
 def test_home_falls_back_to_the_user_home(home):
-    doc = home / "docs" / "~" / "lib" / "x.texl"
-    assert resolve_file(doc.as_uri()) == home / "lib" / "x.texl"
+    doc = home / "docs" / "~" / "references" / "x.texl"
+    assert resolve_file(doc.as_uri()) == home / "references" / "x.texl"
 
 
 def test_home_falls_back_to_the_root_outside_the_user_home(home, tmp_path):
-    outside = tmp_path / "elsewhere" / "~" / "lib" / "x.texl"
-    assert resolve_file(outside.as_uri()) == Path("/lib/x.texl")
+    outside = tmp_path / "elsewhere" / "~" / "references" / "x.texl"
+    assert resolve_file(outside.as_uri()) == Path("/references/x.texl")
 
 
 def test_nearest_manifest_and_several_homes(home):
-    (home / "p" / "lib" / "own").mkdir(parents=True)
+    (home / "p" / "references" / "own").mkdir(parents=True)
     (home / "p" / "package.texl").write_text("")
-    path = home / "p" / "docs" / "~" / "lib" / "plain" / "~" / "lib" / "x.texl"
-    assert resolve_file(str(path)) == home / "p" / "lib" / "x.texl"
-    (home / "p" / "lib" / "own" / "package.texl").write_text("")
-    path = home / "p" / "docs" / "~" / "lib" / "own" / "~" / "lib" / "x.texl"
-    assert resolve_file(str(path)) == home / "p" / "lib" / "own" / "lib" / "x.texl"
+    path = home / "p" / "docs" / "~" / "references" / "plain" / "~" / "references" / "x.texl"
+    assert resolve_file(str(path)) == home / "p" / "references" / "x.texl"
+    (home / "p" / "references" / "own" / "package.texl").write_text("")
+    path = home / "p" / "docs" / "~" / "references" / "own" / "~" / "references" / "x.texl"
+    assert resolve_file(str(path)) == home / "p" / "references" / "own" / "references" / "x.texl"
 
 
 def test_a_library_importing_itself_through_home_ends(home, capsys):
     main(["init", str(home / "p")])
-    (home / "p" / "lib" / "stilo" / "index.texl").write_text(IMPORT + "\n<% stilo = {} %>\n")
+    (home / "p" / "references" / "stilo" / "index.texl").write_text(IMPORT + "\n<% stilo = {} %>\n")
     (home / "p" / "a.texl").write_text(IMPORT + "\ndone\n")
     assert main(["render", str(home / "p" / "a.texl")]) == 0
     assert "done" in capsys.readouterr().out
 
 
 def test_a_document_through_home_is_the_real_file(home, capsys):
-    (home / "p" / "lib").mkdir(parents=True)
+    (home / "p" / "references").mkdir(parents=True)
     (home / "p" / "package.texl").write_text("")
-    (home / "p" / "lib" / "x.texl").write_text("x")
+    (home / "p" / "references" / "x.texl").write_text("x")
     doc = home / "p" / "docs" / "a.texl"
     doc.parent.mkdir()
-    doc.write_text('<% texl.import "~/lib/x.texl" ~> (d -> d.uri) %>\n')
+    doc.write_text('<% texl.import "~/references/x.texl" ~> (d -> d.uri) %>\n')
     assert main(["render", str(doc)]) == 0
-    assert (home / "p" / "lib" / "x.texl").as_uri() in capsys.readouterr().out
+    assert (home / "p" / "references" / "x.texl").as_uri() in capsys.readouterr().out

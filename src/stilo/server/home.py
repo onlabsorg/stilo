@@ -7,19 +7,20 @@ served folder for the server; the user's home directory, or the file-system
 root, for the CLI).
 
 In a path, a segment `~` stands for the home of the folder before it. Texl
-gives `~` no meaning, so an import of `~/lib/x.texl` from `/p/docs/a.texl`
-asks for `/p/docs/~/lib/x.texl`; `expand_home` turns that into the real
-path, one `~` at a time from the left. Several `~` occur naturally: a
-library loaded as `.../~/lib/a/a.texl` that imports `~/lib/b/b.texl` asks
-for `.../~/lib/a/~/lib/b/b.texl`, whose second `~` is the home of `lib/a`
-(the library's own, if it has a manifest, else the package's).
+gives `~` no meaning, so an import of `~/references/x.texl` from
+`/p/docs/a.texl` asks for `/p/docs/~/references/x.texl`; `expand_home`
+turns that into the real path, one `~` at a time from the left. Several `~`
+occur naturally: a reference loaded as `.../~/references/a/a.texl` that imports
+`~/references/b/b.texl` asks for `.../~/references/a/~/references/b/b.texl`,
+whose second `~` is the home of `references/a` (the reference's own, if it
+has a manifest, else the package's).
 
 Hosts give Texl the real path as the document's final URL (Texl 0.8): the
-server redirects, the CLI's loader returns it. So a library is the document
-at its real path, and a library importing itself through `~` asks again for
-that path, an import cycle Texl ends. A path with more than `MAX_HOMES` `~`
-segments is still refused, a safeguard for clients that keep the `~` URL
-(`a/~/lib/x/~/lib/x/...` would grow at every turn).
+server redirects, the CLI's loader returns it. So a reference is the
+document at its real path, and a document importing itself through `~` asks
+again for that path, an import cycle Texl ends. A path with more than
+`MAX_HOMES` `~` segments is still refused, a safeguard for clients that keep
+the `~` URL (`a/~/references/x/~/references/x/...` would grow at every turn).
 
 Used by the server (`storage.py`) and by the CLI's file loader, so that
 both resolve the same way. It reads the file system only to look for

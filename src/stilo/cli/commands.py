@@ -17,7 +17,7 @@ import pytexl
 from stilo.server import create_app
 
 from .errors import count_returned, find_errors, format_report, numbered_text
-from .package import LIB, LIBRARY_NAME, MANIFEST, create_engine, make_package
+from .package import LIBRARY_NAME, MANIFEST, REFERENCES, create_engine, make_package
 from .tutor import tutor, tutor_arguments
 from .web import WEB_DIST, run_server
 
@@ -103,8 +103,9 @@ def init_arguments(parser):
 
 
 def init(args) -> int:
-    """Makes a folder a Stilo package: writes package.texl, creates lib/ and
-    copies the bundled library into lib/stilo/, never over an existing one."""
+    """Makes a folder a Stilo package: writes package.texl, creates
+    references/ and copies the Stilo library into references/stilo/, never
+    over an existing one."""
     folder = args.folder.resolve()
     if (folder / MANIFEST).exists():
         print(f"stilo: {args.folder}: already a package ({MANIFEST} exists)", file=sys.stderr)
@@ -114,9 +115,9 @@ def init(args) -> int:
     except OSError as e:
         print(f"stilo: {args.folder}: {e}", file=sys.stderr)
         return 1
-    print(f"Stilo: {folder} is a package: {MANIFEST}, {LIB}/")
+    print(f"Stilo: {folder} is a package: {MANIFEST}, {REFERENCES}/")
     if kept:
-        print(f"Stilo: {LIB}/{LIBRARY_NAME}/ already exists: left as it is")
+        print(f"Stilo: {REFERENCES}/{LIBRARY_NAME}/ already exists: left as it is")
     return 0
 
 

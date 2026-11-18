@@ -407,7 +407,7 @@ validation, content negotiation on public addresses, `/_api/info`,
 `/_api/x/`, and read-only items (with real file permissions; skipped when
 run as root or on Windows, where they do not apply).
 `tests/server/test_home.py` covers the package home: nearest manifest,
-fallback to the root, several `~`, libraries with and without their own
+fallback to the root, several `~`, references with and without their own
 manifest, cycles, and `~` refused as a name. A change to the protocol starts
 with a test there.
 `tests/server/test_storage_interface.py` covers the storage interface: the

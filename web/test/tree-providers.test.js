@@ -11,17 +11,17 @@ const TREE = {
     type: "folder",
     children: [
         {
-            name: "lib",
-            path: "lib",
+            name: "references",
+            path: "references",
             type: "folder",
-            children: [{ name: "steel.texl", path: "lib/steel.texl", type: "file" }],
+            children: [{ name: "steel.texl", path: "references/steel.texl", type: "file" }],
         },
         { name: "beam.texl", path: "beam.texl", type: "file" },
         { name: "notes.texl", path: "notes.texl", type: "file" },
     ],
 };
 
-/** Stilo's services on a fake tree, the read-only provider making `lib/`
+/** Stilo's services on a fake tree, the read-only provider making `references/`
  * read-only, and `beam.texl` open. */
 async function setUp() {
     const stilo = createStilo({
@@ -37,7 +37,7 @@ async function setUp() {
     return stilo;
 }
 
-const libReadOnly = (path) => (path === "lib" || path.startsWith("lib/") ? "a library" : null);
+const referencesReadOnly = (path) => (path === "references" || path.startsWith("references/") ? "a reference" : null);
 const node = (stilo, path) => findNode(stilo.tree.tree, path);
 
 describe("tree providers", () => {
@@ -73,10 +73,10 @@ describe("tree providers", () => {
 
     it("say why an item is read-only, and a folder holding read-only items locked", async () => {
         const stilo = await setUp();
-        expect(stilo.tree.readOnlyReason("lib/steel.texl")).to.be.null;
-        stilo.tree.readOnly(libReadOnly);
+        expect(stilo.tree.readOnlyReason("references/steel.texl")).to.be.null;
+        stilo.tree.readOnly(referencesReadOnly);
         stilo.tree.readOnly((path) => path === "notes.texl");
-        expect(stilo.tree.readOnlyReason("lib/steel.texl")).to.equal("a library");
+        expect(stilo.tree.readOnlyReason("references/steel.texl")).to.equal("a reference");
         expect(stilo.tree.readOnlyReason("notes.texl")).to.equal("Read-only");
         expect(stilo.tree.readOnlyReason("beam.texl")).to.be.null;
         expect(stilo.tree.lockedReason(node(stilo, ""))).to.equal("It holds read-only items");
@@ -86,16 +86,16 @@ describe("tree providers", () => {
     it("filter items out of the navigation pane, and show marks and the reason", async () => {
         const stilo = await setUp();
         stilo.tree.filter((n) => n.path !== "notes.texl");
-        stilo.tree.readOnly(libReadOnly);
+        stilo.tree.readOnly(referencesReadOnly);
         stilo.tree.decorate((n) => (n.path === "beam.texl" ? { badge: "M", tone: "warning", tooltip: "Changed" } : null));
         const host = await fixture(html`<stilo-provider .stilo=${stilo}><nav-pane></nav-pane></stilo-provider>`);
         const pane = host.querySelector("nav-pane");
         await pane.updateComplete;
         const names = [...pane.renderRoot.querySelectorAll(".name")].map((n) => n.textContent);
-        expect(names).to.deep.equal(["lib", "steel", "beam"]);
+        expect(names).to.deep.equal(["references", "steel", "beam"]);
         const item = (path) => pane.renderRoot.querySelector(`.item[title^="${path}"]`);
-        expect(item("lib/steel.texl").querySelector(".lock")).to.exist;
-        expect(item("lib/steel.texl").title).to.equal("lib/steel.texl\nRead-only: a library");
+        expect(item("references/steel.texl").querySelector(".lock")).to.exist;
+        expect(item("references/steel.texl").title).to.equal("references/steel.texl\nRead-only: a reference");
         expect(item("beam.texl").querySelector(".badge.warning").textContent).to.equal("M");
         expect(item("beam.texl").title).to.equal("beam.texl\nChanged");
         expect(item("beam.texl").querySelector(".lock")).to.be.null;
@@ -103,12 +103,12 @@ describe("tree providers", () => {
 
     it("refuse a read-only folder in the Move to… dialog", async () => {
         const stilo = await setUp();
-        stilo.tree.readOnly(libReadOnly);
+        stilo.tree.readOnly(referencesReadOnly);
         const chosen = [];
         stilo.tree.startMove({ node: node(stilo, "beam.texl"), tree: TREE, choose: (f) => chosen.push(f) });
-        stilo.tree.chooseMove("lib");
+        stilo.tree.chooseMove("references");
         expect(chosen).to.deep.equal([]);
-        expect(stilo.tree.moving.error).to.contain("a library");
+        expect(stilo.tree.moving.error).to.contain("a reference");
         stilo.tree.chooseMove("");
         expect(chosen).to.deep.equal([""]);
     });
@@ -119,16 +119,16 @@ describe("tree providers", () => {
             id: "locks",
             apiVersion: "1",
             activate(s) {
-                s.tree.readOnly(libReadOnly);
+                s.tree.readOnly(referencesReadOnly);
                 s.tree.decorate(() => ({ badge: "x" }));
                 s.tree.filter(() => false);
             },
         });
-        expect(stilo.tree.readOnlyReason("lib")).to.equal("a library");
+        expect(stilo.tree.readOnlyReason("references")).to.equal("a reference");
         stilo.extensions.deactivate("locks");
-        expect(stilo.tree.readOnlyReason("lib")).to.be.null;
-        expect(stilo.tree.decoration(node(stilo, "lib"))).to.be.null;
-        expect(stilo.tree.shows(node(stilo, "lib"))).to.be.true;
+        expect(stilo.tree.readOnlyReason("references")).to.be.null;
+        expect(stilo.tree.decoration(node(stilo, "references"))).to.be.null;
+        expect(stilo.tree.shows(node(stilo, "references"))).to.be.true;
     });
 });
 
@@ -152,34 +152,34 @@ describe("commands that do not apply", () => {
 
     it("on read-only items: Stilo's own commands on files and folders", async () => {
         const stilo = await setUp();
-        stilo.tree.readOnly(libReadOnly);
-        const steel = node(stilo, "lib/steel.texl");
-        const lib = node(stilo, "lib");
+        stilo.tree.readOnly(referencesReadOnly);
+        const steel = node(stilo, "references/steel.texl");
+        const refs = node(stilo, "references");
         const reason = (id, n) => stilo.commands.disabledReason(id, { node: n });
         for (const id of ["tree-rename", "tree-move", "tree-delete"]) {
-            expect(reason(id, steel), id).to.equal("a library");
+            expect(reason(id, steel), id).to.equal("a reference");
             expect(reason(id, node(stilo, "beam.texl")), id).to.be.null;
         }
         expect(reason("tree-delete", node(stilo, ""))).to.equal("It holds read-only items");
-        for (const id of ["new-document", "tree-new-folder", "tree-upload"]) expect(reason(id, lib), id).to.contain("a library");
-        expect(reason("tree-duplicate", steel)).to.contain("a library");
+        for (const id of ["new-document", "tree-new-folder", "tree-upload"]) expect(reason(id, refs), id).to.contain("a reference");
+        expect(reason("tree-duplicate", steel)).to.contain("a reference");
         expect(reason("tree-copy-link", steel)).to.be.null;
     });
 
     it("show greyed out with the reason, in the menus and the commands pane", async () => {
         const stilo = await setUp();
-        stilo.tree.readOnly(libReadOnly);
+        stilo.tree.readOnly(referencesReadOnly);
         const host = await fixture(html`<stilo-provider .stilo=${stilo}><nav-pane></nav-pane><commands-pane></commands-pane></stilo-provider>`);
         const pane = host.querySelector("nav-pane");
         await pane.updateComplete;
-        const item = pane.renderRoot.querySelector('.item[title^="lib/steel.texl"]');
+        const item = pane.renderRoot.querySelector('.item[title^="references/steel.texl"]');
         item.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, composed: true, cancelable: true, clientX: 20, clientY: 30 }));
         await pane.updateComplete;
         const menu = pane.renderRoot.querySelector("context-menu");
         await menu.updateComplete;
         const rename = [...menu.renderRoot.querySelectorAll("button")].find((b) => b.textContent.includes("Rename"));
         expect(rename.getAttribute("aria-disabled")).to.equal("true");
-        expect(rename.title).to.equal("a library");
+        expect(rename.title).to.equal("a reference");
         let picked = 0;
         menu.addEventListener("pick", () => picked++);
         rename.click();
@@ -189,28 +189,28 @@ describe("commands that do not apply", () => {
         await commands.updateComplete;
         const del = [...commands.renderRoot.querySelectorAll("button.command")].find((b) => b.textContent.includes("Delete") && !b.textContent.includes("cells"));
         expect(del.getAttribute("aria-disabled")).to.equal("true");
-        expect(del.title).to.equal("a library");
+        expect(del.title).to.equal("a reference");
     });
 });
 
 describe("read-only documents", () => {
     it("cannot be saved or changed, and the top bar says so", async () => {
         const stilo = await setUp();
-        stilo.tree.readOnly(libReadOnly);
+        stilo.tree.readOnly(referencesReadOnly);
         // A stand-in editor for the open document
         const editor = Object.assign(new EventTarget(), { value: "x", editing: false, focus() {} });
         stilo.document.on("change", () => stilo.document.path && !stilo.editor.element && stilo.editor.attach(editor));
-        await stilo.document.load("lib/steel.texl");
-        expect(stilo.document.readOnly).to.equal("a library");
-        expect(stilo.commands.disabledReason("save")).to.equal("a library");
-        expect(stilo.commands.disabledReason("delete")).to.equal("a library");
+        await stilo.document.load("references/steel.texl");
+        expect(stilo.document.readOnly).to.equal("a reference");
+        expect(stilo.commands.disabledReason("save")).to.equal("a reference");
+        expect(stilo.commands.disabledReason("delete")).to.equal("a reference");
         expect(stilo.commands.disabledReason("copy")).to.be.null;
         await stilo.document.save();
         expect(stilo.ui.status).to.contain("read-only");
         const host = await fixture(html`<stilo-provider .stilo=${stilo}><top-bar></top-bar></stilo-provider>`);
         const bar = host.querySelector("top-bar");
         await bar.updateComplete;
-        expect(bar.renderRoot.querySelector(".read-only").title).to.equal("a library");
+        expect(bar.renderRoot.querySelector(".read-only").title).to.equal("a reference");
         await stilo.document.load("beam.texl");
         expect(stilo.document.readOnly).to.be.null;
         await bar.updateComplete;

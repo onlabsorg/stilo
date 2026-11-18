@@ -254,9 +254,9 @@ Each sketch uses the public API alone.
    views read through `transport.fetch`; a CLI command `stilo history`
    lists them, and `stilo history serve` serves a folder with the
    extension. All in one `ServerExtension("history", …)`.
-4. **Read-only folders.** `tree.readOnly(path => path.startsWith("lib/") &&
-   "a third-party library")`, and `tree.decorate` for a mark on a library
-   changed anyway.
+4. **Read-only folders.** `tree.readOnly(path =>
+   path.startsWith("references/") && "a third-party reference")`, and
+   `tree.decorate` for a mark on a reference changed anyway.
 5. **A server behind a login.** The server answers `401` with a `login`
    address (protocol v1): Stilo asks the user to sign in and goes there,
    adding `next`. The extension, if the server needs more than its

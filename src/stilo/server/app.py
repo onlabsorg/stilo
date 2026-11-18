@@ -61,7 +61,7 @@ def create_app(storage: Storage | Path | str, web_dist: Path | str | None = None
         """A read whose path has `~` segments is redirected to the real path
         (docs/protocol.md): the document is the one at the URL a redirect
         leads to, its identity for Texl (final URLs, Texl 0.8), so imports of
-        one library by different paths share it, and a cycle through `~`
+        one document by different paths share it, and a cycle through `~`
         ends. Temporary, since the home depends on manifests that can change."""
         if not has_home(path):
             return None

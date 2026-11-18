@@ -70,11 +70,12 @@ When a user opens `http://127.0.0.1:8000/packages/beam/beam-check.texl`:
    into the cells' outputs.
 4. An import, `texl.import("../../library/steel.texl")`, is fetched by Texl
    from the public address `/library/steel.texl`, without `text/html`, so the
-   server returns the file. An import from the package's libraries,
-   `texl.import("~/lib/stilo/index.texl")`, is fetched as
-   `/packages/beam/~/lib/stilo/index.texl`, and the server redirects it to
-   the file under the package home, `/packages/beam/lib/stilo/index.texl`,
-   which Texl takes as the library's URL ([Packages](packages.md)).
+   server returns the file. An import from the package's references,
+   `texl.import("~/references/stilo/index.texl")`, is fetched as
+   `/packages/beam/~/references/stilo/index.texl`, and the server redirects
+   it to the file under the package home,
+   `/packages/beam/references/stilo/index.texl`, which Texl takes as the
+   imported document's URL ([Packages](packages.md)).
 5. Ctrl+S commits the cell being edited and sends the text back with
    `PUT /_api/files/...` and the ETag of the last read, so a file changed
    meanwhile is not overwritten.
@@ -141,7 +142,7 @@ A guide, `docs/extensions.md`, comes with the extension API.
 - [The server](server.md): `Storage` (the interface), `FolderStorage`, `StorageWrapper` and `create_app()`.
 - [The CLI](cli.md): `Command` and `COMMANDS`.
 - [Packages and the Stilo library](packages.md): `package.texl`, `~`,
-  `lib/`.
+  `references/`.
 - [The web app](web-app.md): the shell around the editor.
 - [The editor](editor.md): `<texl-editor>`, cells, rendering;
   [Editor design](editor-design.md): the editing model and its open points.

@@ -1,5 +1,5 @@
 <!--{ te00 : formula | hidden }-->
-<% texl.import "~/lib/tutorial/index.texl" ~> (lib -> bind "tutorial" lib.data) %>
+<% texl.import "~/references/tutorial/index.texl" ~> (lib -> bind "tutorial" lib.data) %>
 <!--{ te01 : rich }-->
 # 6. Tables and equations
 

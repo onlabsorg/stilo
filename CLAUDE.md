@@ -34,12 +34,14 @@ A monorepo with three parts, kept strictly modular:
 
 Beside them, `texl-lib/` (root) is the **Stilo Texl library**: Texl
 documents, not code, that `stilo init` copies into a package's
-`lib/stilo/`; shipped in the wheel as `stilo/texl-lib` (hatch
+`references/stilo/`; shipped in the wheel as `stilo/texl-lib` (hatch
 `force-include`), read in place in a checkout (`TEXL_LIB` in
 `src/stilo/cli/package.py`); `tutorial/` (root, S14) is shipped and read the
-same way. **Packages** (S10, S21, `docs/packages.md`): a
-folder with `package.texl` is a package (of Texl files, not the Python
-package; a "project" until 0.5), its *home*; in an import path a `~`
+same way. **Packages** (S10, S21, S22, `docs/packages.md`; OnLabs D23): a
+folder with `package.texl` is a package (a *Texl package*, not the Python
+package; a "project" until 0.5), its *home*; the packages it uses, its
+**references**, are in its `references/` folder (`lib/` until 0.5); in an
+import path a `~`
 segment stands for the home of the folder before it, resolved left to
 right, by the server on reads (a protocol rule: a `307` redirect to the real
 path) and by the CLI's file loader (which returns the real file as the final
@@ -157,7 +159,7 @@ uv sync && uv run pytest              # tests/: server/, cli/, texl_lib/, tutori
                                       #   test_extension_contract.py
 uv run stilo serve examples           # http://127.0.0.1:8000
 uv run stilo render examples/packages/beam/beam-check.texl
-uv run stilo init path/to/package     # package.texl, lib/stilo/
+uv run stilo init path/to/package     # package.texl, references/stilo/
 uv run stilo tutor --dir /tmp/t       # copies tutorial/ there, serves it
 uv build                              # after npm run build: dist/stilo_cli-*.whl
 ```
@@ -275,9 +277,9 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
   import tag: tags run even in code blocks. Swan texts have no escapes:
   markup written in Swan quotes its attributes with `'`.
 - `tutorial/` — the tutorial (S14, `docs/tutorial.md`): `index.texl`,
-  lessons `NN-name.texl`, `files/`, `lib/tutorial/` (the checks:
-  `tutorial.check`, `.progress`, `.tag`) and `lib/steel/`. Shipped in the
-  wheel as `stilo/tutorial`; `stilo tutor` (`src/stilo/cli/tutor.py`)
+  lessons `NN-name.texl`, `files/`, `references/tutorial/` (the checks:
+  `tutorial.check`, `.progress`, `.tag`) and `references/steel/`. Shipped in
+  the wheel as `stilo/tutorial`; `stilo tutor` (`src/stilo/cli/tutor.py`)
   copies it into a working folder made a package with `make_package`, the
   code of `stilo init`, reuses an existing copy, and moves it aside on
   `--reset`. Tested in `tests/tutorial/` (every document renders strictly

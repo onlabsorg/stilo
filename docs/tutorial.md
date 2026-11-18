@@ -18,14 +18,14 @@ tutorial/
 ├─ 13-…, 14-…                  advanced lessons
 ├─ files/                      what lessons link to: beam.svg, beam-drawing.pdf,
 │                              report.texl (lesson 11, one error on purpose)
-└─ lib/
+└─ references/
    ├─ tutorial/index.texl      the checks: `tutorial.check`, `.progress`, `.tag`
-   └─ steel/sections.texl      the library lesson 8 imports
+   └─ steel/sections.texl      the reference lesson 8 imports
 ```
 
 The user never edits this folder: `stilo tutor` copies it and makes the copy
-a package (`package.texl`, `lib/stilo/`), so `~` and data tables work. The
-source alone is not a package: open lessons through a copy
+a package (`package.texl`, `references/stilo/`), so `~` and data tables
+work. The source alone is not a package: open lessons through a copy
 (`uv run stilo tutor --dir /tmp/t`), not with `stilo serve tutorial`.
 
 ## Lessons
@@ -35,7 +35,7 @@ library:
 
 ```text
 <!--{ fo00 : formula | hidden }-->
-<% texl.import "~/lib/tutorial/index.texl" ~> (lib -> bind "tutorial" lib.data) %>
+<% texl.import "~/references/tutorial/index.texl" ~> (lib -> bind "tutorial" lib.data) %>
 ```
 
 then a heading `# N. Title`, short sections, and at the end a line

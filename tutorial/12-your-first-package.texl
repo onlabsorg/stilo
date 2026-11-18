@@ -1,5 +1,5 @@
 <!--{ pr00 : formula | hidden }-->
-<% texl.import "~/lib/tutorial/index.texl" ~> (lib -> bind "tutorial" lib.data) %>
+<% texl.import "~/references/tutorial/index.texl" ~> (lib -> bind "tutorial" lib.data) %>
 <!--{ pr01 : rich }-->
 # 12. Your first package
 
@@ -10,7 +10,7 @@ tutorial. About five minutes.
 ## Make a package
 
 A **package** is a folder of documents that belong together, such as the
-calculations for one structure, with the libraries they use. Everything it
+calculations for one structure, with the references they use. Everything it
 needs is inside its folder, so it works as a whole wherever you copy it: to
 a colleague, to a server, into a backup.
 
@@ -23,8 +23,8 @@ stilo init first-package
 ```
 
 `stilo init` creates the folder if needed, writes `package.texl`, which marks
-it as a package, and copies the Stilo library into `lib/stilo`, which data
-tables need (lesson 7). On Windows, write the folder as you usually do, as
+it as a package, and copies the Stilo library into `references/stilo`, which
+data tables need (lesson 7). On Windows, write the folder as you usually do, as
 `stilo init C:\Users\you\first-package`.
 <!--{ pr03 : rich }-->
 ## Serve it
@@ -44,13 +44,16 @@ in the terminal to stop it.
 Next time, stop the tutorial first and run `stilo serve first-package`,
 which uses the port 8000.
 <!--{ pr04 : rich }-->
-## Libraries
+## References
 
-In an import, `~` stands for the package folder, so every document of the
-package imports the Stilo library as `~/lib/stilo/index.texl`, however deep
-in its folders it is. Your own libraries go in `lib` too: copy the folder
-`lib/steel` of this tutorial into your package, and every document of it
-can import `~/lib/steel/sections.texl`, as in lesson 8.
+The folder `references` holds the **references** of the package: other
+packages, or plain folders of documents, that its documents import, as a
+report lists its references. In an import, `~` stands for the package
+folder, so every document of the package imports the Stilo library as
+`~/references/stilo/index.texl`, however deep in its folders it is. Copy the
+folder `references/steel` of this tutorial into the `references` of your
+package, and every document of it can import
+`~/references/steel/sections.texl`, as in lesson 8.
 
 ## Serving to others
 
@@ -59,7 +62,7 @@ change every document of the folder. By default it accepts connections from
 your own computer only. Keep it that way, unless you put your own access
 control in front of it.
 
-More in the manual: [Packages and libraries](https://www.onlabs.org/manual/editor/projects.html),
+More in the manual: [Packages and references](https://www.onlabs.org/manual/editor/projects.html),
 [stilo init](https://www.onlabs.org/manual/cli/init.html) and
 [stilo serve](https://www.onlabs.org/manual/cli/serve.html).
 <!--{ pr05 : rich }-->
@@ -67,6 +70,6 @@ More in the manual: [Packages and libraries](https://www.onlabs.org/manual/edito
 
 You have finished the core path. The [index](index.texl) shows your checks.
 Two advanced lessons follow, for when you want more: the language of the
-formulas, and your own libraries.
+formulas, and your own references.
 
 Next: [13. The formula language](13-formula-language.texl) · Back to the [index](index.texl)

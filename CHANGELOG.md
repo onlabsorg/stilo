@@ -14,6 +14,18 @@ change the interfaces.
   `stilo tutor` still recognises an old copy of the tutorial and proposes
   `stilo tutor --reset`. The tutorial's lesson 12 is now "Your first
   package". Decision S21.
+- **Libraries are now references, in `references/`** (OnLabs D23): the
+  packages a package uses live in its `references/` folder (was `lib/`).
+  `stilo init` creates `references/` and copies the Stilo library into
+  `references/stilo/`; data tables and charts import
+  `~/references/stilo/index.texl`. An old `lib/` is not read or warned
+  about: it is an ordinary folder. The tutorial follows: its lesson 14 is
+  now "Your own references" (`14-references.texl`). Decision S22.
+- **Migrating a folder made with Stilo 0.5** (once, for both renames):
+  rename `project.texl` to `package.texl` and `project_name` to
+  `package_name` inside it; rename `lib/` to `references/`; in every
+  document, replace `~/lib/` with `~/references/` in imports. A tutorial
+  copy is best made again with `stilo tutor --reset`.
 
 ## 0.5.1 — 2026-11-18
 

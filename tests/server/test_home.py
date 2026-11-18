@@ -11,21 +11,21 @@ from stilo.server.storage import BadRequest, FolderStorage
 def root(tmp_path):
     """
     root/
-      lib/x.texl                      "root lib"
+      references/x.texl                      "root references"
       proj/package.texl
-      proj/lib/x.texl                 "proj lib"
-      proj/lib/own/package.texl       a library with its own home
-      proj/lib/own/lib/x.texl         "own lib"
-      proj/lib/plain/plain.texl       a library without one
+      proj/references/x.texl                 "proj references"
+      proj/references/own/package.texl       a reference with its own home
+      proj/references/own/references/x.texl  "own references"
+      proj/references/plain/plain.texl       a reference without one
       proj/docs/sub/a.texl
     """
     files = {
-        "lib/x.texl": "root lib",
+        "references/x.texl": "root references",
         "proj/package.texl": "<% package_name = \"proj\" %>",
-        "proj/lib/x.texl": "proj lib",
-        "proj/lib/own/package.texl": "",
-        "proj/lib/own/lib/x.texl": "own lib",
-        "proj/lib/plain/plain.texl": "plain",
+        "proj/references/x.texl": "proj references",
+        "proj/references/own/package.texl": "",
+        "proj/references/own/references/x.texl": "own references",
+        "proj/references/plain/plain.texl": "plain",
         "proj/docs/sub/a.texl": "a",
     }
     for path, text in files.items():
@@ -45,12 +45,12 @@ def client(root):
 
 
 @pytest.mark.parametrize("path, expanded", [
-    ("proj/docs/sub/~/lib/x.texl", "proj/lib/x.texl"),          # nearest manifest above
-    ("proj/~/lib/x.texl", "proj/lib/x.texl"),                   # in the folder itself
-    ("~/lib/x.texl", "lib/x.texl"),                             # no manifest: the root
-    ("other/~/lib/x.texl", "lib/x.texl"),
-    ("proj/docs/~/lib/plain/~/lib/x.texl", "proj/lib/x.texl"),  # library without a home
-    ("proj/docs/~/lib/own/~/lib/x.texl", "proj/lib/own/lib/x.texl"),  # with its own
+    ("proj/docs/sub/~/references/x.texl", "proj/references/x.texl"),          # nearest manifest above
+    ("proj/~/references/x.texl", "proj/references/x.texl"),                   # in the folder itself
+    ("~/references/x.texl", "references/x.texl"),                             # no manifest: the root
+    ("other/~/references/x.texl", "references/x.texl"),
+    ("proj/docs/~/references/plain/~/references/x.texl", "proj/references/x.texl"),  # library without a home
+    ("proj/docs/~/references/own/~/references/x.texl", "proj/references/own/references/x.texl"),  # with its own
     ("proj/docs/a.texl", "proj/docs/a.texl"),                   # no ~: unchanged
 ])
 def test_expand_home(storage, path, expanded):
@@ -59,27 +59,27 @@ def test_expand_home(storage, path, expanded):
 
 def test_expand_home_refuses_bad_segments(storage):
     with pytest.raises(BadRequest):
-        storage.expand_home("../~/lib/x.texl")
+        storage.expand_home("../~/references/x.texl")
 
 
 def test_get_by_public_url(client):
-    assert client.get("/proj/docs/sub/~/lib/x.texl").text == "proj lib"
-    assert client.get("/proj/docs/~/lib/own/~/lib/x.texl").text == "own lib"
+    assert client.get("/proj/docs/sub/~/references/x.texl").text == "proj references"
+    assert client.get("/proj/docs/~/references/own/~/references/x.texl").text == "own references"
 
 
 def test_get_by_protocol(client):
-    response = client.get("/_api/files/proj/docs/sub/~/lib/x.texl")
+    response = client.get("/_api/files/proj/docs/sub/~/references/x.texl")
     assert response.status_code == 200
-    assert response.text == "proj lib"
+    assert response.text == "proj references"
 
 
 def test_missing_library_is_not_found(client):
-    assert client.get("/proj/docs/~/lib/none/none.texl").status_code == 404
+    assert client.get("/proj/docs/~/references/none/none.texl").status_code == 404
 
 
 def test_tilde_is_not_a_name(client):
     assert client.post("/_api/files/proj/~/new.texl", content="x").status_code == 400
-    assert client.put("/_api/files/proj/~/lib/x.texl", content="x").status_code == 400
+    assert client.put("/_api/files/proj/~/references/x.texl", content="x").status_code == 400
     assert client.post("/_api/tree/proj/~").status_code == 400
     response = client.post("/_api/move/proj/docs/sub/a.texl", json={"to": "proj/~/a.texl"})
     assert response.status_code == 400
@@ -95,29 +95,29 @@ def test_tilde_folders_are_hidden(root, client):
 
 
 def test_a_cycle_through_home_ends(client):
-    path = "proj/docs/" + "~/lib/plain/" * 17 + "plain.texl"
+    path = "proj/docs/" + "~/references/plain/" * 17 + "plain.texl"
     assert client.get("/" + path).status_code == 400
-    path = "proj/docs/" + "~/lib/plain/" * 16 + "plain.texl"
+    path = "proj/docs/" + "~/references/plain/" * 16 + "plain.texl"
     assert client.get("/" + path).text == "plain"
 
 
 def test_a_read_through_home_redirects_to_the_real_path(client):
-    response = client.get("/proj/docs/sub/~/lib/x.texl?v=1", follow_redirects=False)
+    response = client.get("/proj/docs/sub/~/references/x.texl?v=1", follow_redirects=False)
     assert response.status_code == 307
-    assert response.headers["location"] == "/proj/lib/x.texl?v=1"
-    response = client.get("/_api/files/proj/docs/~/lib/own/~/lib/x.texl", follow_redirects=False)
+    assert response.headers["location"] == "/proj/references/x.texl?v=1"
+    response = client.get("/_api/files/proj/docs/~/references/own/~/references/x.texl", follow_redirects=False)
     assert response.status_code == 307
-    assert response.headers["location"] == "/_api/files/proj/lib/own/lib/x.texl"
+    assert response.headers["location"] == "/_api/files/proj/references/own/references/x.texl"
 
 
 def test_the_redirect_is_percent_encoded(root, client):
-    (root / "proj" / "lib" / "my lib.texl").write_text("spaced")
-    response = client.get("/proj/docs/~/lib/my%20lib.texl", follow_redirects=False)
-    assert response.headers["location"] == "/proj/lib/my%20lib.texl"
-    assert client.get("/proj/docs/~/lib/my%20lib.texl").text == "spaced"
+    (root / "proj" / "references" / "my lib.texl").write_text("spaced")
+    response = client.get("/proj/docs/~/references/my%20lib.texl", follow_redirects=False)
+    assert response.headers["location"] == "/proj/references/my%20lib.texl"
+    assert client.get("/proj/docs/~/references/my%20lib.texl").text == "spaced"
 
 
 def test_a_browser_page_through_home_redirects_too(client):
-    response = client.get("/proj/docs/~/lib/x.texl", headers={"Accept": "text/html"},
+    response = client.get("/proj/docs/~/references/x.texl", headers={"Accept": "text/html"},
                           follow_redirects=False)
-    assert response.headers["location"] == "/proj/lib/x.texl"
+    assert response.headers["location"] == "/proj/references/x.texl"

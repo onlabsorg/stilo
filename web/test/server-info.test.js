@@ -84,7 +84,7 @@ describe("read-only items and refusals from the server", () => {
             name: "",
             type: "folder",
             children: [
-                { path: "lib", name: "lib", type: "folder", readOnly: "The folder cannot be written on the server", children: [{ path: "lib/x.texl", name: "x.texl", type: "file", readOnly: "Its folder cannot be written on the server" }] },
+                { path: "references", name: "references", type: "folder", readOnly: "The folder cannot be written on the server", children: [{ path: "references/x.texl", name: "x.texl", type: "file", readOnly: "Its folder cannot be written on the server" }] },
                 { path: "a.texl", name: "a.texl", type: "file" },
             ],
         };
@@ -92,12 +92,12 @@ describe("read-only items and refusals from the server", () => {
         stilo.router = new Router(stilo, { history: { pushState() {}, replaceState() {} }, location: new URL("https://example.com/"), window: new EventTarget() });
         activateBuiltins(stilo);
         await stilo.tree.refresh();
-        expect(stilo.tree.readOnlyReason("lib")).to.equal("The folder cannot be written on the server");
+        expect(stilo.tree.readOnlyReason("references")).to.equal("The folder cannot be written on the server");
         expect(stilo.tree.readOnlyReason("a.texl")).to.be.null;
         expect(stilo.commands.disabledReason("tree-delete", { node: tree.children[0] })).to.equal("The folder cannot be written on the server");
         const editor = Object.assign(new EventTarget(), { value: "", editing: false, focus() {} });
         stilo.document.on("change", () => stilo.document.path && !stilo.editor.element && stilo.editor.attach(editor));
-        await stilo.document.load("lib/x.texl");
+        await stilo.document.load("references/x.texl");
         expect(stilo.document.readOnly).to.equal("Its folder cannot be written on the server");
     });
 

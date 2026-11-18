@@ -19,7 +19,7 @@ const TREE = {
     children: [
         { name: "doc.texl", path: "doc.texl", type: "file" },
         { name: "hidden.texl", path: "hidden.texl", type: "file" },
-        { name: "lib", path: "lib", type: "folder", children: [{ name: "x.texl", path: "lib/x.texl", type: "file" }] },
+        { name: "references", path: "references", type: "folder", children: [{ name: "x.texl", path: "references/x.texl", type: "file" }] },
     ],
 };
 
@@ -68,7 +68,7 @@ const contract = {
         // The tree
         stilo.tree.decorate((node) => (node.path === "doc.texl" ? { badge: "M", tone: "warning", tooltip: "Changed" } : null));
         stilo.tree.filter((node) => node.path !== "hidden.texl");
-        stilo.tree.readOnly((path) => (path === "lib" || path.startsWith("lib/") ? "a library" : null));
+        stilo.tree.readOnly((path) => (path === "references" || path.startsWith("references/") ? "a reference" : null));
 
         // The editor and the comments
         stilo.editor.decorate(({ cells }) => cells.filter((c) => c.texl.includes("Two")).map((c) => ({ cell: c.name, text: "Check", tone: "danger" })));
@@ -177,8 +177,8 @@ describe("the extension API contract", () => {
         const names = [...pane.renderRoot.querySelectorAll(".name")].map((n) => n.textContent);
         expect(names).to.not.include("hidden");
         expect(pane.renderRoot.querySelector(".badge.warning").textContent).to.equal("M");
-        expect(stilo.tree.readOnlyReason("lib/x.texl")).to.equal("a library");
-        expect(stilo.commands.disabledReason("tree-delete", { node: TREE.children[2] })).to.equal("a library");
+        expect(stilo.tree.readOnlyReason("references/x.texl")).to.equal("a reference");
+        expect(stilo.commands.disabledReason("tree-delete", { node: TREE.children[2] })).to.equal("a reference");
     });
 
     it("marks cells, adds comments from outside, and hears the document's events", async () => {
@@ -233,7 +233,7 @@ describe("the extension API contract", () => {
         expect(stilo.status.list()).to.deep.equal([]);
         expect(shadow(app, "footer")).to.be.null;
         expect(stilo.views.get("contract.page")).to.be.undefined;
-        expect(stilo.tree.readOnlyReason("lib/x.texl")).to.be.null;
+        expect(stilo.tree.readOnlyReason("references/x.texl")).to.be.null;
         expect(stilo.tree.decoration(TREE.children[0])).to.be.null;
         expect(stilo.tree.shows(TREE.children[1])).to.be.true;
         const editor = shadow(app, "texl-editor");

@@ -1,5 +1,5 @@
 <!--{ we00 : formula | hidden }-->
-<% texl.import "~/lib/tutorial/index.texl" ~> (lib -> bind "tutorial" lib.data) %>
+<% texl.import "~/references/tutorial/index.texl" ~> (lib -> bind "tutorial" lib.data) %>
 <!--{ we01 : rich }-->
 # 1. Welcome
 

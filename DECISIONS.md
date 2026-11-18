@@ -583,3 +583,26 @@ or more packages: an OnLabs concept (`../CONCEPTS.md`), not a Stilo one.
 "Package" is neutral: it names what the folder is, a bundle of Texl files
 with its own `lib/`, nestable like npm or Cargo packages, without suggesting
 a purpose. It is done before 1.0, while few folders have a manifest.
+
+## S22 — 2026-11-18 — A package's references live in `references/` (was `lib/`)
+Following OnLabs D23, the packages a package uses are its **references**,
+and they live in its `references/` folder, which replaces `lib/` (S10). `stilo
+init` creates `references/` and copies the Stilo library into
+`references/stilo/`, so its import is `~/references/stilo/index.texl`; the
+data and chart cells write that import, and the example package and the
+tutorial (`references/tutorial/`, `references/steel/`) follow. Stilo
+never gave `lib/` a meaning beyond `stilo init`, so an old `lib/` is
+neither read nor warned about: it is an ordinary folder, and its imports
+keep working until the user moves it. The rename ships in the same
+version as S21, so users migrate once: rename `project.texl` to
+`package.texl`, `lib/` to `references/`, and `~/lib/` to `~/references/`
+in imports. Words follow too: in Stilo's docs, help texts and tutorial,
+what a package imports from `references/` is a *reference*, not a
+library; "the Stilo library" stays the name of that one reference, and a
+document that gives names to values for others may still be called a
+library. This supersedes the folder name `lib/` in S10 and S21.
+*Reason:* OnLabs D23 gives Stilo and Papiro one vocabulary: a reference
+is to a package what a library is to software, and "references" names
+what the folder holds, as the references of an engineering report. A
+fallback or a warning would keep two folder names alive for a rename that
+costs users one `mv` and a search-and-replace, before 1.0.

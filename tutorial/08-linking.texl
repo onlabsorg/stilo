@@ -1,5 +1,5 @@
 <!--{ li00 : formula | hidden }-->
-<% texl.import "~/lib/tutorial/index.texl" ~> (lib -> bind "tutorial" lib.data) %>
+<% texl.import "~/references/tutorial/index.texl" ~> (lib -> bind "tutorial" lib.data) %>
 <!--{ li01 : rich }-->
 # 8. Linking
 
@@ -11,9 +11,9 @@ documents, images and files. About five minutes.
 ## Import a document
 
 This tutorial has a small library of steel sections,
-[sections](lib/steel/sections.texl), in the folder `lib/steel`. Open it,
-look at how it gives its values names, and come back with the browser's back
-button.
+[sections](references/steel/sections.texl), in the folder `references/steel`:
+the folder `references` holds what a package uses. Open it, look at how it
+gives its values names, and come back with the browser's back button.
 
 A formula imports a document with `texl.import`, and gives all the names of
 that document one name of its own with `bind`.
@@ -21,7 +21,7 @@ that document one name of its own with `bind`.
 **Your turn.** Select the empty line just above the check below, press **=**
 for a Formula cell, and write:
 
-`texl.import "~/lib/steel/sections.texl" ~> (lib -> bind "steel" lib.data)`
+`texl.import "~/references/steel/sections.texl" ~> (lib -> bind "steel" lib.data)`
 
 then press **Ctrl+Enter**. This reads the library and names its values
 `steel`: its section IPE 300 is then `steel.IPE.IPE300`. In a package, as
@@ -39,9 +39,10 @@ Now open the library again, change the mass of the IPE 300 to `42.5`, save
 with **Ctrl+S**, and come back: this line shows the new mass. Put it back to
 `42.2` afterwards.
 
-An address can also be relative to the document, as `lib/steel/sections.texl`
-from here, or `../steel/sections.texl` from a document in another folder of
-`lib`. In the navigation pane, right-click a document and choose
+An address can also be relative to the document, as
+`references/steel/sections.texl` from here, or `../steel/sections.texl` from
+a document in another folder of `references`. In the navigation pane,
+right-click a document and choose
 **Copy link** to get its address from the open document.
 <!--{ li07 : markdown }-->
 ## Links to read

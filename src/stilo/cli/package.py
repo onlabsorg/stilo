@@ -16,27 +16,27 @@ from pytexl.loaders import file_path, load_file
 
 from stilo.server.home import MANIFEST, expand_home, has_home
 
-# The Texl library Stilo bundles, copied into a package's lib/stilo/ by
+# The Texl library Stilo bundles, copied into a package's references/stilo/ by
 # `stilo init`. Its source is `texl-lib/` at the root of the checkout; the
 # wheel ships it as `stilo/texl-lib` (pyproject.toml).
 STILO_DIR = Path(__file__).resolve().parents[1]
 _INSTALLED_LIB = STILO_DIR / "texl-lib"
 TEXL_LIB = _INSTALLED_LIB if _INSTALLED_LIB.is_dir() else STILO_DIR.parents[1] / "texl-lib"
 
-LIB = "lib"
+REFERENCES = "references"
 LIBRARY_NAME = "stilo"
 
 
 def make_package(folder: Path, name: str) -> bool:
     """Makes `folder` a package: creates it if missing, writes `package.texl`
-    (never over an existing one: `FileExistsError`), creates `lib/` and
-    copies the bundled library into `lib/stilo/`. Returns whether a
-    `lib/stilo/` was already there, which is then left as it is."""
-    library = folder / LIB / LIBRARY_NAME
+    (never over an existing one: `FileExistsError`), creates `references/` and
+    copies the Stilo library into `references/stilo/`. Returns whether a
+    `references/stilo/` was already there, which is then left as it is."""
+    library = folder / REFERENCES / LIBRARY_NAME
     folder.mkdir(parents=True, exist_ok=True)
     with open(folder / MANIFEST, "x", encoding="utf-8") as file:
         file.write(manifest(name))
-    (folder / LIB).mkdir(exist_ok=True)
+    (folder / REFERENCES).mkdir(exist_ok=True)
     kept = library.exists()
     if not kept:
         shutil.copytree(TEXL_LIB, library)
@@ -69,7 +69,7 @@ def resolve_file(uri: str) -> Path:
 async def load_package_file(uri: str) -> str | tuple[str, str]:
     """pytexl's file loader, with `~` resolved. A path with `~` gives the
     real file as the document's final URL (Texl 0.8): its identity, so
-    imports of one library by different paths share it, and a cycle
+    imports of one document by different paths share it, and a cycle
     through `~` ends."""
     if not has_home(file_path(uri)):
         return await load_file(uri)
@@ -97,7 +97,7 @@ def manifest(name: str) -> str:
     return f"""# {name}
 
 This folder is a Stilo package. This file marks its home folder: in an
-import, `~` stands for it, as in `~/lib/stilo/index.texl`. The values below
+import, `~` stands for it, as in `~/references/stilo/index.texl`. The values below
 configure the package.
 
 <% package_name = "{name}" %>

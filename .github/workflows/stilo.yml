@@ -72,7 +72,7 @@ jobs:
           venv/bin/stilo render examples/packages/beam/beam-check.texl > /dev/null
           venv/bin/stilo init package
           mkdir package/docs
-          echo '<% texl.import "~/lib/stilo/index.texl" ~> (lib -> bind "stilo" lib.data.stilo) %><% stilo.dataframe {columns: ["CI"], rows: [[42]]} %>' > package/docs/a.texl
+          echo '<% texl.import "~/references/stilo/index.texl" ~> (lib -> bind "stilo" lib.data.stilo) %><% stilo.dataframe {columns: ["CI"], rows: [[42]]} %>' > package/docs/a.texl
           venv/bin/stilo render --strict package/docs/a.texl | grep -q '| 42 |'
           venv/bin/stilo serve examples --port 8765 &
           for i in $(seq 50); do curl -sf -o /dev/null localhost:8765/_api/tree/ && break; sleep 0.2; done

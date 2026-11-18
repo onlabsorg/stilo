@@ -121,8 +121,9 @@ def init(args) -> int
 Makes `args.folder` (default: the current folder, created if missing) a
 package: writes `package.texl`, binding `package_name` (`--name`, default
 the folder's name) and `stilo_version` (the installed package's version),
-creates `lib/`, and copies `TEXL_LIB` into `lib/stilo/`. Returns 1 if
-`package.texl` already exists. An existing `lib/stilo/` is left as it is.
+creates `references/`, and copies `TEXL_LIB` into `references/stilo/`.
+Returns 1 if `package.texl` already exists. An existing `references/stilo/`
+is left as it is.
 The work is done by `make_package(folder, name)` in `package.py`, which
 `stilo tutor` shares. See [Packages and the Stilo library](packages.md).
 

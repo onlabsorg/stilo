@@ -43,8 +43,9 @@ def test_the_library_binds_only_stilo():
 
 def test_the_example_package_has_the_current_library():
     """examples/packages/beam holds a copy of the library, as `stilo init`
-    makes one: copy texl-lib/ there again when the library changes."""
-    copy = Path(__file__).resolve().parents[2] / "examples" / "packages" / "beam" / "lib" / "stilo"
+    makes one: copy texl-lib/ into references/stilo/ again when the library
+    changes."""
+    copy = Path(__file__).resolve().parents[2] / "examples" / "packages" / "beam" / "references" / "stilo"
     names = sorted(path.name for path in TEXL_LIB.iterdir())
     assert sorted(path.name for path in copy.iterdir()) == names
     for name in names:

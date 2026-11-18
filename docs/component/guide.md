@@ -212,7 +212,7 @@ library of steel sections:
 
 ```texl
 <!--{ markdown }-->
-<% texl.import("lib/steel.texl") ~> (lib -> bind "steel" lib.data) %>
+<% texl.import("references/steel.texl") ~> (lib -> bind "steel" lib.data) %>
 Section <% steel.IPE.IPE300.name %>
 ```
 

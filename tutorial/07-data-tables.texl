@@ -1,7 +1,7 @@
 <!--{ da00 : formula | hidden }-->
-<% texl.import "~/lib/tutorial/index.texl" ~> (lib -> bind "tutorial" lib.data) %>
+<% texl.import "~/references/tutorial/index.texl" ~> (lib -> bind "tutorial" lib.data) %>
 <!--{ da01 : formula | hidden }-->
-<% texl.import "~/lib/stilo/index.texl" ~> (lib -> bind "stilo" lib.data.stilo) %>
+<% texl.import "~/references/stilo/index.texl" ~> (lib -> bind "stilo" lib.data.stilo) %>
 <!--{ da02 : rich }-->
 # 7. Data tables
 
@@ -99,8 +99,9 @@ a hidden line at the top that imports it. This lesson has that line already.
 To see it, open the commands (**F1**) and choose **Show or hide the hidden
 cells**; choose it again to hide it.
 
-The library is found in the *package* the document belongs to. This tutorial
-is a package; lesson 12 shows how to make your own folder one.
+The library is found among the *references* of the *package* the document
+belongs to, in its folder `references`. This tutorial is a package; lesson
+12 shows how to make your own folder one.
 
 More in the manual: [Data table cells](https://www.onlabs.org/manual/editor/cell-types.html#data-table-cells).
 <!--{ da14 : rich }-->

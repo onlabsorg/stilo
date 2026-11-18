@@ -1,5 +1,5 @@
 <!--{ imp6 : formula | hidden }-->
-<% texl.import "~/lib/stilo/index.texl" ~> (lib -> bind "stilo" lib.data.stilo) %>
+<% texl.import "~/references/stilo/index.texl" ~> (lib -> bind "stilo" lib.data.stilo) %>
 <!--{ bek4 : markdown }-->
 # Mezzanine floor beam — design report
 

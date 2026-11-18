@@ -1,5 +1,5 @@
 <!--{ sw00 : formula | hidden }-->
-<% texl.import "~/lib/tutorial/index.texl" ~> (lib -> bind "tutorial" lib.data) %>
+<% texl.import "~/references/tutorial/index.texl" ~> (lib -> bind "tutorial" lib.data) %>
 <!--{ sw01 : rich }-->
 # 13. The formula language
 
@@ -74,4 +74,4 @@ The manual describes the whole language, with every function it has:
 [Lists, text and namespaces](https://www.onlabs.org/manual/swan/collections.html)
 and the [built-in library](https://www.onlabs.org/manual/swan/builtins/index.html).
 <!--{ sw13 : rich }-->
-Next: [14. Your own libraries](14-libraries.texl) · Back to the [index](index.texl)
+Next: [14. Your own references](14-references.texl) · Back to the [index](index.texl)

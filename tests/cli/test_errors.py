@@ -96,10 +96,10 @@ def test_chain_of_causes(write, capsys):
 
 
 def test_error_in_an_imported_document_points_into_it(write, capsys):
-    write('Acciaio µ\n<% half = x -> x / "two" %>\n', "lib/steel.texl")
-    source = '<% texl.import("lib/steel.texl") ~> (l -> bind "lib" l.data) %>\n<% lib.half 3 %>\n'
+    write('Acciaio µ\n<% half = x -> x / "two" %>\n', "references/steel.texl")
+    source = '<% texl.import("references/steel.texl") ~> (l -> bind "lib" l.data) %>\n<% lib.half 3 %>\n'
     _, _, err = render(capsys, write(source), "-d")
-    assert 'lib/steel.texl:2:18  cannot divide the number `3` by the text `"two"`' in err
+    assert 'references/steel.texl:2:18  cannot divide the number `3` by the text `"two"`' in err
     assert '<% half = x -> x / "two" %>\n' in err
     assert "shown at doc.texl line 2" in err
 

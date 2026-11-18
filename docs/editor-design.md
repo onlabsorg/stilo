@@ -472,7 +472,7 @@ this section keeps the outline.
   value. A source of another shape (edited by hand: comments inside the
   tag, other members) is edited as text. **The import:** when a data
   table is first written with content and no cell mentions
-  `~/lib/stilo/index.texl`, the editor adds a hidden formula cell with the
+  `~/references/stilo/index.texl`, the editor adds a hidden formula cell with the
   import at the top (S12, S13).
 - Forms (first version, 2026-11-10): a cell whose source makes a namespace
   is edited as a **form**, `<texl-form>` (`texl-form.js`), so every such

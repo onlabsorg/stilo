@@ -24,7 +24,7 @@ to Word and Excel users, and renders them from the command line.
 | Editor | Inside the web app: `<texl-editor>`, a document as a stack of typed cells (rich text, the default; text, Markdown, table, formula, data table and chart; formulas as `<% %>` tags; LaTeX equations in Markdown and tables), live rendering, cell comments, errors shown where they happen. Until 2026-10-26 the separate `texl-editor` package. |
 | Server | Python (FastAPI): serves one folder of documents and the web app, for one user. |
 | CLI    | The `stilo` command: `stilo init [folder]` makes a folder a package, with the Stilo library in it; `stilo render <file>` prints a rendered document (or writes it to a file), says how many errors it has and can explain them; `stilo serve [folder]` starts the server on a folder; `stilo tutor` opens the tutorial. |
-| Stilo library | A folder of Texl documents (`texl-lib/`) that `stilo init` copies into each package, for documents to import. `stilo.dataframe` makes a table of data, which the data table cell writes; `stilo.charts.line` draws a line chart as an image, which the chart cell writes. Tested on both Texl engines, the browser's and Python's, with the same cases. |
+| Stilo library | A folder of Texl documents (`texl-lib/`) that `stilo init` copies into each package's references, for documents to import. `stilo.dataframe` makes a table of data, which the data table cell writes; `stilo.charts.line` draws a line chart as an image, which the chart cell writes. Tested on both Texl engines, the browser's and Python's, with the same cases. |
 | Tutorial | A guided tutorial for new users (`tutorial/`), Texl documents shipped in the package and served by `stilo tutor` in the web app: twelve short lessons (30–45 minutes) on the editor and the command line, from the first edit to one's own package, and two advanced ones. Many exercises check themselves and show "✓ Done"; an index shows the progress. The lessons link to the OnLabs.org manual instead of repeating it. Tested automatically, exercises included. |
 | Protocol | Plain HTTP between web app and server: GET a file, CREATE (POST), UPDATE (PUT, with an ETag so concurrent saves don't overwrite each other), QUERY a folder's tree (every file), create a folder, move or rename a file or folder, delete a file or folder. Any file can be created, so files can be uploaded; only documents can be updated. |
 | Documentation | Developer documentation only, as plain Markdown in `docs/`, read on GitHub: architecture, setup, server, CLI, web app, editor, the protocol, the editor component and its API. No site is built. Users read the OnLabs.org manual instead. |
@@ -57,11 +57,13 @@ the document showing it.
 A **package** is a folder with a `package.texl` file (the package's name and
 the Stilo version that created it): a bundle of Texl files that belong
 together. Until 2026-11-18 it was called a project, with a `project.texl`.
-Its libraries live in its `lib/` folder, so the package works as a whole
-wherever it is copied. In an import, `~` stands for the package's folder, so
-`~/lib/stilo/index.texl` works from any document of the package, in the
-browser and on the command line. There is no
-package manager: libraries are copied or cloned in by hand.
+A subfolder with its own `package.texl` is a separate package. The packages
+a package uses, its *references* (as a library is to software), live in its
+`references/` folder (called `lib/` until 2026-11-18), so the package works
+as a whole wherever it is copied. In an import, `~` stands for the package's
+folder, so `~/references/stilo/index.texl` works from any document of the
+package, in the browser and on the command line. There is no package
+manager: references are copied or cloned in by hand.
 
 Single-user by design: no accounts or permissions. Revisions, release and
 accept are not part of Stilo.
@@ -515,6 +517,15 @@ accept are not part of Stilo.
   `stilo tutor` still recognises an old copy of the tutorial and proposes
   starting again. The example moved to `examples/packages/beam/`, and
   lesson 12 of the tutorial is now "Your first package". Not released yet.
+- 2026-11-18: **libraries renamed references**: the packages a package
+  uses are now its *references*, in a `references/` folder (it was
+  `lib/`); `stilo init` copies the Stilo library into `references/stilo/`,
+  and data tables and charts import it from there. An old `lib/` folder is
+  not read or warned about: it must be renamed by hand, and `~/lib/`
+  changed to `~/references/` in imports. The changelog explains how to
+  move a folder made with 0.5 in one go (both renames). The tutorial and
+  the example follow; lesson 14 is now "Your own references". Ships with
+  the package rename in the same version. Not released yet.
 
 ## Known limitations
 

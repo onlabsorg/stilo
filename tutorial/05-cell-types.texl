@@ -1,5 +1,5 @@
 <!--{ ty00 : formula | hidden }-->
-<% texl.import "~/lib/tutorial/index.texl" ~> (lib -> bind "tutorial" lib.data) %>
+<% texl.import "~/references/tutorial/index.texl" ~> (lib -> bind "tutorial" lib.data) %>
 <!--{ ty01 : rich }-->
 # 5. Cell types
 

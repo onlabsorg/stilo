@@ -43,24 +43,27 @@ redirect to the real path, `307 Temporary Redirect` (the query kept,
 ```
 package.texl in /packages/beam/
 
-GET /packages/beam/docs/~/lib/stilo/index.texl
+GET /packages/beam/docs/~/references/stilo/index.texl
 → 307 Temporary Redirect
-  Location: /packages/beam/lib/stilo/index.texl
-GET /packages/beam/docs/~/lib/a/~/lib/b/b.texl
-  → /packages/beam/lib/a/ has no package.texl: /packages/beam/lib/b/b.texl
+  Location: /packages/beam/references/stilo/index.texl
+GET /packages/beam/docs/~/references/a/~/references/b/b.texl
+  → /packages/beam/references/a/ has no package.texl:
+    /packages/beam/references/b/b.texl
 ```
 
-This is how a document imports from its package's libraries wherever it is
-in the package: Texl gives `~` no meaning, so `texl.import "~/lib/x.texl"`
-in `/packages/beam/docs/a.texl` asks for `/packages/beam/docs/~/lib/x.texl`,
-and the server redirects it to `/packages/beam/lib/x.texl`. A redirect, not
-the file itself, because Texl takes a document's identity from the URL it
-was finally fetched from (its *final URL*, Texl 0.8): the library is the
-document at its real path, its relative imports resolve from there, imports
-of it by different paths share one document, and a library importing itself
-through `~` is an import cycle. A library importing `~/...` itself, from its
-real path, asks for a path with one `~`, which resolves from the library's
-folder: to the library's own home if it has a `package.texl`, else to the
+This is how a document imports from its package's references wherever it
+is in the package: Texl gives `~` no meaning, so
+`texl.import "~/references/x.texl"` in `/packages/beam/docs/a.texl` asks
+for `/packages/beam/docs/~/references/x.texl`, and the server redirects it
+to `/packages/beam/references/x.texl`. A redirect, not the file itself,
+because Texl takes a document's identity from the URL it was finally
+fetched from (its *final URL*, Texl 0.8): the imported document is the one
+at its real path, its relative imports resolve from there, imports of it by
+different paths share one document, and a document importing itself
+through `~` is an import cycle. A reference importing `~/...`, from its
+real path, asks for a path with one `~`, which resolves from the
+reference's folder: to the reference's own home if it has a
+`package.texl`, else to the
 package's. The search for a home never leaves the server root, and the
 server never reads the manifest, it only checks that it exists; nor does
 it check that the target exists before redirecting (the target answers
@@ -315,12 +318,12 @@ cannot be reached through the protocol.
 
 ## Read-only items
 
-A server can refuse changes to some items: files it cannot write, a library
+A server can refuse changes to some items: files it cannot write, a reference
 that must not be edited, items the user may only read. It marks them in the
 tree, with the reason, which a client shows:
 
 ```
-{ "name": "steel.texl", "path": "lib/steel.texl", "type": "file",
+{ "name": "steel.texl", "path": "references/steel.texl", "type": "file",
   "readOnly": "The file cannot be written on the server" }
 ```
 
@@ -354,9 +357,9 @@ does not repeat the request on its own. How the user is then recognized
 (a cookie, a header) is up to the server and the client's transport.
 
 ```
-PUT /_api/files/lib/steel.texl
+PUT /_api/files/references/steel.texl
 → 403 Forbidden
-  { "error": "Libraries are read-only" }
+  { "error": "References are read-only" }
 ```
 
 `403` means that the user may not do this; `error` says why, in words a

@@ -1,16 +1,17 @@
 <!--{ lb00 : formula | hidden }-->
-<% texl.import "~/lib/tutorial/index.texl" ~> (lib -> bind "tutorial" lib.data) %>
+<% texl.import "~/references/tutorial/index.texl" ~> (lib -> bind "tutorial" lib.data) %>
 <!--{ lb01 : rich }-->
-# 14. Your own libraries
+# 14. Your own references
 
 *Advanced.* A library is a document that gives names to values and
 functions for other documents to use: material properties, load factors,
-the checks of a design code. You write it once, and every document of the
+the checks of a design code. Kept in a folder of `references`, it is a
+**reference** of the package: you write it once, and every document of the
 package imports it. About six minutes.
 <!--{ lb02 : rich }-->
 ## Write a library
 
-1. In the navigation pane, right-click the folder `lib` and choose
+1. In the navigation pane, right-click the folder `references` and choose
    **New folder…**. Name it `beams`.
 2. Right-click `beams` and choose **New document…**. Name it `index`.
 3. In the new document, write a title line, *Beam formulas*. Then press
@@ -23,7 +24,7 @@ package imports it. About six minutes.
 **Your turn.** On the empty line just above the check below, press **=** and
 write the import of your library:
 
-`texl.import "~/lib/beams/index.texl" ~> (lib -> bind "beams" lib.data)`
+`texl.import "~/references/beams/index.texl" ~> (lib -> bind "beams" lib.data)`
 <!--{ lb04 : rich }-->
 
 <!--{ lb05 : formula }-->
@@ -40,14 +41,14 @@ With your library, a load of 12.5 kN/m on a span of 6 m gives a moment of
   your document, so they never clash with yours: `beams.moment`.
 - The library is read again every time your document is computed. Change
   it, save, and every document that imports it follows.
-- In a package, keep libraries in `lib`, one folder each, and import them
-  with `~`. To give a library to a colleague, give them its folder: they
-  copy it into their package's `lib`.
+- In a package, keep references in `references`, one folder each, and
+  import them with `~`. To give a reference to a colleague, give them its
+  folder: they copy it into their package's `references`.
 - An address can also be a full web address, `https://…`, of a document on
   another server that allows it.
 
 More in the manual: [Documents and imports](https://www.onlabs.org/manual/templates/documents.html)
-and [Packages and libraries](https://www.onlabs.org/manual/editor/projects.html).
+and [Packages and references](https://www.onlabs.org/manual/editor/projects.html).
 <!--{ lb08 : rich }-->
 ## The end
 
