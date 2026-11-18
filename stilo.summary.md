@@ -484,6 +484,13 @@ accept are not part of Stilo.
   typed and kept from running scripts, and how `~` is resolved), and an
   automatic test keeps that list from changing by accident. Nothing
   changes for users.
+- 2026-11-18: **`stilo` commands from other packages**: a package
+  installed beside Stilo can add its own commands to the `stilo` command
+  line (for example `stilo pdf`), listed in `stilo --help` after Stilo's
+  own. A broken add-on, or one that takes the name of an existing
+  command, is skipped with a warning, and Stilo's own commands always
+  keep their names. The command line also lists the parts add-ons may
+  rely on. Nothing changes for users without add-ons.
 
 ## Known limitations
 

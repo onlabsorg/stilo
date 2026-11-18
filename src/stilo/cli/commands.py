@@ -1,8 +1,9 @@
 """The `stilo` subcommands.
 
 Each command is a `Command`: a name, a help line, a function that adds its
-arguments to a parser and a function that runs it. `COMMANDS` lists them in
-the order `stilo --help` shows them; a plugin system can later add its own.
+arguments to a parser and a function that runs it. `COMMANDS` lists Stilo's own, in
+the order `stilo --help` shows them; other packages add theirs through the
+entry-point group `stilo.commands` (`__init__.py`, `plugin_commands`).
 """
 
 import asyncio
@@ -12,6 +13,8 @@ from pathlib import Path
 from typing import Callable
 
 import pytexl
+
+from stilo.server import create_app
 
 from .errors import count_returned, find_errors, format_report, numbered_text
 from .project import LIB, LIBRARY_NAME, MANIFEST, create_engine, make_project
@@ -89,7 +92,7 @@ def serve(args) -> int:
         return 1
     print(f"Stilo: serving {args.folder.resolve()} at http://{args.host}:{args.port}/ "
           "(press Ctrl+C here to stop)")
-    run_server(args.folder, args.host, args.port, args.web)
+    run_server(create_app(args.folder, args.web), args.host, args.port)
     return 0
 
 

@@ -5,8 +5,9 @@ documentation is in the OnLabs.org user manual.*
 
 | Module                  | Role                                              |
 |-------------------------|---------------------------------------------------|
-| `stilo/cli/__init__.py` | `main()`: builds the argument parser from `COMMANDS` and runs the chosen command. The `stilo` script and `python -m stilo` (`stilo/__main__.py`) both call it. |
+| `stilo/cli/__init__.py` | `main()`: builds the argument parser from `COMMANDS` and the commands of other packages (`plugin_commands`), and runs the chosen command. The `stilo` script and `python -m stilo` (`stilo/__main__.py`) both call it. The [public API](#the-public-api), `__all__` |
 | `stilo/cli/commands.py` | The subcommands, as `Command` entries in `COMMANDS` |
+| `stilo/cli/web.py`      | `WEB_DIST`, `run_server(app, host, port, open_url)` |
 | `stilo/cli/project.py`  | Projects: `create_engine()` (the engine every command renders with, `~` resolved), `TEXL_LIB`, the text of a new `project.texl` |
 
 ## `Command`
@@ -34,9 +35,9 @@ COMMANDS = [
 ]
 ```
 
-Lists the subcommands, in the order `stilo --help` shows them. It is the
-only place where commands are defined: a plugin system will add its own
-commands to this list.
+Lists Stilo's own subcommands, in the order `stilo --help` shows them. It
+is the only place where Stilo's commands are defined; other packages add
+theirs as [plugins](#commands-from-other-packages), listed after these.
 
 ### Add a command
 
@@ -146,8 +147,9 @@ def serve(args) -> int
 ```
 
 Runs `create_app(args.folder, args.web)` from the server with uvicorn on
-`args.host` and `args.port`, through `run_server` (`web.py`, shared with
-`tutor`). Returns 1 if `args.folder` is not a folder.
+`args.host` and `args.port`, through `run_server(app, host, port,
+open_url=None)` (`web.py`, shared with `tutor` and open to plugins).
+`stilo serve` itself has no server extensions. Returns 1 if `args.folder` is not a folder.
 
 Ctrl+C stops the server. uvicorn shuts down cleanly, then re-raises the
 interrupt for its caller (asyncio raises it out of a `CancelledError`);
@@ -187,6 +189,64 @@ folder on 127.0.0.1:`--port` and, unless `--no-browser`, opens
 
 How the lessons are written and tested: [The tutorial](tutorial.md).
 
+## Commands from other packages
+
+A package adds commands to `stilo` through the entry-point group
+`stilo.commands`, each entry point a `Command`:
+
+```toml
+# pyproject.toml of the package stilo-pdf
+[project.entry-points."stilo.commands"]
+pdf = "stilo_pdf.cli:command"
+```
+
+```python
+# stilo_pdf/cli.py
+import asyncio
+from pathlib import Path
+from stilo.cli import Command, create_engine
+
+def arguments(parser):
+    parser.add_argument("file", type=Path, help="document to export")
+
+def run(args) -> int:
+    doc = asyncio.run(create_engine().load(args.file.resolve().as_uri()))
+    ...                       # turn doc.text into a PDF
+    return 0
+
+command = Command("pdf", "export a Texl document to PDF", arguments, run)
+```
+
+Once the package is installed beside Stilo, `stilo pdf report.texl` runs
+it and `stilo --help` lists it. `main()` reads the group on every run
+(`plugin_commands` in `__init__.py`), after Stilo's own commands:
+
+- plugins come after Stilo's commands, sorted by name;
+- Stilo's own commands always win a name clash; between two plugins with
+  one name, the first by distribution name wins;
+- an entry point that fails to load, or is not a `Command`, or loses a
+  clash is skipped, with a warning on standard error (`stilo: plugin
+  <name> (<distribution>) skipped: <reason>`), and `stilo` goes on.
+
+A plugin's module is imported on every run of `stilo`, so it should import
+heavy libraries inside `run`. A command that serves a folder with server
+extensions of its own builds the app and hands it to `run_server`:
+
+```python
+from stilo.cli import WEB_DIST, run_server
+from stilo.server import create_app
+
+run_server(create_app(args.folder, WEB_DIST, extensions=[history]), "127.0.0.1", args.port)
+```
+
+## The public API
+
+`stilo.cli.__all__` is what a plugin may use: `Command`, `COMMANDS`,
+`main`, `create_engine`, `WEB_DIST`, `run_server`. Anything else in the
+modules may change without notice; `tests/cli/test_plugins.py` pins the
+list. The server's own public API is `stilo.server.__all__`
+([The server](server.md#the-public-api)).
+
 ## Tests
 
 `tests/cli/test_render.py` runs `main()` on the sample documents in
@@ -199,6 +259,9 @@ it writes to a temporary folder. `tests/cli/test_tutor.py` covers `stilo
 tutor`: copy, reuse, reset, refusals, the version check (with `run_server`
 replaced), and the real command serving the index in a subprocess.
 `tests/cli/test_web.py` covers Ctrl+C in `run_server`.
+`tests/cli/test_plugins.py` covers commands from other packages (with
+fake entry points): running one, the order in `--help`, name clashes,
+broken plugins, and the public API.
 
 ```sh
 uv run pytest tests/cli

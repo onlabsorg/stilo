@@ -1,4 +1,5 @@
-"""Serving a folder with the web app, for `stilo serve` and `stilo tutor`."""
+"""Serving a folder with the web app, for `stilo serve`, `stilo tutor` and
+the commands of plugins."""
 
 import threading
 import time
@@ -14,11 +15,14 @@ from stilo.server import create_app
 WEB_DIST = Path(__file__).resolve().parents[1] / "web"
 
 
-def run_server(folder: Path, host: str, port: int, web: Path = WEB_DIST, open_url: str | None = None):
-    """Serves `folder` until the process is stopped. With `open_url`, opens
-    it in the browser once the server accepts connections. Ctrl+C stops it
-    with a goodbye instead of a traceback."""
-    server = uvicorn.Server(uvicorn.Config(create_app(folder, web), host=host, port=port))
+def run_server(app, host: str, port: int, open_url: str | None = None):
+    """Serves `app` (from `create_app()`, or any ASGI app) until the process
+    is stopped. With `open_url`, opens it in the browser once the server
+    accepts connections. Ctrl+C stops it with a goodbye instead of a
+    traceback. A plugin's command serves a folder with its own server
+    extensions as `run_server(create_app(folder, WEB_DIST, extensions=[...]),
+    host, port)`."""
+    server = uvicorn.Server(uvicorn.Config(app, host=host, port=port))
     if open_url:
         threading.Thread(target=_open_when_started, args=(server, open_url), daemon=True).start()
     try:

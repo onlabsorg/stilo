@@ -17,6 +17,8 @@ from pathlib import Path
 
 import platformdirs
 
+from stilo.server import create_app
+
 from .project import MANIFEST, PACKAGE, make_project, stilo_version, swan_text
 from .web import WEB_DIST, run_server
 
@@ -148,5 +150,6 @@ def tutor(args) -> int:
     url = f"http://{host}:{args.port}/{INDEX}"
     print(f"Stilo: the tutorial is at {url} (press Ctrl+C here to stop)")
     sys.stdout.flush()
-    run_server(folder, host, args.port, WEB_DIST, open_url=None if args.no_browser else url)
+    run_server(create_app(folder, WEB_DIST), host, args.port,
+               open_url=None if args.no_browser else url)
     return 0

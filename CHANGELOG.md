@@ -6,6 +6,13 @@ change the interfaces.
 
 ## Unreleased
 
+- **`stilo` commands from other packages** (for developers;
+  `docs/cli.md`): an installed package can add commands to `stilo`
+  through the entry-point group `stilo.commands`; `stilo --help` lists
+  them after Stilo's own. A broken plugin, or one that takes the name of
+  an existing command, is skipped with a warning. `stilo.cli` names its
+  public API (`Command`, `create_engine`, `run_server`, …); `run_server`
+  now takes an app.
 - **The server's public API** (for developers; `docs/server.md`):
   `stilo.server` lists in `__all__` what extensions and other servers may
   use, among them the helpers that make another server answer as Stilo's:

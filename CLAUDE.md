@@ -99,11 +99,13 @@ side) is under way: `create_app()` takes any storage (`Storage`, the
 interface; `FolderStorage`, the default; `StorageWrapper`), server
 extensions (`ServerExtension`: a router mounted under `/_api/x/<id>/`, a
 storage wrapper, listed in `/_api/info`) and middleware; its public API
-is `stilo.server.__all__`. CLI commands from other packages are not built
-yet.
+is `stilo.server.__all__`. CLI commands come also from other packages,
+through the entry-point group `stilo.commands` (each a `Command`); the
+CLI's public API is `stilo.cli.__all__`.
 Keep each extension point in one place: cell types only through the registry
 (`web/src/editor/registry.js`), CLI commands only through `COMMANDS`
-(`src/stilo/cli/commands.py`), the server only through `create_app()`.
+(`src/stilo/cli/commands.py`) and the `stilo.commands` entry points, the
+server only through `create_app()`.
 Never shape a hook around one known consumer.
 
 ## Summary for OnLabs.org (`stilo.summary.md`)
@@ -274,10 +276,15 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
   `--reset`. Tested in `tests/tutorial/` (every document renders strictly
   or with its `expected_errors`; `solutions.json` turns every check to ✓
   Done) and `web/test/tutorial.test.js` (every cell fits its type).
-- `src/stilo/cli/web.py` — `WEB_DIST`, `run_server` (serve and tutor).
+- `src/stilo/cli/web.py` — `WEB_DIST`, `run_server(app, host, port,
+  open_url)` (serve, tutor and plugins' commands).
 - `src/stilo/cli/commands.py` — the subcommands (`init`, `render`, `serve`, `tutor`) as
   `Command` entries in `COMMANDS`; `main()` in `src/stilo/cli/__init__.py`
-  builds the parser from them (the `stilo` script, `python -m stilo`).
+  builds the parser from them and from `plugin_commands()` (the
+  entry-point group `stilo.commands`: after Stilo's, sorted by name;
+  clashes and broken plugins skipped with a warning) (the `stilo` script,
+  `python -m stilo`). `__all__` there is the CLI's public API, pinned by
+  `tests/cli/test_plugins.py`.
 - `src/stilo/cli/errors.py` — finds the undefined values a document returned
   and formats the report of `stilo render`.
 - `web/src/main.js` — entry: theme CSS, the editor, the app; exports

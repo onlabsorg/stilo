@@ -20,7 +20,8 @@ def served(monkeypatch):
     """Runs `stilo tutor` without serving: the folder it would serve, or None."""
     calls = []
     monkeypatch.setattr(tutor_module, "run_server",
-                        lambda folder, host, port, web, open_url: calls.append((folder, port, open_url)))
+                        lambda app, host, port, open_url: calls.append(
+                            (app.state.storage.root, port, open_url)))
     return calls
 
 
