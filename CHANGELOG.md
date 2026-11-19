@@ -4,7 +4,7 @@ All notable changes to Stilo are listed here, newest first. Versions follow
 [semantic versioning](https://semver.org/); before 1.0, any version may
 change the interfaces.
 
-## Unreleased
+## 0.7.0 — 2026-11-19
 
 - **Packed packages**: a package can be one file, a zip named `*.texlz`
   with `package.texl` at its root, to share as one file. Stilo opens it as
