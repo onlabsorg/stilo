@@ -42,13 +42,13 @@ Two ways:
     uv run stilo serve examples
     ```
 
-    and open <http://127.0.0.1:8000/packages/beam/beam-check.texl>.
+    and open <http://127.0.0.1:8010/packages/beam/beam-check.texl>.
 
 - **With hot reload**, while you work on the web app. Run the server and
   Vite side by side:
 
     ```sh
-    uv run stilo serve examples       # the server, on :8000
+    uv run stilo serve examples       # the server, on :8010
     cd web && npm run dev              # Vite, on :5173
     ```
 

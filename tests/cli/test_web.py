@@ -12,5 +12,5 @@ def test_ctrl_c_stops_with_a_goodbye(tmp_path, monkeypatch, capsys):
         raise KeyboardInterrupt
 
     monkeypatch.setattr(uvicorn.Server, "run", interrupted)
-    run_server(create_app(tmp_path, tmp_path), "127.0.0.1", 8000)
+    run_server(create_app(tmp_path, tmp_path), "127.0.0.1", 8010)
     assert capsys.readouterr().out == "Stilo: stopped. Goodbye!\n"

@@ -148,8 +148,8 @@ def serve(args) -> int
 ```
 
 Runs `create_app(args.folder, args.web)` from the server with uvicorn on
-`args.host` and `args.port`, through `run_server(app, host, port,
-open_url=None)` (`web.py`, shared with `tutor` and open to plugins).
+`args.host` (default `127.0.0.1`) and `args.port` (default 8010, as for
+`tutor`), through `run_server(app, host, port, open_url=None)` (`web.py`, shared with `tutor` and open to plugins).
 `stilo serve` itself has no server extensions. Returns 1 if `args.folder` is not a folder.
 
 Ctrl+C stops the server. uvicorn shuts down cleanly, then re-raises the

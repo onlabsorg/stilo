@@ -147,7 +147,8 @@ def tutor_arguments(parser):
                              f"{default_folder()})")
     parser.add_argument("--reset", action="store_true",
                         help="start again from a fresh copy; the old one is moved aside, not deleted")
-    parser.add_argument("--port", type=int, default=8000)
+    parser.add_argument("--port", type=int, default=8010,
+                        help="port to listen on (default: 8010)")
     parser.add_argument("--no-browser", action="store_true",
                         help="do not open the browser")
 

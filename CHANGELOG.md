@@ -4,6 +4,12 @@ All notable changes to Stilo are listed here, newest first. Versions follow
 [semantic versioning](https://semver.org/); before 1.0, any version may
 change the interfaces.
 
+## Unreleased
+
+- **`stilo serve` and `stilo tutor` now listen on port 8010 by default**
+  (was 8000, often taken by other programs). `--port` still chooses
+  another one. The tutorial's lesson 12 uses 8010 and 8011.
+
 ## 0.6.0 — 2026-11-18
 
 - **Projects are now packages**: a folder with a `package.texl` (was

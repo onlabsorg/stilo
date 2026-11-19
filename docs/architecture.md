@@ -56,7 +56,7 @@ never renders a document: it only reads and writes files.
 
 ## What runs where
 
-When a user opens `http://127.0.0.1:8000/packages/beam/beam-check.texl`:
+When a user opens `http://127.0.0.1:8010/packages/beam/beam-check.texl`:
 
 1. The browser asks for the address with `Accept: text/html`, so the server
    answers with the web app's `index.html`, and then its bundle from

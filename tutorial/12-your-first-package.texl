@@ -30,19 +30,19 @@ data tables need (lesson 7). On Windows, write the folder as you usually do, as
 ## Serve it
 
 `stilo serve` opens a folder in the editor, as `stilo tutor` opens this
-tutorial. The tutorial already uses the port 8000, so give your package
+tutorial. The tutorial already uses the port 8010, so give your package
 another one:
 
 ```
-stilo serve first-package --port 8001
+stilo serve first-package --port 8011
 ```
 
-Open `http://127.0.0.1:8001/` in your browser, press **Alt+N** for a new
+Open `http://127.0.0.1:8011/` in your browser, press **Alt+N** for a new
 document, and write. Everything from the lessons works there. Press **Ctrl+C**
 in the terminal to stop it.
 
 Next time, stop the tutorial first and run `stilo serve first-package`,
-which uses the port 8000.
+which uses the port 8010.
 <!--{ pr04 : rich }-->
 ## References
 

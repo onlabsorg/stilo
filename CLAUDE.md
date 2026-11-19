@@ -157,7 +157,7 @@ for rendering, managed with `uv`. All commands at the root.
 ```bash
 uv sync && uv run pytest              # tests/: server/, cli/, texl_lib/, tutorial/, test_layout.py,
                                       #   test_extension_contract.py
-uv run stilo serve examples           # http://127.0.0.1:8000
+uv run stilo serve examples           # http://127.0.0.1:8010
 uv run stilo render examples/packages/beam/beam-check.texl
 uv run stilo init path/to/package     # package.texl, references/stilo/
 uv run stilo tutor --dir /tmp/t       # copies tutorial/ there, serves it
@@ -183,7 +183,7 @@ npm test             # @web/test-runner in headless local Chrome: test/**/*.test
 npm run build        # src/stilo/web/, served by the Python server under /_app/
 npm run smoke        # after the build: smoke/*.test.js, node --test + puppeteer-core
                      # against `uv run stilo serve` on a copy of examples/ ($STILO)
-npm run dev          # Vite on :5173 with hot reload; proxies to the server on :8000
+npm run dev          # Vite on :5173 with hot reload; proxies to the server on :8010
                      # (STILO_SERVER=http://127.0.0.1:8765 npm run dev for another port)
 npm run check-package  # packs @onlabsorg/stilo-web, installs it in package-check/consumer/
                        # (a small Vite project), builds it (--out=<dir> keeps the tarball)
@@ -192,7 +192,7 @@ npm run check-package  # packs @onlabsorg/stilo-web, installs it in package-chec
 Two ways to run it:
 
 - **One process:** `npm run build`, then `uv run stilo serve examples`
-  at the root; open <http://127.0.0.1:8000/packages/beam/beam-check.texl>.
+  at the root; open <http://127.0.0.1:8010/packages/beam/beam-check.texl>.
 - **Development:** `uv run stilo serve examples` and `npm run dev` side
   by side; open <http://localhost:5173/packages/beam/beam-check.texl>.
   Vite serves the pages and forwards `/_api` and the public URLs of files

@@ -46,7 +46,7 @@ def test_tutor_makes_a_package_copy(tmp_path, served, capsys):
 
 def test_tutor_opens_the_index_in_the_browser(tmp_path, served, capsys):
     assert main(["tutor", "--dir", str(tmp_path / "copy")]) == 0
-    assert served[0][2] == "http://127.0.0.1:8000/index.texl"
+    assert served[0][2] == "http://127.0.0.1:8010/index.texl"
 
 
 def test_tutor_reuses_a_copy(tmp_path, served, capsys):

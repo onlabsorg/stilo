@@ -22,7 +22,7 @@ Requires Python 3.11 or later. Install the `stilo` command from PyPI, with
 ```bash
 uv tool install stilo-cli    # or: pip install stilo-cli
 stilo tutor                  # the tutorial, in your browser
-stilo serve my-folder        # http://127.0.0.1:8000
+stilo serve my-folder        # http://127.0.0.1:8010
 stilo render my-folder/report.texl
 ```
 
@@ -38,7 +38,7 @@ cd web && npm install && npm run build && cd ..
 uv run stilo serve examples
 ```
 
-Open <http://127.0.0.1:8000/packages/beam/beam-check.texl>.
+Open <http://127.0.0.1:8010/packages/beam/beam-check.texl>.
 
 ## Parts
 

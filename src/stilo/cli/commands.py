@@ -80,7 +80,8 @@ def serve_arguments(parser):
                         help="folder of the documents (default: the current folder)")
     parser.add_argument("--host", default="127.0.0.1",
                         help="address to listen on (default: 127.0.0.1)")
-    parser.add_argument("--port", type=int, default=8000)
+    parser.add_argument("--port", type=int, default=8010,
+                        help="port to listen on (default: 8010)")
     parser.add_argument("--web", type=Path, default=WEB_DIST,
                         help="built web app (default: the one installed with stilo)")
 

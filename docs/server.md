@@ -302,7 +302,7 @@ notice that says how to build it.
 import uvicorn
 from stilo.server import create_app
 
-uvicorn.run(create_app("examples", "src/stilo/web"), port=8000)
+uvicorn.run(create_app("examples", "src/stilo/web"), port=8010)
 ```
 
 The routes, in the order they match:

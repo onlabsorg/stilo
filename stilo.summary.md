@@ -516,7 +516,7 @@ accept are not part of Stilo.
   existing `project.texl` is no longer read and must be renamed by hand.
   `stilo tutor` still recognises an old copy of the tutorial and proposes
   starting again. The example moved to `examples/packages/beam/`, and
-  lesson 12 of the tutorial is now "Your first package". Not released yet.
+  lesson 12 of the tutorial is now "Your first package".
 - 2026-11-18: **libraries renamed references**: the packages a package
   uses are now its *references*, in a `references/` folder (it was
   `lib/`); `stilo init` copies the Stilo library into `references/stilo/`,
@@ -525,7 +525,13 @@ accept are not part of Stilo.
   changed to `~/references/` in imports. The changelog explains how to
   move a folder made with 0.5 in one go (both renames). The tutorial and
   the example follow; lesson 14 is now "Your own references". Ships with
-  the package rename in the same version. Not released yet.
+  the package rename in the same version.
+- 2026-11-18: **0.6.0 released**: tagged `v0.6.0`, with the two renames
+  above (projects to packages, libraries to references).
+- 2026-11-19: **default port 8010**: `stilo serve` and `stilo tutor` now
+  listen on port 8010 unless told otherwise (it was 8000, often taken by
+  other programs); the tutorial and the documentation follow. Not
+  released yet.
 
 ## Known limitations
 
