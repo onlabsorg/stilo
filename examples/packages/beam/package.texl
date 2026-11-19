@@ -1,7 +1,7 @@
 # Beam check
 
 This folder is a Stilo package. This file marks its home folder: in an
-import, `~` stands for it, as in `~/references/stilo/index.texl`. The values below
+import, `~` stands for it, as in `~/references/stilo.texlz/index.texl`. The values below
 configure the package.
 
 <% package_name = "Beam check" %>

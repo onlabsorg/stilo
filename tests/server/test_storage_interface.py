@@ -71,6 +71,10 @@ class MemoryStorage:
     def expand_home(self, path):
         return path.replace("~/", "")
 
+    def read_target(self, path):
+        path = self.expand_home(path).strip("/")
+        return f"{path}/index.texl" if path in self.folders else path
+
 
 @pytest.fixture
 def memory():
@@ -123,7 +127,7 @@ def test_home_redirect_uses_the_storage(client):
 
 def test_storage_errors_keep_their_status(client):
     assert client.get("/_api/files/.hidden").status_code == 400
-    assert client.get("/_api/files/images").status_code == 400
+    assert client.get("/_api/files/images?download").status_code == 400
 
 
 class Recorder(StorageWrapper):

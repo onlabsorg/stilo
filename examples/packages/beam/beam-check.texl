@@ -1,5 +1,5 @@
 <!--{ imp6 : formula | hidden }-->
-<% texl.import "~/references/stilo/index.texl" ~> (lib -> bind "stilo" lib.data.stilo) %>
+<% texl.import "~/references/stilo.texlz/index.texl" ~> (lib -> bind "stilo" lib.data.stilo) %>
 <!--{ bek4 : markdown }-->
 # Mezzanine floor beam — design report
 
@@ -62,7 +62,7 @@ their recommended values. The key data, from the
    (EN 1993-1-1, 6.2) and for deflection against the limits of the basis of
    design. The deck restrains the top flange, so lateral-torsional buckling
    does not govern.
-4. The same checks are repeated for the IPE sections of the steel library,
+4. The same checks are repeated for the IPE sections of the steel reference,
    to find the lightest adequate one.
 
 The equations and the intermediate results are in the

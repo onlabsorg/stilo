@@ -1,0 +1,7 @@
+# stilo
+
+The Stilo library, a package: `stilo init` packs this folder into a
+package's `references/stilo.texlz`, a packed package that Stilo reads as a
+folder that cannot be changed. Its main document is `index.texl`.
+
+<% package_name = "stilo" %>

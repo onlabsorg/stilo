@@ -37,6 +37,15 @@ const encode = (path) => path.split("/").map(encodeURIComponent).join("/");
  * by its public URL, not in the editor. */
 export const isDocument = (path) => path.endsWith(".texl");
 
+/** The extension of a packed package: a package in one zip file, which the
+ * server shows as a read-only folder (S23). */
+export const ARCHIVE_SUFFIX = ".texlz";
+
+/** Whether `path` goes through a packed package: a segment ending in
+ * `.texlz`, with more after it. The path of the archive itself names the
+ * file, not a path through it. */
+export const inArchive = (path) => path.split("/").slice(0, -1).some((segment) => segment.endsWith(ARCHIVE_SUFFIX));
+
 /**
  * The protocol client. Every request goes through `fetch`, so one place
  * decides how the server is reached.

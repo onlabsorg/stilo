@@ -13,8 +13,8 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware import Middleware
 
 from .extensions import ServerExtension, check_extensions
-from .files import NO_CACHE, is_document, other_file_response
-from .home import has_home
+from .archive import is_archive
+from .files import NO_CACHE, download_response, is_document, other_file_response
 from .storage import BadRequest, FolderStorage, NotFound, Storage, StorageError
 
 TEXT = "text/plain; charset=utf-8"
@@ -24,7 +24,7 @@ VERSION = "0.6.0"
 
 # The version of the protocol it speaks, and what it can do (GET /_api/info).
 PROTOCOL = 1
-CAPABILITIES = ["files", "tree", "folders", "move", "upload", "trash", "home"]
+CAPABILITIES = ["files", "tree", "folders", "move", "upload", "trash", "home", "archives", "index"]
 
 NO_BUILD = """<!doctype html><meta charset="utf-8"><title>Stilo</title>
 <p>The web app is not built. Run <code>npm run build</code> in <code>web/</code>
@@ -57,24 +57,33 @@ def create_app(storage: Storage | Path | str, web_dist: Path | str | None = None
     async def storage_error(request: Request, error: StorageError):
         return JSONResponse({"error": str(error)}, status_code=error.status)
 
-    def home_redirect(prefix: str, path: str, request: Request) -> Response | None:
-        """A read whose path has `~` segments is redirected to the real path
-        (docs/protocol.md): the document is the one at the URL a redirect
-        leads to, its identity for Texl (final URLs, Texl 0.8), so imports of
-        one document by different paths share it, and a cycle through `~`
-        ends. Temporary, since the home depends on manifests that can change."""
-        if not has_home(path):
+    def read_redirect(prefix: str, path: str, request: Request, *, index: bool = True) -> Response | None:
+        """A read is redirected to the path it leads to (docs/protocol.md):
+        `~` segments expanded to the real path, and a folder or a packed
+        package to its `index.texl` (`storage.read_target`; S25), unless
+        `index` is false or the request asks for `?download`. The document is
+        the one at the URL a redirect leads to, its identity for Texl (final
+        URLs, Texl 0.8), so imports of one document by different paths share
+        it, relative imports resolve from its folder, and a cycle through `~`
+        ends. Temporary, since manifests and folders can change."""
+        if index and "download" not in request.query_params:
+            target = storage.read_target(path)
+        else:
+            target = storage.expand_home(path).strip("/")
+        if target == path:
             return None
-        url = prefix + quote(storage.expand_home(path), safe="/")
+        url = prefix + quote(target, safe="/")
         if request.url.query:
             url += "?" + request.url.query
         return RedirectResponse(url, status_code=307, headers=NO_CACHE)
 
     @app.api_route("/_api/files/{path:path}", methods=["GET", "HEAD"])
     async def get_file(path: str, request: Request):
-        if redirect := home_redirect("/_api/files/", path, request):
+        if redirect := read_redirect("/_api/files/", path, request):
             return redirect
         content, tag = storage.read(path)
+        if "download" in request.query_params:
+            return download_response(path, content, tag)
         return Response(content, media_type=TEXT, headers={"ETag": tag, **NO_CACHE})
 
     @app.post("/_api/files/{path:path}", status_code=201)
@@ -150,8 +159,9 @@ def create_app(storage: Storage | Path | str, web_dist: Path | str | None = None
     def other_file(path: str) -> tuple[bytes, str] | None:
         """The content and ETag of `path` if it is a file that is not a
         document; None for a document, a folder, a missing file or a path the
-        protocol refuses."""
-        if is_document(path):
+        protocol refuses. A packed package is a folder here: its file is
+        fetched with `?download` (S25)."""
+        if is_document(path) or is_archive(path):
             return None
         try:
             return storage.read(path)
@@ -164,12 +174,16 @@ def create_app(storage: Storage | Path | str, web_dist: Path | str | None = None
     # root from ?root=); any other client (texl.import) gets the file itself.
     @app.api_route("/{path:path}", methods=["GET", "HEAD"], include_in_schema=False)
     async def page(path: str, request: Request):
-        if redirect := home_redirect("/", path, request):
+        browser = "text/html" in request.headers.get("accept", "")
+        # A browser asking for a folder gets the app, any other client its index
+        if redirect := read_redirect("/", path, request, index=not browser):
             return redirect
+        if "download" in request.query_params:
+            return download_response(path, *storage.read(path))
         vary = {"Vary": "Accept"}
         if file := other_file(path):
             return other_file_response(path, *file)
-        if "text/html" not in request.headers.get("accept", ""):
+        if not browser:
             content, tag = storage.read(path)
             return Response(content, media_type=TEXT,
                             headers={"ETag": tag, **NO_CACHE, **vary})

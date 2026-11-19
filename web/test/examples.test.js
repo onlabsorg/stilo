@@ -12,6 +12,8 @@ const documents = [
     "packages/beam/beam-check.texl",
     "packages/beam/basis-of-design.texl",
     "packages/beam/analysis.texl",
+    "packages/steel/index.texl",
+    "packages/steel/sections.texl",
 ];
 
 describe("the example documents", () => {

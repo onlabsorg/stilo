@@ -6,7 +6,7 @@
 #   src/stilo/web      the built web app, written by `npm run build` in web/
 #                      (git-ignored; built into the package when present —
 #                      the release workflow checks that the wheel has it)
-#   texl-lib/          the Texl library `stilo init` copies into packages,
+#   texl-lib/          the Texl library `stilo init` packs into packages,
 #                      shipped in the wheel as stilo/texl-lib
 #   tutorial/          the lessons `stilo tutor` copies and serves, shipped
 #                      in the wheel as stilo/tutorial

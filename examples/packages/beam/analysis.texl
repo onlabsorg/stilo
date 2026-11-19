@@ -1,5 +1,5 @@
 <!--{ an00 : formula | hidden }-->
-<% texl.import "~/references/stilo/index.texl" ~> (lib -> bind "stilo" lib.data.stilo) %>
+<% texl.import "~/references/stilo.texlz/index.texl" ~> (lib -> bind "stilo" lib.data.stilo) %>
 <!--{ an01 : markdown }-->
 # Calculation note
 
@@ -136,7 +136,7 @@ the governing check is <% r.governing %>, at <% pct r.u %> %.
 <!--{ an09 : markdown }-->
 ## 3 Alternative sections
 
-The same checks for the IPE sections of the steel library, lightest first.
+The same checks for the IPE sections of the steel reference, lightest first.
 
 <%
 results = [(list.enum [

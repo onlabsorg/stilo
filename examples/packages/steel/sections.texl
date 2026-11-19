@@ -1,0 +1,14 @@
+# IPE sections
+
+Hot-rolled IPE sections. Heights in mm, elastic section moduli `W` in mm³,
+second moments of area `I` in mm⁴, shear areas `Av` in mm², masses in kg/m.
+<%
+IPE = {
+    IPE240: {name: "IPE 240", h: 240, W: 324000, I: 38920000, Av: 1914, mass: 30.7},
+    IPE270: {name: "IPE 270", h: 270, W: 429000, I: 57900000, Av: 2214, mass: 36.1},
+    IPE300: {name: "IPE 300", h: 300, W: 557000, I: 83560000, Av: 2568, mass: 42.2},
+    IPE330: {name: "IPE 330", h: 330, W: 713000, I: 117700000, Av: 3081, mass: 49.1}
+}
+%>
+Sections: <% IPE.IPE240.name %>, <% IPE.IPE270.name %>, <% IPE.IPE300.name %>,
+<% IPE.IPE330.name %>.

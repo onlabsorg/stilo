@@ -7,9 +7,10 @@ deliberate.
 """
 
 from .app import CAPABILITIES, PROTOCOL, VERSION, create_app
+from .archive import ARCHIVE_SUFFIX, ArchiveError, is_archive, pack_package
 from .extensions import ServerExtension, get_storage
-from .files import (DOCUMENT_SUFFIX, FILE_TYPES, NO_CACHE, etag, is_document, media_type,
-                    other_file_response)
+from .files import (DOCUMENT_SUFFIX, FILE_TYPES, INDEX, NO_CACHE, download_response, etag, is_document,
+                    media_type, other_file_response)
 from .home import HOME, MANIFEST, MAX_HOMES, HomeCycle, expand_home, has_home, home_of
 from .storage import (BadRequest, Conflict, FolderStorage, Forbidden, NotFound,
                       PreconditionFailed, Storage, StorageError, StorageWrapper)
@@ -25,7 +26,9 @@ __all__ = [
     "StorageError", "BadRequest", "Forbidden", "NotFound", "Conflict", "PreconditionFailed",
     # Files by their public URL
     "DOCUMENT_SUFFIX", "is_document", "etag", "FILE_TYPES", "media_type",
-    "other_file_response", "NO_CACHE",
+    "other_file_response", "NO_CACHE", "INDEX", "download_response",
     # The package home, `~` in paths
     "MANIFEST", "HOME", "MAX_HOMES", "HomeCycle", "home_of", "expand_home", "has_home",
+    # Packed packages (.texlz)
+    "ARCHIVE_SUFFIX", "is_archive", "ArchiveError", "pack_package",
 ]

@@ -1,13 +1,14 @@
 # Protocol v1 — documents over HTTP
 
-*The contract between the web app and the server, as of 2026-11-18. Plain
+*The contract between the web app and the server, as of 2026-11-19. Plain
 HTTP, close to how the web already serves files, so that `texl.import` can
 fetch documents by URL with no special client. Version 1: no accounts and no
 versions in Stilo's own server; a server can describe itself
 ([`/_api/info`](#get-the-servers-info)), mark items read-only, and ask for a
 login or refuse a request in a way every client understands
-([Login and refusals](#login-and-refusals)). What changed from version 0 is
-[at the end](#changes-from-version-0).*
+([Login and refusals](#login-and-refusals)), and read packed packages as
+read-only folders ([Packed packages](#packed-packages)). What changed from
+version 0 is [at the end](#changes-from-version-0).*
 
 ## URL space
 
@@ -43,9 +44,9 @@ redirect to the real path, `307 Temporary Redirect` (the query kept,
 ```
 package.texl in /packages/beam/
 
-GET /packages/beam/docs/~/references/stilo/index.texl
+GET /packages/beam/docs/~/references/stilo.texlz/index.texl
 → 307 Temporary Redirect
-  Location: /packages/beam/references/stilo/index.texl
+  Location: /packages/beam/references/stilo.texlz/index.texl
 GET /packages/beam/docs/~/references/a/~/references/b/b.texl
   → /packages/beam/references/a/ has no package.texl:
     /packages/beam/references/b/b.texl
@@ -105,6 +106,32 @@ anything either.
 A browser asking for a path that is not a file gets the web app, which
 opens no document unless the path ends in `.texl`.
 
+**A folder reads as its index.** A read of a folder, or of a packed
+package ([Packed packages](#packed-packages)), by any client but a browser
+asking for HTML, is redirected to the folder's `index.texl`, with or
+without a final `/`, by both forms (`307 Temporary Redirect`, the query
+kept, `Cache-Control: no-cache`), after `~` is expanded:
+
+```
+GET /packages/beam/references/steel/
+→ 307 Temporary Redirect
+  Location: /packages/beam/references/steel/index.texl
+```
+
+So `texl.import "~/references/steel/"`, or `"~/references/steel-revA.texlz"`,
+imports the reference's main document, and the redirect makes it the
+document at its real path, whose relative imports resolve from its
+folder, as with `~`. The server does not check that `index.texl` exists
+(the target answers `404`). A browser asking for HTML gets the web app, as
+for any path that is not a file. Capability `index`.
+
+**`?download`** on a read of a file, by either form, sends the file itself
+as an attachment (`Content-Disposition: attachment`, with its type and
+`X-Content-Type-Options: nosniff`), to every client, a browser too. It is
+how a packed package's own file is fetched, since a read of its path
+leads to its index; a folder still answers `400`. A path with `~` is
+redirected first, `?download` kept.
+
 **Imports:** the editor renders a document as the document at its public
 URL, so a relative import resolves from the document's folder
 (`texl.import("steel.texl")` in `/library/beam.texl` fetches
@@ -136,7 +163,7 @@ GET /_api/info
   {
     "protocol": 1,
     "server": { "name": "stilo", "version": "0.4.0" },
-    "capabilities": ["files", "tree", "folders", "move", "upload", "trash", "home"],
+    "capabilities": ["files", "tree", "folders", "move", "upload", "trash", "home", "archives", "index"],
     "extensions": []
   }
 ```
@@ -153,6 +180,8 @@ the software. `capabilities` lists what it can do:
 | `upload`   | CREATE files that are not documents |
 | `trash`    | A deleted item can be got back on the server (not through the protocol) |
 | `home`     | The package home, `~` in paths |
+| `archives` | Packed packages, read as read-only folders ([Packed packages](#packed-packages)) |
+| `index`    | A read of a folder leads to its `index.texl`; `?download` ([URL space](#url-space)) |
 
 A request for something the server cannot do gets `501 Not Implemented`;
 a client hides what the server lacks. `extensions` lists the server's
@@ -185,9 +214,10 @@ GET /_api/files/packages/beam/beam-check.texl
 ```
 
 Any regular file under the root can be read (Texl documents import other
-files too). `404` if it does not exist, `400` if the path is a folder. `HEAD`
-answers the same, without the body. A path with `~` segments is redirected
-to the real path first (see [URL space](#url-space)).
+files too). `404` if it does not exist. `HEAD` answers the same, without
+the body. A path with `~` segments is redirected to the real path first,
+and a folder or a packed package to its `index.texl` (see
+[URL space](#url-space)); with `?download`, a folder gets `400`.
 
 ### CREATE a new file
 
@@ -244,7 +274,8 @@ GET /_api/tree/packages?depth=2
 
 `/_api/tree/` (empty path) is the root, whose `name` and `path` are `""`.
 A node may carry `"readOnly": "<reason>"`: the item cannot be changed (see
-[Read-only items](#read-only-items)).
+[Read-only items](#read-only-items)). A packed package is a folder node
+with `"archive": true` ([Packed packages](#packed-packages)).
 Children are folders first, then files, each sorted by name. Every file is
 listed, documents and other files alike (a client tells them apart by the
 `.texl` extension); hidden entries are skipped. `depth` limits
@@ -337,6 +368,74 @@ Stilo's own server marks the files and folders it cannot write on its file
 system ("The file cannot be written on the server", "The folder cannot be
 written on the server").
 
+## Packed packages
+
+A **packed package** is a package stored as one file: a zip file named
+`*.texlz` whose root holds a `package.texl`. People share it as one file,
+as they do a Word file; a package's references may be packed packages. A
+server with the capability `archives` reads it as a folder that cannot be
+changed:
+
+```
+GET /_api/files/refs/lib-revA.texlz/docs/x.texl   the entry docs/x.texl
+GET /refs/lib-revA.texlz                          307 to refs/lib-revA.texlz/index.texl
+GET /refs/lib-revA.texlz?download                 the file itself, as an attachment
+GET /_api/tree/refs/lib-revA.texlz                its contents, as a folder
+```
+
+**A folder, whose file is a download.** A path that goes through a
+`.texlz` file, with more segments after it, names an entry inside it. The
+path of the file itself reads as a folder does: by its `index.texl`, a
+redirect (a browser asking for HTML gets the web app), so
+`texl.import "~/references/lib-revA.texlz"` imports the package's main
+document. The zip itself is fetched with `?download`
+([URL space](#url-space)), as `application/octet-stream`. The tree gives
+its contents. An entry is served as a file of its kind would be:
+documents as text, other files with their type and safety headers. A
+`.texlz` file that is not a valid packed package is an ordinary file, read
+as itself, and a read through it gets `400`.
+
+**In the tree** a packed package is a folder node, listed among the
+folders, with `"archive": true` and the `size` and `modified` of its file;
+`depth` counts it as a folder. Every item in it carries `readOnly`, and
+the time of the archive file:
+
+```json
+{ "name": "lib-revA.texlz", "path": "refs/lib-revA.texlz", "type": "folder",
+  "archive": true, "size": 18234, "modified": "2026-11-19T09:12:03Z",
+  "children": [
+    { "name": "index.texl", "path": "refs/lib-revA.texlz/index.texl",
+      "type": "file", "size": 412, "modified": "2026-11-19T09:12:03Z",
+      "readOnly": "It is in a packed package, which cannot be changed" } ] }
+```
+
+The archive node itself is not `readOnly`: it is a file, which can be
+renamed, moved, deleted and replaced like any other. A client that knows
+`archive` offers no way to add items to it.
+
+**Writes inside are refused.** CREATE, UPDATE, DELETE, CREATE folder and
+MOVE of a path through a packed package, or into one, get `403 Forbidden`
+with the reason (`"refs/lib-revA.texlz is a packed package: what is in it
+cannot be changed"`). The file is created (uploaded), moved and deleted
+with the requests for files; DELETE of a folder given a packed package
+deletes its file, and `deleted` counts the files in it. A packed package
+keeps its extension when moved, as a document does (`400` otherwise), and
+a folder's name cannot end in `.texlz`.
+
+**The home and imports.** A packed package holds a `package.texl`, so
+inside it `~` stands for its root (or for a package nested in it), by the
+rule of [URL space](#url-space); relative imports resolve inside it, as
+the final URL of a document in it is its path through the file. Imports
+from outside reach into it: `~/references/lib-revA.texlz/index.texl`. A
+packed package nested in another (a release carrying its own references)
+works the same way, for reads, the tree and `~`.
+
+**Archives are untrusted.** A server reads them without extracting them,
+and refuses one with entries whose path is absolute or holds `..`, links,
+duplicate names, or too many entries or bytes once unpacked (Stilo's
+server: 10 000 entries, 256 MiB, 8 levels of nesting). Hidden entries and
+entries named `~` are not shown, as elsewhere.
+
 ## Login and refusals
 
 A server may need to know who the user is (Stilo's own never does; a
@@ -403,3 +502,11 @@ version 0 client still works with a version 1 server:
 - Read-only items: `readOnly` in the tree, `403` on writing them.
 - `401` with `login`, and `403` with a reason, for servers that need a
   signed-in user or refuse a request.
+- Packed packages (2026-11-19), with the capability `archives`: paths
+  through `.texlz` files, `archive` in the tree, `403` on writes inside.
+  A client that does not know them sees a folder of read-only items whose
+  writes are refused.
+- A folder reads as its index (2026-11-19), with the capability `index`:
+  a read of a folder or a packed package is redirected to its
+  `index.texl` (it answered `400` before), and `?download` sends a file
+  as an attachment.

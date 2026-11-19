@@ -1,0 +1,15 @@
+# Steel, revision A
+
+Steel grade and constants, and the IPE sections of
+[sections.texl](sections.texl), for the documents that import this
+reference. A package imports it by its folder, or by its packed file, as
+`~/references/steel-revA.texlz`: the import reads this document.
+<% texl.import "sections.texl" ~> (s -> bind "IPE" s.data.IPE) %>
+<%
+grade = {name: "S355", fy: 355},   # yield strength in N/mm²
+E = 210000,                        # modulus of elasticity in N/mm²
+gammaM0 = 1.0                      # partial factor for resistance
+%>
+Grade <% grade.name %>: f<sub>y</sub> = <% grade.fy %> N/mm², E = <% E %> N/mm²,
+γ<sub>M0</sub> = <% gammaM0 %>. Sections: <% IPE.IPE240.name %> to
+<% IPE.IPE330.name %>.

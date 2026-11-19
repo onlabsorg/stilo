@@ -204,11 +204,11 @@ describe("chart cell in the editor", () => {
     const FETCH = window.fetch;
     afterEach(() => (window.fetch = FETCH));
 
-    /** Serves the Stilo library from texl-lib/ where a package would have it, under references/stilo/. */
+    /** Serves the Stilo library from texl-lib/ where a package would have it, under references/stilo.texlz/. */
     async function serveLibrary() {
         const files = {};
         for (const name of ["index.texl", "dataframe.texl", "charts.texl"])
-            files[`/references/stilo/${name}`] = await (await FETCH(`/texl-lib/${name}`)).text();
+            files[`/references/stilo.texlz/${name}`] = await (await FETCH(`/texl-lib/${name}`)).text();
         window.fetch = async (url, ...rest) => {
             const name = Object.keys(files).find((file) => String(url.url ?? url).endsWith(file));
             return name ? new Response(files[name]) : FETCH(url, ...rest);

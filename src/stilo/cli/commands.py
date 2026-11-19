@@ -7,17 +7,20 @@ entry-point group `stilo.commands` (`__init__.py`, `plugin_commands`).
 """
 
 import asyncio
+import hashlib
 import sys
+import zipfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
 import pytexl
 
-from stilo.server import create_app
+from stilo.server import ARCHIVE_SUFFIX, ArchiveError, create_app, pack_package
 
 from .errors import count_returned, find_errors, format_report, numbered_text
-from .package import LIBRARY_NAME, MANIFEST, REFERENCES, create_engine, make_package
+from .package import (LIBRARY_FILE, LIBRARY_NAME, MANIFEST, REFERENCES, add_library, create_engine,
+                      make_package)
 from .tutor import tutor, tutor_arguments
 from .web import WEB_DIST, run_server
 
@@ -105,12 +108,12 @@ def init_arguments(parser):
 
 def init(args) -> int:
     """Makes a folder a Stilo package: writes package.texl, creates
-    references/ and copies the Stilo library into references/stilo/, never
-    over an existing one."""
+    references/ and writes the Stilo library there, references/stilo.texlz, never
+    over an existing one. In a folder that is already a package, it leaves
+    package.texl as it is and adds the library if it is missing (S24)."""
     folder = args.folder.resolve()
     if (folder / MANIFEST).exists():
-        print(f"stilo: {args.folder}: already a package ({MANIFEST} exists)", file=sys.stderr)
-        return 1
+        return complete_package(args, folder)
     try:
         kept = make_package(folder, args.name or folder.name)
     except OSError as e:
@@ -118,12 +121,68 @@ def init(args) -> int:
         return 1
     print(f"Stilo: {folder} is a package: {MANIFEST}, {REFERENCES}/")
     if kept:
-        print(f"Stilo: {REFERENCES}/{LIBRARY_NAME}/ already exists: left as it is")
+        print(f"Stilo: {REFERENCES}/{LIBRARY_FILE} already exists: left as it is")
+    return 0
+
+
+def complete_package(args, folder: Path) -> int:
+    """`stilo init` in a package: adds the Stilo library if it is missing,
+    and changes nothing else."""
+    try:
+        added = add_library(folder)
+    except OSError as e:
+        print(f"stilo: {args.folder}: {e}", file=sys.stderr)
+        return 1
+    if args.name:
+        print(f"Stilo: --name ignored: {MANIFEST} exists and is left as it is")
+    if not added:
+        print(f"Stilo: {folder} is already a package, with {REFERENCES}/{LIBRARY_FILE}: nothing to do")
+        return 0
+    print(f"Stilo: {folder} is already a package: added {REFERENCES}/{LIBRARY_FILE}")
+    if (folder / REFERENCES / LIBRARY_NAME).is_dir():
+        print(f"Stilo: the old {REFERENCES}/{LIBRARY_NAME}/ is left as it is: change "
+              f"~/{REFERENCES}/{LIBRARY_NAME}/ to ~/{REFERENCES}/{LIBRARY_FILE}/ in the imports, "
+              f"then delete it")
+    return 0
+
+
+def pack_arguments(parser):
+    parser.add_argument("folder", type=Path, nargs="?", default=Path("."),
+                        help="folder of the package (default: the current folder)")
+    parser.add_argument("-o", "--output", type=Path,
+                        help=f"file to write (default: the folder's name with {ARCHIVE_SUFFIX}, "
+                             "next to the folder)")
+
+
+def pack(args) -> int:
+    """Packs a package folder into one file, a packed package (.texlz),
+    which Stilo opens as a read-only folder. The same files always give the
+    same bytes."""
+    folder = args.folder.resolve()
+    if not folder.is_dir():
+        print(f"stilo: {args.folder}: not a folder", file=sys.stderr)
+        return 1
+    output = (args.output or folder.parent / f"{folder.name}{ARCHIVE_SUFFIX}").resolve()
+    try:
+        content = pack_package(folder, exclude=[output])
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_bytes(content)
+    except ArchiveError as e:
+        print(f"stilo: {e}", file=sys.stderr)
+        return 1
+    except OSError as e:
+        print(f"stilo: {output}: {e}", file=sys.stderr)
+        return 1
+    with zipfile.ZipFile(output) as archive:
+        count = len(archive.infolist())
+    print(f"Stilo: packed {count} file{'' if count == 1 else 's'} into {output}")
+    print(f"sha256 {hashlib.sha256(content).hexdigest()}")
     return 0
 
 
 COMMANDS = [
     Command("init", "make a folder a Stilo package, with the Stilo library", init_arguments, init),
+    Command("pack", "pack a package into one file (.texlz), opened read-only", pack_arguments, pack),
     Command("render", "render a Texl document", render_arguments, render),
     Command("serve", "serve a folder of Texl documents with the web app", serve_arguments, serve),
     Command("tutor", "learn Stilo: open the tutorial in the web app", tutor_arguments, tutor),

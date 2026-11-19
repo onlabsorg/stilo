@@ -606,3 +606,101 @@ is to a package what a library is to software, and "references" names
 what the folder holds, as the references of an engineering report. A
 fallback or a warning would keep two folder names alive for a rename that
 costs users one `mv` and a search-and-replace, before 1.0.
+
+## S23 — 2026-11-19 — Packed packages: a package in one `.texlz` file, read as a read-only folder
+A **packed package** is a zip file named `*.texlz` (one constant,
+`ARCHIVE_SUFFIX`) with `package.texl` at its root. Stilo reads it as a
+folder that cannot be changed, everywhere it loads documents, and makes
+one with `stilo pack`.
+
+- **In `FolderStorage`**, not in the app, so a wrapped storage (Papiro
+  wraps one per package) gets it too. A path through a `.texlz` file names
+  an entry inside it; nested archives work the same way. The code is in
+  `stilo/server/archive.py`, which the CLI's file loader shares, so the
+  browser (through the server) and `stilo render` read archives alike.
+- **The endpoint tells the file from the folder**, not the URL's shape:
+  the path of the archive itself is the file for `/_api/files/` and the
+  public URL (a download), and the folder for `/_api/tree/`. No trailing
+  slash or query parameter carries meaning, which keeps paths as they are
+  everywhere else in the protocol.
+- **In the tree**, an archive is a folder node with `"archive": true` and
+  its file's `size` and `modified`; its items carry `readOnly`. The
+  archive node itself is not `readOnly`: the file moves, renames and
+  deletes as one item (protocol v1 says a read-only folder cannot be
+  moved). Writes inside get `403`. An archive keeps its extension when
+  moved, and a folder cannot be named `*.texlz`, so an item never turns
+  from a folder into a file. Still protocol 1, with the capability
+  `archives`: a client that ignores `archive` sees read-only items.
+- **`~` inside an archive** stands for its root, by the unchanged home
+  rule: every archive holds a manifest, and `home_of`/`expand_home` take
+  an `is_package` check that looks inside archives.
+- **Untrusted, in memory**: never extracted; entries with absolute paths,
+  `..`, links, duplicates, encryption or another compression are refused,
+  as are archives over 10 000 entries, 256 MiB unpacked (by declared
+  sizes, which reading enforces) or 8 levels of nesting. Opened archives
+  are cached by path, modification time and size.
+- **`stilo pack` is deterministic**: sorted entries, a fixed date and
+  permissions, no folder entries, deflate at level 9 (archives inside
+  stored). It packs every regular file except hidden entries, `~`, links
+  and files git ignores (the repository's rules, not the user's global
+  ones). `pack_package` is in `stilo.server.__all__` for Papiro's
+  releases.
+
+*Reason:* Papiro will publish a release as a packed package, a file people
+download, email and keep; references then become packed packages, and a
+single user shares a package the same way, so it belongs in open-source
+Stilo. Reading in place keeps the release's bytes, and so its hash, the
+identity of what was released; read-only follows from that. Deflate
+rather than stored keeps files small; its bytes are the same for the same
+zlib, which is the reproducibility a release needs (the hash is taken
+once, of the file published).
+
+## S24 — 2026-11-19 — The Stilo library goes into a package packed, as `references/stilo.texlz`
+`stilo init` (and so `stilo tutor`) writes the Stilo library into a
+package as a packed package (S23), `references/stilo.texlz`, instead of
+copying it into a `references/stilo/` folder. Its import is
+`~/references/stilo.texlz/index.texl`, which the data and chart cells
+write. The source stays plain files in `texl-lib/`, which becomes a
+package with its own `package.texl` (packing needs one); the archive is
+packed when a package is made (`library_archive()`), so the wheel ships no
+binary and needs no build step. The example package commits the packed
+library, and a test checks its entries against `texl-lib/`. A package
+made before keeps its `references/stilo/` folder, which still works; there
+is no fallback in the cells, as for S21 and S22. Instead `stilo init`, run
+in a folder that is already a package, no longer refuses: it leaves
+`package.texl` as it is and adds a missing `references/stilo.texlz`, so
+moving a package over is `stilo init` and a search-and-replace of the
+imports. This supersedes the
+folder `references/stilo/` of S10 and S22.
+*Reason:* the library is a reference the user does not edit, and a packed
+package says so: it opens read-only, travels as one file, and shows that
+Stilo's own references are packed packages like those Papiro will
+release. Packing at `init`, deterministically, keeps one source for the
+library and gives every package made by one Stilo version the same bytes.
+
+## S25 — 2026-11-19 — A folder, or a packed package, reads as its `index.texl`; `?download` fetches a file
+A read of a folder or of a packed package is redirected (`307`) to its
+`index.texl`, by both forms (`/_api/files/` and the public URL), with or
+without a final `/`, after `~` is expanded; a browser asking for HTML
+still gets the web app. The CLI's loader does the same, returning the
+index as the final URL, from one rule (`INDEX`, `Archives.is_folder`). So
+`texl.import "~/references/steel-revA.texlz"` or `"~/references/steel/"`
+imports the reference's main document. The server does not check that the
+index exists. `index.texl` was already the main document of the Stilo
+library and of the tutorial's references.
+
+Since the path of a packed package now reads as its index, its file is
+fetched with **`?download`**, which works on any file and sends it as an
+attachment. This supersedes, in S23, the archive's own path serving the
+file. The storage interface gets a tenth method, `read_target(path)`,
+where a read leads (`~` and the index), which replaces the app's use of
+`expand_home` for redirects; this changes the interface of S20 (pre-1.0;
+`StorageWrapper` passes it on). Protocol 1, with the capability `index`;
+a read of a folder answered `400` before.
+
+*Reason:* importing a package by its name is what a reference is for, and
+an archive shown as a folder should read like one. A redirect, not the
+content, keeps the index the document at its real path, so its relative
+imports resolve from its folder, as with `~` (S11). The download needs its
+own address because a server cannot tell an import from a download by the
+request; a query parameter keeps every path meaning one thing.

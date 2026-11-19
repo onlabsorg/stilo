@@ -71,10 +71,10 @@ When a user opens `http://127.0.0.1:8010/packages/beam/beam-check.texl`:
 4. An import, `texl.import("../../library/steel.texl")`, is fetched by Texl
    from the public address `/library/steel.texl`, without `text/html`, so the
    server returns the file. An import from the package's references,
-   `texl.import("~/references/stilo/index.texl")`, is fetched as
-   `/packages/beam/~/references/stilo/index.texl`, and the server redirects
+   `texl.import("~/references/stilo.texlz/index.texl")`, is fetched as
+   `/packages/beam/~/references/stilo.texlz/index.texl`, and the server redirects
    it to the file under the package home,
-   `/packages/beam/references/stilo/index.texl`, which Texl takes as the
+   `/packages/beam/references/stilo.texlz/index.texl`, which Texl takes as the
    imported document's URL ([Packages](packages.md)).
 5. Ctrl+S commits the cell being edited and sends the text back with
    `PUT /_api/files/...` and the ETag of the last read, so a file changed

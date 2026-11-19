@@ -190,7 +190,7 @@ describe("nav-pane other files", () => {
     it("offers the commands for other files", async () => {
         const el = await pane(withOthers);
         await rightClick(el, row(el, "report.pdf").querySelector(".item"));
-        expect(labels(el)).to.deep.equal(["Rename", "Move to…", "Copy link", "Delete"]);
+        expect(labels(el)).to.deep.equal(["Rename", "Move to…", "Copy link", "Download", "Delete"]);
     });
 
     it("says there are no documents when nothing is left", async () => {

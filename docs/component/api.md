@@ -374,7 +374,7 @@ the row are marked as they are typed, and the cell does not commit while
 one is marked. `accepts` such a tag or a blank source (a new table), with
 white space and comments around the tag. `requires` the Stilo library:
 `STILO_IMPORT`, the tag that imports `STILO_LIBRARY`
-(`~/references/stilo/index.texl`). `parseData(source)` returns `{before, after,
+(`~/references/stilo.texlz/index.texl`). `parseData(source)` returns `{before, after,
 name, columns, rows}` (entries as Swan source), or null;
 `serializeData(data)` writes it back, one row per line;
 `entryError(text)` resolves to why a value cannot be an entry, or `""`

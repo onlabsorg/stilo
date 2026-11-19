@@ -22,6 +22,10 @@ again for that path, an import cycle Texl ends. A path with more than
 `MAX_HOMES` `~` segments is still refused, a safeguard for clients that keep
 the `~` URL (`a/~/references/x/~/references/x/...` would grow at every turn).
 
+A packed package (`archive.py`, S23) always holds a manifest at its root,
+so inside one `~` stands for the archive's root, or a package nested in it:
+the server and the CLI pass an `is_package` that looks inside archives.
+
 Used by the server (`storage.py`) and by the CLI's file loader, so that
 both resolve the same way. It reads the file system only to look for
 manifests; validating the result is the caller's job.
@@ -41,11 +45,19 @@ class HomeCycle(ValueError):
     """A path with more `~` segments than any real chain of imports needs."""
 
 
-def home_of(folder: Path, top: Path) -> Path:
+def holds_manifest(folder: Path) -> bool:
+    """Whether `folder` holds a manifest, on the file system."""
+    return (folder / MANIFEST).is_file()
+
+
+def home_of(folder: Path, top: Path,
+            is_package: Callable[[Path], bool] = holds_manifest) -> Path:
     """The nearest folder at or above `folder`, up to `top`, that holds a
-    manifest; `top` if none does. `folder` is expected inside `top`."""
+    manifest; `top` if none does. `folder` is expected inside `top`.
+    `is_package(folder)` checks for the manifest (the file system by
+    default; the server and the CLI also look inside packed packages)."""
     for candidate in (folder, *folder.parents):
-        if (candidate / MANIFEST).is_file():
+        if is_package(candidate):
             return candidate
         if candidate == top:
             break
@@ -53,17 +65,19 @@ def home_of(folder: Path, top: Path) -> Path:
 
 
 def expand_home(base: Path, segments: Iterable[str],
-                top_of: Callable[[Path], Path]) -> Path:
+                top_of: Callable[[Path], Path],
+                is_package: Callable[[Path], bool] = holds_manifest) -> Path:
     """The path of `segments` under `base`, with every `~` segment replaced,
     from the left, by the home of the folder built so far. `top_of(folder)`
-    gives the highest folder the search for that folder's home may reach.
-    Raises `HomeCycle` beyond `MAX_HOMES` `~` segments."""
+    gives the highest folder the search for that folder's home may reach;
+    `is_package` is passed to `home_of`. Raises `HomeCycle` beyond
+    `MAX_HOMES` `~` segments."""
     segments = list(segments)
     if segments.count(HOME) > MAX_HOMES:
         raise HomeCycle(f"more than {MAX_HOMES} {HOME} segments: an import cycle through {HOME}?")
     current = base
     for segment in segments:
-        current = home_of(current, top_of(current)) if segment == HOME else current / segment
+        current = home_of(current, top_of(current), is_package) if segment == HOME else current / segment
     return current
 
 

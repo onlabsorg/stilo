@@ -8,6 +8,10 @@ wrapper overrides only what it changes (e.g. reacting to every write).
 Paths are relative to the storage root, with "/" separators. Every method
 validates its path and raises a StorageError subclass that the HTTP layer
 maps to a status code.
+
+`FolderStorage` reads packed packages (`archive.py`, S23) as read-only
+folders: a path through a `.texlz` file names an entry inside it, while the
+path of the archive names the file, which moves and deletes as one.
 """
 
 from __future__ import annotations
@@ -18,10 +22,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Protocol
 
-from .files import DOCUMENT_SUFFIX, etag, is_document  # noqa: F401 (is_document: also from here)
+from .archive import ARCHIVE_SUFFIX, Archive, ArchiveError, Archives, is_archive
+from .files import DOCUMENT_SUFFIX, INDEX, etag, is_document  # noqa: F401 (is_document: also from here)
 from .home import HOME, HomeCycle, expand_home, has_home
 
 TRASH = ".trash"
+
+# Why the items in a packed package cannot be changed (tree: `readOnly`)
+IN_ARCHIVE = "It is in a packed package, which cannot be changed"
 
 
 class StorageError(Exception):
@@ -92,6 +100,11 @@ class Storage(Protocol):
         """`path` with its `~` segments replaced by the real path."""
         ...
 
+    def read_target(self, path: str) -> str:
+        """The path a read of `path` leads to: `~` expanded, then a folder
+        or a packed package replaced by its `index.texl` (S25)."""
+        ...
+
 
 class StorageWrapper:
     """A storage that passes every call to `inner`. Subclass it and override
@@ -133,14 +146,20 @@ class StorageWrapper:
     def expand_home(self, path: str) -> str:
         return self.inner.expand_home(path)
 
+    def read_target(self, path: str) -> str:
+        return self.inner.read_target(path)
+
 
 class FolderStorage:
-    """The default storage: the documents in a folder on disk."""
+    """The default storage: the documents in a folder on disk, packed
+    packages (`.texlz` files) read as read-only folders."""
 
     def __init__(self, root: Path | str):
         self.root = Path(root).resolve()
         if not self.root.is_dir():
             raise ValueError(f"storage root is not a folder: {self.root}")
+        # The packed packages opened, kept until their file changes
+        self.archives = Archives(self.root)
 
     # -- paths ---------------------------------------------------------------
 
@@ -159,10 +178,20 @@ class FolderStorage:
         if not has_home(path):
             return path
         try:
-            target = expand_home(self.root, self._segments(path), lambda folder: self.root)
+            target = expand_home(self.root, self._segments(path), lambda folder: self.root,
+                                 self.archives.is_package)
         except HomeCycle as e:
             raise BadRequest(f"{e}: {path!r}") from None
         return target.relative_to(self.root).as_posix() if target != self.root else ""
+
+    def read_target(self, path: str) -> str:
+        """The path a read of `path` leads to (S25): `~` expanded, then, if
+        that is a folder or a packed package (on disk or in an archive), its
+        `index.texl`, whether it exists or not. Otherwise the expanded path."""
+        real = self.expand_home(path).strip("/")
+        if self.archives.is_folder(self.resolve(real)):
+            return f"{real}/{INDEX}" if real else INDEX
+        return real
 
     def resolve(self, path: str) -> Path:
         """The absolute file-system path of `path`, refusing paths that are
@@ -179,6 +208,39 @@ class FolderStorage:
 
     def relative(self, target: Path) -> str:
         return target.relative_to(self.root).as_posix() if target != self.root else ""
+
+    # -- packed packages -----------------------------------------------------
+
+    def _archive_of(self, path: str) -> tuple[str, list[str]] | None:
+        """The path of the archive file `path` goes through, and the segments
+        after it; None if it goes through none. The path of an archive itself
+        goes through none: it names the file."""
+        segments = self._segments(path)
+        for i in range(len(segments) - 1):
+            if segments[i].endswith(ARCHIVE_SUFFIX):
+                prefix = "/".join(segments[:i + 1])
+                if self.resolve(prefix).is_file():
+                    return prefix, segments[i + 1:]
+        return None
+
+    def _inside(self, path: str) -> tuple[Archive, str, str] | None:
+        """For a path through an archive: the archive that holds it (nested
+        ones followed), its path in there, and the path of the archive file
+        on disk; None for a path through none."""
+        found = self._archive_of(path)
+        if found is None:
+            return None
+        prefix, rest = found
+        try:
+            archive, inner = self.archives.open(self.resolve(prefix)).locate(rest)
+        except ArchiveError as e:
+            raise BadRequest(f"not a valid packed package: {e}") from None
+        return archive, inner, prefix
+
+    def _check_not_inside(self, path: str) -> None:
+        """Refuse a change inside a packed package."""
+        if found := self._archive_of(path):
+            raise Forbidden(f"{found[0]} is a packed package: what is in it cannot be changed")
 
     # -- read-only items -----------------------------------------------------
 
@@ -222,7 +284,20 @@ class FolderStorage:
     # -- files ---------------------------------------------------------------
 
     def read(self, path: str) -> tuple[bytes, str]:
-        target = self.resolve(self.expand_home(path))
+        real = self.expand_home(path)
+        if inside := self._inside(real):
+            archive, inner, _ = inside
+            kind = archive.kind(inner)
+            if kind == "folder":
+                raise BadRequest(f"not a file: {path!r}")
+            if kind is None:
+                raise NotFound(f"no such file: {path!r}")
+            try:
+                content = archive.read(inner)
+            except ArchiveError as e:
+                raise BadRequest(f"not a valid packed package: {e}") from None
+            return content, etag(content)
+        target = self.resolve(real)
         if target.is_dir():
             raise BadRequest(f"not a file: {path!r}")
         if not target.is_file():
@@ -233,6 +308,7 @@ class FolderStorage:
     def create(self, path: str, content: bytes) -> str:
         """Create a file, a document or any other, and its missing folders."""
         target = self._item(path)
+        self._check_not_inside(path)
         if target.is_dir():
             raise Conflict(f"already exists, as a folder: {path!r}")
         self._check_room(target)
@@ -248,6 +324,7 @@ class FolderStorage:
 
     def update(self, path: str, content: bytes, if_match: str | None = None) -> str:
         target = self.resolve(path)
+        self._check_not_inside(path)
         if target.suffix != DOCUMENT_SUFFIX:
             raise BadRequest(f"only {DOCUMENT_SUFFIX} files can be updated: {path!r}")
         if target.is_dir():
@@ -281,18 +358,23 @@ class FolderStorage:
 
     def move(self, path: str, to: str) -> str:
         """Move or rename a file or a folder; returns its new path. A document
-        stays a document and another file stays another file."""
+        stays a document, a packed package stays a packed package and another
+        file stays another file."""
         source = self._item(path)
         target = self._item(to)
+        self._check_not_inside(path)
+        self._check_not_inside(to)
         if not os.path.lexists(source):
             raise NotFound(f"no such item: {path!r}")
         if source.is_dir():
-            if target.suffix == DOCUMENT_SUFFIX:
-                raise BadRequest(f"a folder's name cannot end in {DOCUMENT_SUFFIX}: {to!r}")
+            if target.suffix in (DOCUMENT_SUFFIX, ARCHIVE_SUFFIX):
+                raise BadRequest(f"a folder's name cannot end in {target.suffix}: {to!r}")
             if target.resolve().is_relative_to(source.resolve()) and target != source:
                 raise BadRequest(f"a folder cannot go inside itself: {to!r}")
-        elif (source.suffix == DOCUMENT_SUFFIX) != (target.suffix == DOCUMENT_SUFFIX):
-            raise BadRequest(f"a file cannot gain or lose the {DOCUMENT_SUFFIX} extension: {path!r} to {to!r}")
+        else:
+            for suffix in (DOCUMENT_SUFFIX, ARCHIVE_SUFFIX):
+                if (source.suffix == suffix) != (target.suffix == suffix):
+                    raise BadRequest(f"a file cannot gain or lose the {suffix} extension: {path!r} to {to!r}")
         if target == source:
             return self.relative(target)
         # On a file system that ignores case, a new case of the name is the same item
@@ -314,6 +396,7 @@ class FolderStorage:
     def delete_file(self, path: str) -> None:
         """Move a file to the trash. Its folder stays, even if left empty."""
         source = self._item(path)
+        self._check_not_inside(path)
         if not os.path.lexists(source):
             raise NotFound(f"no such file: {path!r}")
         if source.is_dir():
@@ -324,10 +407,21 @@ class FolderStorage:
     def delete_folder(self, path: str) -> dict:
         """Move a folder to the trash with everything in it: documents, other
         files and hidden entries; links go as links. `deleted` is the number of
-        files in it, at any depth. A folder with no files at all is removed."""
+        files in it, at any depth. A folder with no files at all is removed.
+        A packed package, which the tree shows as a folder, goes to the trash
+        as the file it is; `deleted` is then the number of files in it."""
         folder = self._item(path)
+        self._check_not_inside(path)
         if not os.path.lexists(folder):
             raise NotFound(f"no such folder: {path!r}")
+        if is_archive(path) and folder.is_file():
+            self._check_writable(folder)
+            try:
+                count = len(self.archives.open(folder).files)
+            except ArchiveError:
+                count = 1
+            self._to_trash(folder, self._new_trash())
+            return {"deleted": count}
         if folder.is_symlink() or not folder.is_dir():
             raise BadRequest(f"not a folder: {path!r}")
         self._check_writable(folder)
@@ -376,10 +470,11 @@ class FolderStorage:
     def create_folder(self, path: str) -> None:
         """Create a folder, and its missing parents."""
         target = self._item(path)
+        self._check_not_inside(path)
         if os.path.lexists(target):
             raise Conflict(f"already exists: {path!r}")
-        if target.suffix == DOCUMENT_SUFFIX:
-            raise BadRequest(f"a folder's name cannot end in {DOCUMENT_SUFFIX}: {path!r}")
+        if target.suffix in (DOCUMENT_SUFFIX, ARCHIVE_SUFFIX):
+            raise BadRequest(f"a folder's name cannot end in {target.suffix}: {path!r}")
         self._check_room(target)
         self._make_folder(target, path)
 
@@ -399,12 +494,38 @@ class FolderStorage:
         return name.startswith(".") or name == HOME
 
     def tree(self, path: str, depth: int | None = None) -> dict:
+        if inside := self._inside(path):
+            archive, inner, prefix = inside
+            modified = self._modified(self.resolve(prefix))
+            kind = archive.kind(inner)
+            if kind == "file" and archive.is_nested_archive(inner):
+                return self._archive_root(archive.nested(inner), path, depth,
+                                          archive.size(inner), modified, IN_ARCHIVE)
+            if kind == "file":
+                raise BadRequest(f"not a folder: {path!r}")
+            if kind is None:
+                raise NotFound(f"no such folder: {path!r}")
+            node = {"name": path.strip("/").rsplit("/", 1)[-1], "path": path.strip("/"),
+                    "type": "folder", "readOnly": IN_ARCHIVE}
+            return self._archive_folder(node, archive, inner, depth, modified)
         target = self.resolve(path)
+        if target.is_file() and is_archive(target.name):
+            try:
+                archive = self.archives.open(target)
+            except ArchiveError as e:
+                raise BadRequest(f"not a valid packed package: {e}") from None
+            return self._archive_root(archive, self.relative(target), depth, target.stat().st_size,
+                                      self._modified(target), self.read_only(target))
         if target.is_file():
             raise BadRequest(f"not a folder: {path!r}")
         if not target.is_dir():
             raise NotFound(f"no such folder: {path!r}")
         return self._folder(target, depth)
+
+    @staticmethod
+    def _modified(target: Path) -> str:
+        modified = datetime.fromtimestamp(target.stat().st_mtime, timezone.utc)
+        return modified.strftime("%Y-%m-%dT%H:%M:%SZ")
 
     def _folder(self, folder: Path, depth: int | None) -> dict:
         node = {"name": folder.name if folder != self.root else "",
@@ -413,6 +534,7 @@ class FolderStorage:
             node["readOnly"] = reason
         if depth is not None and depth <= 0:
             return node
+        below = None if depth is None else depth - 1
         folders, files = [], []
         for entry in sorted(folder.iterdir(), key=lambda e: e.name):
             if self._hidden(entry.name) or (folder == self.root and entry.name.startswith("_")):
@@ -420,15 +542,62 @@ class FolderStorage:
             if not entry.resolve().is_relative_to(self.root):
                 continue
             if entry.is_dir():
-                folders.append(self._folder(entry, None if depth is None else depth - 1))
+                folders.append(self._folder(entry, below))
             elif entry.is_file():
-                stat = entry.stat()
-                modified = datetime.fromtimestamp(stat.st_mtime, timezone.utc)
+                if is_archive(entry.name):
+                    try:
+                        archive = self.archives.open(entry)
+                    except ArchiveError:
+                        pass  # not a packed package: listed as the file it is
+                    else:
+                        folders.append(self._archive_root(
+                            archive, self.relative(entry), below, entry.stat().st_size,
+                            self._modified(entry), self.read_only(entry)))
+                        continue
                 item = {"name": entry.name, "path": self.relative(entry), "type": "file",
-                        "size": stat.st_size,
-                        "modified": modified.strftime("%Y-%m-%dT%H:%M:%SZ")}
+                        "size": entry.stat().st_size, "modified": self._modified(entry)}
                 if reason := self.read_only(entry):
                     item["readOnly"] = reason
                 files.append(item)
         node["children"] = folders + files
+        return node
+
+    def _archive_root(self, archive: Archive, path: str, depth: int | None, size: int,
+                      modified: str, read_only: str | None) -> dict:
+        """The node of a packed package: a folder marked `archive`, with the
+        size and time of its file. Its items are read-only; the archive
+        itself only if its file is (or if it is in another archive)."""
+        node = {"name": path.rsplit("/", 1)[-1], "path": path, "type": "folder",
+                "archive": True, "size": size, "modified": modified}
+        if read_only:
+            node["readOnly"] = read_only
+        return self._archive_folder(node, archive, "", depth, modified)
+
+    def _archive_folder(self, node: dict, archive: Archive, inner: str, depth: int | None,
+                        modified: str) -> dict:
+        """`node`, a folder in an archive (`inner`, "" its root), with its
+        children down to `depth`. Its files take the time of the archive
+        file, `modified`: their own in the zip mean nothing (S23)."""
+        if depth is not None and depth <= 0:
+            return node
+        below = None if depth is None else depth - 1
+        names, files = archive.children(inner)
+        join = lambda name: f"{inner}/{name}" if inner else name  # noqa: E731
+        children = []
+        for name in names:
+            child = {"name": name, "path": f"{node['path']}/{name}", "type": "folder",
+                     "readOnly": IN_ARCHIVE}
+            children.append(self._archive_folder(child, archive, join(name), below, modified))
+        nested, plain = [], []
+        for name in files:
+            entry = join(name)
+            path = f"{node['path']}/{name}"
+            if archive.is_nested_archive(entry):
+                nested.append(self._archive_root(archive.nested(entry), path, below,
+                                                 archive.size(entry), modified, IN_ARCHIVE))
+            else:
+                plain.append({"name": name, "path": path, "type": "file",
+                              "size": archive.size(entry), "modified": modified,
+                              "readOnly": IN_ARCHIVE})
+        node["children"] = sorted(children + nested, key=lambda child: child["name"]) + plain
         return node

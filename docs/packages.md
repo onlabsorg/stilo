@@ -2,8 +2,9 @@
 
 *How a document finds the references of its package: `package.texl`, the
 home `~`, `references/`, `stilo init`, and Stilo's own library in
-`texl-lib/`. Decisions: [S10](../DECISIONS.md), [S21](../DECISIONS.md) (the
-name), [S22](../DECISIONS.md) (`references/`).*
+`texl-lib/`; packed packages. Decisions: [S10](../DECISIONS.md),
+[S21](../DECISIONS.md) (the name), [S22](../DECISIONS.md) (`references/`),
+[S23](../DECISIONS.md) (packed packages).*
 
 ## A package and its home
 
@@ -21,25 +22,29 @@ what a library is to a software package.
 beam/
 ├─ package.texl          the manifest: this folder is the home
 ├─ references/
-│  └─ stilo/index.texl   a reference: a folder of Texl files
+│  ├─ stilo.texlz        a reference packed in one file: the Stilo library
+│  └─ steel/index.texl   a reference: a folder of Texl files
 └─ docs/checks/
-   └─ beam-check.texl    imports "~/references/stilo/index.texl"
+   └─ beam-check.texl    imports "~/references/stilo.texlz/index.texl"
 ```
 
 The **home** of a folder is the nearest folder at or above it that holds a
 `package.texl`. In an import, a path segment `~` stands for the home:
 
 ```texl
-<% texl.import "~/references/stilo/index.texl" ~> (lib -> bind "stilo" lib.data.stilo) %>
+<% texl.import "~/references/stilo.texlz/index.texl" ~> (lib -> bind "stilo" lib.data.stilo) %>
 ```
 
 The same line works in every document of the package, at any depth.
+A folder or a packed package can be imported by itself: the import reads
+its `index.texl`, and the folder's relative imports resolve from there
+(S25).
 
 ## How `~` resolves
 
 Texl gives `~` no meaning: it resolves the import as a relative path, so
 `docs/checks/beam-check.texl` asks for
-`docs/checks/~/references/stilo/index.texl`.
+`docs/checks/~/references/stilo.texlz/index.texl`.
 The host then replaces each `~` segment, from the left, with the home of
 the folder before it. One rule, in one module,
 `src/stilo/server/home.py`, used in two places:
@@ -104,21 +109,63 @@ requires. The server only checks that the file exists; it never renders it.
 
 ## `references/` and `stilo init`
 
-A reference is a folder of Texl files under `references/`, nothing more.
+A reference is a folder of Texl files under `references/`, or a packed
+package (below), nothing more.
 There is no package manager: copy a reference in, or clone it with git.
 Versions and clashes are the package's business. Stilo gives an old `lib/`
 folder no meaning: it is an ordinary folder (S22).
 
 `stilo init [folder] [--name NAME]` writes `package.texl`, creates
-`references/`, and copies the library Stilo bundles into
-`references/stilo/`, the Stilo library, a reference like any other. It
-refuses to run where a `package.texl` exists and never overwrites
-`references/stilo/`.
+`references/`, and writes the library Stilo bundles there as a packed
+package, `references/stilo.texlz` (S24): the Stilo library, a reference
+like any other, which cannot be changed in place. It never overwrites
+`package.texl` or `references/stilo.texlz`: run in a folder that is
+already a package, it only adds the library if it is missing, so running
+it again is safe.
+A package made before Stilo 0.7 keeps its `references/stilo/` folder,
+which still works; the data and chart cells now write the import of
+`stilo.texlz`. To move such a package over, run `stilo init` in it, which
+adds `references/stilo.texlz`, change the imports from
+`~/references/stilo/` to `~/references/stilo.texlz/`, and delete the old
+folder.
+
+## Packed packages (`.texlz`)
+
+A package can also be one file: a **packed package**, a zip file named
+`*.texlz` with `package.texl` at its root, made with `stilo pack [folder]
+[-o file]`. It is shared as one file, as a Word file is, and a reference
+can be one:
+
+```text
+beam/
+├─ package.texl
+├─ references/
+│  └─ steel-revA.texlz    a packed reference (examples/packages/steel, packed)
+└─ basis-of-design.texl   imports "~/references/steel-revA.texlz"
+```
+
+Stilo reads it as a folder that cannot be changed, in the server and in
+`stilo render` alike. Its main document is `index.texl`: importing the
+packed package itself, `~/references/steel-revA.texlz`, imports it, as
+importing a folder (`~/references/steel/`) imports the folder's
+`index.texl` (S25). Further: a path through the file names an entry
+inside it, relative imports resolve inside it, and `~` inside it stands
+for its root
+(it holds a `package.texl`), or for a package nested in it. Packed
+packages nested in packed packages work the same way. The file itself is
+an ordinary file: it is uploaded, renamed, moved and deleted, and its own
+path with `?download` serves the file. `stilo pack` leaves out hidden
+entries (`.git/`, `.trash/`), links and files git ignores, and gives the
+same bytes for the same files, so a release can be named by its hash. Details:
+[The server](server.md#packed-packages-archivepy).
 
 ## The Stilo library, `texl-lib/`
 
 `texl-lib/` at the repository root is the source of the library `stilo
-init` copies into `references/stilo/`. Its main document, `index.texl`,
+init` packs into `references/stilo.texlz` (`library_archive()` in
+`stilo/cli/package.py`, when the package is made, so the source stays
+plain files). It is a package itself, with its own `package.texl`, which
+packing needs. Its main document, `index.texl`,
 binds one name, `stilo`, a
 namespace of Swan functions, gathered from one document per function in the
 same folder, imported by a relative path:

@@ -23,10 +23,10 @@ to Word and Excel users, and renders them from the command line.
 | Web app | The user interface (Lit web components, Vite): top bar, navigation pane with all the folder's files (documents, and other files greyed out) and commands to manage and upload them, the editor, right pane with commands, cell comments and errors. Light and dark theme. |
 | Editor | Inside the web app: `<texl-editor>`, a document as a stack of typed cells (rich text, the default; text, Markdown, table, formula, data table and chart; formulas as `<% %>` tags; LaTeX equations in Markdown and tables), live rendering, cell comments, errors shown where they happen. Until 2026-10-26 the separate `texl-editor` package. |
 | Server | Python (FastAPI): serves one folder of documents and the web app, for one user. |
-| CLI    | The `stilo` command: `stilo init [folder]` makes a folder a package, with the Stilo library in it; `stilo render <file>` prints a rendered document (or writes it to a file), says how many errors it has and can explain them; `stilo serve [folder]` starts the server on a folder; `stilo tutor` opens the tutorial. |
-| Stilo library | A folder of Texl documents (`texl-lib/`) that `stilo init` copies into each package's references, for documents to import. `stilo.dataframe` makes a table of data, which the data table cell writes; `stilo.charts.line` draws a line chart as an image, which the chart cell writes. Tested on both Texl engines, the browser's and Python's, with the same cases. |
+| CLI    | The `stilo` command: `stilo init [folder]` makes a folder a package, with the Stilo library in it (run again in a package, it only adds the library if missing); `stilo pack [folder]` packs a package into one `.texlz` file; `stilo render <file>` prints a rendered document (or writes it to a file), says how many errors it has and can explain them; `stilo serve [folder]` starts the server on a folder; `stilo tutor` opens the tutorial. |
+| Stilo library | A package of Texl documents (`texl-lib/`) that `stilo init` puts into each package's references as one packed file, `references/stilo.texlz`, for documents to import. `stilo.dataframe` makes a table of data, which the data table cell writes; `stilo.charts.line` draws a line chart as an image, which the chart cell writes. Tested on both Texl engines, the browser's and Python's, with the same cases. |
 | Tutorial | A guided tutorial for new users (`tutorial/`), Texl documents shipped in the package and served by `stilo tutor` in the web app: twelve short lessons (30–45 minutes) on the editor and the command line, from the first edit to one's own package, and two advanced ones. Many exercises check themselves and show "✓ Done"; an index shows the progress. The lessons link to the OnLabs.org manual instead of repeating it. Tested automatically, exercises included. |
-| Protocol | Plain HTTP between web app and server: GET a file, CREATE (POST), UPDATE (PUT, with an ETag so concurrent saves don't overwrite each other), QUERY a folder's tree (every file), create a folder, move or rename a file or folder, delete a file or folder. Any file can be created, so files can be uploaded; only documents can be updated. |
+| Protocol | Plain HTTP between web app and server: GET a file, CREATE (POST), UPDATE (PUT, with an ETag so concurrent saves don't overwrite each other), QUERY a folder's tree (every file), create a folder, move or rename a file or folder, delete a file or folder. Any file can be created, so files can be uploaded; only documents can be updated. Reading a folder or a packed package leads to its `index.texl`; `?download` after an address downloads the file itself. |
 | Documentation | Developer documentation only, as plain Markdown in `docs/`, read on GitHub: architecture, setup, server, CLI, web app, editor, the protocol, the editor component and its API. No site is built. Users read the OnLabs.org manual instead. |
 
 Web app, server and CLI ship as **one Python package**, `stilo`, with the
@@ -61,9 +61,20 @@ A subfolder with its own `package.texl` is a separate package. The packages
 a package uses, its *references* (as a library is to software), live in its
 `references/` folder (called `lib/` until 2026-11-18), so the package works
 as a whole wherever it is copied. In an import, `~` stands for the package's
-folder, so `~/references/stilo/index.texl` works from any document of the
+folder, so `~/references/stilo.texlz/index.texl` works from any document of the
 package, in the browser and on the command line. There is no package
-manager: references are copied or cloned in by hand.
+manager: references are copied or cloned in by hand. Importing a folder or
+a packed package by itself (`~/references/steel-revA.texlz`) imports its
+main document, `index.texl`.
+
+A **packed package** is a package stored as one zip file named `*.texlz`,
+to share as one file, as a Word file is; a reference can be one, and the
+Stilo library now is. Stilo opens it as a folder that cannot be changed,
+in the browser and on the command line alike, packed packages inside it
+included: its documents open read-only, imports reach into it, and the
+file itself can be uploaded, renamed, moved, deleted and downloaded.
+`stilo pack` makes one, giving the same bytes for the same files, so a
+packed package can be identified by its fingerprint (hash).
 
 Single-user by design: no accounts or permissions. Revisions, release and
 accept are not part of Stilo.
@@ -532,6 +543,39 @@ accept are not part of Stilo.
   listen on port 8010 unless told otherwise (it was 8000, often taken by
   other programs); the tutorial and the documentation follow. Not
   released yet.
+- 2026-11-19: **packed packages**: a package can be one file, a zip named
+  `*.texlz` with its `package.texl` at the root. Stilo shows it in the
+  navigation pane as a folder with its own icon and a lock; its documents
+  open read-only and the commands that change files are greyed out inside
+  it, while the file itself can be uploaded, renamed, moved, deleted and,
+  with the new **Download** command (also on other files), saved to the
+  computer. Imports reach into it, its own relative imports and `~`
+  resolve inside it, and packed packages nested in it work too, the same
+  in the editor and in `stilo render`. Archives are treated as untrusted:
+  they are read in memory, never unpacked to disk, and refused if they
+  hold dangerous names or links or are too large once unpacked. **`stilo
+  pack [folder] [-o file]`** makes one and prints its fingerprint; the
+  same files always give the same bytes, and hidden files (such as
+  `.git/`), links and files git ignores are left out. The server's
+  developers can make packed packages with the same function the command
+  uses.
+- 2026-11-19: **the Stilo library is packed**: `stilo init` and `stilo
+  tutor` now put it into a package as `references/stilo.texlz`, and data
+  tables and charts import `~/references/stilo.texlz/index.texl`. Run in a
+  folder that is already a package, `stilo init` no longer refuses: it
+  leaves `package.texl` alone and adds the library if it is missing, which
+  is how a package made before moves over (its imports are then changed by
+  hand from `~/references/stilo/`). Lessons 7, 10, 12 and 14 of the
+  tutorial follow.
+- 2026-11-19: **a folder or a packed package imports its `index.texl`**:
+  importing `~/references/steel-revA.texlz`, or a folder as
+  `~/references/steel/`, imports its main document, whose own imports
+  resolve from its folder, in the editor and in `stilo render` (which
+  also accepts a folder or a `.texlz` file). The protocol says so (a
+  folder answered an error before), and `?download` after a file's
+  address downloads it. The examples gain a small steel package, packed as
+  `steel-revA.texlz` into the beam package, which now imports its steel
+  data from it. Not released yet.
 
 ## Known limitations
 
@@ -568,7 +612,10 @@ accept are not part of Stilo.
   `\vert`). Only the editor typesets them: other outputs show the LaTeX as text.
 - Tutorial: the index counts only saved lessons; changed lessons reach an
   existing copy only after `stilo tutor --reset`; no reset from the web app.
-- Packages: other Texl programs do not understand `~` in imports.
+- Packages: other Texl programs do not understand `~` in imports, packed
+  packages, or importing a folder.
+- Packed packages: read-only in Stilo; to change one, unpack it, edit the
+  folder and pack it again by hand (there is no unpack command).
 - Errors: a value inside a link's address or another HTML attribute counts but
   cannot be highlighted. The failing place is marked in the Errors pane, not
   in the source while editing.

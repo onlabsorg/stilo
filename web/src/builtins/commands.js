@@ -35,10 +35,17 @@ const canDelete = (stilo, { node } = {}) => ((node ?? stilo.tree.target)?.type =
 /** `true`, or why the open document cannot be changed. */
 const documentWritable = (stilo) => stilo.document.readOnly ?? true;
 
-/** `true`, or why nothing can be added to the folder a new item would go in. */
+/** `true`, or why nothing can be added to the folder a new item would go
+ * in: it is read-only, or a packed package. */
 const folderWritable = (stilo, { node } = {}) => {
-    const reason = stilo.tree.readOnlyReason(stilo.tree.folderFor(node));
+    const reason = stilo.tree.addReason(stilo.tree.folderFor(node));
     return reason === null ? true : `the folder is read-only: ${reason}`;
+};
+
+/** `true` for a file or a packed package, which download as one file. */
+const downloadable = (stilo, { node } = {}) => {
+    const item = node ?? stilo.tree.target;
+    return !item || item.type === "file" || item.archive === true || "a folder cannot be downloaded";
 };
 
 /** `true`, or why a tree item cannot be renamed, moved or deleted. */
@@ -127,6 +134,7 @@ export const definitions = [
     treeCommand("tree-duplicate", "Duplicate", "", files.duplicate, besideWritable),
     treeCommand("tree-move", "Move to…", "", files.moveTo, all(canMove, itemUnlocked)),
     treeCommand("tree-copy-link", "Copy link", "", files.copyLink),
+    treeCommand("tree-download", "Download", "", files.download, downloadable),
     treeCommand("tree-open-root", "Open as root", "", files.openAsRoot),
     treeCommand("tree-delete", "Delete", "Delete", files.deleteItem, all(canDelete, itemUnlocked)),
     paneCommand("tree-refresh", "Refresh", (stilo) => stilo.tree.refresh()),
@@ -146,14 +154,19 @@ export const definitions = [
 
 /**
  * The menus of the navigation pane: command ids by group, in order. The
- * menu `tree/document` opens on a document, `tree/other` on any other file.
+ * menu `tree/document` opens on a document, `tree/other` on any other file,
+ * `tree/archive` on a packed package.
  */
 export const menus = {
     "tree/document": { edit: ["tree-rename", "tree-duplicate", "tree-move", "tree-copy-link"], delete: ["tree-delete"] },
-    "tree/other": { edit: ["tree-rename", "tree-move", "tree-copy-link"], delete: ["tree-delete"] },
+    "tree/other": { edit: ["tree-rename", "tree-move", "tree-copy-link", "tree-download"], delete: ["tree-delete"] },
     "tree/folder": {
         new: ["new-document", "tree-new-folder", "tree-upload"],
         place: ["tree-open-root", "tree-rename", "tree-move"],
+        delete: ["tree-delete"],
+    },
+    "tree/archive": {
+        place: ["tree-open-root", "tree-rename", "tree-move", "tree-download"],
         delete: ["tree-delete"],
     },
     "tree/pane": { new: ["new-document", "tree-new-folder", "tree-upload"], view: ["tree-refresh", "tree-show-other"] },

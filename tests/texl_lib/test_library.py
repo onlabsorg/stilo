@@ -8,12 +8,14 @@ one, contain each of `contains` and none of `excludes`.
 """
 
 import asyncio
+import io
 import json
+import zipfile
 from pathlib import Path
 
 import pytest
 
-from stilo.cli.package import TEXL_LIB, create_engine
+from stilo.cli.package import TEXL_LIB, create_engine, library_archive
 
 CASES = [
     (path.name.removesuffix("-cases.json"), data["import"], case)
@@ -42,11 +44,14 @@ def test_the_library_binds_only_stilo():
 
 
 def test_the_example_package_has_the_current_library():
-    """examples/packages/beam holds a copy of the library, as `stilo init`
-    makes one: copy texl-lib/ into references/stilo/ again when the library
-    changes."""
-    copy = Path(__file__).resolve().parents[2] / "examples" / "packages" / "beam" / "references" / "stilo"
-    names = sorted(path.name for path in TEXL_LIB.iterdir())
-    assert sorted(path.name for path in copy.iterdir()) == names
-    for name in names:
-        assert (copy / name).read_text(encoding="utf-8") == (TEXL_LIB / name).read_text(encoding="utf-8"), name
+    """examples/packages/beam holds the library packed, as `stilo init`
+    writes it (S24). When the library changes, pack it again:
+    `uv run stilo pack texl-lib -o examples/packages/beam/references/stilo.texlz`.
+    The entries are compared, not the bytes, which another zlib build could
+    compress differently."""
+    packed = Path(__file__).resolve().parents[2] / "examples" / "packages" / "beam" / "references" / "stilo.texlz"
+    with zipfile.ZipFile(packed) as archive:
+        entries = {info.filename: archive.read(info) for info in archive.infolist()}
+    with zipfile.ZipFile(io.BytesIO(library_archive())) as archive:
+        expected = {info.filename: archive.read(info) for info in archive.infolist()}
+    assert entries == expected

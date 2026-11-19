@@ -1,13 +1,14 @@
 <!--{ bd00 : formula | hidden }-->
-<% texl.import "~/references/stilo/index.texl" ~> (lib -> bind "stilo" lib.data.stilo) %>
+<% texl.import "~/references/stilo.texlz/index.texl" ~> (lib -> bind "stilo" lib.data.stilo) %>
 <!--{ bd01 : markdown }-->
 # Basis of design
 
 Mezzanine floor beam — document MZ-002, revision B. The design data of the
 [design report](beam-check.texl): codes, structure, materials, loads,
 combinations and acceptance criteria. The
-[calculation note](analysis.texl) imports them from here.
-<% texl.import("../../library/steel.texl") ~> (lib -> bind "steel" lib.data) %>
+[calculation note](analysis.texl) imports them from here. Steel data come
+from the packed reference `references/steel-revA.texlz`.
+<% texl.import("~/references/steel-revA.texlz") ~> (lib -> bind "steel" lib.data) %>
 <!--{ bd02 : rich }-->
 ## 1 Codes and standards
 
@@ -52,7 +53,7 @@ gammaM0 = steel.gammaM0
 | Yield strength | $f_y$ | <% fy %> N/mm² |
 | Modulus of elasticity | $E$ | <% E %> N/mm² |
 | Partial factor for resistance | $\gamma_{M0}$ | <% gammaM0 %> |
-<caption>Table 1: Steel properties, from the steel library.</caption>
+<caption>Table 1: Steel properties, from the steel reference, revision A.</caption>
 <!--{ bd05 : markdown }-->
 ## 4 Loads
 

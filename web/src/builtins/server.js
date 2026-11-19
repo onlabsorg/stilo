@@ -1,11 +1,17 @@
 // What the server says, applied through the services as an extension would
 // (protocol v1, S17): its read-only items, and its asking for a login.
 
-import { findNode } from "../core/tree.js";
+import { inArchive } from "../api.js";
+import { ARCHIVE_REASON, findNode } from "../core/tree.js";
 
-/** The read-only items the server marks in the tree (`readOnly`). */
+/** The read-only items the server marks in the tree (`readOnly`). An item
+ * the tree does not show, such as a document opened by its address, is
+ * read-only if its path goes through a packed package (S23). */
 function serverReadOnly(stilo) {
-    return stilo.tree.readOnly((path) => findNode(stilo.tree.tree, path)?.readOnly ?? null);
+    return stilo.tree.readOnly((path) => {
+        const node = findNode(stilo.tree.tree, path);
+        return node ? (node.readOnly ?? null) : inArchive(path) ? ARCHIVE_REASON : null;
+    });
 }
 
 /** The address of the login page with `next`, the page to come back to. */

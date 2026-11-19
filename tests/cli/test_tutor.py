@@ -34,7 +34,7 @@ def test_tutor_makes_a_package_copy(tmp_path, served, capsys):
     folder = tmp_path / "copy"
     assert main(["tutor", "--dir", str(folder), "--no-browser", "--port", "8123"]) == 0
     assert (folder / "index.texl").read_text() == (TUTORIAL / "index.texl").read_text()
-    assert (folder / "references" / "stilo" / "index.texl").is_file()  # as stilo init
+    assert (folder / "references" / "stilo.texlz").is_file()  # as stilo init (S24)
     assert (folder / "references" / "tutorial" / "index.texl").is_file()
     manifest = (folder / "package.texl").read_text()
     assert 'package_name = "Stilo tutorial"' in manifest

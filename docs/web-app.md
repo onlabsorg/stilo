@@ -417,6 +417,8 @@ The `tree` service holds what the navigation pane shows:
 | `showOther`, `setShowOther(on)`, `toggleShowOther()` | Whether other files show (default on); the toggle remembers it in the browser |
 | `askName(request)`  | Asks for a name in the pane, opened if needed (above) |
 | `moving`, `startMove`, `chooseMove`, `failMove`, `endMove` | The Move to… dialog: the item and the whole tree, a folder chosen, a failure shown in the dialog, closing it |
+| `isArchive(path)`   | Whether the item is a packed package (`archive` in the tree, S23) |
+| `addReason(path)`   | Why nothing can be added to the folder at `path`: its read-only reason, or for a packed package `ARCHIVE_REASON`; `null` if items can be added |
 
 **Providers.** Extensions (and Stilo) add to the tree through providers,
 each added by a method that returns `dispose()`; `invalidate()` says that
@@ -432,10 +434,25 @@ throws counts as saying nothing.
 `<nav-pane>` shows a lock after a read-only item's name, the decorations'
 badges after it, their tooltips and the read-only reason in its hover
 text, and leaves filtered items out. The Move to… dialog refuses a
-read-only folder (`chooseMove`).
+read-only folder or a packed package (`chooseMove`, with `addReason`),
+and does not list packed packages.
+
+**Packed packages** (S23). The server shows a `.texlz` file as a folder
+node with `archive: true`, its items marked `readOnly`; the archive node
+itself is not read-only, since its file can be renamed, moved and deleted.
+The pane shows it with its own icon (`archiveIcon`), the class `archive`
+and a lock ("A packed package: what is in it cannot be changed",
+`ARCHIVE_REASON` in `core/tree.js`), and opens the menu `tree/archive` on
+it. `lockedReason` does not look inside one, so a folder holding a packed
+package is not locked by it, and the archive itself moves as one file.
+The server's read-only provider (`builtins/server.js`) also marks a path
+the tree does not show if it goes through a packed package (`inArchive`
+in `api.js`), so a document opened by its address inside one opens
+read-only too.
 
 `checkName(typed, folder, type)` checks a name typed for a document, another
-file or a folder against the protocol's rules for paths; `findNode`,
+file, a folder or a packed package (`archive`: the name without
+`.texlz`) against the protocol's rules for paths; `findNode`,
 `parentFolder` and `baseName` help with tree nodes and paths.
 
 The commands on files and folders are in `builtins/files.js`, one function
@@ -446,8 +463,12 @@ asked in the item's row; a document's without `.texl`, another file's with
 its extension, which cannot become `.texl`), `moveTo` (the dialog carries
 the warning about links), `deleteItem` (closes the open document if it was
 deleted; for a folder the question counts the documents and other files
-that go with it), `copyLink` (relative to the open document, `relativeLink`
-in `route.js`) and `openAsRoot`.
+that go with it; a packed package is deleted as a file), `copyLink`
+(relative to the open document, `relativeLink` in `route.js`), `download`
+(a file, or a packed package as its file, by its public URL with
+`?download`, since a read of a packed package leads to its index; S25) and
+`openAsRoot`. `rename` keeps a packed package's `.texlz`, as a
+document's `.texl`.
 
 ## Routing: `route.js`
 
@@ -501,7 +522,8 @@ the document (`changes` in `editorCommands()`) do not apply to a read-only
 document; Rename, Move to… and Delete not to a read-only item, nor to a
 folder holding one (`tree.lockedReason`); New document…, New folder…,
 Upload files… and Duplicate not where the new item would go in a read-only
-folder.
+folder or a packed package (`tree.addReason`); Download only to a file or
+a packed package.
 
 **`keys`** binds shortcuts to commands:
 `bind("Mod+S", "save", {when, show})`, which returns `dispose()`. `Mod` is
@@ -525,7 +547,8 @@ Delete on macOS).
 **`menus`** says what each menu offers: `add(menu, commandId, {group,
 order})`, returning `dispose()`; `items(menu)` gives the command ids with
 `"-"` between groups. The navigation pane's menus are `tree/document`,
-`tree/other`, `tree/folder` and `tree/pane`.
+`tree/other`, `tree/folder`, `tree/archive` (a packed package) and
+`tree/pane`.
 
 Stilo's own commands:
 
@@ -631,7 +654,8 @@ Its methods:
 `ApiError`'s `status` is the HTTP status, and its message the server's
 `error`. Paths are relative to the server root, without a leading `/`.
 `isDocument(path)`, whether a path ends in `.texl`, is a plain function of
-the module.
+the module; so are `ARCHIVE_SUFFIX` (`.texlz`) and `inArchive(path)`,
+whether a path goes through a packed package.
 
 ## Theme: `theme.css` and `theme.js`
 

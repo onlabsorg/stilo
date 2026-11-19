@@ -23,8 +23,9 @@ stilo init first-package
 ```
 
 `stilo init` creates the folder if needed, writes `package.texl`, which marks
-it as a package, and copies the Stilo library into `references/stilo`, which
-data tables need (lesson 7). On Windows, write the folder as you usually do, as
+it as a package, and puts the Stilo library in `references/stilo.texlz`, which
+data tables need (lesson 7): a *packed package*, one file that Stilo opens as
+a folder you cannot change. On Windows, write the folder as you usually do, as
 `stilo init C:\Users\you\first-package`.
 <!--{ pr03 : rich }-->
 ## Serve it
@@ -50,7 +51,7 @@ The folder `references` holds the **references** of the package: other
 packages, or plain folders of documents, that its documents import, as a
 report lists its references. In an import, `~` stands for the package
 folder, so every document of the package imports the Stilo library as
-`~/references/stilo/index.texl`, however deep in its folders it is. Copy the
+`~/references/stilo.texlz/index.texl`, however deep in its folders it is. Copy the
 folder `references/steel` of this tutorial into the `references` of your
 package, and every document of it can import
 `~/references/steel/sections.texl`, as in lesson 8.

@@ -12,8 +12,9 @@ PUBLIC = {
     "Storage", "FolderStorage", "StorageWrapper",
     "StorageError", "BadRequest", "Forbidden", "NotFound", "Conflict", "PreconditionFailed",
     "DOCUMENT_SUFFIX", "is_document", "etag", "FILE_TYPES", "media_type",
-    "other_file_response", "NO_CACHE",
+    "other_file_response", "NO_CACHE", "INDEX", "download_response",
     "MANIFEST", "HOME", "MAX_HOMES", "HomeCycle", "home_of", "expand_home", "has_home",
+    "ARCHIVE_SUFFIX", "is_archive", "ArchiveError", "pack_package",
 }
 
 

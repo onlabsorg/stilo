@@ -1,0 +1,9 @@
+# steel
+
+A reference of steel data: grade, constants and hot-rolled IPE sections,
+revision A. Its packed copy, `steel-revA.texlz`, is a reference of the
+beam package (`../beam/references/`), imported there as
+`~/references/steel-revA.texlz`, which reads its `index.texl`.
+
+<% package_name = "steel" %>
+<% revision = "A" %>

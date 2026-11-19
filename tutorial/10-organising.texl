@@ -74,6 +74,7 @@ exists, has a comment, and has a hidden line.
 | **Duplicate** | Copies a document next to it, under a new name |
 | **Copy link** | Copies its address, for a link or an import (lesson 8) |
 | **Upload files…** | Adds files from your computer to a folder: images, PDFs, data |
+| **Download** | Saves a file, or a packed package (`.texlz`, lesson 14), on your computer |
 | **Delete** | Moves it to a hidden `.trash` folder, a folder with everything in it: nothing is erased |
 
 Links do not follow: after a rename or a move, links and imports in other

@@ -6,6 +6,51 @@ change the interfaces.
 
 ## Unreleased
 
+- **Packed packages**: a package can be one file, a zip named `*.texlz`
+  with `package.texl` at its root, to share as one file. Stilo opens it as
+  a folder that cannot be changed: the navigation pane shows it with its
+  own icon and a lock, its documents open read-only, and the commands that
+  change files are greyed out inside it. The file itself can be uploaded,
+  renamed, moved, deleted and downloaded (new **Download** command, on
+  packed packages and other files). Imports reach into it
+  (`~/references/lib.texlz/index.texl`), relative imports and `~` resolve
+  inside it, and packed packages nested in packed packages work too, in
+  the editor and in `stilo render` alike.
+- **Import a folder or a packed package by itself**: importing
+  `~/references/steel-revA.texlz`, or a folder as `~/references/steel/`,
+  imports its `index.texl`, whose own imports resolve from its folder, in
+  the editor and in `stilo render` alike (which also accepts a folder or a
+  `.texlz` file). Protocol: a read of a folder or packed package is
+  redirected to its `index.texl` (it answered `400`), capability `index`.
+  **`?download`** after a file's address downloads it: how a packed
+  package's own file is fetched now, and what the Download command uses.
+  The storage interface gets `read_target`; `INDEX` and
+  `download_response` join `stilo.server.__all__`. Decision S25.
+- **A new example**: the package `examples/packages/steel/`, packed as
+  `examples/packages/beam/references/steel-revA.texlz`, which the beam
+  example now imports instead of `examples/library/steel.texl`.
+- **The Stilo library is now a packed package**: `stilo init` (and
+  `stilo tutor`) writes it as `references/stilo.texlz`, which opens
+  read-only, instead of a `references/stilo/` folder; data tables and
+  charts import `~/references/stilo.texlz/index.texl`. `texl-lib/` gets a
+  `package.texl`. An existing package keeps its `references/stilo/`
+  folder, which still works. To use new data or chart cells in it, run
+  `stilo init` there: in a folder that is already a package it now leaves
+  `package.texl` alone and adds a missing `references/stilo.texlz` (it
+  used to refuse, with exit status 1). Then change `~/references/stilo/`
+  to `~/references/stilo.texlz/` in the imports and delete the old folder. The example package and the tutorial (lessons 7 and 12)
+  follow. Decision S24.
+- **`stilo pack [folder] [-o file]`** packs a package folder into a
+  `.texlz` (default: the folder's name, next to the folder) and prints its
+  SHA-256. The same files always give the same bytes; hidden entries
+  (`.git/`, `.trash/`), links and git-ignored files are left out.
+- Protocol: a packed package is a tree node with `"archive": true`, its
+  items `readOnly`; writes inside it get `403`; `/_api/info` lists the
+  capability `archives`. Still protocol 1. Server: `pack_package`,
+  `ARCHIVE_SUFFIX`, `is_archive` and `ArchiveError` join
+  `stilo.server.__all__`; `home_of` and `expand_home` take an optional
+  `is_package` check. Web app: the `tree` service has `isArchive` and
+  `addReason`, and the menu `tree/archive`. Decision S23.
 - **`stilo serve` and `stilo tutor` now listen on port 8010 by default**
   (was 8000, often taken by other programs). `--port` still chooses
   another one. The tutorial's lesson 12 uses 8010 and 8011.

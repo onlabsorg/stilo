@@ -5,7 +5,7 @@ import { folderIcon } from "../icons.js";
 /**
  * The Move to… dialog: choose a folder from the whole tree. The item's own
  * folder, and for a folder the folder itself and those inside it, cannot be
- * chosen.
+ * chosen. Packed packages are not listed: nothing can go in them.
  *
  * Fires `choose` ({folder}) when the user confirms, `close` when the user gives
  * up. The app closes it by removing it.
@@ -163,7 +163,7 @@ export class MoveDialog extends LitElement {
             >
                 ${folderIcon}<span>${node.name || "/"}</span>
             </button>
-            ${(node.children ?? []).filter((c) => c.type === "folder").map((c) => this._renderFolder(c, depth + 1))}`;
+            ${(node.children ?? []).filter((c) => c.type === "folder" && !c.archive).map((c) => this._renderFolder(c, depth + 1))}`;
     }
 
     render() {

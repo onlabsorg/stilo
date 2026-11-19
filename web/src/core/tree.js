@@ -6,6 +6,9 @@ import { isDocument } from "../api.js";
 
 const SHOW_OTHER_KEY = "stilo-show-other";
 
+/** Why nothing can be added to a packed package, or changed in it. */
+export const ARCHIVE_REASON = "A packed package: what is in it cannot be changed";
+
 /** The node at `path` in a tree, if any. */
 export function findNode(node, path) {
     if (!node) return null;
@@ -45,7 +48,7 @@ export const baseName = (path) => path.slice(path.lastIndexOf("/") + 1);
  * and `problem` if it cannot be used (the rules of the protocol's paths).
  */
 export function checkName(typed, folder, type) {
-    const name = type === "file" ? typed.replace(/\.texl$/, "") : typed;
+    const name = type === "file" ? typed.replace(/\.texl$/, "") : type === "archive" ? typed.replace(/\.texlz$/, "") : typed;
     const problem = !name
         ? "Type a name."
         : /[/\\]/.test(name)
@@ -56,8 +59,8 @@ export function checkName(typed, folder, type) {
               ? "A name here cannot start with _."
               : name === "~"
                 ? "A name cannot be ~."
-                : type === "folder" && isDocument(name)
-                  ? "A folder's name cannot end in .texl."
+                : type === "folder" && /\.texlz?$/.test(name)
+                  ? `A folder's name cannot end in ${name.slice(name.lastIndexOf("."))}.`
                   : type === "other" && isDocument(name)
                     ? "Only documents end in .texl."
                     : "";
@@ -238,15 +241,29 @@ export class Tree extends Service {
         return null;
     }
 
+    /** Whether the item at `path` is a packed package: a file the tree
+     * shows as a read-only folder (`archive` in the protocol's tree). */
+    isArchive(path) {
+        return findNode(this._tree, path)?.archive === true;
+    }
+
     /** Why a node cannot be renamed, moved or deleted: it, or for a folder
-     * an item inside it, is read-only; `null` if it can. */
+     * an item inside it, is read-only; `null` if it can. A packed package
+     * moves as the one file it is: what is in it does not lock it. */
     lockedReason(node) {
         if (!node) return null;
         const own = this.readOnlyReason(node.path);
         if (own !== null) return own;
-        if (node.type !== "folder" || !this._readOnly.length) return null;
-        const inside = (folder) => (folder.children ?? []).some((child) => this.readOnlyReason(child.path) !== null || inside(child));
+        if (node.type !== "folder" || node.archive || !this._readOnly.length) return null;
+        const inside = (folder) =>
+            (folder.children ?? []).some((child) => this.readOnlyReason(child.path) !== null || (!child.archive && inside(child)));
         return inside(findNode(this._tree, node.path) ?? node) ? "It holds read-only items" : null;
+    }
+
+    /** Why nothing can be added to the folder at `path`: it is read-only,
+     * or a packed package; `null` if items can be added. */
+    addReason(path) {
+        return this.readOnlyReason(path) ?? (this.isArchive(path) ? ARCHIVE_REASON : null);
     }
 
     /** Make the item at `path` the current one, if it is in the tree. */
@@ -316,7 +333,7 @@ export class Tree extends Service {
     /** A folder was chosen in the dialog; a read-only one is refused. */
     chooseMove(folder) {
         if (!this._moving) return;
-        const reason = this.readOnlyReason(folder);
+        const reason = this.addReason(folder);
         if (reason !== null) return this.failMove(`That folder is read-only: ${reason}`);
         return this._moving.choose(folder);
     }

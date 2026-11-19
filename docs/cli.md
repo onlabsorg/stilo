@@ -121,11 +121,32 @@ def init(args) -> int
 Makes `args.folder` (default: the current folder, created if missing) a
 package: writes `package.texl`, binding `package_name` (`--name`, default
 the folder's name) and `stilo_version` (the installed package's version),
-creates `references/`, and copies `TEXL_LIB` into `references/stilo/`.
-Returns 1 if `package.texl` already exists. An existing `references/stilo/`
-is left as it is.
+creates `references/`, and writes `TEXL_LIB` packed there,
+`references/stilo.texlz` (`library_archive()`, deterministic; S24).
+An existing `references/stilo.texlz` is left as it is. In a folder that
+is already a package (`complete_package`), it leaves `package.texl` as it
+is (`--name` is ignored, with a note), adds `references/stilo.texlz` if
+it is missing (`add_library`), and says how to move off an old
+`references/stilo/` folder if there is one; with nothing to add it says
+so. It returns 0 in both cases, 1 only if a file cannot be written.
 The work is done by `make_package(folder, name)` in `package.py`, which
 `stilo tutor` shares. See [Packages and the Stilo library](packages.md).
+
+## `pack`
+
+```python
+def pack(args) -> int
+```
+
+Packs the package in `args.folder` (default: the current folder) into one
+file, a packed package (S23): `-o`, `--output`, default
+`<folder name>.texlz` next to the folder, its missing folders created, an
+existing file replaced. It prints the number of files and the SHA-256 of
+the result. The work, and what goes in, is `pack_package` in the server's
+`archive.py` ([Packed packages](server.md#packed-packages-archivepy)), so
+the same files always give the same bytes; the output is left out when it
+is inside the folder. Returns 1 for a folder that is not a package (no
+`package.texl`) or an output that cannot be written.
 
 ## `create_engine`
 
@@ -139,7 +160,17 @@ of the server's `home.py`, and for a path with `~` returns the real file as
 the document's final URL, `(final_url, source)`, as the server's redirect
 does ([Packages](packages.md#how--resolves)). Its top, the highest folder
 the search for a home may reach, is the user's home directory, or the
-file-system root for a document outside it. A command that renders creates its engine here.
+file-system root for a document outside it. A path that goes through a
+packed package (`.texlz`) is read inside it, in memory, with the server's
+`Archives` (`ARCHIVES`, one cache per process; `read_archived`), and `~`
+looks for `package.texl` inside archives too, so `stilo render` reads
+archives as the server does, nested ones included. A folder or a packed
+package is read as its `index.texl` (`Archives.is_folder`, `INDEX`; S25),
+with that file as the final URL, as the server's redirect does: an
+import of `~/references/steel-revA.texlz` or of `references/steel/`
+reads the reference's main document, and `stilo render` accepts a folder
+or a `.texlz` file. A command that renders
+creates its engine here.
 
 ## `serve`
 
@@ -260,6 +291,11 @@ it writes to a temporary folder. `tests/cli/test_tutor.py` covers `stilo
 tutor`: copy, reuse, reset, refusals, the version check (with `run_server`
 replaced), and the real command serving the index in a subprocess.
 `tests/cli/test_web.py` covers Ctrl+C in `run_server`.
+`tests/cli/test_pack.py` covers `stilo pack` and `pack_package`: the
+same bytes from the same files (other times and permissions), sorted
+entries with fixed dates and permissions, hidden entries, links and
+git-ignored files left out, the output left out, and `stilo render`
+through packed packages, nested ones included.
 `tests/cli/test_plugins.py` covers commands from other packages (with
 fake entry points): running one, the order in `--help`, name clashes,
 broken plugins, and the public API.

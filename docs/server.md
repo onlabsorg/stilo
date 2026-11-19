@@ -9,8 +9,9 @@ built web app. FastAPI and uvicorn.*
 | `stilo/server/storage.py`       | `Storage`, the interface of a storage; `FolderStorage`, the default, the folder on disk (path validation, read, create, update, move, delete, tree, ETags); `StorageWrapper`. No HTTP. |
 | `stilo/server/app.py`           | `create_app()`: the HTTP routes, mapped onto a `Storage`, and the extensions' |
 | `stilo/server/extensions.py`    | `ServerExtension`, `get_storage`: server extensions (S17, phase 5) |
-| `stilo/server/files.py`         | Files by their public URL: `is_document`, `etag`, `media_type`, `other_file_response` (types and safety headers), `NO_CACHE` |
+| `stilo/server/files.py`         | Files by their public URL: `is_document`, `etag`, `media_type`, `other_file_response` (types and safety headers), `download_response`, `INDEX`, `NO_CACHE` |
 | `stilo/server/home.py`          | The package home rule, `~` in paths; shared with the CLI |
+| `stilo/server/archive.py`       | Packed packages (`.texlz`): `Archive` (read and checked in memory), `Archives` (the cache, paths through archives), `pack_package`; shared with the CLI |
 | `stilo/server/__init__.py`      | The [public API](#the-public-api), `__all__` |
 
 The server imports nothing from the rest of the package (the CLI starts it
@@ -35,6 +36,7 @@ class Storage(Protocol):
     def create_folder(self, path: str) -> None
     def tree(self, path: str, depth: int | None = None) -> dict
     def expand_home(self, path: str) -> str
+    def read_target(self, path: str) -> str
 ```
 
 What `create_app()` needs from a storage, and nothing more: a
@@ -43,7 +45,9 @@ method does what the method of the same name of `FolderStorage` does
 (below), with the same arguments and results; a storage refuses a request
 by raising one of the [errors](#errors), whose status the HTTP layer
 answers. `tree` returns the protocol's QUERY body; `expand_home` returns
-its argument unchanged if the storage has no package homes. Whether a
+its argument unchanged if the storage has no package homes; `read_target`
+returns where a read leads (`~` expanded, a folder to its `index.texl`),
+its argument without slashes at its ends if nowhere else. Whether a
 public address is a document or another file, `create_app()` decides from
 the suffix (`is_document`) and a `read`, so a storage needs no method for
 it. `tests/server/test_storage_interface.py` runs the app on a storage
@@ -87,6 +91,11 @@ Paths are strings relative to the root, with `/` separators: `""` is the
 root, `"packages/beam/check.texl"` a file. Every public method validates
 its path first.
 
+It reads packed packages (`.texlz` files) as read-only folders: a path that
+goes through one names an entry inside it; see
+[Packed packages](#packed-packages-archivepy) below. `self.archives` is
+the cache of the archives it opened.
+
 ### `resolve`
 
 ```python
@@ -109,11 +118,25 @@ def expand_home(self, path: str) -> str
 
 Returns `path` with each `~` segment, from the left, replaced by the
 package home of the folder before it: the nearest folder holding a
-`package.texl`, or the root (protocol: [URL space](protocol.md#url-space)).
+`package.texl`, or the root (protocol: [URL space](protocol.md#url-space));
+inside a packed package, its root or a package nested in it.
 Raises `BadRequest` for malformed segments and for more than 16 `~`
 segments. The app calls it to redirect a read with `~` to the real path
-(`home_redirect` in `app.py`); `read` calls it too, for other callers. A write never expands `~`. The rule itself is in `home.py` (`expand_home`, `home_of`), shared
+(through `read_target`, below); `read` calls it too, for other callers. A write never expands `~`. The rule itself is in `home.py` (`expand_home`, `home_of`), shared
 with the CLI, which imports it from there.
+
+### `read_target`
+
+```python
+def read_target(self, path: str) -> str
+```
+
+The path a read of `path` leads to (S25): `expand_home`, then, if that is
+a folder or a packed package, on disk or in an archive, its `index.texl`
+(`INDEX`), whether it exists or not (`Archives.is_folder`); otherwise the
+expanded path, without slashes at its ends. The app redirects a read to
+it when it differs from the path asked for (`read_redirect` in `app.py`).
+Raises `BadRequest` as `resolve` and `expand_home` do.
 
 ### `read`
 
@@ -122,8 +145,11 @@ def read(self, path: str) -> tuple[bytes, str]
 ```
 
 Returns the content of a file and its ETag, after `expand_home`. Any
-regular file can be read, not only `.texl` files. Raises `NotFound` if there is no such file, and
-`BadRequest` if the path is a folder.
+regular file can be read, not only `.texl` files, also an entry of a
+packed package (`refs/lib.texlz/docs/x.texl`); the path of the archive
+itself reads the file. Raises `NotFound` if there is no such file,
+`BadRequest` if the path is a folder or goes through a `.texlz` file that
+is not a valid packed package.
 
 ### `create`
 
@@ -162,7 +188,12 @@ protocol's QUERY: folders with `children`, files with `size` and
 every file is listed, without hidden entries, folders named `~`, or
 reserved names at the root. `depth` limits the recursion. A node the
 server cannot change carries `readOnly`, the reason (`read_only`, below).
-Raises `NotFound` and `BadRequest` as `read` does.
+A packed package is a folder node with `"archive": true` and the `size`
+and `modified` of its file, listed among the folders; its items carry
+`readOnly` ("It is in a packed package, which cannot be changed") and the
+time of the archive file. A `.texlz` file that is not a valid packed
+package is listed as a file. `path` may be an archive, or a folder or an
+archive inside one. Raises `NotFound` and `BadRequest` as `read` does.
 
 ### `read_only`
 
@@ -194,8 +225,8 @@ def create_folder(self, path: str) -> None
 ```
 
 Creates a folder and its missing parents. Raises `Conflict` if the path exists
-or a file is in the way, and `BadRequest` for a name ending in `.texl` or the
-root.
+or a file is in the way, and `BadRequest` for a name ending in `.texl` or
+`.texlz`, or the root.
 
 ### `move`
 
@@ -205,7 +236,8 @@ def move(self, path: str, to: str) -> str
 
 Moves or renames a file or a folder and returns its new path, creating
 missing parents of `to`. A folder takes everything in it. A file keeps its
-kind: a document's new name ends in `.texl`, another file's does not. Raises `Conflict` if
+kind: a document's new name ends in `.texl`, a packed package's in
+`.texlz`, another file's in neither. Raises `Conflict` if
 `to` exists (move never overwrites), `NotFound` if the item does not, and
 `BadRequest` for anything else the protocol refuses. A symbolic link moves as
 the link, not what it points to.
@@ -225,9 +257,77 @@ user can find them and deleting twice loses nothing.
 if left empty. `delete_folder` moves the whole folder, with documents, other
 files, hidden entries and links (as links, not followed), and returns
 `{"deleted": <number of files in it>}`. A folder with no files at all, at any
-depth, is removed and makes no trash folder (S15).
+depth, is removed and makes no trash folder (S15). Given a packed package,
+which the tree shows as a folder, `delete_folder` moves its file to the
+trash and returns the number of files in it.
 
 `etag` and `is_document` are in `files.py` (below).
+
+### Packed packages (`archive.py`)
+
+A packed package (S23) is a zip file named `*.texlz` (`ARCHIVE_SUFFIX`)
+with a `package.texl` at its root. `FolderStorage` reads it as a folder
+that cannot be changed:
+
+- **Reads go inside.** A path is walked from the root; the first segment
+  that ends in `.texlz`, is a regular file and has more segments after it
+  is an archive, and the rest of the path is an entry in it. A segment of
+  that rest naming a `.texlz` entry, with more after it, goes into that
+  archive in turn (nested archives). The path of an archive itself is the
+  file: `read` gives its bytes, `tree` its contents, and `read_target`
+  its `index.texl`. On the HTTP side a read of it is redirected to its
+  index, as for a folder; `?download` gives the file (S25); `/_api/tree/`
+  lists it.
+- **Writes inside are refused** with `Forbidden` ("refs/lib.texlz is a
+  packed package: what is in it cannot be changed"), before any other
+  check: `create`, `update`, `delete_file`, `delete_folder`,
+  `create_folder`, and `move` from or into one. The archive file itself is
+  an ordinary file: it is uploaded with `create`, moved, renamed and
+  deleted.
+- **`~`** (`expand_home`) uses `Archives.is_package`, which looks for
+  `package.texl` inside archives too (`home.py` takes it as `is_package`).
+  As every archive holds one at its root, `~` inside one stands for its
+  root, or for a package nested in it; the search still never leaves the
+  storage root.
+
+`Archive` reads one archive in memory, from its bytes, and never extracts
+it. On opening it checks every entry and raises `ArchiveError` for an
+absolute path (also `C:` or a backslash), an empty, `.` or `..` segment, a
+symbolic link, a duplicate name, a name that is both a file and a folder,
+encryption, a compression other than stored or deflate, a missing
+`package.texl`, more than `MAX_ENTRIES` (10 000) entries, more than
+`MAX_UNPACKED` (256 MiB) unpacked, by the sizes the entries declare, and a
+file over `MAX_ARCHIVE_BYTES` (256 MiB). Reading an entry stops at its
+declared size, so an entry that lies about it fails its CRC check rather
+than unpacking more. Nested archives are opened when first reached, up to
+`MAX_NESTING` (8) deep. Hidden entries and entries named `~` are left out,
+as elsewhere.
+
+`Archives.is_folder` tells a folder or a packed package from a file, on
+disk or in an archive: what `read_target` and the CLI's loader lead to the
+`index.texl` of.
+
+`Archives` is the cache: an archive file is read and checked once, and
+again only when its path, modification time or size changes; the 16 most
+recently used are kept, failures included. Given a root, it refuses an
+archive whose real path (through links) leaves it. The CLI's file loader
+uses the same class (docs/cli.md), so the browser and `stilo render` read
+archives the same way.
+
+`pack_package(folder, exclude=())` returns the bytes of a packed package
+of the package in `folder`, deterministically: `package_files` lists every
+regular file under it except hidden entries (`.git/`, `.trash/`, …), `~`,
+symbolic links (nothing outside the folder goes in) and files git ignores
+(`git check-ignore`, when the folder is in a working tree and git is
+installed; the user's global excludes are not used, so the result depends
+on the repository alone). The entries are sorted by path, dated
+1980-01-01, with permissions `rw-r--r--`, no folder entries and no
+comment, compressed with deflate at level 9, except `.texlz` entries,
+stored. The same files give the same bytes with the same zlib; the
+compressed bytes could differ with another zlib build. It raises
+`ArchiveError` for a folder without `package.texl`, or one that would give
+an archive `Archive` refuses. `stilo pack` calls it, and Papiro will for
+releases.
 
 ### Errors
 
@@ -248,12 +348,14 @@ and the body `{"error": "<message>"}`.
 
 ```python
 DOCUMENT_SUFFIX = ".texl"
+INDEX = "index.texl"
 NO_CACHE = {"Cache-Control": "no-cache"}
 FILE_TYPES: mimetypes.MimeTypes
 def is_document(path: str) -> bool
 def etag(content: bytes) -> str
 def media_type(path: str) -> str
 def other_file_response(path: str, content: bytes, tag: str) -> Response
+def download_response(path: str, content: bytes, tag: str) -> Response
 ```
 
 The rules of the protocol for files, kept apart from the routes so that a
@@ -271,6 +373,11 @@ answers the same:
   `ETag`, `X-Content-Type-Options: nosniff`, `NO_CACHE`, `Vary: Accept`,
   and `Content-Security-Policy: sandbox` for HTML and XML, so it cannot
   run scripts on the server's origin (protocol: [URL space](protocol.md#url-space)).
+- `download_response` answers `?download`: the file with its type (a
+  document as text), `ETag`, `nosniff`, `NO_CACHE` and
+  `Content-Disposition: attachment` with its name (plain ASCII, and
+  encoded as `filename*`).
+- `INDEX` is the document a read of a folder leads to (S25).
 - `NO_CACHE` is the header every document and file is served with.
 
 ## `create_app`
@@ -309,7 +416,7 @@ The routes, in the order they match:
 
 | Route                              | Methods      | Does                                     |
 |------------------------------------|--------------|------------------------------------------|
-| `/_api/files/{path}`               | GET, HEAD    | `Storage.read`; `ETag` and `Cache-Control: no-cache`. A path with `~`: `307` to the real path (`home_redirect`) |
+| `/_api/files/{path}`               | GET, HEAD    | `Storage.read`; `ETag` and `Cache-Control: no-cache`. A path with `~`, a folder or a packed package: `307` to `Storage.read_target` (`read_redirect`). `?download`: no index, the file as an attachment (`download_response`) |
 | `/_api/files/{path}`               | POST         | `Storage.create`; `201`, `ETag`, `Location` |
 | `/_api/files/{path}`               | PUT          | `Storage.update` with the `If-Match` header |
 | `/_api/files/{path}`               | DELETE       | `Storage.delete_file`; `204`             |
@@ -322,7 +429,7 @@ The routes, in the order they match:
 | `/_api/x/{extension}/{path}`       | any          | `404`: "no extension …" for an extension the server does not have, "unknown endpoint of extension …" for a path its router lacks |
 | `/_api/{path}`                     | any          | `404`: unknown endpoint                  |
 | `/_app/...`                        | GET          | The web app's static files (`web_dist`)  |
-| `/{path}`                          | GET, HEAD    | The public address. A path with `~`: `307` to the real path, for every client (`home_redirect`). A file that is not a document: itself, for every client, with its real type and the safety headers of the protocol (`other_file_response`). Otherwise the web app for a browser (`Accept` includes `text/html`), the file for anything else. `Vary: Accept` |
+| `/{path}`                          | GET, HEAD    | The public address. A path with `~`: `307` to the real path, for every client; a folder or a packed package: `307` to its `index.texl` for every client but a browser asking for HTML, which gets the web app (`read_redirect`). `?download`: the file as an attachment. A file that is not a document: itself, for every client, with its real type and the safety headers of the protocol (`other_file_response`). Otherwise the web app for a browser (`Accept` includes `text/html`), the file for anything else. `Vary: Accept` |
 
 `create_app()` is the server's extension point: Stilo's own new endpoints
 go under `/_api/`, added here, without changing the existing ones; those of
@@ -391,8 +498,9 @@ another kind or another server that speaks the protocol may use:
 | Server extensions | `ServerExtension`, `get_storage` |
 | Storages | `Storage`, `FolderStorage`, `StorageWrapper` |
 | Errors | `StorageError`, `BadRequest`, `Forbidden`, `NotFound`, `Conflict`, `PreconditionFailed` |
-| Files | `DOCUMENT_SUFFIX`, `is_document`, `etag`, `FILE_TYPES`, `media_type`, `other_file_response`, `NO_CACHE` |
+| Files | `DOCUMENT_SUFFIX`, `is_document`, `etag`, `FILE_TYPES`, `media_type`, `other_file_response`, `download_response`, `INDEX`, `NO_CACHE` |
 | The package home | `MANIFEST`, `HOME`, `MAX_HOMES`, `HomeCycle`, `home_of`, `expand_home`, `has_home` |
+| Packed packages | `ARCHIVE_SUFFIX`, `is_archive`, `ArchiveError`, `pack_package` |
 
 Anything else in the modules may change without notice.
 `tests/server/test_public_api.py` pins the list: a change to it is
@@ -418,6 +526,11 @@ app on a storage held in memory (the interface is enough), a
 `/_api/info`, storage wrappers and their order, refused ids, and
 middleware in front of everything. `tests/server/test_public_api.py`
 pins the public API and checks that the helpers answer as the server does.
+`tests/server/test_archives.py` covers packed packages: reading entries
+and the file itself, the tree (`archive`, `readOnly`, `depth`), every
+write inside refused, the archive file moved, renamed, deleted and
+uploaded, `~` and nested archives, a rendering through the server equal to
+the CLI's, the cache, and the safety checks on bad archives.
 
 ```sh
 uv run pytest tests/server

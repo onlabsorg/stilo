@@ -2,14 +2,15 @@
 // against the services only (S17). Each takes the services and a tree node:
 // the item of the menu or key, or, from the commands pane, `tree.target`.
 
-import { isDocument } from "../api.js";
+import { ARCHIVE_SUFFIX, isDocument } from "../api.js";
 import { checkName, parentFolder, baseName } from "../core/tree.js";
 import { relativeLink } from "../route.js";
-import { fileIcon, folderIcon, otherFileIcon } from "../icons.js";
+import { archiveIcon, fileIcon, folderIcon, otherFileIcon } from "../icons.js";
 
 const NEW_DOCUMENT = (title) => `<!--{ rich }-->\n# ${title}\n`;
 
 const documentName = (path) => baseName(path).replace(/\.texl$/, "");
+const archiveName = (path) => baseName(path).slice(0, -ARCHIVE_SUFFIX.length);
 const join = (folder, name) => (folder ? `${folder}/${name}` : name);
 const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
@@ -167,24 +168,25 @@ export async function rename(stilo, node) {
     if (!node) return askForItem(stilo);
     if (!(await saveFirst(stilo, node))) return;
     const { tree, transport, ui } = stilo;
-    const isFile = node.type === "file";
-    const type = isFile && !isDocument(node.path) ? "other" : node.type;
+    const isFile = node.type === "file" || node.archive === true;
+    const type = node.archive ? "archive" : isFile && !isDocument(node.path) ? "other" : node.type;
     const folder = parentFolder(node.path);
-    const old = type === "file" ? documentName(node.path) : baseName(node.path);
+    const old = type === "file" ? documentName(node.path) : type === "archive" ? archiveName(node.path) : baseName(node.path);
+    const suffix = { file: ".texl", archive: ARCHIVE_SUFFIX }[type] ?? "";
     let to;
     const done = await tree.askName({
         folder,
         replaces: node.path,
         value: old,
         label: `New name of ${old}`,
-        icon: { file: fileIcon, other: otherFileIcon, folder: folderIcon }[type],
+        icon: { file: fileIcon, other: otherFileIcon, folder: folderIcon, archive: archiveIcon }[type],
         submit: async (typed) => {
             const { name, problem } = checkName(typed, folder, type);
             if (problem) return problem;
             if (name === old) return false;
             const what = isFile ? "it" : "the files in it";
             if (!(await ui.confirm(`Links from other documents to ${what} will stop working. Rename ${old} to ${name}?`, { ok: "Rename" }))) return false;
-            to = join(folder, type === "file" ? `${name}.texl` : name);
+            to = join(folder, name + suffix);
             try {
                 await transport.moveItem(node.path, to);
             } catch (error) {
@@ -227,10 +229,13 @@ export async function moveTo(stilo, node) {
 export async function deleteItem(stilo, node) {
     if (!node) return askForItem(stilo);
     const { document, router, tree, transport, ui } = stilo;
-    const isFile = node.type === "file";
+    // A packed package goes as the one file it is
+    const isFile = node.type === "file" || node.archive === true;
     const closes = !!document.path && isIn(document.path, node.path);
     const name = isFile && isDocument(node.path) ? documentName(node.path) : baseName(node.path);
-    let question = `Delete ${name}? It goes to the .trash folder.`;
+    let question = node.archive
+        ? `Delete the packed package ${name}? It goes to the .trash folder.`
+        : `Delete ${name}? It goes to the .trash folder.`;
     if (!isFile) {
         const { documents, others } = countFiles(node);
         const contents = [documents && plural(documents, "document"), others && plural(others, "other file")].filter(Boolean);
@@ -260,6 +265,21 @@ export async function copyLink({ document, ui }, node) {
     if (node.type === "folder") return ui.notify("Copy link works on files, not folders");
     const link = relativeLink(document.path, node.path);
     ui.notify((await copyText(link)) ? `Link copied: ${link}` : `Could not copy the link: ${link}`);
+}
+
+/** Download a file, or a packed package as the one file it is, by its
+ * public URL with `?download` (S25): the server sends the file itself, as
+ * an attachment, where a read of a packed package leads to its index. */
+export function download({ transport, ui }, node) {
+    if (!node) return askForItem({ ui });
+    if (node.type === "folder" && !node.archive) return ui.notify("Download works on files and packed packages");
+    const link = document.createElement("a");
+    link.href = `${transport.documentUrl(node.path)}?download`;
+    link.download = node.name;
+    link.rel = "noopener";
+    document.body.append(link);
+    link.click();
+    link.remove();
 }
 
 /** Make a folder, or the folder of a file, the navigation root. */

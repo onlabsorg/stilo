@@ -1,6 +1,9 @@
+import io
+import zipfile
 from pathlib import Path
 
 from stilo.cli import main
+from stilo.server import pack_package
 
 EXAMPLES = Path(__file__).resolve().parents[2] / "examples"
 
@@ -31,3 +34,18 @@ def test_render_examples_without_errors(capsys):
     for path in sorted(EXAMPLES.rglob("*.texl")):
         assert main(["render", "--strict", str(path)]) == 0, path
     assert "<%" not in capsys.readouterr().out
+
+
+def test_the_beam_package_has_the_current_steel_reference():
+    """examples/packages/beam/references/steel-revA.texlz is
+    examples/packages/steel packed (S25). When the steel package changes,
+    pack it again: `uv run stilo pack examples/packages/steel -o
+    examples/packages/beam/references/steel-revA.texlz`. The entries are
+    compared, not the bytes, which another zlib build could compress
+    differently."""
+    packed = EXAMPLES / "packages/beam/references/steel-revA.texlz"
+    with zipfile.ZipFile(packed) as archive:
+        entries = {info.filename: archive.read(info) for info in archive.infolist()}
+    with zipfile.ZipFile(io.BytesIO(pack_package(EXAMPLES / "packages/steel"))) as archive:
+        expected = {info.filename: archive.read(info) for info in archive.infolist()}
+    assert entries == expected

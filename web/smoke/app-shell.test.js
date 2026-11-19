@@ -10,8 +10,8 @@
 
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
-import { spawn } from "node:child_process";
-import { cp, mkdtemp, readFile, rm } from "node:fs/promises";
+import { execFile, spawn } from "node:child_process";
+import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -88,6 +88,24 @@ after(async () => {
     server?.kill();
     if (folder) await rm(folder, { recursive: true, force: true });
 });
+
+/** Runs `stilo <args>` (the command STILO sets) and gives its standard output. */
+function stilo(args) {
+    const [command, ...rest] = (process.env.STILO ?? "uv run stilo").split(" ");
+    return new Promise((done, fail) =>
+        execFile(command, [...rest, ...args], { cwd: REPO }, (error, stdout, stderr) =>
+            error ? fail(new Error(`stilo ${args.join(" ")}: ${stderr || error.message}`)) : done(stdout),
+        ),
+    );
+}
+
+/** Writes files, `{path: text}` under `base`, with their folders. */
+async function writeFiles(base, files) {
+    for (const [path, text] of Object.entries(files)) {
+        await mkdir(join(base, path, ".."), { recursive: true });
+        await writeFile(join(base, path), text);
+    }
+}
 
 // -- helpers that run in the page --------------------------------------------
 
@@ -190,5 +208,40 @@ test("opens another document from the navigation pane", async () => {
     const text = await waitForText("Mezzanine floor beam");
     assert.match(text, /S355/);
     assert.equal(await renderErrors(), 0);
+    assertNoPageErrors();
+});
+
+test("reads a packed package as `stilo render` does, and opens it read-only", async () => {
+    // A package packed with `stilo pack`, imported by a package served here:
+    // a relative import and `~` resolve inside the archive
+    const source = await mkdtemp(join(tmpdir(), "stilo-smoke-pack-"));
+    try {
+        await writeFiles(source, {
+            "package.texl": '<% name = "demo" %>\n',
+            "docs/data.texl": "<% x = 42 %>\n",
+            "index.texl": '<% texl.import "docs/data.texl" ~> (d -> bind "d" d.data) %><% texl.import "~/package.texl" ~> (h -> bind "h" h.data) %>value <% d.x %> of <% h.name %>\n',
+        });
+        await writeFiles(folder, {
+            "packed/package.texl": '<% name = "packed" %>\n',
+            "packed/report.texl": '<% texl.import "~/references/demo.texlz/index.texl" ~> (l -> bind "l" l.text) %>Report: <% l %>',
+        });
+        await stilo(["pack", source, "-o", join(folder, "packed/references/demo.texlz")]);
+    } finally {
+        await rm(source, { recursive: true, force: true });
+    }
+    const local = await stilo(["render", "--strict", join(folder, "packed/report.texl")]);
+    assert.equal(local, "Report: value 42 of demo\n");
+
+    // The browser's engine, reading through the server, gives the same text
+    await page.goto(`${base}/packed/report.texl`);
+    const text = await waitForText("Report:");
+    assert.equal(text.trim(), local.trim());
+    assert.equal(await renderErrors(), 0);
+
+    // A document inside opens read-only; the archive shows as a folder
+    await page.goto(`${base}/packed/references/demo.texlz/index.texl?root=packed`);
+    await waitForText("value 42 of demo");
+    await page.waitForSelector("stilo-app >>> top-bar >>> .read-only", { timeout: 10000 });
+    await page.waitForSelector('stilo-app >>> nav-pane >>> .item.archive[title^="packed/references/demo.texlz"]', { timeout: 10000 });
     assertNoPageErrors();
 });

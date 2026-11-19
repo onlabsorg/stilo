@@ -29,12 +29,13 @@ A monorepo with three parts, kept strictly modular:
 - **Server** (`src/stilo/server/`, module `stilo.server`) — Python, serves
   the documents of one folder over HTTP, and the built web app.
 - **CLI** (`src/stilo/cli/`, module `stilo.cli`) — the `stilo` command:
-  `init` a package, `render` a document, `serve` a folder, `tutor` (the
-  tutorial). It is the only Texl command line (D19).
+  `init` a package, `pack` it into one file, `render` a document, `serve`
+  a folder, `tutor` (the tutorial). It is the only Texl command line (D19).
 
 Beside them, `texl-lib/` (root) is the **Stilo Texl library**: Texl
-documents, not code, that `stilo init` copies into a package's
-`references/stilo/`; shipped in the wheel as `stilo/texl-lib` (hatch
+documents, not code, a package itself (`texl-lib/package.texl`), that
+`stilo init` packs into a package's `references/stilo.texlz` (S24);
+shipped in the wheel as `stilo/texl-lib` (hatch
 `force-include`), read in place in a checkout (`TEXL_LIB` in
 `src/stilo/cli/package.py`); `tutorial/` (root, S14) is shipped and read the
 same way. **Packages** (S10, S21, S22, `docs/packages.md`; OnLabs D23): a
@@ -47,7 +48,19 @@ right, by the server on reads (a protocol rule: a `307` redirect to the real
 path) and by the CLI's file loader (which returns the real file as the final
 URL), with one shared rule in `src/stilo/server/home.py`. The real path is
 thus the document's identity for Texl (final URLs, Texl 0.8; S11). More
-than 16 `~` segments are refused, a safeguard.
+than 16 `~` segments are refused, a safeguard. **Packed packages** (S23):
+a package in one zip file, `*.texlz` (`ARCHIVE_SUFFIX`) with
+`package.texl` at its root, read as a read-only folder by
+`FolderStorage` and by the CLI's loader alike (`src/stilo/server/archive.py`):
+a path through the file names an entry, nested archives too; the tree
+lists it as a folder (`"archive": true`, items `readOnly`); writes
+inside get `403`; `~` inside one is its root. `stilo pack` makes one,
+deterministically (`pack_package`, public). **A folder reads as its
+index** (S25): a read of a folder or a packed package (not by a browser
+asking for HTML) is redirected to its `index.texl` (`Storage.read_target`;
+the CLI's loader returns it as the final URL), so `texl.import
+"~/references/steel-revA.texlz"` imports its main document; `?download`
+fetches a file itself, the zip of a packed package included.
 
 **One package, one Python project.** `pyproject.toml` at the root is the
 only Python project and builds the only Python package, `stilo`
@@ -159,7 +172,8 @@ uv sync && uv run pytest              # tests/: server/, cli/, texl_lib/, tutori
                                       #   test_extension_contract.py
 uv run stilo serve examples           # http://127.0.0.1:8010
 uv run stilo render examples/packages/beam/beam-check.texl
-uv run stilo init path/to/package     # package.texl, references/stilo/
+uv run stilo init path/to/package     # package.texl, references/stilo.texlz
+uv run stilo pack path/to/package     # path/to/package.texlz, deterministic
 uv run stilo tutor --dir /tmp/t       # copies tutorial/ there, serves it
 uv build                              # after npm run build: dist/stilo_cli-*.whl
 ```
@@ -223,8 +237,8 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
   (editing model, open points), `texl-primer.md`, `tutorial.md` (how the
   tutorial is built and kept current), `protocol.md` (protocol
   v1: URL space, `/_api/info`, `/_api/x/`, the interactions, read-only
-  items, login and refusals, errors, public document URLs, why
-  plain HTTP — also the contract), `component/` (embedding guide and
+  items, packed packages, login and refusals, errors, public document
+  URLs, why plain HTTP — also the contract), `component/` (embedding guide and
   editor API reference).
 - The **user manual** (getting started, the web editor, the `stilo`
   command, the file format) is not in this repository: it is the
@@ -238,37 +252,48 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
   (`package.texl`), `home_of`, `expand_home` (left to right, `MAX_HOMES`),
   shared by the server and the CLI.
 - `src/stilo/server/storage.py` — `Storage`, the interface of a storage
-  (a `typing.Protocol`: the nine methods `create_app()` uses; S17 phase
-  5); `StorageWrapper` (passes every call to another storage; a wrapper
+  (a `typing.Protocol`: the ten methods `create_app()` uses; S17 phase
+  5, `read_target` S25); `StorageWrapper` (passes every call to another storage; a wrapper
   overrides what it changes); `is_document`; `FolderStorage`, the default:
   path validation (no `..`,
   no hidden segments, no `~` names, no `_` names at the root, no escape
   through symlinks), `expand_home` on reads,
   read / create / update / move / delete (to `.trash`) / tree, ETags (sha256);
   `read_only` (what the server cannot write, from the file system's
-  permissions: `readOnly` in the tree, `Forbidden` (403) on writing it).
-  Raises `StorageError` subclasses carrying the HTTP status.
+  permissions: `readOnly` in the tree, `Forbidden` (403) on writing it);
+  packed packages (`_inside`, `_check_not_inside`, `IN_ARCHIVE`,
+  `self.archives`). Raises `StorageError` subclasses carrying the HTTP
+  status.
+- `src/stilo/server/archive.py` — packed packages (S23): `ARCHIVE_SUFFIX`,
+  `is_archive`, `ArchiveError`; `Archive` (one zip read and checked in
+  memory: the safety rules and limits `MAX_*`, entries, nested archives);
+  `Archives` (the cache by path, mtime and size; `locate`, `read`,
+  `is_package`, used by the storage and the CLI's loader);
+  `package_files`, `pack_package` (deterministic). Imports only `home.py`.
 - `src/stilo/server/app.py` — `create_app(storage | root, web_dist, *,
   extensions, middleware)` (a path is a `FolderStorage`; the storage, as
   wrapped by the extensions, kept as `app.state.storage`): the
   `/_api/` routes (`/_api/info` from `PROTOCOL`, `VERSION`,
   `CAPABILITIES` and the extensions; the extensions' routers under
   `/_api/x/<id>/`, then a `404` catch-all there), `/_app/` static bundle,
-  and `/<path>` (web app for browsers, the file for other clients).
+  and `/<path>` (web app for browsers, the file for other clients);
+  `read_redirect` (`~`, a folder's index), `?download`.
 - `src/stilo/server/files.py` — files by their public URL:
   `DOCUMENT_SUFFIX`, `is_document`, `etag`, `FILE_TYPES`, `media_type`,
-  `other_file_response` (type and safety headers), `NO_CACHE`.
+  `other_file_response` (type and safety headers), `download_response`
+  (`?download`), `INDEX` (`index.texl`, S25), `NO_CACHE`.
 - `src/stilo/server/__init__.py` — the server's public API, `__all__`
   (the app, server extensions, storages, errors, files helpers, the home
-  rule), pinned by `tests/server/test_public_api.py`; anything else may
+  rule, packed packages), pinned by `tests/server/test_public_api.py`; anything else may
   change.
 - `src/stilo/server/extensions.py` — `ServerExtension` (`id`, `router`,
   `wrap_storage`, `capabilities`, `version`), `check_extensions`,
   `get_storage` (the FastAPI dependency an extension's endpoint uses).
 - `src/stilo/cli/package.py` — `create_engine()` (the one place an engine
-  is made; its file loader resolves `~`, top: `$HOME` or `/`), `TEXL_LIB`,
-  the text of a new `package.texl`.
-- `texl-lib/` — the Stilo Texl library: `index.texl` binds `stilo`,
+  is made; its file loader resolves `~`, top: `$HOME` or `/`, and reads
+  inside packed packages through `ARCHIVES`), `TEXL_LIB`, the text of a
+  new `package.texl`.
+- `texl-lib/` — the Stilo Texl library, a package (`package.texl`): `index.texl` binds `stilo`,
   gathering one document per function (`dataframe.texl`:
   `stilo.dataframe`; `charts.texl`: `stilo.charts.line`, an SVG line
   chart). Tested by the cases in `tests/texl_lib/<function>-cases.json`,
@@ -287,7 +312,7 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
   Done) and `web/test/tutorial.test.js` (every cell fits its type).
 - `src/stilo/cli/web.py` — `WEB_DIST`, `run_server(app, host, port,
   open_url)` (serve, tutor and plugins' commands).
-- `src/stilo/cli/commands.py` — the subcommands (`init`, `render`, `serve`, `tutor`) as
+- `src/stilo/cli/commands.py` — the subcommands (`init`, `pack`, `render`, `serve`, `tutor`) as
   `Command` entries in `COMMANDS`; `main()` in `src/stilo/cli/__init__.py`
   builds the parser from them and from `plugin_commands()` (the
   entry-point group `stilo.commands`: after Stilo's, sorted by name;
@@ -354,7 +379,8 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
   navigation pane's tree, current item, other files, `askName` through
   the pane, the Move to… dialog; `checkName`; providers: `decorate`,
   `filter`, `readOnly`, read by `decoration`, `shows`, `readOnlyReason`,
-  `lockedReason`), `extensions.js` (the
+  `lockedReason`; packed packages: `isArchive`, `addReason`,
+  `ARCHIVE_REASON`, menu `tree/archive`), `extensions.js` (the
   `extensions` service, `API_VERSION`, the scoped `stilo` an extension
   gets). `<stilo-app>` creates and
   provides it. A new command, key or menu entry is registered there.
@@ -421,9 +447,18 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
   `consumer/`, the small Vite project that imports every entry point of
   the npm package. `web/README.md` — the package's page on npm.
 - `examples/` — sample documents: `library/steel.texl`, `sample.texl`,
-  and the package `packages/beam/`: `beam-check.texl`, a short design
+  the package `packages/steel/` (a steel reference: `index.texl` imports
+  `sections.texl`), and the package `packages/beam/`: `beam-check.texl`, a short design
   report that links to and imports `basis-of-design.texl` (design data,
-  imports the steel library) and `analysis.texl` (the checks). Every
+  imports `~/references/steel-revA.texlz`, `packages/steel/` packed,
+  checked against it in `tests/cli/test_render.py`; repack with `uv run
+  stilo pack examples/packages/steel -o
+  examples/packages/beam/references/steel-revA.texlz`) and
+  `analysis.texl` (the checks); its
+  `references/stilo.texlz` is the library packed, checked against
+  `texl-lib/` (`tests/texl_lib/test_library.py`; repack with `uv run
+  stilo pack texl-lib -o examples/packages/beam/references/stilo.texlz`
+  when the library changes). Every
   example renders with `stilo render --strict` (`tests/cli/test_render.py`)
   and its cells fit their types (`web/test/examples.test.js`).
 

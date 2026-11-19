@@ -22,5 +22,9 @@ export const newFileIcon = icon(svg`<path d="M7 3h7l5 5v11a2 2 0 0 1-2 2H7a2 2 0
 export const newFolderIcon = icon(
     svg`<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><path d="M12 10.5v5M9.5 13h5" />`,
 );
+export const archiveIcon = icon(
+    svg`<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><path d="M13 10h2M13 13h2M13 16h2" />`,
+);
+export const downloadIcon = icon(svg`<path d="M12 4v12M7 11l5 5 5-5M5 20h14" />`);
 export const lockIcon = icon(svg`<rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" />`);
 export const closeIcon = icon(svg`<path d="M6 6l12 12M18 6L6 18" />`);

@@ -44,6 +44,11 @@ With your library, a load of 12.5 kN/m on a span of 6 m gives a moment of
 - In a package, keep references in `references`, one folder each, and
   import them with `~`. To give a reference to a colleague, give them its
   folder: they copy it into their package's `references`.
+- A reference that is a package itself, with its own `package.texl` (as
+  `stilo init` makes), can also travel as one file: `stilo pack` turns it
+  into a *packed package*, `beams.texlz`, to email like a Word file. In
+  `references` it reads as a folder that cannot be changed:
+  `~/references/beams.texlz/index.texl`.
 - An address can also be a full web address, `https://…`, of a document on
   another server that allows it.
 

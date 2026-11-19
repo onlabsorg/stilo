@@ -1,7 +1,7 @@
 <!--{ da00 : formula | hidden }-->
 <% texl.import "~/references/tutorial/index.texl" ~> (lib -> bind "tutorial" lib.data) %>
 <!--{ da01 : formula | hidden }-->
-<% texl.import "~/references/stilo/index.texl" ~> (lib -> bind "stilo" lib.data.stilo) %>
+<% texl.import "~/references/stilo.texlz/index.texl" ~> (lib -> bind "stilo" lib.data.stilo) %>
 <!--{ da02 : rich }-->
 # 7. Data tables
 

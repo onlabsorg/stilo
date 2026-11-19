@@ -1,11 +1,12 @@
 import { LitElement, html, css } from "lit";
 import { base } from "./shared.js";
-import { folderIcon, fileIcon, otherFileIcon, chevronIcon, upIcon, moreIcon, newFileIcon, newFolderIcon, lockIcon } from "../icons.js";
+import { archiveIcon, folderIcon, fileIcon, otherFileIcon, chevronIcon, upIcon, moreIcon, newFileIcon, newFolderIcon, lockIcon } from "../icons.js";
 import { isDocument } from "../api.js";
+import { ARCHIVE_REASON } from "../core/tree.js";
 import { StiloController } from "../core/context.js";
 
 /** The menu of the `menus` service each kind of row opens. */
-const MENUS = { file: "tree/document", other: "tree/other", folder: "tree/folder", pane: "tree/pane" };
+const MENUS = { file: "tree/document", other: "tree/other", folder: "tree/folder", archive: "tree/archive", pane: "tree/pane" };
 import "./context-menu.js";
 
 /** Whether a tree node is a document or has one somewhere inside. */
@@ -467,7 +468,8 @@ export class NavPane extends LitElement {
     _marks(node) {
         const { tree } = this._services;
         const decoration = tree.decoration(node);
-        const reason = tree.readOnlyReason(node.path);
+        // A packed package itself can move, but nothing in it can change
+        const reason = tree.readOnlyReason(node.path) ?? (node.archive ? ARCHIVE_REASON : null);
         const title = [node.path, reason !== null ? `Read-only: ${reason}` : "", decoration?.tooltip ?? ""].filter(Boolean).join("\n");
         const marks = html`${reason !== null ? html`<span class="lock" aria-label="read-only">${lockIcon}</span>` : ""}${(decoration?.badges ?? []).map(
             (badge) => html`<span class="badge ${badge.tone ?? ""}">${badge.text}</span>`,
@@ -506,16 +508,17 @@ export class NavPane extends LitElement {
             </li>`;
         }
         const open = !this._collapsed.has(node.path);
+        const archive = node.archive === true;
         return html`<li>
-            ${this._renderRow("folder", node, depth, html`<button
-                class="item ${isOther(node) ? "other" : ""} ${muted ? "muted" : ""}"
+            ${this._renderRow(archive ? "archive" : "folder", node, depth, html`<button
+                class="item ${isOther(node) ? "other" : ""} ${archive ? "archive" : ""} ${muted ? "muted" : ""}"
                 style="--depth: ${depth}"
                 aria-expanded=${open}
                 title=${title}
                 @click=${() => this._toggle(node.path)}
                 @dblclick=${() => this._go({ root: node.path, doc: this._services.document.path })}
             >
-                <span class="chevron ${open ? "open" : ""}">${chevronIcon}</span>${folderIcon}<span class="name">${node.name}</span>${marks}
+                <span class="chevron ${open ? "open" : ""}">${chevronIcon}</span>${archive ? archiveIcon : folderIcon}<span class="name">${node.name}</span>${marks}
             </button>`)}
             ${open && node.children ? this._renderChildren(node, depth + 1) : ""}
         </li>`;

@@ -47,8 +47,40 @@ def test_get_missing(client):
     assert "error" in response.json()
 
 
-def test_get_folder_is_bad_request(client):
-    assert client.get("/_api/files/packages").status_code == 400
+def test_reading_a_folder_leads_to_its_index(client, root):
+    """S25: a folder reads as its index.texl, by a redirect, whether it
+    exists or not; with or without the final slash, by both forms."""
+    for prefix in ("/_api/files/", "/"):
+        for path in ("packages", "packages/"):
+            response = client.get(f"{prefix}{path}", follow_redirects=False)
+            assert response.status_code == 307
+            assert response.headers["location"] == f"{prefix}packages/index.texl"
+    assert client.get("/_api/files/packages").status_code == 404  # no index.texl there
+    (root / "packages" / "index.texl").write_text("the index")
+    assert client.get("/packages").text == "the index"
+    root_index = client.get("/_api/files/", follow_redirects=False)
+    assert root_index.headers["location"] == "/_api/files/index.texl"
+
+
+def test_a_browser_asking_for_a_folder_gets_the_app(client):
+    response = client.get("/packages", headers={"Accept": "text/html"}, follow_redirects=False)
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/html")
+
+
+def test_home_then_index(client, root):
+    (root / "packages" / "package.texl").write_text("")
+    response = client.get("/packages/beam/~/", follow_redirects=False)
+    assert response.headers["location"] == "/packages/index.texl"
+
+
+def test_download(client):
+    response = client.get("/_api/files/packages/beam/notes.txt?download")
+    assert response.content == b"notes"
+    assert response.headers["content-disposition"].startswith('attachment; filename="notes.txt"')
+    response = client.get("/packages/beam/check.texl?download", headers={"Accept": "text/html"})
+    assert response.text == DOC and "attachment" in response.headers["content-disposition"]
+    assert client.get("/packages?download").status_code == 400  # a folder is not a file
 
 
 @pytest.mark.parametrize("path", ["packages/.hidden/x.texl", "_api/x.texl", "packages//x.texl"])
@@ -462,7 +494,8 @@ def test_info(client):
     assert info["protocol"] == 1
     # The version published in pyproject.toml, so a release can't forget app.py
     assert info["server"] == {"name": "stilo", "version": version("stilo-cli")}
-    assert info["capabilities"] == ["files", "tree", "folders", "move", "upload", "trash", "home"]
+    assert info["capabilities"] == ["files", "tree", "folders", "move", "upload", "trash", "home",
+                                    "archives", "index"]
     assert info["extensions"] == []
 
 
