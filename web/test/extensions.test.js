@@ -231,6 +231,35 @@ describe("registries: panels, topBar, status", () => {
             target.remove();
         }
     });
+
+    it("lay out a panel of several elements from the top of the pane, and one element filling it", async () => {
+        const target = document.createElement("div");
+        target.style.height = "600px";
+        document.body.append(target);
+        const transport = { readTree: async () => ({ path: "", name: "", type: "folder", children: [] }), documentUrl: (p) => `/${p}` };
+        try {
+            const app = await startStilo({ target, transport });
+            const { panels, ui } = app.stilo;
+            // As the first extension in docs/extensions.md: a header, then a paragraph
+            panels.register({ id: "x.two", label: "Two", icon: "2", render: () => html`<div class="pane-header">Two</div><p class="two">Text</p>` });
+            panels.register({ id: "x.one", label: "One", icon: "1", render: () => html`<div class="one">All</div>` });
+            ui.openPane("x.two");
+            await app.updateComplete;
+            const aside = app.shadowRoot.querySelector("aside");
+            const header = aside.querySelector(".pane-header");
+            const top = aside.getBoundingClientRect().top;
+            expect(header.getBoundingClientRect().top - top).to.be.below(2);
+            // The header keeps its height, and the paragraph comes right after it, not halfway down
+            expect(header.getBoundingClientRect().height).to.be.below(60);
+            expect(aside.querySelector(".two").getBoundingClientRect().top - top).to.be.below(100);
+            ui.openPane("x.one");
+            await app.updateComplete;
+            const one = app.shadowRoot.querySelector("aside .one");
+            expect(Math.abs(one.getBoundingClientRect().height - aside.clientHeight)).to.be.below(2);
+        } finally {
+            target.remove();
+        }
+    });
 });
 
 describe("the commands pane's Extensions group", () => {

@@ -186,7 +186,10 @@ stilo.panels.setBadge("errors", { text: "2", label: "2 errors", tone: "danger" }
 
 `<top-bar>` shows a button per panel, with its badge, in `order`; a click
 toggles it (`ui.togglePane`). `<stilo-app>` renders the open panel's
-`render(stilo)` in the right pane. Stilo's panels are registered by
+`render(stilo)` in the right pane: a panel of one element fills the
+pane's height (Stilo's own scroll their list inside it); a panel of
+several elements (a header, then the content) stacks them from the top,
+and the pane scrolls. Stilo's panels are registered by
 `builtins/panels.js`: errors (10), comments (20), commands (30); the
 errors badge is their count, which `builtins/panels.js` sets whenever
 it changes.

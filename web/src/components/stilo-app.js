@@ -117,11 +117,19 @@ export class StiloApp extends LitElement {
                 flex-direction: column;
                 width: var(--pane-width);
                 min-height: 0;
+                overflow-y: auto;
                 background: var(--surface);
                 border-left: 1px solid var(--border);
             }
+            /* A panel of one element fills the pane (and may scroll inside,
+               as Stilo's own do); a panel of several elements stacks them
+               from the top, and the pane scrolls */
             aside > * {
+                flex: none;
+            }
+            aside > :only-child {
                 flex: 1;
+                min-height: 0;
             }
             footer {
                 grid-area: status;

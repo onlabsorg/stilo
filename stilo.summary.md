@@ -588,6 +588,10 @@ accept are not part of Stilo.
   emptied; outside any repository, the package's own ignore files now
   count too. Packing refuses a package whose `package.texl` would be left
   out, instead of writing a file that cannot be opened. Not released yet.
+- 2026-11-20: **fix: extension panels made of several parts** (a heading,
+  then the content) were spread over the whole height of the right pane;
+  they now start at the top and the pane scrolls. Stilo's own panels look
+  as before. Not released yet.
 
 ## Known limitations
 

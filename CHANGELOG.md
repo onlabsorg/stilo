@@ -6,6 +6,11 @@ change the interfaces.
 
 ## Unreleased
 
+- **Fix: an extension's panel of several elements** (a header, then its
+  content, as in the first example of `docs/extensions.md`) was spread
+  over the right pane's height, each element getting an equal share. They
+  now stack from the top and the pane scrolls; a panel of one element
+  fills the pane, as Stilo's own do.
 - **Fix: `stilo init` wrote an empty `references/stilo.texlz`** when Stilo
   was installed inside a git repository that ignores it (a virtual
   environment in a project): the navigation pane showed it as a plain
