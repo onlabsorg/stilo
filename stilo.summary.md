@@ -598,6 +598,11 @@ accept are not part of Stilo.
   can keep its data in the folder as an ordinary file. The server says it
   can do this, so extensions can check before relying on it. The editor
   itself still edits only documents. Not released yet.
+- 2026-11-20: **a save that did not happen stands out**: "Not saved" in
+  the top bar is now coloured, as a warning when it can be fixed in the
+  editor (a read-only document, a cell to correct) and as an error when
+  the server refused the save or could not be reached; it looked like
+  "Saved" before. Not released yet.
 
 ## Known limitations
 

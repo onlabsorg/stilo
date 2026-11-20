@@ -87,19 +87,22 @@ export class Document extends Service {
 
     /** Save the document, the cell being edited included. A cell that refuses
      * its edit stops the save; a document changed on the server meanwhile is
-     * not overwritten. The status says how it went. */
+     * not overwritten. The status says how it went: a save that did not
+     * happen is a warning when the user can fix it here (a read-only
+     * document, a cell to correct), an error when the server refused it or
+     * could not be reached. */
     async save() {
         const { editor, ui, transport } = this._stilo;
         const path = this._path;
         if (!path || !editor.element) return;
         const readOnly = this.readOnly;
         if (readOnly !== null) {
-            ui.notify(`Not saved: read-only (${readOnly})`);
+            ui.notify(`Not saved: read-only (${readOnly})`, { level: "warning" });
             return;
         }
         if (editor.editing && !(await editor.element.runCommand("commit"))) {
             ui.setSource(null);
-            ui.notify("Not saved: correct the cell being edited");
+            ui.notify("Not saved: correct the cell being edited", { level: "warning" });
             return;
         }
         ui.notify("Saving…");
@@ -110,7 +113,9 @@ export class Document extends Service {
             ui.notify("Saved");
             this.emit("save", { path });
         } catch (error) {
-            ui.notify(error.status === 412 ? "Not saved: changed on the server, reload it" : `Not saved: ${error.message}`);
+            ui.notify(error.status === 412 ? "Not saved: changed on the server, reload it" : `Not saved: ${error.message}`, {
+                level: "error",
+            });
         }
     }
 

@@ -339,7 +339,7 @@ reason as hover text, and `save` refuses it.
 | Method       | Does                                                       |
 |--------------|------------------------------------------------------------|
 | `load(path)` | Resets the status, comments, errors and source view, reads the file, waits for the new editor and gives it the text; fires `open` (`{path, text}`). Used by the router |
-| `save()`     | Commits the cell being edited, then `updateFile` with the editor's value and the ETag of the last read or write; a cell that refuses its edit stops the save, a `412` shows "changed on the server, reload it". Fires `save` (`{path}`) |
+| `save()`     | Commits the cell being edited, then `updateFile` with the editor's value and the ETag of the last read or write; a cell that refuses its edit stops the save, a `412` shows "changed on the server, reload it". A save that did not happen shows as a warning when the user can fix it in the editor (a read-only document, a cell to correct), as an error when the server refused it or could not be reached. Fires `save` (`{path}`) |
 | `reload()`   | Reads the document again, after confirming if dirty         |
 | `discard()`  | Forgets the unsaved changes (the document is going away)    |
 

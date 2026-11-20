@@ -149,7 +149,7 @@ describe("router and document", () => {
         await stilo.router.start();
         stilo.document._etag = '"stale"';
         await stilo.document.save();
-        expect(stilo.ui.status).to.equal("Not saved: changed on the server, reload it");
+        expect([stilo.ui.status, stilo.ui.level]).to.deep.equal(["Not saved: changed on the server, reload it", "error"]);
     });
 
     it("save the cell being edited too, and not save when it refuses its edit", async () => {
@@ -158,12 +158,12 @@ describe("router and document", () => {
         editor().editing = true;
         editor().commits = false;
         await stilo.document.save();
-        expect(stilo.ui.status).to.equal("Not saved: correct the cell being edited");
+        expect([stilo.ui.status, stilo.ui.level]).to.deep.equal(["Not saved: correct the cell being edited", "warning"]);
         expect(transport.calls.filter((c) => c[0] === "update")).to.have.length(0);
         editor().commits = true;
         await stilo.document.save();
         expect(editor().commands).to.deep.equal(["commit", "commit"]);
-        expect(stilo.ui.status).to.equal("Saved");
+        expect([stilo.ui.status, stilo.ui.level]).to.deep.equal(["Saved", "info"]);
     });
 
     it("reload in a new editor, asking first if there are unsaved changes", async () => {

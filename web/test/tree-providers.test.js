@@ -207,6 +207,7 @@ describe("read-only documents", () => {
         expect(stilo.commands.disabledReason("copy")).to.be.null;
         await stilo.document.save();
         expect(stilo.ui.status).to.contain("read-only");
+        expect(stilo.ui.level).to.equal("warning");
         const host = await fixture(html`<stilo-provider .stilo=${stilo}><top-bar></top-bar></stilo-provider>`);
         const bar = host.querySelector("top-bar");
         await bar.updateComplete;

@@ -6,6 +6,11 @@ change the interfaces.
 
 ## Unreleased
 
+- **A save that did not happen stands out**: "Not saved: …" in the top
+  bar is now coloured, as a warning when it can be fixed in the editor (a
+  read-only document, a cell to correct) and as an error when the server
+  refused the save or could not be reached. It was plain grey, like
+  "Saved".
 - **Any file can be updated** (S27, protocol capability `rewrite`): the
   server's UPDATE (PUT with `If-Match`) now replaces files that are not
   documents too (it answered `400` before), so an extension can keep its

@@ -115,7 +115,7 @@ describe("read-only items and refusals from the server", () => {
         stilo.document.on("change", () => stilo.document.path && !stilo.editor.element && stilo.editor.attach(editor));
         await stilo.document.load("a.texl");
         await stilo.document.save();
-        expect(stilo.ui.status).to.equal("Not saved: Libraries are read-only");
+        expect([stilo.ui.status, stilo.ui.level]).to.deep.equal(["Not saved: Libraries are read-only", "error"]);
     });
 });
 
