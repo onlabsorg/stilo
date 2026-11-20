@@ -271,6 +271,26 @@ from stilo.server import create_app
 run_server(create_app(args.folder, WEB_DIST, extensions=[history]), "127.0.0.1", args.port)
 ```
 
+**Trying a plugin from a Stilo checkout.** Without installing it, add the
+plugin to the checkout's environment for one run with uv, and run Stilo
+as a module:
+
+```bash
+uv run --with-editable ../stilo-pdf python -m stilo pdf report.texl
+```
+
+Not `uv run --with-editable ../stilo-pdf stilo pdf …`: the `stilo` script
+belongs to the checkout's environment, which does not see what `--with`
+adds, so the plugin's commands are missing (`invalid choice: 'pdf'`).
+`python -m stilo` runs in the environment that has both. Installed
+into the environment (`uv pip install -e ../stilo-pdf`, until the next
+`uv sync` removes it; or `pip install` elsewhere), the plugin works with
+the `stilo` script too. If the plugin lists `stilo-cli` among its
+dependencies, `--with` may install the published Stilo next to the
+checkout's, and the run uses that one: leave it out while trying the
+plugin against a checkout, or point uv at the checkout (`[tool.uv.sources]`
+in the plugin's `pyproject.toml`).
+
 ## The public API
 
 `stilo.cli.__all__` is what a plugin may use: `Command`, `COMMANDS`,
