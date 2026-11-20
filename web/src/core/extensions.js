@@ -21,13 +21,14 @@ const ID = /^[a-z][a-z0-9-]*$/;
  * value names the property of the first argument that holds an id, which
  * must start with `<extension-id>.`; `null` if there is none. Every
  * service's `on` is recorded too. A new hook that returns `dispose()` is
- * added here.
+ * added here. A `dispose()` with a `key` (a badge) replaces the one recorded
+ * with the same key, so a hook called again and again keeps one record.
  */
 const REGISTRATIONS = {
     commands: { register: "id" },
     keys: { bind: null },
     menus: { add: null },
-    panels: { register: "id", replace: null },
+    panels: { register: "id", replace: null, setBadge: null },
     topBar: { register: "id", replace: null },
     status: { register: "id", replace: null },
     views: { register: "id", replace: null },
@@ -65,6 +66,8 @@ class Scope {
         this.id = id;
         /** @type {Set<() => void>} */
         this.disposers = new Set();
+        /** The recorded disposer of each key (`dispose.key`). @type {Map<string, () => void>} */
+        this.keyed = new Map();
         this.stilo = {
             apiVersion: API_VERSION,
             html,
@@ -109,13 +112,22 @@ class Scope {
     /** Record a `dispose()`; the one returned forgets it when called. */
     _track(dispose) {
         if (typeof dispose !== "function") return dispose;
+        const { key } = dispose;
         let done = false;
         const once = () => {
             if (done) return;
             done = true;
             this.disposers.delete(once);
+            if (key && this.keyed.get(key) === once) this.keyed.delete(key);
             dispose();
         };
+        if (key) {
+            // The latest of a key takes the place of the one before, whose
+            // effect it has replaced
+            const before = this.keyed.get(key);
+            if (before) this.disposers.delete(before);
+            this.keyed.set(key, once);
+        }
         this.disposers.add(once);
         return once;
     }

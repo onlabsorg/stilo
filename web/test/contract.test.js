@@ -60,6 +60,7 @@ const contract = {
         // Visible contributions
         stilo.panels.register({ id: "contract.panel", label: "Contract", icon: html`C`, order: 40, render: () => html`<p class="contract-panel">Panel</p>` });
         stilo.panels.setBadge("contract.panel", { text: "1", label: "1 thing" });
+        stilo.panels.setBadge("comments", { text: "7", label: "7 issues" });
         stilo.panels.replace("commands", { label: "Other commands", icon: html`X`, order: 30, render: () => html`<p>Replaced</p>` });
         stilo.topBar.register({ id: "contract.user", render: () => html`<span class="contract-user">Ada</span>` });
         stilo.status.register({ id: "contract.counter", render: () => html`<contract-counter></contract-counter>` });
@@ -236,6 +237,7 @@ describe("the extension API contract", () => {
         expect(stilo.menus.items("tree/document")).to.not.include("contract.ask");
         expect(stilo.panels.get("contract.panel")).to.be.undefined;
         expect(stilo.panels.get("commands").label).to.equal("Commands");
+        expect(stilo.panels.badge("comments")).to.be.undefined;
         expect(stilo.topBar.list()).to.deep.equal([]);
         expect(stilo.status.list()).to.deep.equal([]);
         expect(shadow(app, "footer")).to.be.null;

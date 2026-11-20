@@ -132,7 +132,8 @@ details of each service.
 | Add a command (menus, commands pane, keys) | `commands.register({id, label, group, run, enabled?, checked?})`; `enabled` returns `true` or why not, shown greyed out | `dispose` |
 | Bind a key | `keys.bind("Alt+Shift+K", id, {when})`, `when` = `global`, `tree`, `editor` | `dispose` |
 | Put a command in a menu | `menus.add("tree/document", id, {group})`; menus `tree/document`, `tree/other`, `tree/folder`, `tree/archive`, `tree/pane` | `dispose` |
-| Add a right-pane panel | `panels.register({id, label, icon, order, render})`; `panels.setBadge(id, badge)`. One element fills the pane; several stack from the top, and the pane scrolls | `dispose` |
+| Add a right-pane panel | `panels.register({id, label, icon, order, render})`. One element fills the pane; several stack from the top, and the pane scrolls | `dispose` |
+| Put a badge on a panel's button, Stilo's too | `panels.setBadge(id, badge)`, `null` to remove it; called as often as needed | `dispose` |
 | Replace a panel, Stilo's too | `panels.replace("comments", panel)`; disposing brings the old one back | `dispose` |
 | Add to the top bar | `topBar.register({id, order, render})` | `dispose` |
 | Add to the status line | `status.register({id, order, render})`; the line shows only with items | `dispose` |

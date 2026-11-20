@@ -6,6 +6,11 @@ change the interfaces.
 
 ## Unreleased
 
+- **An extension's badges go when it is deactivated**: `panels.setBadge`
+  returns a `dispose()` and is recorded like the other hooks, so a badge
+  an extension put on one of Stilo's panels (a count on Comments, say) no
+  longer stays after it is deactivated. A badge set by someone else since
+  stays; calling `setBadge` again and again keeps one record per panel.
 - **Extensions can ask the server's info in `activate`**: `startStilo`
   reads `/_api/info` before it activates the extensions, so
   `info.hasExtension(id)` and `info.has(capability)` are right there; they

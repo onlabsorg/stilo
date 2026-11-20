@@ -608,6 +608,10 @@ accept are not part of Stilo.
   before it starts the extensions, so an extension can check for its
   server part as it starts (it was told "none" before). It asks once.
   Signing in is unchanged for the user. Not released yet.
+- 2026-11-20: **an extension's badges go with it**: a count an extension
+  shows on a panel button, Stilo's own included (on Comments, say), is
+  now taken away when the extension is turned off; it stayed before. A
+  badge set by Stilo since stays. Not released yet.
 
 ## Known limitations
 

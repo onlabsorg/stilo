@@ -170,6 +170,21 @@ describe("panels service", () => {
         expect(panels.badge("a")).to.equal(undefined);
         expect(panels.list().map((p) => p.id)).to.deep.equal(["b"]);
     });
+
+    it("takes a badge away with the function setBadge returns, unless another was set since", async () => {
+        const { Panels } = await import("../src/core/index.js");
+        const panels = new Panels();
+        panels.register({ id: "a", label: "A", render: () => "" });
+        const first = panels.setBadge("a", { text: "1" });
+        const second = panels.setBadge("a", { text: "2" });
+        expect(first.key).to.equal("panels.badge:a");
+        expect(second.key).to.equal(first.key);
+        first(); // replaced since: nothing happens
+        expect(panels.badge("a").text).to.equal("2");
+        second();
+        expect(panels.badge("a")).to.equal(undefined);
+        expect(typeof panels.setBadge("a", null)).to.equal("function");
+    });
 });
 
 describe("top bar", () => {

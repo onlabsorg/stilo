@@ -120,6 +120,27 @@ describe("extensions", () => {
         // Stilo's own are still there
         expect(stilo.commands.get("save")).to.exist;
     });
+
+    it("take away an extension's badges on Stilo's panels on deactivate, keeping one record per panel", async () => {
+        const { stilo } = env;
+        await stilo.extensions.activate({
+            id: "issues",
+            apiVersion: "1.0",
+            activate(s) {
+                for (let n = 1; n <= 50; n++) s.panels.setBadge("comments", { text: String(n) });
+            },
+        });
+        expect(stilo.panels.badge("comments").text).to.equal("50");
+        // One record for the 50 calls: the scope does not grow with them
+        expect(stilo.extensions._active.get("issues").scope.disposers.size).to.equal(1);
+        stilo.extensions.deactivate("issues");
+        expect(stilo.panels.badge("comments")).to.equal(undefined);
+        // A badge Stilo set since stays
+        await stilo.extensions.activate({ id: "again", apiVersion: "1.0", activate: (s) => s.panels.setBadge("errors", { text: "x" }) });
+        stilo.panels.setBadge("errors", { text: "2", label: "2 errors" });
+        stilo.extensions.deactivate("again");
+        expect(stilo.panels.badge("errors").text).to.equal("2");
+    });
 });
 
 describe("startStilo", () => {

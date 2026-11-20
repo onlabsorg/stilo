@@ -113,11 +113,13 @@ valid or taken, its `apiVersion` does not match (`API_VERSION`, now
 `activate` gets a **scoped `stilo`**: the same services, through a proxy
 that records each registration (the table `REGISTRATIONS`: `commands.register`,
 `keys.bind`, `menus.add`, `register` and `replace` of `panels`, `topBar`
-and `status`, `transport.use`, `decorate`, `filter` and `readOnly` of
+and `status`, `panels.setBadge`, `transport.use`, `decorate`, `filter` and `readOnly` of
 `tree`, `editor.decorate`, `comments.addProvider`, the listeners of its
 `settings`, `views.register` and `views.replace`, and every service's `on`), so
 `deactivate(id)` undoes all
-of them, the latest first; a `dispose()` the extension calls itself is not
+of them, the latest first (of the badges, an extension's latest on each
+panel: a `dispose()` with a `key` replaces the record of the one before);
+a `dispose()` the extension calls itself is not
 undone twice. The ids of its commands, panels, views, comment providers and top-bar
 and status items
 must start with `<id>.`; another is refused (and an `activate` that does
@@ -184,6 +186,10 @@ stilo.panels.register({
 });                                      // returns dispose(); a taken id throws
 stilo.panels.setBadge("errors", { text: "2", label: "2 errors", tone: "danger" });
 ```
+
+`setBadge` works on any panel and returns the function that takes that
+badge away, if it is still the one shown; an extension's badges, on its
+own panels or on Stilo's, go when it is deactivated.
 
 `<top-bar>` shows a button per panel, with its badge, in `order`; a click
 toggles it (`ui.togglePane`). `<stilo-app>` renders the open panel's

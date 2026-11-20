@@ -23,7 +23,8 @@ import { Registry } from "./registry.js";
 export class Panels extends Registry {
     constructor() {
         super();
-        /** @type {Map<string, Badge>} */
+        /** The badge of each panel, in an entry of its own per setBadge call.
+         * @type {Map<string, {badge: Badge}>} */
         this._badges = new Map();
     }
 
@@ -41,15 +42,30 @@ export class Panels extends Registry {
         this._badges.delete(id);
     }
 
-    /** Show a badge on a panel's button, or remove it with `null`. */
+    /**
+     * Show a badge on a panel's button, or remove it with `null`, on any
+     * panel, Stilo's own too. Returns the function that removes this badge,
+     * if it is still the one shown (a badge set since stays). It has a `key`,
+     * the same for every call on one panel: an extension's scoped `stilo`
+     * keeps only the latest, and calls it when the extension is deactivated.
+     * @param {string} id
+     * @param {Badge | null} badge
+     * @returns {(() => void) & {key: string}}
+     */
     setBadge(id, badge) {
-        if (badge) this._badges.set(id, badge);
-        else if (!this._badges.delete(id)) return;
-        this.changed();
+        const entry = badge ? { badge } : null;
+        if (entry) this._badges.set(id, entry);
+        if (entry || this._badges.delete(id)) this.changed();
+        const dispose = () => {
+            if (!entry || this._badges.get(id) !== entry) return;
+            this._badges.delete(id);
+            this.changed();
+        };
+        return Object.assign(dispose, { key: `panels.badge:${id}` });
     }
 
     /** The badge on a panel's button, if any. @returns {Badge | undefined} */
     badge(id) {
-        return this._badges.get(id);
+        return this._badges.get(id)?.badge;
     }
 }
