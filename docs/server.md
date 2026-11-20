@@ -314,19 +314,25 @@ archive whose real path (through links) leaves it. The CLI's file loader
 uses the same class (docs/cli.md), so the browser and `stilo render` read
 archives the same way.
 
-`pack_package(folder, exclude=())` returns the bytes of a packed package
+`pack_package(folder, exclude=(), *, gitignore=True)` returns the bytes of a packed package
 of the package in `folder`, deterministically: `package_files` lists every
 regular file under it except hidden entries (`.git/`, `.trash/`, …), `~`,
 symbolic links (nothing outside the folder goes in) and files git ignores
-(`git check-ignore`, when the folder is in a working tree and git is
-installed; the user's global excludes are not used, so the result depends
-on the repository alone). The entries are sorted by path, dated
+(`git check-ignore`, when git is installed; S26). If the folder belongs to
+a working tree (one that does not ignore the folder or a folder above it),
+that repository's rules count; otherwise, outside a repository or in one
+that ignores the folder, only the `.gitignore` files inside the folder
+count, as if it were the top of its own repository. The user's global
+excludes are never used, so the result depends on the files alone.
+`gitignore=False` (keyword) packs ignored files too: `library_archive()`
+uses it, so the library is packed in full wherever Stilo is installed. The entries are sorted by path, dated
 1980-01-01, with permissions `rw-r--r--`, no folder entries and no
 comment, compressed with deflate at level 9, except `.texlz` entries,
 stored. The same files give the same bytes with the same zlib; the
 compressed bytes could differ with another zlib build. It raises
-`ArchiveError` for a folder without `package.texl`, or one that would give
-an archive `Archive` refuses. `stilo pack` calls it, and Papiro will for
+`ArchiveError` for a folder without `package.texl`, one whose
+`package.texl` would be left out (ignored or excluded), or one that would
+give an archive `Archive` refuses. `stilo pack` calls it, and Papiro will for
 releases.
 
 ### Errors

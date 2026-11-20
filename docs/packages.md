@@ -155,7 +155,10 @@ for its root
 packages nested in packed packages work the same way. The file itself is
 an ordinary file: it is uploaded, renamed, moved and deleted, and its own
 path with `?download` serves the file. `stilo pack` leaves out hidden
-entries (`.git/`, `.trash/`), links and files git ignores, and gives the
+entries (`.git/`, `.trash/`), links and files git ignores (the rules of
+the repository the package belongs to; in a folder that repository
+ignores, or outside any, only the `.gitignore` files inside the package;
+S26), refuses a package whose `package.texl` would be left out, and gives the
 same bytes for the same files, so a release can be named by its hash. Details:
 [The server](server.md#packed-packages-archivepy).
 
@@ -164,7 +167,7 @@ same bytes for the same files, so a release can be named by its hash. Details:
 `texl-lib/` at the repository root is the source of the library `stilo
 init` packs into `references/stilo.texlz` (`library_archive()` in
 `stilo/cli/package.py`, when the package is made, so the source stays
-plain files). It is a package itself, with its own `package.texl`, which
+plain files; git's ignore rules do not apply to it, S26). It is a package itself, with its own `package.texl`, which
 packing needs. Its main document, `index.texl`,
 binds one name, `stilo`, a
 namespace of Swan functions, gathered from one document per function in the

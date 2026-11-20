@@ -76,6 +76,56 @@ def test_git_ignored_files_are_left_out(package):
     assert names(pack_package(package)) == ["docs/data.texl", "index.texl", "package.texl"]
 
 
+@pytest.mark.skipif(shutil.which("git") is None, reason="git is not installed")
+def test_the_rules_of_the_repository_the_package_is_in_count(package):
+    """A package in a subfolder of a repository: the repository's rules count,
+    those above the package too (S23, amended)."""
+    project = package.parent
+    subprocess.run(["git", "init", "-q"], cwd=project, check=True)
+    write(project / ".gitignore", "*.log\n")
+    write(package / ".gitignore", "files/\n")
+    write(package / "docs/run.log", "x")
+    assert names(pack_package(package)) == ["docs/data.texl", "index.texl", "package.texl"]
+
+
+@pytest.mark.skipif(shutil.which("git") is None, reason="git is not installed")
+def test_a_repository_that_ignores_the_package_folder_does_not_count(package, tmp_path):
+    """A package in a git-ignored folder of another repository: only the
+    .gitignore files inside the package count."""
+    project = tmp_path / "project"
+    inside = project / "build" / "lib"
+    shutil.move(package, inside)
+    subprocess.run(["git", "init", "-q"], cwd=project, check=True)
+    write(project / ".gitignore", "build/\n*.txt\n")
+    write(inside / "docs/.gitignore", "*.log\n")
+    write(inside / "docs/run.log", "x")
+    assert names(pack_package(inside)) == ["docs/data.texl", "files/b.txt", "index.texl", "package.texl"]
+
+
+@pytest.mark.skipif(shutil.which("git") is None, reason="git is not installed")
+def test_a_gitignore_counts_outside_a_repository(package):
+    write(package / ".gitignore", "files/\n")
+    assert names(pack_package(package)) == ["docs/data.texl", "index.texl", "package.texl"]
+
+
+@pytest.mark.skipif(shutil.which("git") is None, reason="git is not installed")
+def test_gitignore_false_packs_ignored_files(package):
+    write(package / ".gitignore", "files/\n")
+    assert "files/b.txt" in names(pack_package(package, gitignore=False))
+
+
+@pytest.mark.skipif(shutil.which("git") is None, reason="git is not installed")
+def test_an_ignored_manifest_is_refused(package):
+    write(package / ".gitignore", "*.texl\n")
+    with pytest.raises(ArchiveError, match="package.texl would be left out"):
+        pack_package(package)
+
+
+def test_an_excluded_manifest_is_refused(package):
+    with pytest.raises(ArchiveError, match="package.texl would be left out"):
+        pack_package(package, exclude=[package / "package.texl"])
+
+
 def test_a_folder_without_a_manifest_is_not_a_package(tmp_path):
     with pytest.raises(ArchiveError, match="not a package"):
         pack_package(tmp_path)

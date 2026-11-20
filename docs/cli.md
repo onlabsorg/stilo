@@ -284,7 +284,8 @@ list. The server's own public API is `stilo.server.__all__`
 `tests/cli/test_render.py` runs `main()` on the sample documents in
 `examples/`: rendering with imports, writing to a file, a missing file, and
 every example rendered with `--strict`.
-`tests/cli/test_package.py` covers `stilo init` and `~` in `render`, with
+`tests/cli/test_package.py` covers `stilo init` (the library packed in
+full from a git-ignored folder too) and `~` in `render`, with
 `Path.home()` moved into a temporary folder.
 `tests/cli/test_errors.py` covers the report of undefined values, on documents
 it writes to a temporary folder. `tests/cli/test_tutor.py` covers `stilo
@@ -294,7 +295,10 @@ replaced), and the real command serving the index in a subprocess.
 `tests/cli/test_pack.py` covers `stilo pack` and `pack_package`: the
 same bytes from the same files (other times and permissions), sorted
 entries with fixed dates and permissions, hidden entries, links and
-git-ignored files left out, the output left out, and `stilo render`
+git-ignored files left out by the rules of S26 (the enclosing
+repository's, or only the package's own `.gitignore` when that repository
+ignores the package folder), refused when `package.texl` would be left
+out, the output left out, and `stilo render`
 through packed packages, nested ones included.
 `tests/cli/test_plugins.py` covers commands from other packages (with
 fake entry points): running one, the order in `--help`, name clashes,

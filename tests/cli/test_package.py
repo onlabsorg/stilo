@@ -1,11 +1,14 @@
 """`stilo init` and `~` in `stilo render` (DECISIONS.md S10, S24)."""
 
+import shutil
+import subprocess
 import zipfile
 from pathlib import Path
 
 import pytest
 
 from stilo.cli import main
+from stilo.cli import package as package_module
 from stilo.cli.package import TEXL_LIB, resolve_file
 
 IMPORT = '<% texl.import "~/references/stilo.texlz/index.texl" ~> (lib -> bind "stilo" lib.data.stilo) %>'
@@ -85,6 +88,22 @@ def test_the_library_is_packed_the_same_every_time(home):
     main(["init", str(home / "b")])
     library = Path("references") / "stilo.texlz"
     assert (home / "a" / library).read_bytes() == (home / "b" / library).read_bytes()
+
+
+@pytest.mark.skipif(shutil.which("git") is None, reason="git is not installed")
+def test_the_library_is_packed_in_full_inside_a_git_ignored_folder(home, tmp_path, monkeypatch):
+    """Stilo installed in a git-ignored virtual environment of a project:
+    the project's rules do not apply to the library."""
+    main(["init", str(home / "elsewhere")])
+    project = tmp_path / "project"
+    venv_lib = project / ".venv" / "site-packages" / "stilo" / "texl-lib"
+    shutil.copytree(TEXL_LIB, venv_lib)
+    subprocess.run(["git", "init", "-q"], cwd=project, check=True)
+    (project / ".gitignore").write_text(".venv/\n")
+    monkeypatch.setattr(package_module, "TEXL_LIB", venv_lib)
+    main(["init", str(home / "here")])
+    library = Path("references") / "stilo.texlz"
+    assert (home / "here" / library).read_bytes() == (home / "elsewhere" / library).read_bytes()
 
 
 def test_render_imports_the_library(home, capsys):

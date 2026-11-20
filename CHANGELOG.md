@@ -4,6 +4,21 @@ All notable changes to Stilo are listed here, newest first. Versions follow
 [semantic versioning](https://semver.org/); before 1.0, any version may
 change the interfaces.
 
+## Unreleased
+
+- **Fix: `stilo init` wrote an empty `references/stilo.texlz`** when Stilo
+  was installed inside a git repository that ignores it (a virtual
+  environment in a project): the navigation pane showed it as a plain
+  file and imports of the library failed. The library is now always
+  packed in full.
+- **`stilo pack` and git's ignore rules** (S26): a package in a folder its
+  repository ignores (e.g. inside a git-ignored `build/`) is packed by the
+  `.gitignore` files inside it only, no longer emptied by the outer rule;
+  outside any repository, a `.gitignore` in the package now counts too.
+  Packing refuses a package whose `package.texl` would be left out,
+  instead of writing an archive that cannot be opened. Server:
+  `pack_package` takes `gitignore=False` to pack ignored files too.
+
 ## 0.7.0 — 2026-11-19
 
 - **Packed packages**: a package can be one file, a zip named `*.texlz`

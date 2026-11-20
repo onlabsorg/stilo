@@ -576,6 +576,18 @@ accept are not part of Stilo.
   address downloads it. The examples gain a small steel package, packed as
   `steel-revA.texlz` into the beam package, which now imports its steel
   data from it. Not released yet.
+- 2026-11-19: **0.7.0 released**: tagged `v0.7.0`, with the default port
+  8010, packed packages and `stilo pack`, the packed Stilo library and
+  folder imports above.
+- 2026-11-20: **fix: the library packed empty**: installed inside a
+  project's git-ignored folder (such as a virtual environment), `stilo
+  init` wrote an empty `references/stilo.texlz`, so imports of the library
+  failed; the library is now always packed in full. **`stilo pack` and git's
+  ignore rules**: a package inside a folder its repository ignores is
+  packed by the ignore files inside the package only, instead of being
+  emptied; outside any repository, the package's own ignore files now
+  count too. Packing refuses a package whose `package.texl` would be left
+  out, instead of writing a file that cannot be opened. Not released yet.
 
 ## Known limitations
 

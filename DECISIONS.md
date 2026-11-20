@@ -704,3 +704,31 @@ content, keeps the index the document at its real path, so its relative
 imports resolve from its folder, as with `~` (S11). The download needs its
 own address because a server cannot tell an import from a download by the
 request; a query parameter keeps every path meaning one thing.
+
+## S26 — 2026-11-20 — Which git ignore rules count when packing (amends S23)
+`pack_package` leaves out the files git ignores, by these rules:
+
+- **A package that belongs to a repository**, one whose working tree it is
+  in and which does not ignore the package folder (or a folder above it):
+  that repository's rules count, as before (its `.gitignore` files, those
+  above the package included, and `.git/info/exclude`).
+- **Otherwise** (no repository, or one that ignores the package folder):
+  the package counts as the top of a repository of its own, so only the
+  `.gitignore` files inside it count.
+- Never the user's global excludes (as in S23).
+- **Stilo's own library** is packed with no ignore rules at all
+  (`gitignore=False`, a keyword of `pack_package`): `texl-lib/` is Stilo's
+  source, nothing in it is private.
+- **Packing refuses** (`ArchiveError`) when `package.texl` would be left
+  out, ignored or excluded, instead of writing an archive that cannot be
+  read as a package.
+
+*Reason:* installed in a git-ignored virtual environment of a project
+(Papiro's `.venv/`), the library was packed by the project's rules, which
+ignore every file in it: `stilo init` wrote an empty
+`references/stilo.texlz`. A rule that ignores the package folder itself
+says the folder is not part of that repository, not that each file in it
+is private. Papiro's releases (Papiro P5) pack a checkout whose top is the
+package, where both cases give the same result; a package in a subfolder
+of a repository keeps the repository's rules, `*.log` at its top
+included.

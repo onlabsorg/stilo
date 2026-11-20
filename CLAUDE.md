@@ -269,7 +269,9 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
   memory: the safety rules and limits `MAX_*`, entries, nested archives);
   `Archives` (the cache by path, mtime and size; `locate`, `read`,
   `is_package`, used by the storage and the CLI's loader);
-  `package_files`, `pack_package` (deterministic). Imports only `home.py`.
+  `package_files`, `pack_package` (deterministic; which git ignore rules
+  count, `_git_ignored`, S26; `gitignore=False` for the library). Imports
+  only `home.py`.
 - `src/stilo/server/app.py` — `create_app(storage | root, web_dist, *,
   extensions, middleware)` (a path is a `FolderStorage`; the storage, as
   wrapped by the extensions, kept as `app.state.storage`): the

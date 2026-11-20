@@ -30,6 +30,7 @@ import io
 import os
 import stat
 import subprocess
+import tempfile
 import threading
 import zipfile
 import zlib
@@ -306,31 +307,71 @@ class Archives:
 
 # -- packing -----------------------------------------------------------------------
 
-def _git_ignored(folder: Path, paths: list[str]) -> set[str]:
-    """Those of `paths` (relative to `folder`) that git ignores, if `folder`
-    is in a git working tree and git is installed; else none. Only the
-    repository's own rules count (`.gitignore` files, `.git/info/exclude`),
-    not the user's global ones, so that the result depends on the
-    repository alone."""
-    if not paths:
-        return set()
+def _git(folder: Path, *args: str, stdin: bytes | None = None,
+         git_dir: Path | None = None) -> subprocess.CompletedProcess | None:
+    """Runs git in `folder` without the user's global excludes, so that the
+    result depends on the files alone; with `git_dir`, as the top of the
+    working tree of that repository. None if git cannot run."""
+    command = ["git", "-c", f"core.excludesFile={os.devnull}"]
+    if git_dir is not None:
+        command += [f"--git-dir={git_dir}", f"--work-tree={folder}"]
     try:
-        result = subprocess.run(
-            ["git", "-c", f"core.excludesFile={os.devnull}", "check-ignore", "-z", "--stdin"],
-            cwd=folder, input="\0".join(paths).encode() + b"\0",
-            capture_output=True, timeout=60)
+        return subprocess.run(command + list(args), cwd=folder, input=stdin,
+                              capture_output=True, timeout=60)
     except (OSError, subprocess.SubprocessError):
-        return set()
-    if result.returncode not in (0, 1):  # 128: not a repository
-        return set()
+        return None
+
+
+def _check_ignore(folder: Path, paths: list[str], git_dir: Path | None = None) -> set[str] | None:
+    """Those of `paths` (relative to `folder`) that git ignores; None if
+    `folder` is not in a working tree or git cannot run."""
+    result = _git(folder, "check-ignore", "-z", "--stdin",
+                  stdin="\0".join(paths).encode() + b"\0", git_dir=git_dir)
+    if result is None or result.returncode not in (0, 1):  # 128: not a repository
+        return None
     return {path for path in result.stdout.decode().split("\0") if path}
 
 
-def package_files(folder: Path | str, exclude: Iterable[Path | str] = ()) -> list[str]:
+def _in_repository(folder: Path) -> bool:
+    """Whether `folder` belongs to the git working tree it is in: it is in
+    one, and that repository does not ignore it (or a folder above it)."""
+    result = _git(folder, "rev-parse", "--show-toplevel")
+    if result is None or result.returncode != 0:
+        return False
+    top = Path(result.stdout.decode().strip()).resolve()
+    if top == folder:
+        return True
+    if not folder.is_relative_to(top):  # e.g. a submodule's top, or a link
+        return False
+    ignored = _check_ignore(top, [folder.relative_to(top).as_posix()])
+    return ignored is not None and not ignored
+
+
+def _git_ignored(folder: Path, paths: list[str]) -> set[str]:
+    """Those of `paths` (relative to `folder`) that git ignores (S23, as
+    amended 2026-11-20). If `folder` belongs to a working tree (one that
+    does not ignore it), that repository's rules count (its `.gitignore`
+    files, `.git/info/exclude`). Otherwise, outside a repository or in one
+    that ignores the folder, the folder counts as the top of a repository
+    of its own: only the `.gitignore` files inside it count. Never the
+    user's global excludes. None ignored if git is not installed."""
+    if not paths:
+        return set()
+    if _in_repository(folder):
+        return _check_ignore(folder, paths) or set()
+    with tempfile.TemporaryDirectory() as empty:
+        if (result := _git(Path(empty), "init", "-q")) is None or result.returncode != 0:
+            return set()
+        return _check_ignore(folder, paths, git_dir=Path(empty) / ".git") or set()
+
+
+def package_files(folder: Path | str, exclude: Iterable[Path | str] = (), *,
+                  gitignore: bool = True) -> list[str]:
     """The files `pack_package` packs from `folder`, as sorted "/" paths:
     every regular file under it, except hidden entries (`.git/`, `.trash/`,
     `.gitignore`…), entries named `~`, symbolic links (whatever they point
-    to: nothing outside the folder goes in), files git ignores, and the
+    to: nothing outside the folder goes in), files git ignores (unless
+    `gitignore` is false; `_git_ignored` says which rules count), and the
     files in `exclude`."""
     folder = Path(folder).resolve()
     excluded = {Path(path).resolve() for path in exclude}
@@ -343,24 +384,30 @@ def package_files(folder: Path | str, exclude: Iterable[Path | str] = ()) -> lis
             if _hidden(name) or path.is_symlink() or not path.is_file() or path in excluded:
                 continue
             found.append(path.relative_to(folder).as_posix())
-    ignored = _git_ignored(folder, found)
+    ignored = _git_ignored(folder, found) if gitignore else set()
     return sorted(path for path in found if path not in ignored)
 
 
-def pack_package(folder: Path | str, exclude: Iterable[Path | str] = ()) -> bytes:
+def pack_package(folder: Path | str, exclude: Iterable[Path | str] = (), *,
+                 gitignore: bool = True) -> bytes:
     """A packed package (`.texlz`) of the package in `folder`, as bytes.
 
     Deterministic: the same files give the same bytes, and so the same hash.
     The entries (`package_files`) are sorted by path, with a fixed date
     (1980-01-01), fixed permissions (rw-r--r--), no folder entries and no
     comment; they are compressed with deflate at level 9, except packed
-    packages, stored as they are. Raises `ArchiveError` if `folder` is not a
-    package, or the result would be refused when read (`MAX_ENTRIES`,
+    packages, stored as they are. With `gitignore` false, files git ignores
+    go in too (Stilo's own library, whose files are never private). Raises
+    `ArchiveError` if `folder` is not a package, if its `package.texl` would
+    be left out (ignored or excluded: the result could not be read as a
+    package), or the result would be refused when read (`MAX_ENTRIES`,
     `MAX_UNPACKED`)."""
     folder = Path(folder).resolve()
     if not (folder / MANIFEST).is_file():
         raise ArchiveError(f"{folder}: not a package (no {MANIFEST})")
-    paths = package_files(folder, exclude)
+    paths = package_files(folder, exclude, gitignore=gitignore)
+    if MANIFEST not in paths:
+        raise ArchiveError(f"{folder}: its {MANIFEST} would be left out (ignored or excluded)")
     if len(paths) > MAX_ENTRIES:
         raise ArchiveError(f"{folder}: more than {MAX_ENTRIES} files to pack")
     buffer = io.BytesIO()

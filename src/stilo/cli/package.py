@@ -37,8 +37,10 @@ ARCHIVES = Archives()
 
 def library_archive() -> bytes:
     """The Stilo library as a packed package: `texl-lib/` packed, the same
-    bytes for the same library."""
-    return pack_package(TEXL_LIB)
+    bytes for the same library, wherever Stilo is installed. Git's ignore
+    rules do not apply: an install inside a repository that ignores it (a
+    virtual environment in a project) would otherwise leave out every file."""
+    return pack_package(TEXL_LIB, gitignore=False)
 
 
 def make_package(folder: Path, name: str) -> bool:
