@@ -4,7 +4,9 @@
 import { Service } from "./service.js";
 
 /**
- * Read once when the app starts (`load`). Until then, and if it cannot be
+ * Read once (`load`), by `startStilo` before the extensions are activated,
+ * so `has` and `hasExtension` are right in an extension's `activate`, or
+ * else when `<stilo-app>` connects. Until then, and if it cannot be
  * read, the server counts as able to do everything, so nothing is greyed out
  * for nothing; a version 0 server (no `/_api/info`) has the capabilities of
  * version 0 (`Transport.info`).
@@ -15,6 +17,8 @@ export class Info extends Service {
         this._stilo = stilo;
         this._info = null;
         this._error = "";
+        /** The reading, once started. @type {Promise<void> | null} */
+        this._loading = null;
     }
 
     /** The protocol version the server speaks, or `null` until read. */
@@ -52,9 +56,15 @@ export class Info extends Service {
         return this.extensions.some((extension) => extension.id === id);
     }
 
-    /** Read the server's info. A transport without `info` counts as a server
-     * that can do everything. */
-    async load() {
+    /** Read the server's info, once: a later call resolves with the first
+     * reading. A transport without `info` counts as a server that can do
+     * everything. */
+    load() {
+        this._loading ??= this._read();
+        return this._loading;
+    }
+
+    async _read() {
         const { transport } = this._stilo;
         if (typeof transport.info !== "function") return;
         try {

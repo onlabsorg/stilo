@@ -49,6 +49,14 @@ describe("the server's info", () => {
         expect(stilo.info.hasExtension("history")).to.be.false;
     });
 
+    it("reads the info once, however often it is asked to", async () => {
+        let reads = 0;
+        const stilo = createStilo({ transport: { info: async () => (reads++, { protocol: 1, capabilities: [] }) } });
+        await Promise.all([stilo.info.load(), stilo.info.load()]);
+        await stilo.info.load();
+        expect(reads).to.equal(1);
+    });
+
     it("counts a transport without info, or info that cannot be read, as able to do everything", async () => {
         const plain = createStilo({ transport: {} });
         await plain.info.load();
@@ -152,6 +160,18 @@ describe("asking for a login", () => {
         expect(asked).to.deep.equal([["Sign in to continue", "Sign in"]]);
         expect(went.length).to.equal(1);
         expect(new URL(went[0]).searchParams.get("next")).to.equal(location.href);
+    });
+
+    it("does not ask on a 401 to the server's info: the next request does", async () => {
+        const { transport, asked } = setUp();
+        await withFetch(() => json({ error: "Sign in", login: "/login" }, 401), async () => {
+            await transport.info().catch(() => {});
+            await settle();
+            expect(asked).to.deep.equal([]);
+            await transport.readTree("").catch(() => {});
+        });
+        await settle();
+        expect(asked.length).to.equal(1);
     });
 
     it("does not ask on a 401 without a login address, nor go if the user declines", async () => {

@@ -6,6 +6,12 @@ change the interfaces.
 
 ## Unreleased
 
+- **Extensions can ask the server's info in `activate`**: `startStilo`
+  reads `/_api/info` before it activates the extensions, so
+  `info.hasExtension(id)` and `info.has(capability)` are right there; they
+  said "no extensions" before, since the info was read only when the app
+  connected. The info is read once. A `401` to it no longer asks the user
+  to sign in: the app's first request after it does, in Stilo's dialog.
 - **A save that did not happen stands out**: "Not saved: …" in the top
   bar is now coloured, as a warning when it can be fixed in the editor (a
   read-only document, a cell to correct) and as an error when the server

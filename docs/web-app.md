@@ -90,7 +90,8 @@ export default {
 
 `startStilo({target, extensions, transport})` (`src/start.js`, exported by
 the package) creates the services (`createStilo`), activates Stilo's own
-contributions, then the extensions in order, and appends a `<stilo-app>`
+contributions, reads the server's info (`info.load()`), then activates the
+extensions in order, and appends a `<stilo-app>`
 to `target` (`document.body` by default); it resolves to the app. Stilo's
 own `index.html` calls `startStilo()`.
 
@@ -218,7 +219,12 @@ or it renders an element that follows the services itself.
 ## The server: `info`
 
 The `info` service holds what the server is and can do (protocol v1),
-read once when the app connects (`load`):
+read once (`load`, which reads it only the first time it is called):
+by `startStilo` before it activates the extensions, so an extension can
+ask `has` and `hasExtension` in its `activate`, or, in a front end that
+does not use `startStilo`, when `<stilo-app>` connects. A `401` to this
+request does not ask the user to sign in (the app and its dialogs are not
+there yet); the app's first request after it does:
 
 | Member | Is or does |
 |--------|------------|

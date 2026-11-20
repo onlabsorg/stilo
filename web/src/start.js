@@ -6,7 +6,8 @@ import "./components/stilo-app.js";
 
 /**
  * Start the app: create its services, activate Stilo's own contributions,
- * then the given extensions in order (one that cannot be activated is
+ * read what the server is and can do (`info`), so an extension can ask it in
+ * `activate`, then activate the given extensions in order (one that cannot be
  * reported and skipped), and put a `<stilo-app>` in `target`. Resolves to
  * the app element; its services are its `stilo` property.
  *
@@ -23,6 +24,7 @@ import "./components/stilo-app.js";
 export async function startStilo({ target = document.body, extensions = [], transport } = {}) {
     const stilo = createStilo(transport ? { transport } : {});
     activateBuiltins(stilo);
+    await stilo.info.load();
     for (const extension of extensions) await stilo.extensions.activate(extension);
     const app = document.createElement("stilo-app");
     app.stilo = stilo;

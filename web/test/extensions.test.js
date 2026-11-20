@@ -157,6 +157,32 @@ describe("startStilo", () => {
     });
 });
 
+describe("startStilo and the server's info", () => {
+    it("reads the info before the extensions, so activate can ask it, and only once", async () => {
+        const target = document.createElement("div");
+        document.body.append(target);
+        let reads = 0;
+        const seen = [];
+        const transport = {
+            readTree: async () => ({ path: "", name: "", type: "folder", children: [] }),
+            documentUrl: (path) => `/${path}`,
+            info: async () => (reads++, { protocol: 1, capabilities: ["files"], extensions: [{ id: "history" }] }),
+        };
+        try {
+            const app = await startStilo({
+                target,
+                transport,
+                extensions: [{ id: "history", apiVersion: "1", activate: (s) => seen.push([s.info.hasExtension("history"), s.info.has("move")]) }],
+            });
+            await app.updateComplete;
+            expect(seen).to.deep.equal([[true, false]]);
+            expect(reads).to.equal(1);
+        } finally {
+            target.remove();
+        }
+    });
+});
+
 describe("registries: panels, topBar, status", () => {
     it("list items by order, refuse a taken id, and replace one until disposed", () => {
         const registry = new Registry();

@@ -24,7 +24,9 @@ export function loginUrl(login, next = location.href) {
 /**
  * A request the server answers with `401` and a `login` address asks the
  * user, in a dialog, to sign in, and goes to the login page if they agree;
- * the request fails as it would. One question at a time. Added outermost
+ * the request fails as it would. One question at a time. The server's info
+ * never asks: `startStilo` reads it before the app, and its dialogs, are
+ * there; the app's first request after it asks instead. Added outermost
  * (`transport.use(…, {outermost: true})`): an extension's middleware sees the
  * response first and can handle a `401` its own way.
  */
@@ -33,7 +35,7 @@ function askForLogin(stilo, go = (url) => location.assign(url)) {
     return stilo.transport.use?.(
         async (url, init, next) => {
             const response = await next(url, init);
-            if (response.status !== 401 || asking) return response;
+            if (response.status !== 401 || asking || isInfo(url)) return response;
             // Taken at once, so that requests failing together ask once
             asking = true;
             let body = {};
@@ -53,6 +55,9 @@ function askForLogin(stilo, go = (url) => location.assign(url)) {
         { outermost: true },
     );
 }
+
+/** Whether `url` is the server's info, `/_api/info`. */
+const isInfo = (url) => new URL(url, location.href).pathname === "/_api/info";
 
 /** Apply what the server says. Returns the function that stops it. */
 export function activate(stilo, { go } = {}) {

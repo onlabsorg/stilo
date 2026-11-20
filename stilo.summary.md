@@ -603,6 +603,11 @@ accept are not part of Stilo.
   editor (a read-only document, a cell to correct) and as an error when
   the server refused the save or could not be reached; it looked like
   "Saved" before. Not released yet.
+- 2026-11-20: **extensions know the server from the start**: the web app
+  now asks the server what it can do, and which server extensions it has,
+  before it starts the extensions, so an extension can check for its
+  server part as it starts (it was told "none" before). It asks once.
+  Signing in is unchanged for the user. Not released yet.
 
 ## Known limitations
 
