@@ -4,7 +4,7 @@ All notable changes to Stilo are listed here, newest first. Versions follow
 [semantic versioning](https://semver.org/); before 1.0, any version may
 change the interfaces.
 
-## Unreleased
+## 0.8.0 — 2026-11-20
 
 - **The panel rail** (S28): the buttons that open the right pane's panels
   moved from the top bar to a narrow rail at the right edge of the window,
