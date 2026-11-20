@@ -592,6 +592,16 @@ export class TexlEditor extends LitElement {
         e.preventDefault();
     }
 
+    /**
+     * The selected line, from 1, and the name of its cell: `{line, cell}`;
+     * `cell` is `null` for a line past the last cell, or text before the
+     * first marker (it has no name). With several lines selected, the line
+     * last moved to.
+     */
+    get selection() {
+        return { line: this._selected + 1, cell: this._cells[this._selected]?.name ?? null };
+    }
+
     /** Whether a cell is in edit mode. Its edit is not in `value` until committed. */
     get editing() {
         return this._editing >= 0;
@@ -1119,8 +1129,7 @@ export class TexlEditor extends LitElement {
         // Keep the selected line in view while moving with the keys
         if (changed.has("_selected")) {
             this._cellElement(this._selected)?.scrollIntoView({ block: "nearest" });
-            const line = this._selected + 1;
-            this.dispatchEvent(new CustomEvent("selection-change", { detail: { line }, bubbles: true, composed: true }));
+            this.dispatchEvent(new CustomEvent("selection-change", { detail: this.selection, bubbles: true, composed: true }));
         }
         if (changed.has("_menu")) this.renderRoot.querySelector(".type-menu")?.scrollIntoView({ block: "nearest" });
     }

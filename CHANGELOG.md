@@ -6,6 +6,10 @@ change the interfaces.
 
 ## Unreleased
 
+- **The selected cell's name**: the editor's `selection-change` event now
+  gives `{line, cell}`, the name of the selected cell with its line, and
+  the editor and the `editor` service have `selection`, the same, so an
+  extension can anchor a comment or a mark to the selected cell.
 - **An extension's badges go when it is deactivated**: `panels.setBadge`
   returns a `dispose()` and is recorded like the other hooks, so a badge
   an extension put on one of Stilo's panels (a count on Comments, say) no

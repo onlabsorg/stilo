@@ -24,7 +24,7 @@ const TREE = {
 };
 
 /** What the extension saw and did, for the test to check. */
-const seen = { requests: [], opened: [], edits: 0, deactivated: 0 };
+const seen = { requests: [], opened: [], edits: 0, deactivated: 0, selections: [] };
 
 /** The extension: it imports nothing from Stilo. */
 const contract = {
@@ -87,6 +87,7 @@ const contract = {
         // Events and settings
         stilo.document.on("open", ({ path }) => seen.opened.push(path));
         stilo.editor.on("edit", () => seen.edits++);
+        stilo.editor.on("selection-change", (selection) => seen.selections.push(selection));
         stilo.settings.set("runs", (stilo.settings.get("runs", 0) ?? 0) + 1);
 
         // A cell type
@@ -191,6 +192,15 @@ describe("the extension API contract", () => {
         expect(seen.opened).to.include("doc.texl");
         editor.dispatchEvent(new CustomEvent("change"));
         expect(seen.edits).to.equal(1);
+    });
+
+    it("knows which cell is selected", async () => {
+        expect(stilo.editor.selection).to.deep.equal({ line: 1, cell: "aaaa" });
+        const editor = shadow(app, "texl-editor");
+        editor.select(2);
+        await editor.updateComplete;
+        expect(stilo.editor.selection).to.deep.equal({ line: 2, cell: "bbbb" });
+        expect(seen.selections.at(-1)).to.deep.equal({ line: 2, cell: "bbbb" });
     });
 
     it("sees every request through its middleware, and keeps its settings", () => {

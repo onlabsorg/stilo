@@ -143,6 +143,7 @@ details of each service.
 | Make items read-only | `tree.readOnly(path => reason)`: the document opens read-only, save, rename, move, delete are disabled | `dispose` |
 | Ask the tree's providers again | `tree.invalidate()` | — |
 | Mark cells | `editor.decorate(({path, value, cells}) => [{cell, text, tone, title}])`; `editor.invalidate()`; event `mark-click` | `dispose` |
+| Know which cell is selected | `editor.selection`, `{line, cell}`: the line and its cell's name, the anchor of comments and marks; event `selection-change`, with the same | — |
 | Add comments from elsewhere | `comments.addProvider({id, label, comments(path)})`, anchored to cells by name; `comments.refresh()` | `dispose` |
 | See or change every request | `transport.use((url, init, next) => response)`, Texl imports included; `{outermost: true}` to wrap all the others | `dispose` |
 | Keep data in the folder | `transport.readFile(path)`, `transport.createFile(path, text)`, `transport.updateFile(path, text, etag)`: any file, a JSON file too, on a server with `info.has("rewrite")`; a hidden name (`.x`) is not served | promises |

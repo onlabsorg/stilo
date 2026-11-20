@@ -72,6 +72,7 @@ count). It owns the document: set it with `value`, read it back from `value`.
 | `loader`  | —          | `function \| null` | `null` | The loader of `http` and `https` URIs for the editor's Texl engine (Texl's `addLoader`): it takes a URL and returns the source, or `{url, source}` with the final URL, or a promise of either. Every `texl.import` goes through it, e.g. to send credentials. `null`: Texl's own, a plain `fetch`. A new one renders again. |
 | `rendered`| —          | `Promise<void>`  | resolved | The current rendering pass. Await it after setting `value` (or after a change) to read the rendered outputs. Read-only by convention. |
 | `errors`  | —          | `DocumentError[]` | `[]`   | The errors of the document, as of the last rendering (see [Errors](#errors)). Read-only. |
+| `selection` | —        | `{line, cell}`   | `{line: 1, …}` | The selected line, from 1, and the name of its cell; `cell` is `null` for a line past the last cell, or text before the first marker. With several lines selected, the line last moved to. Read-only. |
 | `editing` | —          | `boolean`        | `false` | Whether a cell is in edit mode. Its edit is not in `value` until committed (the `commit` command). Read-only. |
 | `showHidden` | —       | `boolean`        | `false` | Whether hidden cells (`| hidden` in their marker) are shown, greyed out, instead of out of sight. A view setting, not saved; the `show-hidden` command toggles it. Read-only. |
 
@@ -150,7 +151,7 @@ All events bubble and are composed.
 | Event              | `detail`                                   | Fired when |
 |--------------------|--------------------------------------------|------------|
 | `change`           | none (`Event`)                             | The cells changed by a user action: committed edit, insert, delete, move, paste, cut, type change, undo, redo. Not fired when `value` is set. Read `editor.value` for the new text. |
-| `selection-change` | `{line}`                                   | The selected line changed. `line` counts from 1. Also fired on the first render (line 1). |
+| `selection-change` | `{line, cell}`                             | The selected line changed. `line` counts from 1; `cell` is the name of its cell, or `null` (as `selection`). Also fired on the first render (line 1). |
 | `comments-click`   | `{line, comments}`                         | The user clicked a line's comment icon, or pressed Shift+F2 on the selected line (also when it has no comments). `comments` is an array of strings: the trimmed text of each cell comment `<!--[ ... ]-->`. |
 | `errors-change`    | `{errors}`                                 | A rendering finished. `errors` is the same list as the `errors` property. Fired after every rendering, also when nothing changed. |
 | `mark-click`       | `{line, cell, mark}`                       | The user clicked a mark in the right margin (`marks`). `line` counts from 1; `cell` is the cell's name, `mark` the mark as given. |

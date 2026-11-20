@@ -1353,6 +1353,23 @@ Third line
             expect(cells(editor).map((c) => c.selected).slice(0, 3)).to.deep.equal([false, true, false]);
         });
 
+        it("names the selected cell, in its selection and in selection-change", async () => {
+            const editor = await editorWith(SOURCE);
+            const seen = [];
+            editor.addEventListener("selection-change", (e) => seen.push(e.detail));
+            expect(editor.selection).to.deep.equal({ line: 1, cell: "txt2" });
+            editor.select(2);
+            await editor.updateComplete;
+            editor.select(5); // past the last cell
+            await editor.updateComplete;
+            expect(seen).to.deep.equal([
+                { line: 2, cell: "mdn3" },
+                { line: 5, cell: null },
+            ]);
+            const plain = await editorWith("Text before any marker\n<!--{ abcd : text }-->\nB\n");
+            expect(plain.selection).to.deep.equal({ line: 1, cell: null });
+        });
+
         it("extends the selection from the anchor", async () => {
             const editor = await editorWith(SOURCE);
             editor.select(3, true);

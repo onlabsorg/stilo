@@ -113,6 +113,12 @@ export class Editor extends Service {
         return this._element?.value ?? "";
     }
 
+    /** The selected line and the name of its cell, `{line, cell}` (the
+     * editor's `selection`), or `null` without an editor. */
+    get selection() {
+        return this._element?.selection ?? null;
+    }
+
     /** Whether a cell is being edited. */
     get editing() {
         return !!this._element?.editing;

@@ -612,6 +612,10 @@ accept are not part of Stilo.
   shows on a panel button, Stilo's own included (on Comments, say), is
   now taken away when the extension is turned off; it stayed before. A
   badge set by Stilo since stays. Not released yet.
+- 2026-11-20: **extensions know the selected cell**: the editor now tells
+  which cell is selected, by its name, not only which line, so an
+  extension can attach a comment or a mark to the cell the user chose.
+  Not released yet.
 
 ## Known limitations
 

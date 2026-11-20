@@ -333,7 +333,7 @@ throws is reported in the console and left out.
 
 | Member             | Is or does                                          |
 |--------------------|-----------------------------------------------------|
-| `element`, `value`, `editing` | The element (or `null`), its text, whether a cell is being edited |
+| `element`, `value`, `editing`, `selection` | The element (or `null`), its text, whether a cell is being edited, the selected line and its cell's name (`{line, cell}`, or `null`) |
 | `whenReady()`      | The editor once attached; `null` if another document comes first |
 | `settled()`        | The editor once the window shows the latest state (`ui.settled`) |
 | `reveal(line)`     | Back in the editor view, selects the line and focuses it |
