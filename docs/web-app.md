@@ -11,7 +11,8 @@ its own page: [The editor](editor.md).*
 | `src/main.js`                  | Entry point: loads the theme CSS, the editor and the app; exports `startStilo` and `API_VERSION` |
 | `src/start.js`                 | `startStilo()`: starts the app with extensions ([below](#extensions-startstilo-and-extensions)) |
 | `src/components/stilo-app.js`  | `StiloApp`, `<stilo-app>`: the shell. Creates and provides the services, the layout, link clicks |
-| `src/components/top-bar.js`    | `<top-bar>`: the document's name, the status (`ui`), the items of `topBar`, a button per panel (`panels`) |
+| `src/components/top-bar.js`    | `<top-bar>`: the document's name, the status (`ui`), the items of `topBar` |
+| `src/components/panel-rail.js` | `<panel-rail>`: the panel rail at the right edge, a button per panel (`panels`), with its badge |
 | `src/components/nav-pane.js`   | `<nav-pane>`: the tree of folders and files (`tree`), its menus (`menus`) and keys (`keys`) |
 | `src/components/context-menu.js` | `<context-menu>`: a menu at a point of the window |
 | `src/components/move-dialog.js` | `<move-dialog>`: Move to…, choosing a folder       |
@@ -181,7 +182,7 @@ stilo.panels.register({
     id: "comments",                      // an extension's: "<extension-id>.<name>"
     label: "Comments",                   // the button's name
     icon: commentsIcon,                  // a Lit template (SVG)
-    order: 20,                           // buttons left to right
+    order: 30,                           // buttons in the rail, from the top
     render: (stilo) => html`<comments-pane></comments-pane>`,
 });                                      // returns dispose(); a taken id throws
 stilo.panels.setBadge("errors", { text: "2", label: "2 errors", tone: "danger" });
@@ -191,13 +192,16 @@ stilo.panels.setBadge("errors", { text: "2", label: "2 errors", tone: "danger" }
 badge away, if it is still the one shown; an extension's badges, on its
 own panels or on Stilo's, go when it is deactivated.
 
-`<top-bar>` shows a button per panel, with its badge, in `order`; a click
-toggles it (`ui.togglePane`). `<stilo-app>` renders the open panel's
+`<panel-rail>`, a narrow bar at the right edge of the window, always
+shown, has a button per panel, in `order` from the top, with its badge
+(the text under the icon, coloured by its tone); a click toggles it
+(`ui.togglePane`), and the open panel's button is pressed. Only panels go
+there; buttons that run an action are `topBar` items (S28). `<stilo-app>` renders the open panel's
 `render(stilo)` in the right pane: a panel of one element fills the
 pane's height (Stilo's own scroll their list inside it); a panel of
 several elements (a header, then the content) stacks them from the top,
 and the pane scrolls. Stilo's panels are registered by
-`builtins/panels.js`: errors (10), comments (20), commands (30); the
+`builtins/panels.js`: commands (10), errors (20), comments (30); the
 errors badge is their count, which `builtins/panels.js` sets whenever
 it changes.
 
@@ -215,7 +219,8 @@ stilo.status.register({ id: "word-count.words", render: () => `${words} words` }
 stilo.status.changed();                  // render the items again
 ```
 
-**`topBar`** items show in the top bar, left of the panels' buttons.
+**`topBar`** items show on the right of the top bar: the place for
+buttons that run an action (a panel's button is in the panel rail).
 **`status`** items show in the **status line** at the bottom of the
 window, right-aligned, as in Word; the line shows only while it has
 items, so without extensions the window is as before. An item's
@@ -395,8 +400,8 @@ opens the view in the app.
 a `stilo` object set as its property before it connects), provides them by
 context, activates Stilo's own contributions on them (`activateBuiltins`),
 and tells `ui` how to wait for its rendering (`ui.setSettle`). It lays out
-the window in a CSS grid (top bar; navigation, main area, right pane;
-status line) and
+the window in a CSS grid (top bar; navigation, main area, right pane,
+panel rail; status line) and
 renders:
 
 - the view of the address, if any (`router.view`, `views`), or else

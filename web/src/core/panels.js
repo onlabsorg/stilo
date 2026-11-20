@@ -1,5 +1,5 @@
 // The `panels` service: the panels of the right pane, each with its button in
-// the top bar.
+// the panel rail, at the right edge of the window.
 
 import { Registry } from "./registry.js";
 
@@ -8,7 +8,7 @@ import { Registry } from "./registry.js";
  * @property {string} id - Unique; an extension's are `<extension-id>.<name>`.
  * @property {string} label - The button's name, e.g. "Comments".
  * @property {unknown} icon - The button's icon, a Lit template (an SVG).
- * @property {number} [order] - Place among the buttons, left to right.
+ * @property {number} [order] - Place among the buttons, from the top.
  * @property {(stilo: object) => unknown} render - The panel's content, a Lit
  *   template or an element, rendered when it is open.
  */

@@ -61,7 +61,7 @@ const contract = {
         stilo.panels.register({ id: "contract.panel", label: "Contract", icon: html`C`, order: 40, render: () => html`<p class="contract-panel">Panel</p>` });
         stilo.panels.setBadge("contract.panel", { text: "1", label: "1 thing" });
         stilo.panels.setBadge("comments", { text: "7", label: "7 issues" });
-        stilo.panels.replace("commands", { label: "Other commands", icon: html`X`, order: 30, render: () => html`<p>Replaced</p>` });
+        stilo.panels.replace("commands", { label: "Other commands", icon: html`X`, order: 10, render: () => html`<p>Replaced</p>` });
         stilo.topBar.register({ id: "contract.user", render: () => html`<span class="contract-user">Ada</span>` });
         stilo.status.register({ id: "contract.counter", render: () => html`<contract-counter></contract-counter>` });
         stilo.views.register({ id: "contract.page", label: "Contract page", render: (s, params) => html`<p class="contract-view">Page ${params.n}</p>` });
@@ -164,11 +164,13 @@ describe("the extension API contract", () => {
         expect(await answer).to.equal("yes");
     });
 
-    it("adds a panel with a badge, a top-bar item and a status item that follows the services", async () => {
+    it("adds a panel with a badge in the rail, a top-bar item and a status item that follows the services", async () => {
         const bar = shadow(app, "top-bar");
         await bar.updateComplete;
         expect(bar.renderRoot.querySelector(".contract-user").textContent).to.equal("Ada");
-        expect([...bar.renderRoot.querySelectorAll("button")].map((b) => b.getAttribute("aria-label"))).to.include("1 thing");
+        const rail = shadow(app, "panel-rail");
+        await rail.updateComplete;
+        expect([...rail.renderRoot.querySelectorAll("button")].map((b) => b.getAttribute("aria-label"))).to.include("1 thing");
         const counter = shadow(app, "footer contract-counter");
         await counter.updateComplete;
         expect(counter.shadowRoot.textContent.trim()).to.equal("open: doc.texl");
@@ -272,6 +274,6 @@ describe("the extension API contract", () => {
         expect(seen.edits).to.equal(1);
         // Stilo's own are all there
         expect(stilo.commands.get("save")).to.exist;
-        expect(stilo.panels.list().map((p) => p.id)).to.deep.equal(["errors", "comments", "commands"]);
+        expect(stilo.panels.list().map((p) => p.id)).to.deep.equal(["commands", "errors", "comments"]);
     });
 });

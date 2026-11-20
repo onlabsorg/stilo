@@ -20,7 +20,7 @@ to Word and Excel users, and renders them from the command line.
 
 | Part   | What                                                          |
 |--------|---------------------------------------------------------------|
-| Web app | The user interface (Lit web components, Vite): top bar, navigation pane with all the folder's files (documents, and other files greyed out) and commands to manage and upload them, the editor, right pane with commands, cell comments and errors. Light and dark theme. |
+| Web app | The user interface (Lit web components, Vite): top bar, navigation pane with all the folder's files (documents, and other files greyed out) and commands to manage and upload them, the editor, right pane with commands, errors and cell comments, opened from a narrow bar of buttons at the right edge of the window (the panel rail); the top bar holds the other buttons. Light and dark theme. |
 | Editor | Inside the web app: `<texl-editor>`, a document as a stack of typed cells (rich text, the default; text, Markdown, table, formula, data table and chart; formulas as `<% %>` tags; LaTeX equations in Markdown and tables), live rendering, cell comments, errors shown where they happen. Until 2026-10-26 the separate `texl-editor` package. |
 | Server | Python (FastAPI): serves one folder of documents and the web app, for one user. |
 | CLI    | The `stilo` command: `stilo init [folder]` makes a folder a package, with the Stilo library in it (run again in a package, it only adds the library if missing); `stilo pack [folder]` packs a package into one `.texlz` file; `stilo render <file>` prints a rendered document (or writes it to a file), says how many errors it has and can explain them; `stilo serve [folder]` starts the server on a folder; `stilo tutor` opens the tutorial. |
@@ -622,6 +622,14 @@ accept are not part of Stilo.
   hidden cells left out. Cell types and the export share one way of
   turning a cell's result into a page, so an export looks like the
   editor. Not released yet.
+- 2026-11-20: **the panel rail**: the buttons that open the right pane's
+  panels moved from the top bar to a narrow bar at the right edge of the
+  window, always shown: Commands (now with a list icon), Errors (with the
+  number of errors) and Comments, from the top. The open panel's button
+  shows as pressed. The top bar keeps only buttons that do something else,
+  which extensions add, so the two kinds no longer look alike. Keys are
+  unchanged; extensions need no change. Lessons 1 and 9 of the tutorial
+  follow. Not released yet.
 
 ## Known limitations
 

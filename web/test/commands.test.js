@@ -188,25 +188,42 @@ describe("panels service", () => {
 });
 
 describe("top bar", () => {
-    it("shows the status and one button per panel, with its badge, and toggles them", async () => {
+    it("shows the status, and no panel buttons", async () => {
         const { fixture, html } = await import("@open-wc/testing");
         await import("../src/components/top-bar.js");
         const stilo = createStilo();
-        stilo.panels.register({ id: "x.one", label: "One", icon: "1", order: 2, render: () => "" });
-        stilo.panels.register({ id: "x.two", label: "Two", icon: "2", order: 1, render: () => "" });
-        stilo.panels.setBadge("x.one", { text: "5", label: "5 things", tone: "danger" });
+        stilo.panels.register({ id: "x.one", label: "One", icon: "1", render: () => "" });
         stilo.ui.notify("Saved");
         const el = await fixture(html`<stilo-provider .stilo=${stilo}><top-bar heading="Doc"></top-bar></stilo-provider>`);
         const bar = el.querySelector("top-bar");
         await bar.updateComplete;
-        const buttons = [...bar.renderRoot.querySelectorAll(".right button")];
+        expect(bar.renderRoot.querySelector(".status").textContent).to.equal("Saved");
+        expect(bar.renderRoot.querySelectorAll(".right button")).to.have.length(0);
+    });
+});
+
+describe("panel rail", () => {
+    it("shows one button per panel from the top, with its badge, and toggles them", async () => {
+        const { fixture, html } = await import("@open-wc/testing");
+        await import("../src/components/panel-rail.js");
+        const stilo = createStilo();
+        stilo.panels.register({ id: "x.one", label: "One", icon: "1", order: 2, render: () => "" });
+        stilo.panels.register({ id: "x.two", label: "Two", icon: "2", order: 1, render: () => "" });
+        stilo.panels.setBadge("x.one", { text: "5", label: "5 things", tone: "danger" });
+        const el = await fixture(html`<stilo-provider .stilo=${stilo}><panel-rail></panel-rail></stilo-provider>`);
+        const rail = el.querySelector("panel-rail");
+        await rail.updateComplete;
+        expect(rail.getAttribute("role")).to.equal("toolbar");
+        const buttons = [...rail.renderRoot.querySelectorAll("button")];
         expect(buttons.map((b) => b.getAttribute("aria-label"))).to.deep.equal(["Two", "5 things"]);
         expect(buttons[1].classList.contains("danger")).to.equal(true);
-        expect(bar.renderRoot.querySelector(".status").textContent).to.equal("Saved");
+        expect(buttons[1].querySelector(".count").textContent).to.equal("5");
         buttons[1].click();
         expect(stilo.ui.pane).to.equal("x.one");
-        await bar.updateComplete;
+        await rail.updateComplete;
         expect(buttons[1].getAttribute("aria-pressed")).to.equal("true");
+        buttons[1].click();
+        expect(stilo.ui.pane).to.equal(null);
     });
 });
 

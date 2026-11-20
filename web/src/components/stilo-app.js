@@ -7,6 +7,7 @@ import { createStilo, stiloContext } from "../core/index.js";
 import { readRoute } from "../route.js";
 import { activateBuiltins } from "../builtins/index.js";
 import "./top-bar.js";
+import "./panel-rail.js";
 import "./nav-pane.js";
 import "./move-dialog.js";
 import "./stilo-dialog.js";
@@ -30,16 +31,19 @@ export class StiloApp extends LitElement {
             :host {
                 display: grid;
                 grid-template-rows: var(--bar-height) 1fr auto;
-                grid-template-columns: auto 1fr auto;
+                grid-template-columns: auto 1fr auto auto;
                 grid-template-areas:
-                    "bar bar bar"
-                    "nav main pane"
-                    "status status status";
+                    "bar bar bar bar"
+                    "nav main pane rail"
+                    "status status status status";
                 height: 100vh;
                 overflow: hidden;
             }
             top-bar {
                 grid-area: bar;
+            }
+            panel-rail {
+                grid-area: rail;
             }
             nav-pane {
                 grid-area: nav;
@@ -164,11 +168,11 @@ export class StiloApp extends LitElement {
                     left: 0;
                 }
                 aside {
-                    right: 0;
-                    width: min(var(--pane-width), 100vw);
+                    right: var(--rail-width);
+                    width: min(var(--pane-width), calc(100vw - var(--rail-width)));
                 }
                 main {
-                    grid-column: 1 / -1;
+                    grid-column: 1 / 4;
                     padding: 0.75rem 0.75rem 0;
                 }
             }
@@ -343,6 +347,7 @@ export class StiloApp extends LitElement {
             <nav-pane ?hidden=${!ui.navOpen}></nav-pane>
             <main @click=${this._onLinkClick}>${this._renderMain()}</main>
             <aside ?hidden=${!panel}>${panel?.render(this.stilo) ?? ""}</aside>
+            <panel-rail></panel-rail>
             ${items.length
                 ? html`<footer>${items.map((item) => html`<span class="item" data-id=${item.id}>${item.render(this.stilo)}</span>`)}</footer>`
                 : ""}

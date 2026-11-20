@@ -6,6 +6,15 @@ change the interfaces.
 
 ## Unreleased
 
+- **The panel rail** (S28): the buttons that open the right pane's panels
+  moved from the top bar to a narrow rail at the right edge of the window,
+  always shown, one button per panel from the top: Commands, Errors (with
+  the count of errors), Comments. The Commands button has a new icon, a
+  list (it was ⋮). The top bar keeps only buttons that do something else
+  (extensions' `topBar` items). Keys are unchanged (F1, Alt+C). For
+  extensions, `panels` and `topBar` do not change; panels' `order` now runs
+  from the top, and Stilo's own are commands (10), errors (20), comments
+  (30).
 - **The document as rendered**: the editor's `renderedHtml({hidden})`, and
   the `editor` service's, give the HTML every cell shows, sanitised, for an
   export or a print, without reaching into the editor. Cell types turn

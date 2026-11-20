@@ -23,7 +23,8 @@ architecture) are in `DECISIONS.md` at the root of this repository.
 A monorepo with three parts, kept strictly modular:
 
 - **Web app** (`web/`) — the user interface: top bar, navigation pane (file
-  tree), main area with the editor, right pane (commands, comments). The
+  tree), main area with the editor, right pane (commands, errors,
+  comments) and the panel rail that opens its panels. The
   editor itself (`web/src/editor/`, the `<texl-editor>` component and its
   cells) was the `texl-editor` repository until 2026-10-26.
 - **Server** (`src/stilo/server/`, module `stilo.server`) — Python, serves
@@ -334,9 +335,11 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
   out the window, renders the editor of the open document (attached to
   the `editor` service after every rendering), the open panel and the Move
   to… dialog, handles link clicks and the window's shortcuts.
-- `web/src/components/top-bar.js`, `nav-pane.js`, `commands-pane.js`,
-  `comments-pane.js`, `errors-pane.js` — the parts of the layout, views of
-  the services: they read them through context and call them. `context-menu.js` — the menu `nav-pane.js` opens.
+- `web/src/components/top-bar.js`, `panel-rail.js`, `nav-pane.js`,
+  `commands-pane.js`, `comments-pane.js`, `errors-pane.js` — the parts of
+  the layout, views of the services: they read them through context and
+  call them. The top bar holds actions (`topBar` items); the panel rail, at
+  the right edge, always shown, holds only the panels' buttons (S28). `context-menu.js` — the menu `nav-pane.js` opens.
   `move-dialog.js` — the Move to… dialog. `stilo-dialog.js` — the
   modal dialog of `ui.dialog`, `confirm`, `prompt`. The tree lists every file (S15):
   documents open in the editor; other files (`isDocument` in `api.js`) are
@@ -369,7 +372,7 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
   services: top-bar items, the status line at the bottom, shown only with
   items; `views`: pages that are not a document, at `?view=<id>`, shown in
   place of the editor), `panels.js` (the right pane's
-  panels, the top bar's buttons, badges; a `Registry`), `errors.js` (the open document's
+  panels, their buttons in the panel rail, badges; a `Registry`), `errors.js` (the open document's
   errors, the one pointed out, `go-to`), `comments.js` (its cell comments
   by line, the line pointed out, `go-to`; comment providers, anchored to
   cells by name), `editor.js` (the open

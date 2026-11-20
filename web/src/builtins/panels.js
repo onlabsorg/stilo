@@ -1,6 +1,6 @@
 // Stilo's own panels of the right pane, registered through the `panels`
-// service as an extension's would be (S17). Buttons in the top bar follow
-// `order`, left to right.
+// service as an extension's would be (S17). Their buttons in the panel rail
+// follow `order`, from the top: the commands first.
 
 import { html } from "lit";
 import { commandsIcon, commentsIcon, errorsIcon } from "../icons.js";
@@ -9,9 +9,9 @@ import "../components/comments-pane.js";
 import "../components/errors-pane.js";
 
 export const panels = [
-    { id: "errors", label: "Errors", icon: errorsIcon, order: 10, render: () => html`<errors-pane></errors-pane>` },
-    { id: "comments", label: "Comments", icon: commentsIcon, order: 20, render: () => html`<comments-pane></comments-pane>` },
-    { id: "commands", label: "Commands", icon: commandsIcon, order: 30, render: () => html`<commands-pane></commands-pane>` },
+    { id: "commands", label: "Commands", icon: commandsIcon, order: 10, render: () => html`<commands-pane></commands-pane>` },
+    { id: "errors", label: "Errors", icon: errorsIcon, order: 20, render: () => html`<errors-pane></errors-pane>` },
+    { id: "comments", label: "Comments", icon: commentsIcon, order: 30, render: () => html`<comments-pane></comments-pane>` },
 ];
 
 /** The errors panel's badge: how many errors, in the danger colour. */

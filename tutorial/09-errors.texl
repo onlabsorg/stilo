@@ -26,7 +26,8 @@ The editor shows you where each error is:
 - The value is **highlighted** in its line. Point at it to read the reason.
 - The **right margin** shows a warning icon, with the number of errors on
   that line.
-- The **warning button** in the top bar shows the total of the document.
+- The **warning button** at the right edge of the window shows the total
+  of the document.
 
 Click the warning button: the **Errors** pane opens on the right and lists
 each error, with what went wrong, the formula, and the line. Under

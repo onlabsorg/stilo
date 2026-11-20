@@ -106,7 +106,7 @@ lives in one place:
 | Cell types      | The registry, `registerCell()` in `web/src/editor/registry.js`; for extensions `stilo.cells.register()`, which adds the type's command | — |
 | Web app as a dependency | The npm package `@onlabsorg/stilo-web` (not published yet); its public API is the `exports` map of `web/package.json` (S16): `startStilo`, `API_VERSION`, `createStilo`, `StiloController`, `StiloProvider`, `stiloContext`, the editor, the theme | The panes |
 | Commands, keys, menus | The `commands`, `keys` and `menus` services (`web/src/core/`), open to extensions; Stilo's own in `web/src/builtins/commands.js` | — |
-| Right-pane panels, top bar, status line | The `panels`, `topBar` and `status` registries (`web/src/core/`), open to extensions, which may also replace a panel; Stilo's own panels in `web/src/builtins/panels.js` | — |
+| Right-pane panels (opened from the panel rail), top bar, status line | The `panels`, `topBar` and `status` registries (`web/src/core/`), open to extensions, which may also replace a panel; Stilo's own panels in `web/src/builtins/panels.js` | — |
 | Tree markers, filters, read-only items | Providers in the `tree` service (`decorate`, `filter`, `readOnly`); read-only documents open in the editor's read-only mode; commands say when they do not apply (`enabled`). The navigation pane itself stays core | — |
 | Comments from elsewhere, marks on cells | Comment providers in the `comments` service (`addProvider`) and mark providers in the `editor` service (`decorate`), anchored to cells by name | — |
 | Dialogs, settings | `ui.dialog`, `confirm`, `prompt` (shown by `<stilo-app>`), `notify` with a level; `settings`, per browser, one namespace per extension | Settings stored in the folder |

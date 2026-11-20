@@ -211,6 +211,22 @@ test("opens another document from the navigation pane", async () => {
     assertNoPageErrors();
 });
 
+test("opens and closes a panel from the panel rail", async () => {
+    // The rail is always shown, the commands first; a click opens the panel
+    // in the right pane, a second click closes it
+    const labels = await page.evaluate(() =>
+        [...document.querySelector("stilo-app").shadowRoot.querySelector("panel-rail").shadowRoot.querySelectorAll("button")].map((b) =>
+            b.getAttribute("aria-label"),
+        ),
+    );
+    assert.deepEqual(labels, ["Commands", "Errors", "Comments"]);
+    await page.click('stilo-app >>> panel-rail >>> button[data-id="commands"]');
+    await page.waitForSelector("stilo-app >>> commands-pane", { timeout: 10000 });
+    await page.click('stilo-app >>> panel-rail >>> button[data-id="commands"]');
+    await page.waitForFunction(() => document.querySelector("stilo-app").shadowRoot.querySelector("aside").hidden, { timeout: 10000 });
+    assertNoPageErrors();
+});
+
 test("reads a packed package as `stilo render` does, and opens it read-only", async () => {
     // A package packed with `stilo pack`, imported by a package served here:
     // a relative import and `~` resolve inside the archive

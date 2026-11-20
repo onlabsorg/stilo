@@ -242,7 +242,7 @@ describe("registries: panels, topBar, status", () => {
         }
     });
 
-    it("show top-bar items left of the panels' buttons", async () => {
+    it("show top-bar items on the right of the top bar, in order", async () => {
         const stilo = createStilo();
         stilo.panels.register({ id: "x.panel", label: "Panel", icon: "P", render: () => "" });
         stilo.topBar.register({ id: "x.late", order: 2, render: () => html`<b>late</b>` });
@@ -252,7 +252,7 @@ describe("registries: panels, topBar, status", () => {
         await bar.updateComplete;
         const right = bar.renderRoot.querySelector(".right");
         expect([...right.querySelectorAll(".item")].map((i) => i.textContent.trim())).to.deep.equal(["Ada", "late"]);
-        expect(right.lastElementChild.getAttribute("aria-label")).to.equal("Panel");
+        expect(right.querySelector("button")).to.be.null;
     });
 
     it("show the status line only while it has items", async () => {

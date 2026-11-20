@@ -762,3 +762,23 @@ wrote files; extensions now write too. The ETag check protects other files
 as it protects documents, and the server stays safe: other files are still
 served by their public URL with their real type, sandboxed when they could
 run scripts.
+
+## S28 — 2026-11-20 — Panels open from a rail; the top bar holds actions
+The buttons that open the right pane's panels are in a **panel rail**, a
+narrow bar at the right edge of the window, between the top bar and the
+status line, always shown: one button per panel, in `order` from the top,
+with its badge under the icon; the open panel's button is pressed, with an
+accent bar on the side that faces the pane. The **top bar** holds the
+other buttons, those that run an action (`topBar` items), on its right.
+Stilo's own panels come in this order: commands (with a list icon instead
+of ⋮), errors, comments. The extension API does not change (`panels`,
+`topBar`); only where Stilo draws them does.
+
+*Reason:* a panel button and an action button behave differently (the
+first stays pressed and opens one of several panels, like a tab; the
+second runs once), and in one row they looked the same. A rail beside the
+pane puts each toggle next to what it opens, as the side panels of Google
+Docs and Outlook on the web do, and keeps room for extensions' panels
+without crowding the title. Considered: one top-bar row in two groups
+(weaker separation, crowds the bar), one toggle with tabs in the pane's
+header (the panels are hidden while it is closed).

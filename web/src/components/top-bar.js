@@ -8,8 +8,8 @@ import { StiloController } from "../core/context.js";
  * document's name, with • while it has unsaved changes (`document`), or else
  * the navigation root (`router`), "Read-only" with the reason if the
  * document is (`document.readOnly`), and the status (`ui`); on the right the
- * items of the `topBar` service, then one button per panel of the right pane
- * (`panels`), with its badge.
+ * items of the `topBar` service. The panels' buttons are in the panel rail
+ * (`<panel-rail>`), at the right edge of the window.
  */
 export class TopBar extends LitElement {
 
@@ -68,18 +68,6 @@ export class TopBar extends LitElement {
                 font-weight: 500;
                 color: var(--text-muted);
             }
-            button.icon-button.has-badge {
-                width: auto;
-                gap: 0.25rem;
-                padding: 0 0.375rem;
-            }
-            button.icon-button.danger {
-                color: var(--danger);
-            }
-            .count {
-                font-size: 12px;
-                font-weight: 600;
-            }
             .item {
                 display: inline-flex;
                 align-items: center;
@@ -89,7 +77,7 @@ export class TopBar extends LitElement {
 
     constructor() {
         super();
-        this._stilo = new StiloController(this, (stilo) => [stilo.ui, stilo.panels, stilo.topBar, stilo.document, stilo.router, stilo.tree, stilo.views]);
+        this._stilo = new StiloController(this, (stilo) => [stilo.ui, stilo.topBar, stilo.document, stilo.router, stilo.tree, stilo.views]);
     }
 
     /** The open view's label, or the open document's name, or else the navigation root. */
@@ -101,26 +89,10 @@ export class TopBar extends LitElement {
         return `${name}${document.dirty ? " •" : ""}`;
     }
 
-    /** The button of a panel, with its badge if it has one. */
-    _panelButton(panel) {
-        const { ui, panels } = this._stilo.stilo;
-        const badge = panels.badge(panel.id);
-        const label = badge?.label ?? panel.label;
-        return html`<button
-            class="icon-button ${badge ? "has-badge" : ""} ${badge?.tone ?? ""}"
-            title=${label}
-            aria-label=${label}
-            aria-pressed=${ui.pane === panel.id}
-            @click=${() => ui.togglePane(panel.id)}
-        >
-            ${panel.icon}${badge ? html`<span class="count">${badge.text}</span>` : ""}
-        </button>`;
-    }
-
     render() {
         const stilo = this._stilo.stilo;
         if (!stilo) return "";
-        const { ui, panels, topBar } = stilo;
+        const { ui, topBar } = stilo;
         return html`
             <div class="left">
                 <button
@@ -143,7 +115,6 @@ export class TopBar extends LitElement {
             </div>
             <div class="right">
                 ${topBar.list().map((item) => html`<span class="item" data-id=${item.id}>${item.render(stilo)}</span>`)}
-                ${panels.list().map((panel) => this._panelButton(panel))}
             </div>
         `;
     }
