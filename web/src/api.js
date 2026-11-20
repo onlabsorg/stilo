@@ -169,10 +169,12 @@ export class Transport {
         await this.fetch(this.contentUrl(path), { method: "POST", body: file, headers });
     }
 
-    /** UPDATE a file; fails with status 412 if it changed since `etag`.
+    /** UPDATE a file, a document or another file (capability `rewrite`), with
+     * a text or a `Blob`; fails with status 412 if it changed since `etag`.
      * Returns the new ETag. */
     async updateFile(path, text, etag) {
-        const headers = { "Content-Type": "text/plain; charset=utf-8" };
+        const type = typeof text === "string" ? "text/plain; charset=utf-8" : text.type || "application/octet-stream";
+        const headers = { "Content-Type": type };
         if (etag) headers["If-Match"] = etag;
         const response = await this.fetch(this.contentUrl(path), { method: "PUT", body: text, headers });
         return response.headers.get("ETag");

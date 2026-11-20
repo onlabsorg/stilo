@@ -26,7 +26,7 @@ to Word and Excel users, and renders them from the command line.
 | CLI    | The `stilo` command: `stilo init [folder]` makes a folder a package, with the Stilo library in it (run again in a package, it only adds the library if missing); `stilo pack [folder]` packs a package into one `.texlz` file; `stilo render <file>` prints a rendered document (or writes it to a file), says how many errors it has and can explain them; `stilo serve [folder]` starts the server on a folder; `stilo tutor` opens the tutorial. |
 | Stilo library | A package of Texl documents (`texl-lib/`) that `stilo init` puts into each package's references as one packed file, `references/stilo.texlz`, for documents to import. `stilo.dataframe` makes a table of data, which the data table cell writes; `stilo.charts.line` draws a line chart as an image, which the chart cell writes. Tested on both Texl engines, the browser's and Python's, with the same cases. |
 | Tutorial | A guided tutorial for new users (`tutorial/`), Texl documents shipped in the package and served by `stilo tutor` in the web app: twelve short lessons (30–45 minutes) on the editor and the command line, from the first edit to one's own package, and two advanced ones. Many exercises check themselves and show "✓ Done"; an index shows the progress. The lessons link to the OnLabs.org manual instead of repeating it. Tested automatically, exercises included. |
-| Protocol | Plain HTTP between web app and server: GET a file, CREATE (POST), UPDATE (PUT, with an ETag so concurrent saves don't overwrite each other), QUERY a folder's tree (every file), create a folder, move or rename a file or folder, delete a file or folder. Any file can be created, so files can be uploaded; only documents can be updated. Reading a folder or a packed package leads to its `index.texl`; `?download` after an address downloads the file itself. |
+| Protocol | Plain HTTP between web app and server: GET a file, CREATE (POST), UPDATE (PUT, with an ETag so concurrent saves don't overwrite each other), QUERY a folder's tree (every file), create a folder, move or rename a file or folder, delete a file or folder. Any file can be created, so files can be uploaded, and any file can be updated, so extensions can keep their own data (a JSON file, say) in the folder. Reading a folder or a packed package leads to its `index.texl`; `?download` after an address downloads the file itself. |
 | Documentation | Developer documentation only, as plain Markdown in `docs/`, read on GitHub: architecture, setup, server, CLI, web app, editor, the protocol, the editor component and its API. No site is built. Users read the OnLabs.org manual instead. |
 
 Web app, server and CLI ship as **one Python package**, `stilo`, with the
@@ -592,6 +592,12 @@ accept are not part of Stilo.
   then the content) were spread over the whole height of the right pane;
   they now start at the top and the pane scrolls. Stilo's own panels look
   as before. Not released yet.
+- 2026-11-20: **any file can be updated**: the server now saves changes to
+  files that are not documents too (only documents before), with the same
+  protection against overwriting someone else's change, so an extension
+  can keep its data in the folder as an ordinary file. The server says it
+  can do this, so extensions can check before relying on it. The editor
+  itself still edits only documents. Not released yet.
 
 ## Known limitations
 

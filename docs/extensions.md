@@ -144,6 +144,7 @@ details of each service.
 | Mark cells | `editor.decorate(({path, value, cells}) => [{cell, text, tone, title}])`; `editor.invalidate()`; event `mark-click` | `dispose` |
 | Add comments from elsewhere | `comments.addProvider({id, label, comments(path)})`, anchored to cells by name; `comments.refresh()` | `dispose` |
 | See or change every request | `transport.use((url, init, next) => response)`, Texl imports included; `{outermost: true}` to wrap all the others | `dispose` |
+| Keep data in the folder | `transport.readFile(path)`, `transport.createFile(path, text)`, `transport.updateFile(path, text, etag)`: any file, a JSON file too, on a server with `info.has("rewrite")`; a hidden name (`.x`) is not served | promises |
 | Know what the server can do | `info.protocol`, `info.has("upload")`, `info.hasExtension(id)`, `info.server` | — |
 | Add a cell type | `cells.register(CellClass)`, a subclass of `stilo.TexlCell`, with its "Make it …" command | `dispose` (the command; the type stays) |
 | Talk to the user | `ui.notify(message, {level})`, `ui.confirm(message, {ok, danger})`, `ui.prompt(message, value)`, `ui.dialog(render)` | promises |

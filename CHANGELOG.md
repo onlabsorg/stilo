@@ -6,6 +6,11 @@ change the interfaces.
 
 ## Unreleased
 
+- **Any file can be updated** (S27, protocol capability `rewrite`): the
+  server's UPDATE (PUT with `If-Match`) now replaces files that are not
+  documents too (it answered `400` before), so an extension can keep its
+  data in the folder, e.g. a JSON file. `transport.updateFile` takes a
+  text or a `Blob`.
 - **Fix: an extension's panel of several elements** (a header, then its
   content, as in the first example of `docs/extensions.md`) was spread
   over the right pane's height, each element getting an equal share. They

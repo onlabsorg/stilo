@@ -72,8 +72,8 @@ class Storage(Protocol):
         ...
 
     def update(self, path: str, content: bytes, if_match: str | None = None) -> str:
-        """A document's new content, if it still has the ETag `if_match`;
-        returns the new ETag."""
+        """A file's new content (a document or another file), if it still
+        has the ETag `if_match`; returns the new ETag."""
         ...
 
     def delete_file(self, path: str) -> None:
@@ -325,8 +325,6 @@ class FolderStorage:
     def update(self, path: str, content: bytes, if_match: str | None = None) -> str:
         target = self.resolve(path)
         self._check_not_inside(path)
-        if target.suffix != DOCUMENT_SUFFIX:
-            raise BadRequest(f"only {DOCUMENT_SUFFIX} files can be updated: {path!r}")
         if target.is_dir():
             raise BadRequest(f"is a folder: {path!r}")
         if not target.is_file():
@@ -335,7 +333,7 @@ class FolderStorage:
             raise PreconditionFailed(f"changed since it was read: {path!r}")
         self._check_writable(target)
         # Write a sibling and rename it over the target, so readers never see
-        # a half-written document.
+        # a half-written file.
         temp = target.with_name(f".{target.name}.tmp")
         try:
             temp.write_bytes(content)

@@ -163,7 +163,7 @@ GET /_api/info
   {
     "protocol": 1,
     "server": { "name": "stilo", "version": "0.4.0" },
-    "capabilities": ["files", "tree", "folders", "move", "upload", "trash", "home", "archives", "index"],
+    "capabilities": ["files", "tree", "folders", "move", "upload", "rewrite", "trash", "home", "archives", "index"],
     "extensions": []
   }
 ```
@@ -178,6 +178,7 @@ the software. `capabilities` lists what it can do:
 | `folders`  | CREATE and DELETE folders |
 | `move`     | MOVE files and folders |
 | `upload`   | CREATE files that are not documents |
+| `rewrite`  | UPDATE files that are not documents ([UPDATE](#update-an-existing-file)) |
 | `trash`    | A deleted item can be got back on the server (not through the protocol) |
 | `home`     | The package home, `~` in paths |
 | `archives` | Packed packages, read as read-only folders ([Packed packages](#packed-packages)) |
@@ -248,8 +249,11 @@ PUT /_api/files/packages/beam/beam-check.texl
 ```
 
 The body replaces the whole file. `404` if the file does not exist (update
-never creates). Only `.texl` files can be updated (`400` otherwise, whether or
-not the file exists). With `If-Match`, the server refuses the write with
+never creates). Any file can be updated, a document or another file (the
+data an extension keeps in the folder, a JSON file, an image), on a server
+with the capability `rewrite`; a server without it answers `400` for a file
+that is not a document. For another file the body is its bytes, of any
+type. With `If-Match`, the server refuses the write with
 `412 Precondition Failed` if the file changed since the client read it, so
 two people saving the same document do not silently overwrite each other.
 Without `If-Match` the write is unconditional; the web app always sends it.
@@ -510,3 +514,5 @@ version 0 client still works with a version 1 server:
   a read of a folder or a packed package is redirected to its
   `index.texl` (it answered `400` before), and `?download` sends a file
   as an attachment.
+- Any file can be updated (2026-11-20), with the capability `rewrite`:
+  UPDATE of a file that is not a document (it answered `400` before).

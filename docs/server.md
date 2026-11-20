@@ -168,13 +168,14 @@ and `BadRequest` for a path the protocol refuses or the root.
 def update(self, path: str, content: bytes, if_match: str | None = None) -> str
 ```
 
-Replaces the content of an existing `.texl` file and returns the new ETag.
+Replaces the content of an existing file, a document or another file, and
+returns the new ETag (protocol capability `rewrite`, S27).
 With `if_match`, raises `PreconditionFailed` if the current ETag differs:
 the file changed since the client read it. Raises `NotFound` if there is no
 such file (update never creates).
 
 The new content is written to a hidden sibling file and renamed over the
-target, so a reader never sees a half-written document.
+target, so a reader never sees a half-written file.
 
 ### `tree`
 

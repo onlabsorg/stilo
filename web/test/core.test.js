@@ -130,6 +130,16 @@ describe("Transport", () => {
         expect(calls[0].init.headers["If-Match"]).to.equal('"1"');
     });
 
+    it("updates another file, with a text or a Blob", async () => {
+        await transport.updateFile("data/issues.json", "{}", '"1"');
+        expect(calls[0].url).to.equal("https://example.com/_api/files/data/issues.json");
+        expect(calls[0].init.headers["Content-Type"]).to.equal("text/plain; charset=utf-8");
+        const blob = new Blob(["{}"], { type: "application/json" });
+        await transport.updateFile("data/issues.json", blob, '"2"');
+        expect(calls[1].init.body).to.equal(blob);
+        expect(calls[1].init.headers["Content-Type"]).to.equal("application/json");
+    });
+
     it("throws the server's error with its status", async () => {
         reply = () => new Response(JSON.stringify({ error: "file changed" }), { status: 412 });
         const error = await transport.updateFile("a.texl", "new", '"0"').catch((e) => e);

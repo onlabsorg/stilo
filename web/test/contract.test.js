@@ -107,7 +107,8 @@ function serve() {
     window.fetch = async (url, init) => {
         const path = new URL(url, location.href).pathname;
         if (!path.startsWith("/_api/")) return realFetch(url, init);
-        if (path === "/_api/info") return new Response(JSON.stringify({ protocol: 1, server: { name: "test" }, capabilities: ["files", "tree", "folders", "move"], extensions: [{ id: "contract" }] }), { status: 200 });
+        if (path === "/_api/info") return new Response(JSON.stringify({ protocol: 1, server: { name: "test" }, capabilities: ["files", "tree", "folders", "move", "rewrite"], extensions: [{ id: "contract" }] }), { status: 200 });
+        if (path.startsWith("/_api/files/") && init?.method === "PUT") return new Response(null, { status: 200, headers: { ETag: '"f"' } });
         if (path.startsWith("/_api/files/")) return new Response(DOC, { status: 200, headers: { ETag: '"e"' } });
         if (path.startsWith("/_api/tree")) return new Response(JSON.stringify(TREE), { status: 200 });
         return new Response(JSON.stringify({ error: "not found" }), { status: 404 });
@@ -195,6 +196,12 @@ describe("the extension API contract", () => {
         expect(seen.requests.some((url) => url.includes("/_api/files/doc.texl"))).to.be.true;
         expect(seen.requests.some((url) => url.includes("/_api/tree"))).to.be.true;
         expect(localStorage.getItem("stilo.ext.contract.runs")).to.equal("1");
+    });
+
+    it("keeps data of its own in a file of the folder, a JSON file too", async () => {
+        expect(seen.info.has("rewrite")).to.be.true;
+        expect(await stilo.transport.updateFile("contract/data.json", '{"n": 1}', '"e"')).to.equal('"f"');
+        expect(seen.requests.at(-1)).to.contain("/_api/files/contract/data.json");
     });
 
     it("knows what the server is and can do", () => {

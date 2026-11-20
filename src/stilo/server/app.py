@@ -24,7 +24,8 @@ VERSION = "0.7.0"
 
 # The version of the protocol it speaks, and what it can do (GET /_api/info).
 PROTOCOL = 1
-CAPABILITIES = ["files", "tree", "folders", "move", "upload", "trash", "home", "archives", "index"]
+CAPABILITIES = ["files", "tree", "folders", "move", "upload", "rewrite", "trash", "home", "archives",
+                "index"]
 
 NO_BUILD = """<!doctype html><meta charset="utf-8"><title>Stilo</title>
 <p>The web app is not built. Run <code>npm run build</code> in <code>web/</code>

@@ -159,10 +159,16 @@ def test_update_without_etag(client, root):
     assert client.put("/_api/files/packages/beam/check.texl", content="new").status_code == 200
 
 
-def test_update_only_documents(client, root):
-    response = client.put("/_api/files/packages/beam/notes.txt", content="new")
-    assert response.status_code == 400
-    assert (root / "packages" / "beam" / "notes.txt").read_text() == "notes"
+def test_update_other_files(client, root):
+    """Any file can be updated (S27), with the same ETag check as a document."""
+    path = "/_api/files/packages/beam/notes.txt"
+    tag = client.get(path).headers["etag"]
+    assert client.put(path, content="stale", headers={"If-Match": etag(b"else")}).status_code == 412
+    response = client.put(path, content=b"\x00new", headers={"If-Match": tag})
+    assert response.status_code == 200
+    assert response.headers["etag"] == etag(b"\x00new")
+    assert (root / "packages" / "beam" / "notes.txt").read_bytes() == b"\x00new"
+    assert client.put("/_api/files/packages/beam/nope.json", content="{}").status_code == 404
 
 
 def test_update_missing(client, root):
@@ -494,8 +500,8 @@ def test_info(client):
     assert info["protocol"] == 1
     # The version published in pyproject.toml, so a release can't forget app.py
     assert info["server"] == {"name": "stilo", "version": version("stilo-cli")}
-    assert info["capabilities"] == ["files", "tree", "folders", "move", "upload", "trash", "home",
-                                    "archives", "index"]
+    assert info["capabilities"] == ["files", "tree", "folders", "move", "upload", "rewrite", "trash",
+                                    "home", "archives", "index"]
     assert info["extensions"] == []
 
 

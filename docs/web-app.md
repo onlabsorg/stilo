@@ -224,7 +224,7 @@ read once when the app connects (`load`):
 |--------|------------|
 | `protocol` | The protocol version the server speaks (0 for a server without `/_api/info`), `null` until read |
 | `server` | `{name, version}`, or `null` |
-| `capabilities`, `has(name)` | What it can do (`files`, `tree`, `folders`, `move`, `upload`, `trash`, `home`); `has` is `true` until the info is read, or if it cannot be (`error`), so nothing is greyed out for nothing |
+| `capabilities`, `has(name)` | What it can do (`files`, `tree`, `folders`, `move`, `upload`, `rewrite`, `trash`, `home`, `archives`, `index`); `has` is `true` until the info is read, or if it cannot be (`error`), so nothing is greyed out for nothing |
 | `extensions`, `hasExtension(id)` | The server's extensions, with endpoints under `/_api/x/<id>/` |
 
 Stilo's commands that need a capability are greyed out without it, with
@@ -644,7 +644,7 @@ Its methods:
 | `readFile(path)`           | GET a file               | `{text, etag}`     |
 | `createFile(path, text)`   | CREATE                   | the ETag           |
 | `uploadFile(path, file)`   | CREATE, with the bytes of a `File` | —        |
-| `updateFile(path, text, etag)` | UPDATE with `If-Match` | the new ETag     |
+| `updateFile(path, text, etag)` | UPDATE with `If-Match`, of a document or another file (`rewrite`), with a text or a `Blob` | the new ETag |
 | `readTree(path, depth?)`   | QUERY the tree           | the tree           |
 | `createFolder(path)`       | CREATE a folder          | —                  |
 | `moveItem(path, to)`       | MOVE                     | —                  |

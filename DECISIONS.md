@@ -732,3 +732,33 @@ is private. Papiro's releases (Papiro P5) pack a checkout whose top is the
 package, where both cases give the same result; a package in a subfolder
 of a repository keeps the repository's rules, `*.log` at its top
 included.
+
+## S27 — 2026-11-20 — Any file can be updated (protocol capability `rewrite`; supersedes part of S15)
+
+Supersedes, in S15, "UPDATE stays for documents".
+
+- **UPDATE takes any file**: a document or another file (a JSON file, an
+  image, a PDF), with the same rules as a document: the file must exist
+  (update never creates), the body replaces it whole, `If-Match` refuses a
+  write over a change (`412`), read-only items and writes inside a packed
+  package are refused (`403`). For another file the body is its bytes, of
+  any type; the server never reads or runs it.
+- **A capability, `rewrite`**, in `/_api/info`, says that a server does
+  this. A server without it (an older Stilo, or another server of the
+  protocol) answers `400` for a file that is not a document, as before;
+  a client asks `info.has("rewrite")` first. Protocol 1: the change only
+  adds.
+- **The web app's client**: `transport.updateFile(path, text, etag)` takes
+  a text or a `Blob`. The editor, the navigation pane and their commands do
+  not change: Stilo itself still edits only documents.
+
+*Reason:* extensions keep data beside the documents (issues, settings, a
+glossary, a list of reviewed files), and the natural form for it is a plain
+file, often JSON. Without UPDATE they could only create such a file once,
+or delete and create it again, losing the ETag check, or they needed a
+server extension for a simple save (found while building the extension
+demo, 2026-11-20). S15 kept UPDATE for documents because only the editor
+wrote files; extensions now write too. The ETag check protects other files
+as it protects documents, and the server stays safe: other files are still
+served by their public URL with their real type, sandboxed when they could
+run scripts.
