@@ -88,6 +88,7 @@ selected line in view.
 | Method | Returns | Description |
 |--------|---------|-------------|
 | `runCommand(name)` | `Promise<boolean>` | Runs an editor command by name: the same action as its key (see [Commands](#commands)). Resolves to `true` if the command ran, `false` if it does not apply now. Rejects for an unknown name. |
+| `renderedHtml({hidden} = {})` | `Promise<string>` | The document as rendered, once the current rendering pass is done: the HTML each cell shows (its type's `viewHtml`, sanitised), in order, each in a `<div class="texl-cell" data-cell="<name>" data-type="<type>">`. Hidden cells are left out unless `hidden` is `true`; a cell being edited counts with its committed source. For an export or a print: equations need KaTeX's stylesheet to look right outside the editor. |
 | `select(line, extend = false)` | — | Selects line `line` (from 1), as a click on it does, and scrolls it into view; with `extend`, selects the lines from the anchor to it, as Shift+click does. The line is kept within the sheet. Closes the type menu; does not leave edit mode or take the focus. Fires `selection-change` if the line changed. A hidden line is selected too, and the hidden cells are shown (`showHidden`). |
 | `commands` (getter) | `string[]` | The names `runCommand` takes, including `make-<type>` for every registered cell type. |
 
@@ -258,7 +259,8 @@ Set by the editor; a cell reads them and does not change them.
 | `fromTexl(texl)`    | `this.input = texl` | Read the widget's input back from the Texl source. Called when the cell enters edit mode, before rendering. |
 | `toTexl()`          | `this.input ?? ""` | Produce the Texl source for the current input. Called on commit. |
 | `renderEditor()`    | a "no editor" notice | Return the editing widget (a Lit template). |
-| `renderView()`      | `output` as HTML, through `sanitizeOutput(html, errorMessages)` of `errors.js`: sanitised with DOMPurify, marks shown as highlighted values | Show the output differently (as `MarkdownCell` does). Always pass the result through `sanitizeOutput`: documents are untrusted, and the marks are not meant to be seen. |
+| `static viewHtml(output, errorMessages)` | `sanitizeOutput(output, errorMessages)` of `errors.js`: sanitised with DOMPurify, marks shown as highlighted values | Turn the output into HTML differently (as `MarkdownCell` does, with `marked`). Always pass the result through `sanitizeOutput`: documents are untrusted, and the marks are not meant to be seen. The editor's `renderedHtml()` uses it too, so an export shows what the cell shows. |
+| `renderView()`      | `viewHtml(output, errorMessages)` in a `<div class="view">` | Put something around the output (a box, an icon), or show it as something other than HTML. Prefer `viewHtml` for what the output becomes: `renderedHtml()` does not see `renderView()`. |
 | `focusEditor()`     | focuses the first `textarea` or `input` | Focus your widget when it is not one of those. Called after entering edit mode. |
 | `inputError(texl)`  | a message if the type does not `accept` `texl`, else `""` | Give a more precise reason (as `FormulaCell` does for `%>`). Called on commit with the new source, only if it changed. |
 

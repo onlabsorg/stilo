@@ -119,6 +119,12 @@ export class Editor extends Service {
         return this._element?.selection ?? null;
     }
 
+    /** The open document as rendered, the HTML of its cells (the editor's
+     * `renderedHtml`); `""` without an editor. */
+    async renderedHtml(options) {
+        return this._element ? this._element.renderedHtml(options) : "";
+    }
+
     /** Whether a cell is being edited. */
     get editing() {
         return !!this._element?.editing;

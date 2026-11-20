@@ -143,6 +143,7 @@ details of each service.
 | Make items read-only | `tree.readOnly(path => reason)`: the document opens read-only, save, rename, move, delete are disabled | `dispose` |
 | Ask the tree's providers again | `tree.invalidate()` | — |
 | Mark cells | `editor.decorate(({path, value, cells}) => [{cell, text, tone, title}])`; `editor.invalidate()`; event `mark-click` | `dispose` |
+| Get the document as rendered | `await editor.renderedHtml()`: the HTML each cell shows, sanitised, one `<div class="texl-cell" data-cell data-type>` each, hidden cells left out (`{hidden: true}` to keep them) | — |
 | Know which cell is selected | `editor.selection`, `{line, cell}`: the line and its cell's name, the anchor of comments and marks; event `selection-change`, with the same | — |
 | Add comments from elsewhere | `comments.addProvider({id, label, comments(path)})`, anchored to cells by name; `comments.refresh()` | `dispose` |
 | See or change every request | `transport.use((url, init, next) => response)`, Texl imports included; `{outermost: true}` to wrap all the others | `dispose` |
@@ -273,6 +274,7 @@ Each sketch uses the public API alone.
    `topBar` item for new notifications.
 7. **Export to PDF.** A command and a menu entry on documents, offered
    only when `info.hasExtension("pdf")`, post the editor's rendered HTML
+   (`editor.renderedHtml()`)
    to `/_api/x/pdf/<path>` and download the answer, `application/pdf`
    with `Content-Disposition: attachment` (the server never runs a
    document itself). A CLI command `stilo pdf <file>` renders it with

@@ -602,6 +602,29 @@ export class TexlEditor extends LitElement {
         return { line: this._selected + 1, cell: this._cells[this._selected]?.name ?? null };
     }
 
+    /**
+     * The document as rendered: once the current rendering pass is done, the
+     * HTML each cell shows (its type's `viewHtml`, sanitised), in order, each
+     * in a `<div class="texl-cell" data-cell="<name>" data-type="<type>">`.
+     * Hidden cells are left out unless `hidden` is true. A cell being edited
+     * counts with its committed source. Equations need KaTeX's stylesheet
+     * to look right outside the editor.
+     * @param {{hidden?: boolean}} [options]
+     * @returns {Promise<string>}
+     */
+    async renderedHtml({ hidden = false } = {}) {
+        await this.rendered;
+        return this._cells
+            .map((cell, i) => {
+                if (cell.hidden && !hidden) return "";
+                const type = customElements.get(cellTagName(cell.type)) ?? TexlCell;
+                const content = type.viewHtml(this._outputs[i] ?? "", this._errorMessages ?? []);
+                return `<div class="texl-cell" data-cell="${escapeAttribute(cell.name ?? "")}" data-type="${escapeAttribute(cell.type ?? "")}">${content}</div>`;
+            })
+            .filter(Boolean)
+            .join("\n");
+    }
+
     /** Whether a cell is in edit mode. Its edit is not in `value` until committed. */
     get editing() {
         return this._editing >= 0;
@@ -1338,4 +1361,9 @@ export class TexlEditor extends LitElement {
         });
         return html`<div class="sheet" @click=${{ handleEvent: (e) => this._onSheetClick(e), capture: true }}>${rows}</div>`;
     }
+}
+
+/** A text safe inside a double-quoted HTML attribute. */
+function escapeAttribute(text) {
+    return String(text).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
 }

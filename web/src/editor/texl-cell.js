@@ -16,7 +16,11 @@ import { sanitizeOutput } from "./errors.js";
  * - `fromTexl(texl)`: reads the cell's input from its Texl source;
  * - `toTexl()`: produces the Texl source from the current input;
  * - `renderEditor()`: the editing widget (the base only shows a notice);
- * - `renderView()`, rarely: the base shows `output` as sanitised HTML.
+ * - the static `viewHtml(output, errorMessages)`, rarely: the HTML a
+ *   rendering of the cell shows, sanitised; the base sanitises `output`
+ *   (the editor's `renderedHtml()` uses it too, so an export shows what
+ *   the cell shows);
+ * - `renderView()`, rarely: the view around it (the base shows `viewHtml`).
  * They also set the static `type`, and `label` and `icon`, which the
  * editor shows in the left margin and in the menu of cell types, and may
  * set `key`, the key that changes a selected cell to the type and edits it.
@@ -378,9 +382,22 @@ export class TexlCell extends LitElement {
         return html`<p class="no-editor">No editor is defined for this cell type.</p>`;
     }
 
-    /** Shows `output` as HTML, sanitised: documents are untrusted. */
+    /**
+     * The HTML a cell of this type shows for `output`, sanitised: documents
+     * are untrusted. `errorMessages` are the hover texts of the errors marked
+     * in it. A type that shows its output differently (as Markdown, say)
+     * overrides it; the result must go through `sanitizeOutput`.
+     * @param {string} output
+     * @param {string[]} [errorMessages]
+     * @returns {string}
+     */
+    static viewHtml(output, errorMessages = []) {
+        return sanitizeOutput(output, errorMessages);
+    }
+
+    /** Shows the cell's `viewHtml`. */
     renderView() {
-        const content = sanitizeOutput(this.output, this.errorMessages);
+        const content = /** @type {typeof TexlCell} */ (this.constructor).viewHtml(this.output, this.errorMessages);
         return html`<div class="view">${unsafeHTML(content)}</div>`;
     }
 }

@@ -194,6 +194,12 @@ describe("the extension API contract", () => {
         expect(seen.edits).to.equal(1);
     });
 
+    it("gets the document as rendered", async () => {
+        const rendered = await stilo.editor.renderedHtml();
+        expect(rendered).to.contain('data-cell="aaaa"');
+        expect(rendered).to.contain("Two");
+    });
+
     it("knows which cell is selected", async () => {
         expect(stilo.editor.selection).to.deep.equal({ line: 1, cell: "aaaa" });
         const editor = shadow(app, "texl-editor");

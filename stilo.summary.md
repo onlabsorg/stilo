@@ -616,6 +616,12 @@ accept are not part of Stilo.
   which cell is selected, by its name, not only which line, so an
   extension can attach a comment or a mark to the cell the user chose.
   Not released yet.
+- 2026-11-20: **the document as rendered, for extensions**: the editor
+  now gives the whole document as it shows it, ready for an export or a
+  print (an extension that makes a PDF, say), cleaned of anything unsafe,
+  hidden cells left out. Cell types and the export share one way of
+  turning a cell's result into a page, so an export looks like the
+  editor. Not released yet.
 
 ## Known limitations
 

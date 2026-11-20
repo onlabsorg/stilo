@@ -1,5 +1,4 @@
 import { html } from "lit";
-import { unsafeHTML } from "lit/directives/unsafe-html.js";
 import { Marked } from "marked";
 import { sanitizeOutput } from "../errors.js";
 import { mathMarkdown, mathStyles, matchInlineMath } from "../math.js";
@@ -92,9 +91,8 @@ export class MarkdownCell extends TextCell {
         ];
     }
 
-    /** Shows `output` as Markdown, sanitised: documents are untrusted. */
-    renderView() {
-        const content = sanitizeOutput(captionTables(markdownParser.parse(this.output)), this.errorMessages);
-        return html`<div class="view">${unsafeHTML(content)}</div>`;
+    /** `output` read as Markdown, sanitised: documents are untrusted. */
+    static viewHtml(output, errorMessages = []) {
+        return sanitizeOutput(captionTables(markdownParser.parse(output)), errorMessages);
     }
 }

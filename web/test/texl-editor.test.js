@@ -1353,6 +1353,34 @@ Third line
             expect(cells(editor).map((c) => c.selected).slice(0, 3)).to.deep.equal([false, true, false]);
         });
 
+        it("gives the document as rendered: what each cell shows, sanitised, hidden cells left out", async () => {
+            const editor = await editorWith(`<!--{ aaaa : text }-->
+Span: <% 2 * 3 %> m<img src=x onerror="alert(1)">
+<!--{ bbbb : markdown }-->
+# Title <% 1 + 1 %>
+<!--{ cccc : text | hidden }-->
+Secret
+`);
+            const rendered = await editor.renderedHtml();
+            const box = document.createElement("div");
+            box.innerHTML = rendered;
+            const parts = [...box.children];
+            expect(parts.map((p) => [p.dataset.cell, p.dataset.type])).to.deep.equal([
+                ["aaaa", "text"],
+                ["bbbb", "markdown"],
+            ]);
+            expect(parts[0].textContent).to.contain("Span: 6 m");
+            expect(parts[0].querySelector("img").hasAttribute("onerror")).to.be.false;
+            expect(parts[1].querySelector("h1").textContent).to.equal("Title 2");
+            expect(rendered).to.not.contain("Secret");
+            expect(await editor.renderedHtml({ hidden: true })).to.contain("Secret");
+            // The same HTML the cells show (without Lit's markers)
+            const views = cells(editor)
+                .slice(0, 2)
+                .map((c) => c.shadowRoot.querySelector(".view").innerHTML.replace(/<!--[^>]*-->/g, ""));
+            expect(parts.map((p) => p.innerHTML)).to.deep.equal(views);
+        });
+
         it("names the selected cell, in its selection and in selection-change", async () => {
             const editor = await editorWith(SOURCE);
             const seen = [];

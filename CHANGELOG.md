@@ -6,6 +6,13 @@ change the interfaces.
 
 ## Unreleased
 
+- **The document as rendered**: the editor's `renderedHtml({hidden})`, and
+  the `editor` service's, give the HTML every cell shows, sanitised, for an
+  export or a print, without reaching into the editor. Cell types turn
+  their output into HTML with a static `viewHtml(output, errorMessages)`,
+  which `renderView()` and `renderedHtml()` share (`MarkdownCell`
+  overrides it; a type that overrode `renderView()` only to convert its
+  output should override `viewHtml` instead).
 - **The selected cell's name**: the editor's `selection-change` event now
   gives `{line, cell}`, the name of the selected cell with its line, and
   the editor and the `editor` service have `selection`, the same, so an

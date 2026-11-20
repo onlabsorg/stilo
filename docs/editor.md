@@ -387,8 +387,10 @@ Its language comes from `languageExtensions()`: Swan highlighting
 (`swanTags()`) and the keymap for Mod+E (insert a tag) and Shift+F2
 (insert a comment). `MarkdownCell` adds Markdown highlighting in front of
 them, with a small Markdown parser extension so that Markdown does not
-interpret what is inside a tag, and overrides `renderView()` to convert its
-output with `marked` before sanitising it.
+interpret what is inside a tag, and overrides the static `viewHtml()` to
+convert its output with `marked` before sanitising it; `renderView()`
+shows it, and the editor's `renderedHtml()` (the document as rendered, for
+an export) uses it too.
 
 A new text-based cell type follows the same pattern (a sketch;
 `latexLanguage` stands for any CodeMirror language support):
@@ -400,7 +402,7 @@ class LatexCell extends TextCell {
     languageExtensions() {
         return [latexLanguage(), super.languageExtensions()];
     }
-    renderView() { /* typeset this.output, then sanitise */ }
+    static viewHtml(output, errorMessages) { /* typeset output, then sanitizeOutput */ }
 }
 ```
 

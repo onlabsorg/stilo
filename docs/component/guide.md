@@ -394,7 +394,10 @@ How it works:
   stores it, renders the document and fires `change`. Escape calls
   `exitEdit(false)`: nothing is stored.
 - In render mode, the base `renderView()` shows the rendered output as
-  sanitised HTML; you rarely need to override it.
+  sanitised HTML, from the static `viewHtml(output, errorMessages)`; you
+  rarely need to override either. To turn the output into HTML
+  differently, override `viewHtml`, so that `renderedHtml()` (the document
+  as rendered) shows the same.
 - `fromTexl` must accept any source, including one written by hand or by
   another cell type (the type menu keeps the source when it changes the
   type). Fall back to sensible defaults, as above, rather than throwing.
@@ -410,8 +413,9 @@ More rules for cells:
   dropdown), call `e.preventDefault()`: the editor ignores keys that are
   already default-prevented.
 - If your widget is not an `input` or `textarea`, override `focusEditor()`.
-- If your `renderView()` shows HTML from the document, sanitise it (e.g.
-  with DOMPurify): documents may come from other people.
+- If your `viewHtml()` or `renderView()` shows HTML from the document,
+  sanitise it (`sanitizeOutput`, or DOMPurify): documents may come from
+  other people.
 - For a text-based cell (a template in another language, e.g. LaTeX or
   HTML), extend `TextCell` and override `languageExtensions()` instead: you
   get the CodeMirror editor, Swan highlighting and the tag key for free. See

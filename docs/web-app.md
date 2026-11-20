@@ -338,6 +338,7 @@ throws is reported in the console and left out.
 | `settled()`        | The editor once the window shows the latest state (`ui.settled`) |
 | `reveal(line)`     | Back in the editor view, selects the line and focuses it |
 | `runCommand(name)` | Back in the editor view, runs an editor command (`docs/component/api.md`) |
+| `renderedHtml({hidden})` | The open document as rendered, the HTML of its cells (the editor's `renderedHtml`); `""` without an editor |
 | `reset()`          | Lets go of the editor: a new document is coming      |
 
 **`document`** is the open document: `path`, `error` (why it could not be
