@@ -4,7 +4,7 @@ All notable changes to Stilo are listed here, newest first. Versions follow
 [semantic versioning](https://semver.org/); before 1.0, any version may
 change the interfaces.
 
-## Unreleased
+## 0.9.0 — 2026-11-22
 
 - **Your own brand in the top bar**: an extension can show its own name
   (a link to its home page, say) at the top left in place of "Stilo",
