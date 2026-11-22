@@ -29,7 +29,7 @@ const REGISTRATIONS = {
     keys: { bind: null },
     menus: { add: null },
     panels: { register: "id", replace: null, setBadge: null },
-    topBar: { register: "id", replace: null },
+    topBar: { register: "id", replace: null, setBrand: null },
     status: { register: "id", replace: null },
     views: { register: "id", replace: null },
     transport: { use: null },

@@ -136,6 +136,7 @@ details of each service.
 | Put a badge on a panel's button, Stilo's too | `panels.setBadge(id, badge)`, `null` to remove it; called as often as needed | `dispose` |
 | Replace a panel, Stilo's too | `panels.replace("comments", panel)`; disposing brings the old one back | `dispose` |
 | Add to the top bar (a button that runs an action, a user's name) | `topBar.register({id, order, render})` | `dispose` |
+| Show your own brand at the top left, in place of "Stilo" | `topBar.setBrand(stilo => html\`<a href="/" title="Home">Papiro</a>\`)`: readable text, a link with a `title`; it keeps the brand's style, a link its colour. The latest set shows; disposing it brings back the one before | `dispose` |
 | Add to the status line | `status.register({id, order, render})`; the line shows only with items | `dispose` |
 | Add a page | `views.register({id, label, render(stilo, params)})`, at `/?view=<id>&…`; `views.open(id, params)` | `dispose` |
 | Mark tree items | `tree.decorate(node => ({badge, tooltip, tone, muted}))` | `dispose` |

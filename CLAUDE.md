@@ -369,7 +369,7 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
   extension's own), `cells.js` (cell types for extensions, with
   their "Make it …" command), `registry.js` (`Registry`:
   items by id and order, `register`, `replace`; the `topBar` and `status`
-  services: top-bar items, the status line at the bottom, shown only with
+  services: top-bar items and the brand (`setBrand`), the status line at the bottom, shown only with
   items; `views`: pages that are not a document, at `?view=<id>`, shown in
   place of the editor), `panels.js` (the right pane's
   panels, their buttons in the panel rail, badges; a `Registry`), `errors.js` (the open document's

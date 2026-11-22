@@ -221,6 +221,13 @@ stilo.status.changed();                  // render the items again
 
 **`topBar`** items show on the right of the top bar: the place for
 buttons that run an action (a panel's button is in the panel rail).
+Its **brand**, at the left after the navigation button, is the "Stilo"
+label until `topBar.setBrand(render)` sets another: `render(stilo)`, like
+an item's, gives a Lit template (the name of a product that embeds
+Stilo, a link to its home page with a `title`), shown inside `.brand`,
+whose weight it keeps and whose colour a link inherits. Brands stack:
+the latest shows, and the `dispose()` it returns brings back the one
+before; `topBar.brand` is the shown one's `render`, `null` for "Stilo".
 **`status`** items show in the **status line** at the bottom of the
 window, right-aligned, as in Word; the line shows only while it has
 items, so without extensions the window is as before. An item's

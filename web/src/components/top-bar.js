@@ -4,7 +4,8 @@ import { menuIcon } from "../icons.js";
 import { StiloController } from "../core/context.js";
 
 /**
- * The title/tool bar: navigation toggle on the left; in the middle the open
+ * The title/tool bar: navigation toggle and the brand on the left ("Stilo",
+ * or what `topBar.setBrand` renders, inside `.brand`); in the middle the open
  * document's name, with • while it has unsaved changes (`document`), or else
  * the navigation root (`router`), "Read-only" with the reason if the
  * document is (`document.readOnly`), and the status (`ui`); on the right the
@@ -35,9 +36,19 @@ export class TopBar extends LitElement {
                 justify-content: flex-end;
             }
             .brand {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.375rem;
                 margin-left: 0.25rem;
                 font-weight: 600;
                 letter-spacing: -0.01em;
+            }
+            .brand a {
+                color: inherit;
+                text-decoration: none;
+            }
+            .brand a:hover {
+                text-decoration: underline;
             }
             .title {
                 display: flex;
@@ -104,7 +115,7 @@ export class TopBar extends LitElement {
                 >
                     ${menuIcon}
                 </button>
-                <span class="brand">Stilo</span>
+                <span class="brand">${topBar.brand ? topBar.brand(stilo) : "Stilo"}</span>
             </div>
             <div class="title">
                 <span>${this._heading(stilo)}</span>

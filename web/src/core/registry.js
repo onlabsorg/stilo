@@ -105,8 +105,42 @@ export class Views extends Registry {
     }
 }
 
-/** The `topBar` service: items in the top bar, left of the panels' buttons. */
-export class TopBar extends Registry {}
+/** The `topBar` service: items on the right of the top bar, and the brand
+ * at its left, after the navigation button. */
+export class TopBar extends Registry {
+    constructor() {
+        super();
+        /** @type {{render: (stilo: object) => unknown}[]} the brands set, the latest shows */
+        this._brands = [];
+    }
+
+    /**
+     * Show `render(stilo)` as the brand, in place of the "Stilo" label: a
+     * Lit template or an element, like an item's `render`, e.g. a link to
+     * the home page of the product that embeds Stilo. Returns the function
+     * that takes it away; the brand set before it (or the "Stilo" label)
+     * shows again.
+     * @param {(stilo: object) => unknown} render
+     * @returns {() => void}
+     */
+    setBrand(render) {
+        if (typeof render !== "function") throw new Error("setBrand takes a function rendering the brand");
+        const entry = { render };
+        this._brands.push(entry);
+        this.changed();
+        return () => {
+            const i = this._brands.indexOf(entry);
+            if (i < 0) return;
+            this._brands.splice(i, 1);
+            this.changed();
+        };
+    }
+
+    /** The brand's `render`, or `null` for the "Stilo" label. */
+    get brand() {
+        return this._brands.at(-1)?.render ?? null;
+    }
+}
 
 /** The `status` service: items in the status line at the bottom of the
  * window, which shows only while it has items. */

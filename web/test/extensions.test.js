@@ -255,6 +255,52 @@ describe("registries: panels, topBar, status", () => {
         expect(right.querySelector("button")).to.be.null;
     });
 
+    it("show the brand at the left of the top bar, \"Stilo\" unless one is set", async () => {
+        const stilo = createStilo();
+        const el = await fixture(html`<stilo-provider .stilo=${stilo}><top-bar></top-bar></stilo-provider>`);
+        const bar = el.querySelector("top-bar");
+        await bar.updateComplete;
+        const brand = () => bar.renderRoot.querySelector(".left .brand");
+        expect(brand().textContent.trim()).to.equal("Stilo");
+        expect(stilo.topBar.brand).to.be.null;
+        expect(() => stilo.topBar.setBrand("Papiro")).to.throw();
+        const disposeA = stilo.topBar.setBrand(() => html`<a href="/" title="Papiro home">Papiro</a>`);
+        await bar.updateComplete;
+        const link = brand().querySelector("a");
+        expect(link.textContent).to.equal("Papiro");
+        expect(link.title).to.equal("Papiro home");
+        // The link keeps the brand's colour
+        expect(getComputedStyle(link).color).to.equal(getComputedStyle(brand()).color);
+        // The latest shows; disposing it brings back the one before
+        const disposeB = stilo.topBar.setBrand(() => "Other");
+        await bar.updateComplete;
+        expect(brand().textContent.trim()).to.equal("Other");
+        disposeA();
+        await bar.updateComplete;
+        expect(brand().textContent.trim()).to.equal("Other");
+        disposeB();
+        disposeB();
+        await bar.updateComplete;
+        expect(brand().textContent.trim()).to.equal("Stilo");
+        expect(stilo.topBar.list()).to.deep.equal([]);
+    });
+
+    it("take an extension's brand away when it is deactivated", async () => {
+        const { stilo, restore } = setUp();
+        try {
+            await stilo.extensions.activate({
+                id: "brand",
+                apiVersion: "1",
+                activate: (s) => s.topBar.setBrand(() => "Brand"),
+            });
+            expect(stilo.topBar.brand(stilo)).to.equal("Brand");
+            stilo.extensions.deactivate("brand");
+            expect(stilo.topBar.brand).to.be.null;
+        } finally {
+            restore();
+        }
+    });
+
     it("show the status line only while it has items", async () => {
         const target = document.createElement("div");
         document.body.append(target);

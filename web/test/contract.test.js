@@ -63,6 +63,7 @@ const contract = {
         stilo.panels.setBadge("comments", { text: "7", label: "7 issues" });
         stilo.panels.replace("commands", { label: "Other commands", icon: html`X`, order: 10, render: () => html`<p>Replaced</p>` });
         stilo.topBar.register({ id: "contract.user", render: () => html`<span class="contract-user">Ada</span>` });
+        stilo.topBar.setBrand(() => html`<a class="contract-brand" href="/" title="Contract home">Contract</a>`);
         stilo.status.register({ id: "contract.counter", render: () => html`<contract-counter></contract-counter>` });
         stilo.views.register({ id: "contract.page", label: "Contract page", render: (s, params) => html`<p class="contract-view">Page ${params.n}</p>` });
 
@@ -164,10 +165,11 @@ describe("the extension API contract", () => {
         expect(await answer).to.equal("yes");
     });
 
-    it("adds a panel with a badge in the rail, a top-bar item and a status item that follows the services", async () => {
+    it("adds a panel with a badge in the rail, a top-bar item, a brand and a status item that follows the services", async () => {
         const bar = shadow(app, "top-bar");
         await bar.updateComplete;
         expect(bar.renderRoot.querySelector(".contract-user").textContent).to.equal("Ada");
+        expect(bar.renderRoot.querySelector(".brand .contract-brand").textContent).to.equal("Contract");
         const rail = shadow(app, "panel-rail");
         await rail.updateComplete;
         expect([...rail.renderRoot.querySelectorAll("button")].map((b) => b.getAttribute("aria-label"))).to.include("1 thing");
@@ -257,6 +259,8 @@ describe("the extension API contract", () => {
         expect(stilo.panels.get("commands").label).to.equal("Commands");
         expect(stilo.panels.badge("comments")).to.be.undefined;
         expect(stilo.topBar.list()).to.deep.equal([]);
+        expect(stilo.topBar.brand).to.be.null;
+        expect(shadow(app, "top-bar").renderRoot.querySelector(".brand").textContent.trim()).to.equal("Stilo");
         expect(stilo.status.list()).to.deep.equal([]);
         expect(shadow(app, "footer")).to.be.null;
         expect(stilo.views.get("contract.page")).to.be.undefined;

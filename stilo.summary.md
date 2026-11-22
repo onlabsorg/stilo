@@ -630,6 +630,15 @@ accept are not part of Stilo.
   which extensions add, so the two kinds no longer look alike. Keys are
   unchanged; extensions need no change. Lessons 1 and 9 of the tutorial
   follow. Not released yet.
+- 2026-11-20: **0.8.0 released**: tagged `v0.8.0`, with the changes of
+  2026-11-20 above (any file can be updated, the panel rail, the
+  extension hooks and the fixes).
+- 2026-11-22: **a product's own name in the top bar**: an extension can
+  show its own name, a link to its home page for example, at the top left
+  in place of "Stilo", so a product built on Stilo (or anyone embedding
+  it) carries its own name there. "Stilo" comes back when the extension is
+  turned off. Nothing changes for users without extensions. Not released
+  yet.
 
 ## Known limitations
 

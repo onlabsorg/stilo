@@ -4,6 +4,15 @@ All notable changes to Stilo are listed here, newest first. Versions follow
 [semantic versioning](https://semver.org/); before 1.0, any version may
 change the interfaces.
 
+## Unreleased
+
+- **Your own brand in the top bar**: an extension can show its own name
+  (a link to its home page, say) at the top left in place of "Stilo",
+  with `topBar.setBrand(render)`; `render(stilo)` returns a Lit template
+  like a top-bar item's. It returns a `dispose()`, recorded like the other
+  hooks, so the "Stilo" label comes back when the extension is
+  deactivated.
+
 ## 0.8.0 — 2026-11-20
 
 - **The panel rail** (S28): the buttons that open the right pane's panels
