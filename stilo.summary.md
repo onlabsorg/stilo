@@ -637,8 +637,9 @@ accept are not part of Stilo.
   show its own name, a link to its home page for example, at the top left
   in place of "Stilo", so a product built on Stilo (or anyone embedding
   it) carries its own name there. "Stilo" comes back when the extension is
-  turned off. Nothing changes for users without extensions. Not released
-  yet.
+  turned off. Nothing changes for users without extensions.
+- 2026-11-22: **0.9.0 released**: tagged `v0.9.0`, published on PyPI and
+  npm, with the top-bar brand above.
 
 ## Known limitations
 
