@@ -4,7 +4,7 @@ All notable changes to Stilo are listed here, newest first. Versions follow
 [semantic versioning](https://semver.org/); before 1.0, any version may
 change the interfaces.
 
-## Unreleased
+## 0.10.0 — 2026-11-24
 
 - **A menu on a cell** (S29): a right click on a cell (or the menu key,
   or Shift+F10) selects it and opens a menu: Edit, Change the cell type…,
