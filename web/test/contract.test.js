@@ -24,7 +24,7 @@ const TREE = {
 };
 
 /** What the extension saw and did, for the test to check. */
-const seen = { requests: [], opened: [], edits: 0, deactivated: 0, selections: [] };
+const seen = { requests: [], opened: [], edits: 0, deactivated: 0, selections: [], onCell: [] };
 
 /** The extension: it imports nothing from Stilo. */
 const contract = {
@@ -56,6 +56,15 @@ const contract = {
         });
         stilo.keys.bind("Alt+Shift+K", "contract.ask");
         stilo.menus.add("tree/document", "contract.ask", { group: "contract" });
+        // A command on the cell a menu opened on, read-only documents too
+        stilo.commands.register({
+            id: "contract.on-cell",
+            label: "On this cell",
+            group: "Contract",
+            run: (s, context) => seen.onCell.push({ ...context, selection: stilo.editor.selection }),
+            enabled: (s, { cell } = {}) => (cell === undefined || cell ? true : "the line has no name"),
+        });
+        stilo.menus.add("editor/cell", "contract.on-cell", { group: "contract" });
 
         // Visible contributions
         stilo.panels.register({ id: "contract.panel", label: "Contract", icon: html`C`, order: 40, render: () => html`<p class="contract-panel">Panel</p>` });
@@ -205,12 +214,75 @@ describe("the extension API contract", () => {
     });
 
     it("knows which cell is selected", async () => {
-        expect(stilo.editor.selection).to.deep.equal({ line: 1, cell: "aaaa" });
+        expect(stilo.editor.selection).to.deep.equal({ path: "doc.texl", line: 1, cell: "aaaa" });
         const editor = shadow(app, "texl-editor");
         editor.select(2);
         await editor.updateComplete;
-        expect(stilo.editor.selection).to.deep.equal({ line: 2, cell: "bbbb" });
+        expect(stilo.editor.selection).to.deep.equal({ path: "doc.texl", line: 2, cell: "bbbb" });
         expect(seen.selections.at(-1)).to.deep.equal({ line: 2, cell: "bbbb" });
+    });
+
+    it("puts a command in the menu on a cell, which runs on that cell", async () => {
+        const editor = shadow(app, "texl-editor");
+        const cell = editor.shadowRoot.querySelector('[data-index="0"]');
+        const ask = new MouseEvent("contextmenu", { bubbles: true, composed: true, cancelable: true, clientX: 30, clientY: 40 });
+        cell.dispatchEvent(ask);
+        expect(ask.defaultPrevented).to.be.true;
+        await app.updateComplete;
+        const menu = shadow(app, "context-menu");
+        await menu.updateComplete;
+        const labels = [...menu.shadowRoot.querySelectorAll("button .label")].map((b) => b.textContent);
+        expect(labels).to.include("On this cell");
+        expect(labels).to.include("Edit the selected cell");
+        [...menu.shadowRoot.querySelectorAll("button")].find((b) => b.textContent.includes("On this cell")).click();
+        await app.updateComplete;
+        expect(shadow(app, "context-menu")).to.be.null;
+        expect(seen.onCell.at(-1)).to.deep.equal({ line: 1, cell: "aaaa", selection: { path: "doc.texl", line: 1, cell: "aaaa" } });
+    });
+
+    it("goes to a cell by its name", async () => {
+        expect(stilo.editor.lineOf("BBBB")).to.equal(2);
+        expect(await stilo.editor.goTo({ path: "doc.texl", cell: "bbbb" })).to.be.true;
+        expect(stilo.editor.selection.line).to.equal(2);
+        expect(await stilo.editor.goTo({ cell: "zzzz" })).to.be.false;
+        expect(await stilo.editor.goTo({ line: 1 })).to.be.true;
+        expect(stilo.editor.selection.line).to.equal(1);
+    });
+
+    it("renders a Texl text that is not the open document", async () => {
+        const rendered = await stilo.editor.renderHtml("<!--{ cccc : markdown }-->\nTwo is <% 1 + 1 %>, **bold**\n");
+        expect(rendered).to.contain('data-cell="cccc"');
+        expect(rendered).to.contain("Two is 2");
+        expect(rendered).to.contain("<strong>bold</strong>");
+    });
+
+    it("asks for a rich text, as Markdown", async () => {
+        const answer = stilo.ui.write("Your reply", "Hello **world**");
+        await app.updateComplete;
+        const dialog = shadow(app, "stilo-dialog");
+        await dialog.updateComplete;
+        const cell = dialog.shadowRoot.querySelector(".rich-text");
+        await cell.updateComplete;
+        expect(cell.mode).to.equal("edit");
+        cell._rich.dispatch(cell._rich.state.tr.insertText("Oh, ", 1));
+        dialog.shadowRoot.querySelector("button.primary").click();
+        expect(await answer).to.equal("Oh, Hello **world**");
+
+        const cancelled = stilo.ui.write("Your reply");
+        await app.updateComplete;
+        await shadow(app, "stilo-dialog").updateComplete;
+        shadow(app, "stilo-dialog").shadowRoot.querySelector("button.secondary").click();
+        expect(await cancelled).to.be.null;
+    });
+
+    it("knows the packed package a document is in, and its hash", async () => {
+        expect(stilo.tree.archiveOf("doc.texl")).to.be.null;
+        expect(stilo.tree.archiveOf("rel.texlz/index.texl")).to.equal("rel.texlz");
+        expect(stilo.tree.archiveOf("p/rel.texlz/references/steel.texlz/a.texl")).to.equal("p/rel.texlz/references/steel.texlz");
+        const bytes = new TextEncoder().encode(DOC);
+        const digest = [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))].map((b) => b.toString(16).padStart(2, "0")).join("");
+        expect(await stilo.transport.sha256("rel.texlz")).to.equal(digest);
+        expect(seen.requests.at(-1)).to.contain("/_api/files/rel.texlz?download");
     });
 
     it("sees every request through its middleware, and keeps its settings", () => {
@@ -255,6 +327,7 @@ describe("the extension API contract", () => {
         expect(stilo.commands.get("contract.ask")).to.be.undefined;
         expect(stilo.keys.keysFor("contract.ask")).to.not.be.ok;
         expect(stilo.menus.items("tree/document")).to.not.include("contract.ask");
+        expect(stilo.menus.items("editor/cell")).to.not.include("contract.on-cell");
         expect(stilo.panels.get("contract.panel")).to.be.undefined;
         expect(stilo.panels.get("commands").label).to.equal("Commands");
         expect(stilo.panels.badge("comments")).to.be.undefined;

@@ -131,7 +131,7 @@ details of each service.
 |----|-----|---------|
 | Add a command (menus, commands pane, keys) | `commands.register({id, label, group, run, enabled?, checked?})`; `enabled` returns `true` or why not, shown greyed out | `dispose` |
 | Bind a key | `keys.bind("Alt+Shift+K", id, {when})`, `when` = `global`, `tree`, `editor` | `dispose` |
-| Put a command in a menu | `menus.add("tree/document", id, {group})`; menus `tree/document`, `tree/other`, `tree/folder`, `tree/archive`, `tree/pane` | `dispose` |
+| Put a command in a menu | `menus.add("tree/document", id, {group})`; menus `tree/document`, `tree/other`, `tree/folder`, `tree/archive`, `tree/pane`, and `editor/cell`, the menu on a cell (a right click, the menu key), read-only documents too, whose commands run with `{line, cell}` | `dispose` |
 | Add a right-pane panel, with its button in the panel rail | `panels.register({id, label, icon, order, render})`; `order` from the top (Stilo's: commands 10, errors 20, comments 30). One element fills the pane; several stack from the top, and the pane scrolls | `dispose` |
 | Put a badge on a panel's button, Stilo's too | `panels.setBadge(id, badge)`, `null` to remove it; called as often as needed | `dispose` |
 | Replace a panel, Stilo's too | `panels.replace("comments", panel)`; disposing brings the old one back | `dispose` |
@@ -145,13 +145,16 @@ details of each service.
 | Ask the tree's providers again | `tree.invalidate()` | — |
 | Mark cells | `editor.decorate(({path, value, cells}) => [{cell, text, tone, title}])`; `editor.invalidate()`; event `mark-click` | `dispose` |
 | Get the document as rendered | `await editor.renderedHtml()`: the HTML each cell shows, sanitised, one `<div class="texl-cell" data-cell data-type>` each, hidden cells left out (`{hidden: true}` to keep them) | — |
-| Know which cell is selected | `editor.selection`, `{line, cell}`: the line and its cell's name, the anchor of comments and marks; event `selection-change`, with the same | — |
+| Know which cell is selected | `editor.selection`, `{path, line, cell}`: the document, the line and its cell's name, the anchor of comments and marks (`null` where there is no stable name); event `selection-change`, with `{line, cell}` | — |
+| Go to a cell, in any document | `await editor.goTo({path, cell})` (or `{uri, line}`): opens the document as a link does, a packed package's too, and selects the cell; `false` if it is not there. `editor.lineOf(cell)` in the open one | promise |
+| Render a Texl text that is not open | `await editor.renderHtml(text, {url})`: the HTML of its cells, sanitised, as `renderedHtml()` gives it; imports resolve from `url` (default: the open document) | promise |
 | Add comments from elsewhere | `comments.addProvider({id, label, comments(path)})`, anchored to cells by name; `comments.refresh()` | `dispose` |
 | See or change every request | `transport.use((url, init, next) => response)`, Texl imports included; `{outermost: true}` to wrap all the others | `dispose` |
 | Keep data in the folder | `transport.readFile(path)`, `transport.createFile(path, text)`, `transport.updateFile(path, text, etag)`: any file, a JSON file too, on a server with `info.has("rewrite")`; a hidden name (`.x`) is not served | promises |
+| Know which packed package (release) a document is in | `tree.archiveOf(path)`, the innermost `.texlz` on the path, or `null`; `await transport.sha256(archive)`, the SHA-256 of its bytes, its identity | — / promise |
 | Know what the server can do | `info.protocol`, `info.has("upload")`, `info.hasExtension(id)`, `info.server`; read before `activate`, when started with `startStilo` | — |
 | Add a cell type | `cells.register(CellClass)`, a subclass of `stilo.TexlCell`, with its "Make it …" command | `dispose` (the command; the type stays) |
-| Talk to the user | `ui.notify(message, {level})`, `ui.confirm(message, {ok, danger})`, `ui.prompt(message, value)`, `ui.dialog(render)` | promises |
+| Talk to the user | `ui.notify(message, {level})`, `ui.confirm(message, {ok, danger})`, `ui.prompt(message, value)`, `ui.dialog(render)`; `ui.write(message, value)` asks for a short rich text with the `rich` cell's editor and resolves to its Markdown, or `null` | promises |
 | Keep settings | `settings.get(key, fallback)`, `settings.set(key, value)`, `settings.on("change")`, per browser | — |
 | Hear what happens | `document.on("open" \| "save")`, `editor.on("edit" \| "selection-change" \| …)`, `router.on("change")`, any service's `on("change")` | `stop` |
 
@@ -272,7 +275,8 @@ Each sketch uses the public API alone.
 6. **Comments from an outside source.** `comments.addProvider` with
    `comments(path)` fetching an issue tracker (through `transport.fetch`
    or the tracker's own API); `panels.setBadge("comments", …)` or a
-   `topBar` item for new notifications.
+   `topBar` item for new notifications. Notes that are a discussion of
+   their own, with replies and a status, get a panel instead (11).
 7. **Export to PDF.** A command and a menu entry on documents, offered
    only when `info.hasExtension("pdf")`, post the editor's rendered HTML
    (`editor.renderedHtml()`)
@@ -289,6 +293,39 @@ Each sketch uses the public API alone.
 10. **A replaced panel.** `panels.replace("comments", {…})` with a panel
     of its own over the `comments` service. The navigation pane is part
     of the core: it is extended through `tree` and `menus`, not replaced.
+
+11. **Notes or threads on a release** (S29; Papiro's Threads panel,
+    OnLabs D25). A release is a packed package, so its documents open
+    read-only. `tree.archiveOf(document.path)` and
+    `transport.sha256(archive)` identify the release; a command "New
+    note…" in `menus.add("editor/cell", …)` (and the commands pane) acts
+    on `{cell}` (or `editor.selection`), its `enabled` saying why not on
+    an unpacked document or a line without a name; `ui.write` asks for the
+    text; `editor.decorate` counts the notes in the margin, `mark-click`
+    opens the panel; the panel lists them, each rendered with
+    `editor.renderHtml` and linking to its cell with `editor.goTo({path,
+    cell})`, in this release or an earlier one. The anchor is the cell's
+    name, which follows the cell from one release to the next. A minimal
+    version is the example below.
+
+## Example: review notes on a packed package
+
+[`examples/extensions/review-notes.js`](../examples/extensions/review-notes.js)
+is a whole extension of about 200 lines, Validation 11 for a single user:
+open a document of a packed package, right-click a cell, **New note…**,
+write it as rich text; the cell gets a count in its margin and the
+**Review notes** panel lists the notes of the release, each rendered,
+with a link to its cell and Close / Reopen. It keeps the notes in the
+browser (`settings`), by the release's SHA-256; Papiro keeps its threads
+on its server, beside the package, as Texl documents, with replies,
+statuses and the threads carried over from earlier releases.
+`web/test/review-notes.test.js` runs it in a real app. Add it to a front
+end as any other: `startStilo({extensions: [reviewNotes]})`.
+
+Only cells with a name in the file can be noted: a read-only document
+has no way to write a name the editor would give a cell read without
+one, so `editor.selection.cell` is `null` there. Packages meant to be
+reviewed are written with Stilo, which names every cell on save.
 
 `web/test/contract.test.js` is one extension that uses every hook in a
 real app, then is deactivated; a change that breaks a hook breaks it.

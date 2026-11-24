@@ -3,7 +3,7 @@ import { base } from "./shared.js";
 
 /**
  * A modal dialog over the window (the `ui` service's `dialog`, `confirm`,
- * `prompt`): the browser's `<dialog>`, so the focus stays inside and the
+ * `prompt`, `write`): the browser's `<dialog>`, so the focus stays inside and the
  * page behind cannot be used. Shows `content`, a Lit template. Escape fires
  * `cancel`. Styles the forms Stilo's dialogs are made of: `.message`, an
  * input, `.buttons` with `button.primary` (`.danger`) and `button.secondary`.
@@ -53,6 +53,17 @@ export class StiloDialog extends LitElement {
             input:focus {
                 outline: none;
                 border-color: var(--accent);
+            }
+            /* The rich text editor of ui.write */
+            .rich-text {
+                min-height: 7rem;
+                max-height: 50vh;
+                overflow: auto;
+                margin-bottom: 1rem;
+                border: 1px solid var(--border);
+                border-radius: 4px;
+                background: var(--bg);
+                text-align: left;
             }
             .buttons {
                 display: flex;

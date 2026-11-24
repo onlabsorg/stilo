@@ -72,7 +72,7 @@ count). It owns the document: set it with `value`, read it back from `value`.
 | `loader`  | —          | `function \| null` | `null` | The loader of `http` and `https` URIs for the editor's Texl engine (Texl's `addLoader`): it takes a URL and returns the source, or `{url, source}` with the final URL, or a promise of either. Every `texl.import` goes through it, e.g. to send credentials. `null`: Texl's own, a plain `fetch`. A new one renders again. |
 | `rendered`| —          | `Promise<void>`  | resolved | The current rendering pass. Await it after setting `value` (or after a change) to read the rendered outputs. Read-only by convention. |
 | `errors`  | —          | `DocumentError[]` | `[]`   | The errors of the document, as of the last rendering (see [Errors](#errors)). Read-only. |
-| `selection` | —        | `{line, cell}`   | `{line: 1, …}` | The selected line, from 1, and the name of its cell; `cell` is `null` for a line past the last cell, or text before the first marker. With several lines selected, the line last moved to. Read-only. |
+| `selection` | —        | `{line, cell}`   | `{line: 1, …}` | The selected line, from 1, and the name of its cell; `cell` is `null` for a line past the last cell, text before the first marker, and, when `readonly`, a cell read without a name (the name the editor gives it is never written, so it is no anchor for marks or comments kept elsewhere). With several lines selected, the line last moved to. Read-only. |
 | `editing` | —          | `boolean`        | `false` | Whether a cell is in edit mode. Its edit is not in `value` until committed (the `commit` command). Read-only. |
 | `showHidden` | —       | `boolean`        | `false` | Whether hidden cells (`| hidden` in their marker) are shown, greyed out, instead of out of sight. A view setting, not saved; the `show-hidden` command toggles it. Read-only. |
 
@@ -157,6 +157,7 @@ All events bubble and are composed.
 | `errors-change`    | `{errors}`                                 | A rendering finished. `errors` is the same list as the `errors` property. Fired after every rendering, also when nothing changed. |
 | `mark-click`       | `{line, cell, mark}`                       | The user clicked a mark in the right margin (`marks`). `line` counts from 1; `cell` is the cell's name, `mark` the mark as given. |
 | `error-click`      | `{line, error}`                            | The user clicked a highlighted value (`error` is its error) or a line's error icon (the line's first error), or the `errors` command ran (`error` is null on a line with none). `line` counts from 1. |
+| `cell-menu`        | `{line, cell, x, y}`                       | A context menu was asked for on a line not being edited (a right click, the menu key, Shift+F10): the line is selected first, unless it is in the selection. `cell` is its cell's name, or `null`; `x`, `y` the point a menu opens at (the cell's corner for a key). Cancelable: a page that shows its own menu calls `preventDefault()`, and the browser's menu does not open. Not fired while a cell is being edited, which keeps the browser's menu. |
 | `name-conflict`    | `{conflicts}`                              | Several cells share a name (compared without case). Each conflict is `{name, lines}`, with `lines` counted from 1. Fired again only when the set of clashing names changes. The editor does not rename them. |
 
 ```js
@@ -461,6 +462,19 @@ Returns the class registered for a type, or `undefined`.
 
 Returns the registered types, in registration order. This is the order of
 the type menu.
+
+## Rendering without an editor
+
+### `renderHtml(source, {url, loader?, hidden?})`
+
+From `web/src/editor/render.js`. Renders the text of a document as the
+document at `url` and resolves to the HTML its cells show, the same as
+`renderedHtml()` of an editor holding it: sanitised, one `<div
+class="texl-cell" data-cell data-type>` per cell, hidden cells left out
+unless `hidden`. Imports are read with `loader` (as the editor's `loader`)
+and resolve against `url`; a text that cannot be rendered gives cells
+without output. For a preview, or a document shown inside a page that is
+not an editor.
 
 ## Document functions
 

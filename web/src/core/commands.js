@@ -7,12 +7,15 @@ import { Service } from "./service.js";
  * @property {string} id - Unique; an extension's are `<extension-id>.<name>`.
  * @property {string} label - As the user sees it, in the commands pane and menus.
  * @property {string} group - The heading it is listed under in the commands pane.
- * @property {(stilo: object, context: {node?: object}) => any} [run] - What it
- *   does; `context.node` is the tree item it was called on, if any. A command
- *   without `run` is listed for reference (a key a cell handles itself).
+ * @property {(stilo: object, context: {node?: object, line?: number, cell?: string | null}) => any} [run] -
+ *   What it does; `context.node` is the tree item it was called on, if any;
+ *   from the menu on a cell (`editor/cell`), `context.line` and
+ *   `context.cell` are the line and its cell's name (the selection). A
+ *   command without `run` is listed for reference (a key a cell handles
+ *   itself).
  * @property {(stilo: object) => boolean} [checked] - For an option: whether it
  *   is on, shown as a check mark in menus.
- * @property {(stilo: object, context: {node?: object}) => boolean | string} [enabled] -
+ * @property {(stilo: object, context: {node?: object, line?: number, cell?: string | null}) => boolean | string} [enabled] -
  *   Whether it applies now: `true`, or why not (a text, shown with it greyed
  *   out), or `false`. Without it, a command always applies.
  */

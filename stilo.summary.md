@@ -41,7 +41,8 @@ end or embed the editor, published on npm since 0.5.0. It has the same version
 as the Python package; only its three entry points (the whole app, the
 editor and the theme) are its public interface, and before 1.0 any version
 may change them. The web app can be extended without changing its
-code: extensions add commands, panels, pages, marks, comments and more;
+code: extensions add commands (also in the menu on a cell), panels,
+pages, marks, comments and more;
 the server and the `stilo` command can be extended too, by separate
 Python packages (see Status).
 
@@ -640,6 +641,24 @@ accept are not part of Stilo.
   turned off. Nothing changes for users without extensions.
 - 2026-11-22: **0.9.0 released**: tagged `v0.9.0`, published on PyPI and
   npm, with the top-bar brand above.
+- 2026-11-24: **a menu on a cell**: a right click on a cell (or the menu
+  key) selects it and opens a menu, as in Excel: Edit, Change the cell
+  type, Cut, Copy, Paste, Insert a cell above or below, Delete, Show the
+  cell's comments. In a read-only document (a packed package) the entries
+  that would change it are greyed out, with the reason. Lesson 2 of the
+  tutorial mentions it. Not released yet.
+- 2026-11-24: **hooks for notes and threads on a release** (for
+  developers; for Papiro's Threads panel, OnLabs D25): an extension can
+  put its own commands in the menu on a cell, read-only documents
+  included; know which document and cell are selected; go to a cell by
+  its name, in any document or packed package; ask the user for a short
+  rich text, written with the rich text cell's own editor; show a Texl
+  document that is not open, rendered as Stilo renders it; and find the
+  packed package a document is in and its SHA-256, which identifies a
+  release. In a read-only document, a cell without a name in the file no
+  longer gets a made-up one that could not be found again. An example
+  extension, notes with a status on the cells of a packed package in a
+  panel of their own, shows them at work and is tested. Not released yet.
 
 ## Known limitations
 
@@ -678,6 +697,8 @@ accept are not part of Stilo.
   existing copy only after `stilo tutor --reset`; no reset from the web app.
 - Packages: other Texl programs do not understand `~` in imports, packed
   packages, or importing a folder.
+- Notes and threads on a release can be anchored only to cells that have
+  a name in the file; Stilo names every cell when it saves a document.
 - Packed packages: read-only in Stilo; to change one, unpack it, edit the
   folder and pack it again by hand (there is no unpack command).
 - Errors: a value inside a link's address or another HTML attribute counts but

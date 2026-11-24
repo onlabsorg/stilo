@@ -4,6 +4,32 @@ All notable changes to Stilo are listed here, newest first. Versions follow
 [semantic versioning](https://semver.org/); before 1.0, any version may
 change the interfaces.
 
+## Unreleased
+
+- **A menu on a cell** (S29): a right click on a cell (or the menu key,
+  or Shift+F10) selects it and opens a menu: Edit, Change the cell type…,
+  Cut, Copy, Paste, Insert a cell above or below, Delete, Show the cell's
+  comments. In a read-only document (a packed package) those that would
+  change it are greyed out, with the reason. A cell being edited keeps
+  the browser's own menu. Extensions add to it with
+  `menus.add("editor/cell", id)`; their commands run with `{line, cell}`.
+  The editor fires `cell-menu` (cancelable) for a page that shows its own.
+- **Hooks for notes and threads on a release** (S29, OnLabs D25), for
+  extensions: `editor.selection` has the document's `path`;
+  `editor.goTo({path | uri, cell | line})` opens a document and selects a
+  cell by its name, `editor.lineOf(cell)`; `ui.write(message, value)`
+  asks for a short rich text with the rich text cell's editor and returns
+  its Markdown; `editor.renderHtml(text, {url})` (and `renderHtml` of the
+  editor module) renders a Texl text that is not open, as
+  `renderedHtml()` does; `tree.archiveOf(path)` gives the packed package
+  a document is in, `transport.sha256(path)` the SHA-256 of a file.
+- In a read-only document, the editor no longer reports a name for a
+  cell read without one (`selection`, `cell-menu`): that name was random
+  and never written.
+- **Example extension**: `examples/extensions/review-notes.js`, notes
+  with a status on the cells of a packed package, in a panel of its own
+  (`docs/extensions.md`).
+
 ## 0.9.0 — 2026-11-22
 
 - **Your own brand in the top bar**: an extension can show its own name

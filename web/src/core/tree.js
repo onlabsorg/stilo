@@ -2,7 +2,7 @@
 // the navigation pane shows them.
 
 import { Service } from "./service.js";
-import { isDocument } from "../api.js";
+import { archiveOf, isDocument } from "../api.js";
 
 const SHOW_OTHER_KEY = "stilo-show-other";
 
@@ -239,6 +239,14 @@ export class Tree extends Service {
             if (reason) return typeof reason === "string" ? reason : "Read-only";
         }
         return null;
+    }
+
+    /** The path of the packed package the item at `path` is in, the
+     * innermost if they are nested (`references/` of a packed package), or
+     * `null`: e.g. the release a document belongs to. By the path alone, so
+     * it holds before the tree is read. */
+    archiveOf(path) {
+        return path ? archiveOf(path) : null;
     }
 
     /** Whether the item at `path` is a packed package: a file the tree

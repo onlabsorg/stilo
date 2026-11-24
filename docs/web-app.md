@@ -165,10 +165,16 @@ and closing it gives the focus back.
   Stilo's own: "Discard", "Delete" (danger), "Save", "Rename".
 - `prompt(message, value, {ok, cancel})` asks for a text and resolves to
   it, or `null`.
+- `write(message, value, {ok, cancel})` asks for a short rich text (a
+  message, a note) with the editor of `rich` cells (S29): a `rich` cell
+  element in edit mode, its toolbar and keys included. OK or Ctrl+Enter
+  resolve to the text as the Markdown a `rich` cell stores; Cancel or
+  Escape to `null`. `value` is Markdown too.
 
-Without a view for dialogs (a front end that shows none), `confirm` and
-`prompt` use the browser's. The dialogs' forms take the styles of
-`<stilo-dialog>`: `.message`, an input, `.buttons` with `button.primary`
+Without a view for dialogs (a front end that shows none), `confirm`,
+`prompt` and `write` use the browser's (`write` asks for the Markdown
+itself). The dialogs' forms take the styles of
+`<stilo-dialog>`: `.message`, an input, `.rich-text`, `.buttons` with `button.primary`
 (`.danger`) and `button.secondary`.
 `settled()` resolves when the window shows the latest state, e.g. the
 navigation pane after `setNavOpen(true)` or the editor after
@@ -319,8 +325,9 @@ so the margin counts them with the file's own.
 `<comments-pane>` shows the lines that have comments, highlights and
 scrolls to `line`, and calls `goTo` on a click; under the file's comments
 of a line come the providers', each with its source, author and date.
-`builtins/go-to.js` handles `go-to`: it selects the line, back in the
-editor view, and focuses the editor.
+`builtins/go-to.js` handles `go-to` with `editor.goTo`: it opens the
+document if needed, selects the line, back in the editor view, and
+focuses the editor.
 
 ## The document: `editor`, `document` and `router`
 
@@ -345,7 +352,10 @@ throws is reported in the console and left out.
 
 | Member             | Is or does                                          |
 |--------------------|-----------------------------------------------------|
-| `element`, `value`, `editing`, `selection` | The element (or `null`), its text, whether a cell is being edited, the selected line and its cell's name (`{line, cell}`, or `null`) |
+| `element`, `value`, `editing`, `selection` | The element (or `null`), its text, whether a cell is being edited, the selected line and its cell's name with the open document's path (`{path, line, cell}`, or `null`; `cell` is `null` for a line without a name, and in a read-only document for a cell read without one) |
+| `lineOf(cell)`     | The line of the cell with that name (without case) in the open document, or `null` |
+| `goTo({path?, uri?, line?, cell?})` | Opens the document (by path or public URL; the open one without either), as a link does, then selects the cell with that name, or the line, and focuses it; resolves to whether it got there (S29) |
+| `renderHtml(text, {url?, hidden?})` | Renders a Texl text that is not the open document, as the document at `url` (by default the open one's), imports through the transport, and resolves to the HTML of its cells as `renderedHtml` gives it (S29) |
 | `whenReady()`      | The editor once attached; `null` if another document comes first |
 | `settled()`        | The editor once the window shows the latest state (`ui.settled`) |
 | `reveal(line)`     | Back in the editor view, selects the line and focuses it |
@@ -446,6 +456,7 @@ The `tree` service holds what the navigation pane shows:
 | `askName(request)`  | Asks for a name in the pane, opened if needed (above) |
 | `moving`, `startMove`, `chooseMove`, `failMove`, `endMove` | The Move to… dialog: the item and the whole tree, a folder chosen, a failure shown in the dialog, closing it |
 | `isArchive(path)`   | Whether the item is a packed package (`archive` in the tree, S23) |
+| `archiveOf(path)`   | The packed package the item at `path` is in, the innermost if nested, or `null`; by the path alone (S29) |
 | `addReason(path)`   | Why nothing can be added to the folder at `path`: its read-only reason, or for a packed package `ARCHIVE_REASON`; `null` if items can be added |
 
 **Providers.** Extensions (and Stilo) add to the tree through providers,
@@ -533,7 +544,8 @@ stilo.commands.register({
     id: "save",                         // unique; an extension's: "<extension-id>.<name>"
     label: "Save",
     group: "File",                      // its heading in the commands pane
-    run: (stilo, { node }) => ...,      // node: the tree item, if called on one
+    run: (stilo, { node }) => ...,      // node: the tree item, if called on one;
+                                        // from the menu on a cell: { line, cell }
     checked: (stilo) => ...,            // for an option: on or off, in menus
     enabled: (stilo, { node }) => ...,  // true, or why it does not apply now
 });                                     // returns dispose(); a taken id throws
@@ -576,7 +588,15 @@ Delete on macOS).
 order})`, returning `dispose()`; `items(menu)` gives the command ids with
 `"-"` between groups. The navigation pane's menus are `tree/document`,
 `tree/other`, `tree/folder`, `tree/archive` (a packed package) and
-`tree/pane`.
+`tree/pane`. **`editor/cell`** opens on a cell of the editor (S29): a
+right click, the menu key or Shift+F10 selects the line (unless it is in
+the selection) and `<stilo-app>` shows the menu at the cell (the
+editor's `cell-menu`), its commands run with `{line, cell}`, the line
+and its cell's name; with no item, the browser's own menu opens, and a
+cell being edited keeps the browser's menu. Stilo's own entries: Edit,
+Change the cell type…; Cut, Copy, Paste; Insert a cell above, below,
+Delete; Show the cell's comments. Those that change the document are
+greyed out in a read-only one.
 
 Stilo's own commands:
 
@@ -670,6 +690,7 @@ Its methods:
 | `createFile(path, text)`   | CREATE                   | the ETag           |
 | `uploadFile(path, file)`   | CREATE, with the bytes of a `File` | —        |
 | `updateFile(path, text, etag)` | UPDATE with `If-Match`, of a document or another file (`rewrite`), with a text or a `Blob` | the new ETag |
+| `sha256(path)`             | GET with `?download`, then hashed here (`crypto.subtle`, a secure context) | the SHA-256 of the file's bytes, hex: a packed package's identity (S29) |
 | `readTree(path, depth?)`   | QUERY the tree           | the tree           |
 | `createFolder(path)`       | CREATE a folder          | —                  |
 | `moveItem(path, to)`       | MOVE                     | —                  |

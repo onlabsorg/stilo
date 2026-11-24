@@ -11,18 +11,21 @@ import "./panel-rail.js";
 import "./nav-pane.js";
 import "./move-dialog.js";
 import "./stilo-dialog.js";
+import "./context-menu.js";
 
 /**
  * The app shell: top bar, navigation pane, editor, right pane. Creates and
  * provides the services (`stilo`, S17), activates Stilo's own contributions
  * on them, and lays out the window: the editor of the open document (or the
  * source view, or a view of `views` addressed by `?view=`), the open panel, the status line (`status`, only while it
- * has items), the Move to… dialog and the dialogs of `ui`. The state lives in the
+ * has items), the menu on a cell (`editor/cell`), the Move to… dialog and the dialogs of `ui`. The state lives in the
  * services; the parts read it through context.
  */
 export class StiloApp extends LitElement {
     static properties = {
         stilo: { attribute: false },
+        /** The menu open on a cell (`editor/cell`): `{items, x, y, context}`, or null. */
+        _cellMenu: { state: true },
     };
 
     static styles = [
@@ -184,6 +187,7 @@ export class StiloApp extends LitElement {
         /** The services (S17), provided to the elements inside by context.
          * Created here unless set before the app is connected. */
         this.stilo = createStilo();
+        this._cellMenu = null;
         this._provider = new ContextProvider(this, { context: stiloContext, initialValue: this.stilo });
         this._useStilo();
         this._onKeyDown = this._onKeyDown.bind(this);
@@ -289,6 +293,34 @@ export class StiloApp extends LitElement {
         }
     }
 
+    /** A context menu asked for on a cell (the editor's `cell-menu`): the
+     * menu `editor/cell`, whose commands run with `{line, cell}`; the
+     * browser's own menu if it is empty. */
+    _onCellMenu(e) {
+        const { menus, commands, keys } = this.stilo;
+        const { line, cell, x, y } = e.detail;
+        const context = { line, cell };
+        const items = menus
+            .items("editor/cell")
+            .map((id) => {
+                if (id === "-") return id;
+                const command = commands.get(id);
+                if (!command?.run) return null;
+                const disabled = commands.disabledReason(id, context);
+                return { id, label: command.label, keys: keys.keysFor(id), checked: command.checked?.(this.stilo), disabled };
+            })
+            .filter(Boolean)
+            .filter((item, i, all) => item !== "-" || (i > 0 && all[i - 1] !== "-" && i < all.length - 1));
+        if (!items.some((item) => item !== "-")) return;
+        e.preventDefault();
+        this._cellMenu = { items, x, y, context };
+    }
+
+    _closeCellMenu() {
+        this._cellMenu = null;
+        this.stilo.editor.focus();
+    }
+
     // -- render --------------------------------------------------------------
 
     /** A view (`router.view`) in place of the editor. */
@@ -320,6 +352,7 @@ export class StiloApp extends LitElement {
                     url=${this._transport.documentUrl(this._doc)}
                     .loader=${this._transport.loader}
                     ?readonly=${this.stilo.document.readOnly !== null}
+                    @cell-menu=${this._onCellMenu}
                 ></texl-editor>`,
             )}
             ${this._ui.source !== null
@@ -359,6 +392,19 @@ export class StiloApp extends LitElement {
                       @choose=${(e) => tree.chooseMove(e.detail.folder)}
                       @close=${() => tree.endMove()}
                   ></move-dialog>`
+                : ""}
+            ${this._cellMenu
+                ? html`<context-menu
+                      .items=${this._cellMenu.items}
+                      .x=${this._cellMenu.x}
+                      .y=${this._cellMenu.y}
+                      @close=${this._closeCellMenu}
+                      @pick=${(e) => {
+                          const { context } = this._cellMenu;
+                          this._closeCellMenu();
+                          this.stilo.commands.run(e.detail.id, context);
+                      }}
+                  ></context-menu>`
                 : ""}
             ${dialog
                 ? keyed(dialog, html`<stilo-dialog .content=${dialog.render()} @cancel=${() => dialog.close(undefined)}></stilo-dialog>`)

@@ -153,9 +153,10 @@ export const definitions = [
 ];
 
 /**
- * The menus of the navigation pane: command ids by group, in order. The
- * menu `tree/document` opens on a document, `tree/other` on any other file,
- * `tree/archive` on a packed package.
+ * The menus: command ids by group, in order. The navigation pane's menu
+ * `tree/document` opens on a document, `tree/other` on any other file,
+ * `tree/archive` on a packed package; `editor/cell` opens on a cell of the
+ * editor (its commands run with `{line, cell}`).
  */
 export const menus = {
     "tree/document": { edit: ["tree-rename", "tree-duplicate", "tree-move", "tree-copy-link"], delete: ["tree-delete"] },
@@ -170,6 +171,12 @@ export const menus = {
         delete: ["tree-delete"],
     },
     "tree/pane": { new: ["new-document", "tree-new-folder", "tree-upload"], view: ["tree-refresh", "tree-show-other"] },
+    "editor/cell": {
+        edit: ["edit", "cell-type"],
+        clipboard: ["cut", "copy", "paste"],
+        lines: ["insert-above", "insert-below", "delete"],
+        view: ["comments"],
+    },
 };
 
 /** Register Stilo's commands, keys and menus. Returns the function that

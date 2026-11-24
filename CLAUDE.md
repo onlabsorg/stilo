@@ -333,21 +333,23 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
 - `web/src/components/stilo-app.js` — the shell, with no state of its
   own: creates and provides the services, activates the built-ins, lays
   out the window, renders the editor of the open document (attached to
-  the `editor` service after every rendering), the open panel and the Move
-  to… dialog, handles link clicks and the window's shortcuts.
+  the `editor` service after every rendering), the open panel, the menu
+  on a cell (`editor/cell`, from the editor's `cell-menu`; S29) and the
+  Move to… dialog, handles link clicks and the window's shortcuts.
 - `web/src/components/top-bar.js`, `panel-rail.js`, `nav-pane.js`,
   `commands-pane.js`, `comments-pane.js`, `errors-pane.js` — the parts of
   the layout, views of the services: they read them through context and
   call them. The top bar holds actions (`topBar` items); the panel rail, at
-  the right edge, always shown, holds only the panels' buttons (S28). `context-menu.js` — the menu `nav-pane.js` opens.
+  the right edge, always shown, holds only the panels' buttons (S28). `context-menu.js` — the menu `nav-pane.js` opens, and `<stilo-app>` on a cell.
   `move-dialog.js` — the Move to… dialog. `stilo-dialog.js` — the
-  modal dialog of `ui.dialog`, `confirm`, `prompt`. The tree lists every file (S15):
+  modal dialog of `ui.dialog`, `confirm`, `prompt`, `write`. The tree lists every file (S15):
   documents open in the editor; other files (`isDocument` in `api.js`) are
   muted, open by their public URL in a new tab and hide with Show other
   files; Upload files… adds files with the browser's file dialog.
 - `web/src/builtins/` — Stilo's own contributions, registered through the
   services as extensions will be: `commands.js` (the commands, their keys,
-  the navigation pane's menus; editor commands call the editor's
+  the navigation pane's menus and the menu on a cell, `editor/cell`;
+  editor commands call the editor's
   `runCommand(name)`, tree commands have ids `tree-*`), `panels.js` (the
   errors, comments and commands panels), `go-to.js` (going to a place a
   pane points to, in another document if needed), `files.js` (the
@@ -365,7 +367,8 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
   `editor`; `formatKeys`, `isMac`), `menus.js`, `info.js` (what the server
   is and can do, `/_api/info`; `has(capability)`), `ui.js` (status and its level, navigation
   pane, open panel, source view, dialogs: `dialog`, `confirm`, `prompt`,
-  shown by `<stilo-app>`), `settings.js` (per browser, by namespace; an
+  `write` (a short rich text with the `rich` cell's editor, as Markdown;
+  S29), shown by `<stilo-app>`), `settings.js` (per browser, by namespace; an
   extension's own), `cells.js` (cell types for extensions, with
   their "Make it …" command), `registry.js` (`Registry`:
   items by id and order, `register`, `replace`; the `topBar` and `status`
@@ -377,14 +380,16 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
   by line, the line pointed out, `go-to`; comment providers, anchored to
   cells by name), `editor.js` (the open
   document's `<texl-editor>`, its events passed on; mark providers,
-  `decorate`), `document.js` (the
+  `decorate`; `selection` with `path`, `lineOf`, `goTo` (a cell or line
+  of any document, used by `builtins/go-to.js`), `renderHtml` (a text
+  not open); S29), `document.js` (the
   open document: load, save, reload, dirty), `router.js` (the address:
   navigation root, the view and its parameters, `go`, `replace`, back and
   forward), `tree.js` (the
   navigation pane's tree, current item, other files, `askName` through
   the pane, the Move to… dialog; `checkName`; providers: `decorate`,
   `filter`, `readOnly`, read by `decoration`, `shows`, `readOnlyReason`,
-  `lockedReason`; packed packages: `isArchive`, `addReason`,
+  `lockedReason`; packed packages: `isArchive`, `archiveOf`, `addReason`,
   `ARCHIVE_REASON`, menu `tree/archive`), `extensions.js` (the
   `extensions` service, `API_VERSION`, the scoped `stilo` an extension
   gets). `<stilo-app>` creates and
@@ -394,7 +399,8 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
   the protocol client, `Transport` (`stilo.transport`); every request goes
   through its `fetch`, and its middleware (`use`, `{outermost}`); `loader`,
   given to the editor, sends Texl imports through it too; `info()`;
-  `ApiError` (`status`, message, `body`). `web/src/theme.js`,
+  `sha256(path)` (a file's hash, computed in the browser; S29);
+  `archiveOf(path)`; `ApiError` (`status`, message, `body`). `web/src/theme.js`,
   `theme.css` — light/dark theme (default dark), design tokens as CSS custom properties, also mapped onto
   the editor's `--texl-*` properties.
 - `web/src/editor/` — the editor:
@@ -409,7 +415,9 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
     `rendered`, `errors`, `editing`,
     `runCommand(name)`, `select(line)`, `commands`, events `change`,
     `comments-click`, `errors-change`, `error-click`, `selection-change`,
-    `name-conflict`. Keys and `runCommand` share one
+    `name-conflict`, `cell-menu` (a context menu asked for on a cell,
+    cancelable; S29). In a read-only editor, `selection` gives no name for
+    a cell read without one (never written, so no anchor). Keys and `runCommand` share one
     table of commands (`_commands()`); a new editor action goes there,
     and in `commands.js` (`editorCommands()`: label, keys, group, whether
     it changes the document), which Stilo's commands pane lists.
@@ -439,6 +447,9 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
   - `errors.js` — the errors of a rendering: the undefined values tags
     returned (the same rule as `src/stilo/cli/errors.py`; S7), their marks in
     the output, `sanitizeOutput` (the one way a cell shows HTML).
+  - `render.js` — `cellsHtml` (the HTML of rendered cells, what
+    `renderedHtml()` gives) and `renderHtml(source, {url, loader})`, a
+    text rendered without an editor (S29).
   - `math.js` — equations in Markdown: finds `$...$` and `$$...$$`, typesets
     them with KaTeX, declares its fonts in the document (a shadow root ignores
     them). Imports KaTeX's styles with `?inline`, as Vite does and as
@@ -451,6 +462,10 @@ the tarball the check packed) and creates the GitHub release. Bump the version i
 - `web/package-check/` — `check.js` (`npm run check-package`) and
   `consumer/`, the small Vite project that imports every entry point of
   the npm package. `web/README.md` — the package's page on npm.
+- `examples/extensions/review-notes.js` — an example web extension (S29,
+  Validation 11 in `docs/extensions.md`): notes with a status on the
+  cells of a packed package, in a panel; tested by
+  `web/test/review-notes.test.js`. Imports nothing from Stilo.
 - `examples/` — sample documents: `library/steel.texl`, `sample.texl`,
   the package `packages/steel/` (a steel reference: `index.texl` imports
   `sections.texl`), and the package `packages/beam/`: `beam-check.texl`, a short design

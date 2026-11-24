@@ -45,6 +45,14 @@ content needs it.
     comments are written as `<!--[ ... ]-->`; Shift+F2 inserts one. In a
     `rich` cell Shift+F2 opens a field and adds the comment at the end of the
     cell. **(open)** Editing a comment outside the source.
+  - **A right click** on a line not being edited (or the menu key, or
+    Shift+F10) selects it, unless it is in the selection, and fires
+    `cell-menu` (cancelable) with the line, its cell's name and the point
+    to open a menu at; the page shows the menu (Stilo: `editor/cell`,
+    S29). A cell being edited keeps the browser's menu (spelling, paste).
+    In read-only mode the name of a cell read without one is not given
+    (`selection` neither): the editor's name for it is random and never
+    written, so a host could not anchor anything to it.
   - Both margins are `--texl-margin` wide (6rem); they are the CSS parts
     `left-margin` and `right-margin`.
     **(open)** The layout on narrow screens.

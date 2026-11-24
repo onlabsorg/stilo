@@ -46,6 +46,15 @@ export const ARCHIVE_SUFFIX = ".texlz";
  * file, not a path through it. */
 export const inArchive = (path) => path.split("/").slice(0, -1).some((segment) => segment.endsWith(ARCHIVE_SUFFIX));
 
+/** The path of the packed package `path` goes through, the innermost if
+ * they are nested (a reference inside a packed package), or `null`. */
+export function archiveOf(path) {
+    const segments = path.split("/");
+    for (let i = segments.length - 2; i >= 0; i--)
+        if (segments[i].endsWith(ARCHIVE_SUFFIX)) return segments.slice(0, i + 1).join("/");
+    return null;
+}
+
 /**
  * The protocol client. Every request goes through `fetch`, so one place
  * decides how the server is reached.
@@ -153,6 +162,22 @@ export class Transport {
     async readFile(path) {
         const response = await this.fetch(this.contentUrl(path), { cache: "no-store" });
         return { text: await response.text(), etag: response.headers.get("ETag") };
+    }
+
+    /**
+     * The SHA-256 of a file's content, as lowercase hex, computed here from
+     * the bytes read (`?download`: a packed package's own file, not its
+     * index). The identity of a file that does not change, a packed package
+     * above all. Needs a secure context (HTTPS, or localhost), where the
+     * browser's `crypto.subtle` is.
+     * @param {string} path
+     * @returns {Promise<string>}
+     */
+    async sha256(path) {
+        if (!globalThis.crypto?.subtle) throw new Error("hashing needs a secure context (HTTPS or localhost)");
+        const response = await this.fetch(this.contentUrl(path) + "?download", { cache: "no-store" });
+        const digest = await crypto.subtle.digest("SHA-256", await response.arrayBuffer());
+        return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
     }
 
     /** CREATE a new file; fails with status 409 if it exists. Returns the ETag. */

@@ -52,6 +52,9 @@ check after them sees the order.
 | Ctrl+C, Ctrl+X, Ctrl+V | Copy, cut and paste lines |
 | Ctrl+Z, Ctrl+Shift+Z | Undo and redo |
 
+A right click on a line opens a menu with the same actions (Edit, Cut, Copy,
+Paste, Insert a cell above or below, Delete, and more), as in Excel.
+
 Try it: select this line, press **Alt+Enter**, press **Enter**, write a
 sentence and press **Ctrl+Enter**. Then press **Ctrl+Z** to undo it.
 

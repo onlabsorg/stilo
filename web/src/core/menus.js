@@ -3,9 +3,11 @@
 import { Service } from "./service.js";
 
 /**
- * The menus are known by id: `tree/document`, `tree/other`, `tree/folder` and
- * `tree/pane` are the navigation pane's (on a document, on another file, on a
- * folder, on the pane itself). A menu lists commands by group, with a
+ * The menus are known by id: `tree/document`, `tree/other`, `tree/folder`,
+ * `tree/archive` and `tree/pane` are the navigation pane's (on a document,
+ * on another file, on a folder, on a packed package, on the pane itself);
+ * `editor/cell` opens on a cell of the editor (a right click, the menu key),
+ * its commands run with `{line, cell}`, the line and the cell's name. A menu lists commands by group, with a
  * separator between groups; groups come in the order they were first used,
  * and within a group the items by `order`, then in the order they were added.
  */

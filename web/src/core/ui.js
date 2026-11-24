@@ -3,6 +3,7 @@
 
 import { html } from "lit";
 import { Service } from "./service.js";
+import { cellTagName } from "../editor/index.js";
 
 export class UI extends Service {
     constructor() {
@@ -144,6 +145,50 @@ export class UI extends Service {
                 </div>
             </form>`,
         );
+        return typeof answer === "string" ? answer : null;
+    }
+
+    /**
+     * Ask the user to write a short rich text (a message, a note), in a
+     * dialog with the editor of Stilo's `rich` cells: styles, lists, links,
+     * as in the document. Resolves to the text as the Markdown a `rich`
+     * cell stores, or `null` if they cancel (Escape, Cancel). OK and
+     * Ctrl+Enter accept it. Without a view for dialogs, the browser's
+     * prompt asks for the Markdown itself.
+     * @param {string} message
+     * @param {string} [value] - The text at first, Markdown.
+     * @param {{ok?: string, cancel?: string}} [options]
+     * @returns {Promise<string | null>}
+     */
+    async write(message, value = "", { ok = "OK", cancel = "Cancel" } = {}) {
+        if (!this._dialogView) return window.prompt(message, value);
+        const cell = /** @type {any} */ (document.createElement(cellTagName("rich")));
+        cell.texl = value;
+        cell.mode = "edit";
+        cell.className = "rich-text";
+        // The cell's commit (Ctrl+Enter, OK) and discard (Escape) both end in
+        // `cell-exit`; `cell-change` comes first only when the text changed
+        let commit = false;
+        let text = value;
+        const exitEdit = cell.exitEdit.bind(cell);
+        cell.exitEdit = (accept = true) => {
+            commit = accept;
+            exitEdit(accept);
+        };
+        let closeDialog = null;
+        cell.addEventListener("cell-change", (e) => (text = e.detail.texl));
+        cell.addEventListener("cell-exit", () => closeDialog?.(commit ? text : null));
+        const answer = await this.dialog((close) => {
+            closeDialog = close;
+            return html`<form method="dialog" @submit=${(e) => (e.preventDefault(), cell.exitEdit(true))}>
+                <p class="message">${message}</p>
+                ${cell}
+                <div class="buttons">
+                    <button type="button" class="secondary" @click=${() => close(null)}>${cancel}</button>
+                    <button type="submit" class="primary">${ok}</button>
+                </div>
+            </form>`;
+        });
         return typeof answer === "string" ? answer : null;
     }
 

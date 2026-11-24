@@ -1668,3 +1668,90 @@ describe("texl-editor's command list, read-only mode and loader", () => {
         expect(cells(editor)[0].output.trim()).to.equal("7");
     });
 });
+
+describe("texl-editor cell menu", () => {
+    const ask = (target, point = { clientX: 10, clientY: 20 }) => {
+        const event = new MouseEvent("contextmenu", { bubbles: true, composed: true, cancelable: true, ...point });
+        target.dispatchEvent(event);
+        return event;
+    };
+
+    it("selects the line and fires cell-menu, which a page cancels to show its own menu", async () => {
+        const editor = await editorWith(SOURCE);
+        editor.readonly = true;
+        await editor.updateComplete;
+        const fired = [];
+        editor.addEventListener("cell-menu", (e) => {
+            fired.push(e.detail);
+            e.preventDefault();
+        });
+        const event = ask(cells(editor)[1]);
+        await editor.updateComplete;
+        expect(fired).to.deep.equal([{ line: 2, cell: "mdn3", x: 10, y: 20 }]);
+        expect(event.defaultPrevented).to.be.true;
+        expect(editor.selection).to.deep.equal({ line: 2, cell: "mdn3" });
+    });
+
+    it("leaves the browser's menu when the page does not cancel it, and on a margin finds the line", async () => {
+        const editor = await editorWith(SOURCE);
+        const fired = [];
+        editor.addEventListener("cell-menu", (e) => fired.push(e.detail.line));
+        const event = ask(editor.shadowRoot.querySelector('.margin.left[data-row="1"]'));
+        expect(fired).to.deep.equal([2]);
+        expect(event.defaultPrevented).to.be.false;
+    });
+
+    it("keeps a selection of several lines that holds the line", async () => {
+        const editor = await editorWith(SOURCE);
+        editor.select(1);
+        editor.select(2, true);
+        ask(cells(editor)[0]);
+        await editor.updateComplete;
+        expect(editor.shadowRoot.querySelectorAll("[data-index].selected, [data-index][selected]").length).to.equal(2);
+    });
+
+    it("from a key, opens at the selected cell", async () => {
+        const editor = await editorWith(SOURCE);
+        editor.select(2);
+        await editor.updateComplete;
+        const fired = [];
+        editor.addEventListener("cell-menu", (e) => fired.push(e.detail));
+        ask(editor, { clientX: 0, clientY: 0 });
+        const box = cells(editor)[1].getBoundingClientRect();
+        expect(fired[0].line).to.equal(2);
+        expect(fired[0].x).to.equal(box.left);
+    });
+
+    it("in a read-only document, gives no name for a cell read without one: it is no anchor", async () => {
+        const editor = await fixture(html`<texl-editor readonly></texl-editor>`);
+        editor.value = anon(SOURCE);
+        await editor.updateComplete;
+        const fired = [];
+        editor.addEventListener("cell-menu", (e) => fired.push(e.detail.cell));
+        ask(cells(editor)[0]);
+        expect(fired).to.deep.equal([null]);
+        expect(editor.selection).to.deep.equal({ line: 1, cell: null });
+        editor.readonly = false;
+        expect(editor.selection.cell).to.match(/^[a-z0-9]{4}$/);
+    });
+
+    it("is not fired while a cell is being edited", async () => {
+        const editor = await editorWith(SOURCE);
+        await editor.runCommand("edit");
+        await editor.updateComplete;
+        const fired = [];
+        editor.addEventListener("cell-menu", (e) => fired.push(e.detail));
+        ask(cells(editor)[0]);
+        expect(fired).to.deep.equal([]);
+    });
+});
+
+describe("renderHtml", () => {
+    it("renders a text without an editor, as renderedHtml does", async () => {
+        const { renderHtml } = await import("../src/editor/index.js");
+        const editor = await editorWith(SOURCE);
+        const html = await renderHtml(SOURCE, { url: editor.url ?? location.href });
+        expect(html).to.equal(await editor.renderedHtml());
+        expect(html).to.contain('data-cell="mdn3"');
+    });
+});

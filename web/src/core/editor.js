@@ -1,7 +1,7 @@
 // The `editor` service: the `<texl-editor>` of the open document.
 
 import { Service } from "./service.js";
-import { parseDocument } from "../editor/index.js";
+import { parseDocument, renderHtml } from "../editor/index.js";
 
 /** The editor's events the service passes on, under the same names, except
  * `change` (an edit), passed on as `edit`. */
@@ -113,16 +113,45 @@ export class Editor extends Service {
         return this._element?.value ?? "";
     }
 
-    /** The selected line and the name of its cell, `{line, cell}` (the
-     * editor's `selection`), or `null` without an editor. */
+    /** The selected line and the name of its cell, with the open
+     * document's path, `{path, line, cell}` (the editor's `selection`), or
+     * `null` without an editor. `cell` is `null` on a line without a name
+     * (past the last cell, or text before the first marker). */
     get selection() {
-        return this._element?.selection ?? null;
+        const selection = this._element?.selection;
+        return selection ? { path: this._stilo.document?.path ?? null, ...selection } : null;
+    }
+
+    /** The line (from 1) of the cell named `cell` (without case) in the
+     * open document, or `null` if it has none. */
+    lineOf(cell) {
+        const name = String(cell ?? "").toLowerCase();
+        if (!name || !this._element) return null;
+        const index = parseDocument(this._element.value).findIndex((c) => c.name?.toLowerCase() === name);
+        return index < 0 ? null : index + 1;
     }
 
     /** The open document as rendered, the HTML of its cells (the editor's
      * `renderedHtml`); `""` without an editor. */
     async renderedHtml(options) {
         return this._element ? this._element.renderedHtml(options) : "";
+    }
+
+    /**
+     * Render the text of a Texl document, not the open one, as Stilo renders
+     * documents, and return the HTML its cells show, as `renderedHtml` does
+     * (`renderHtml`, docs/component/api.md): for a document shown in a panel
+     * or a view (a message, a preview). It renders as the document at `url`,
+     * by default the open document's (or the server's root without one), so
+     * relative imports resolve from there; imports go through the transport.
+     * @param {string} text
+     * @param {{url?: string, hidden?: boolean}} [options]
+     * @returns {Promise<string>}
+     */
+    renderHtml(text, { url, hidden = false } = {}) {
+        const { transport, document } = this._stilo;
+        const base = url ?? transport.documentUrl(document?.path ?? "");
+        return renderHtml(text, { url: base, loader: transport.loader, hidden });
     }
 
     /** Whether a cell is being edited. */
@@ -181,6 +210,30 @@ export class Editor extends Service {
         const element = await this.settled();
         element?.select(line);
         element?.focus();
+    }
+
+    /**
+     * Go to a place: a line or a cell (by name) of a document, opening it
+     * first if it is not the open one, as a link does; a document inside a
+     * packed package too. The place is `{path?, uri?, line?, cell?}`: the
+     * document by its path or its public URL (the open one without either),
+     * and in it the cell named `cell` or else line `line`. Resolves to
+     * whether it got there: `false` if the document was not opened (the
+     * user kept unsaved changes, or it cannot be read) or has no such cell.
+     * @param {{path?: string, uri?: string, line?: number, cell?: string}} place
+     * @returns {Promise<boolean>}
+     */
+    async goTo({ path, uri, line, cell } = {}) {
+        const { router, document, transport } = this._stilo;
+        const target = uri ? transport.documentPath(new URL(uri)) : (path ?? document.path);
+        if (!target) return false;
+        if (target !== document.path) await router.go({ root: router.root, doc: target });
+        if (target !== document.path || document.error) return false;
+        if (!(await this.whenReady())) return false;
+        const found = cell ? this.lineOf(cell) : (line ?? 1);
+        if (found === null) return false;
+        await this.reveal(found);
+        return true;
     }
 
     /** Run a command of the editor (`runCommand`, docs/component/api.md),

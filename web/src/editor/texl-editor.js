@@ -17,6 +17,7 @@ import { createEngine } from "./engine.js";
 import { changesDocument } from "./commands.js";
 import { findErrors, markErrors } from "./errors.js";
 import { TexlCell } from "./texl-cell.js";
+import { cellsHtml } from "./render.js";
 
 /** What an empty line below the document shows: an empty rich text cell. */
 const EMPTY_LINE = { type: "rich", texl: "" };
@@ -134,6 +135,11 @@ function isMod(e) {
  * with `select` shows them.
  * When another line is selected, the editor fires `selection-change`, whose
  * `detail` has the selected line number (`line`, from 1).
+ * A context menu asked for on a line not being edited (a right click, the
+ * menu key) selects it, unless it is in the selection, and fires
+ * `cell-menu`, cancelable, whose `detail` has the line (`line`), its cell's
+ * name (`cell`) and the point to open a menu at (`x`, `y`); a page that
+ * shows its own menu cancels it, and the browser's does not open.
  *
  * A page drives the editor with `runCommand(name)`, which does what a key
  * does (the names are in `commands`), and `select(line)`.
@@ -471,6 +477,7 @@ export class TexlEditor extends LitElement {
         };
         this.addEventListener("keydown", (e) => this._onKeyDown(e));
         for (const type of ["copy", "cut", "paste"]) this.addEventListener(type, (e) => this._onClipboard(e));
+        this.addEventListener("contextmenu", (e) => this._onContextMenu(e));
     }
 
     connectedCallback() {
@@ -508,7 +515,11 @@ export class TexlEditor extends LitElement {
     }
 
     set value(source) {
-        this._cells = nameCells(parseDocument(source ?? ""));
+        const read = parseDocument(source ?? "");
+        this._cells = nameCells(read);
+        /** The names given here to cells read without one: not in the file
+         * until it is saved, never in a read-only one. */
+        this._givenNames = new Set(this._cells.filter((cell, i) => cell.name && !read[i].name).map((cell) => cell.name));
         this._reportedConflicts = "";
         this._checkNames();
         this._anchor = 0;
@@ -595,11 +606,18 @@ export class TexlEditor extends LitElement {
     /**
      * The selected line, from 1, and the name of its cell: `{line, cell}`;
      * `cell` is `null` for a line past the last cell, or text before the
-     * first marker (it has no name). With several lines selected, the line
-     * last moved to.
+     * first marker (it has no name), and in a read-only editor for a cell
+     * read without a name: the one the editor gives it is never written, so
+     * it is no anchor. With several lines selected, the line last moved to.
      */
     get selection() {
-        return { line: this._selected + 1, cell: this._cells[this._selected]?.name ?? null };
+        return { line: this._selected + 1, cell: this._anchorName(this._selected) };
+    }
+
+    /** The name of the cell at `index` as an anchor (`selection`), or null. */
+    _anchorName(index) {
+        const name = this._cells[index]?.name ?? null;
+        return name && this.readonly && this._givenNames?.has(name) ? null : name;
     }
 
     /**
@@ -614,15 +632,7 @@ export class TexlEditor extends LitElement {
      */
     async renderedHtml({ hidden = false } = {}) {
         await this.rendered;
-        return this._cells
-            .map((cell, i) => {
-                if (cell.hidden && !hidden) return "";
-                const type = customElements.get(cellTagName(cell.type)) ?? TexlCell;
-                const content = type.viewHtml(this._outputs[i] ?? "", this._errorMessages ?? []);
-                return `<div class="texl-cell" data-cell="${escapeAttribute(cell.name ?? "")}" data-type="${escapeAttribute(cell.type ?? "")}">${content}</div>`;
-            })
-            .filter(Boolean)
-            .join("\n");
+        return cellsHtml(this._cells, this._outputs, this._errorMessages, { hidden });
     }
 
     /** Whether a cell is in edit mode. Its edit is not in `value` until committed. */
@@ -1157,6 +1167,41 @@ export class TexlEditor extends LitElement {
         if (changed.has("_menu")) this.renderRoot.querySelector(".type-menu")?.scrollIntoView({ block: "nearest" });
     }
 
+    /**
+     * A context menu asked for on a line (a right click, the menu key,
+     * Shift+F10): the line is selected, unless it is in the selection, and
+     * `cell-menu` is fired, cancelable, with `{line, cell, x, y}`, the point
+     * where a menu should open. The page that shows a menu cancels it; the
+     * browser's menu then does not open. While a cell is being edited, the
+     * browser's menu is left alone (spelling, paste).
+     */
+    _onContextMenu(e) {
+        if (this._editing >= 0 || this._rowCount() === 0) return;
+        let index = this._selected;
+        for (const node of e.composedPath()) {
+            if (node === this) break;
+            const row = node.dataset?.index ?? node.dataset?.row;
+            if (row !== undefined) {
+                index = Number(row);
+                break;
+            }
+        }
+        this._closeMenu();
+        const [first, last] = this._range();
+        if (index < first || index > last) this._select(index);
+        // A key reports no position: the menu opens at the cell
+        const box = this._cellElement(index)?.getBoundingClientRect();
+        const atCell = !(e.clientX || e.clientY);
+        const detail = {
+            line: index + 1,
+            cell: this._anchorName(index),
+            x: atCell ? (box?.left ?? 0) : e.clientX,
+            y: atCell ? (box?.top ?? 0) + Math.min(box?.height ?? 0, 24) : e.clientY,
+        };
+        const menu = new CustomEvent("cell-menu", { detail, bubbles: true, composed: true, cancelable: true });
+        if (!this.dispatchEvent(menu)) e.preventDefault();
+    }
+
     /** Selects line `index` and reports its `comments` with `comments-click`. */
     _onCommentsClick(index, comments) {
         this._select(index);
@@ -1332,6 +1377,7 @@ export class TexlEditor extends LitElement {
             return html`<div
                     class="margin left ${classes}"
                     part="left-margin"
+                    data-row=${i}
                     title=${rowClasses.includes("after-hidden") ? "Hidden lines above: select the lines around them and unhide them" : ""}
                     @click=${(e) => this._select(i, e.shiftKey)}
                 >
@@ -1355,15 +1401,10 @@ export class TexlEditor extends LitElement {
                 @cell-change=${(e) => this._onCellChange(i, e.detail.texl)}
                 @cell-exit=${() => this._onCellExit()}
             ></${tag}>
-                <div class="margin right ${rowClasses}" part="right-margin">
+                <div class="margin right ${rowClasses}" part="right-margin" data-row=${i}>
                     ${this._renderMarks(i)}${this._renderErrorCount(i)}${this._renderCommentCount(i, cellComments(cell.texl))}
                 </div>`;
         });
         return html`<div class="sheet" @click=${{ handleEvent: (e) => this._onSheetClick(e), capture: true }}>${rows}</div>`;
     }
-}
-
-/** A text safe inside a double-quoted HTML attribute. */
-function escapeAttribute(text) {
-    return String(text).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
 }

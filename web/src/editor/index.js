@@ -29,5 +29,6 @@ export { registerCell, cellTagName, cellClass, cellTypes } from "./registry.js";
 export { editorCommands } from "./commands.js";
 export { parseDocument, serializeDocument, parseMarker, formatMarker, cellComments, isBlank, cellName, nameCells, nameConflicts, tagSpans, cellsFromSource, spanningTag, outputSpans, tagOutputs, splitRendering } from "./document.js";
 export { createEngine } from "./engine.js";
+export { renderHtml } from "./render.js";
 export { excerptAt } from "./errors.js";
 export { swanTags, swanExpression, insertTag, insertComment } from "./swan.js";

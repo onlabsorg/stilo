@@ -782,3 +782,65 @@ Docs and Outlook on the web do, and keeps room for extensions' panels
 without crowding the title. Considered: one top-bar row in two groups
 (weaker separation, crowds the bar), one toggle with tabs in the pane's
 header (the panels are hidden while it is closed).
+
+## S29 — 2026-11-24 — Hooks for notes and threads on a release (OnLabs D25)
+OnLabs D25 puts review on Papiro in **threads**: discussions about one
+cell of one release (a packed package, so open read-only), kept by Papiro
+beside the package and shown by Papiro's extension in a **Threads panel**
+of its own. The comments pane stays for the document's own comments
+(Shift+F2). What Stilo gives such an extension, in general terms (a
+single user's reviewer or annotation extension uses the same hooks):
+
+- **A menu on a cell**, `editor/cell`: a right click, the menu key or
+  Shift+F10 on a cell selects it (unless it is in the selection) and opens
+  a menu of the commands put there with `menus.add`, run with
+  `{line, cell}`, on read-only documents too. Stilo puts its own there
+  (Edit, Change the cell type…; Cut, Copy, Paste; Insert above, below,
+  Delete; Show the cell's comments), greyed out with the reason where they
+  do not apply, as a Word or Excel user expects of a right click. The
+  editor fires `cell-menu` (cancelable); the app shows the menu; a cell
+  being edited keeps the browser's own menu.
+- **Anchors are cell names in the file.** `editor.selection` is
+  `{path, line, cell}`. In a read-only document the editor reports no
+  name for a cell read without one: the name it gives such a cell is
+  random and never written, so it would anchor nothing. A package to be
+  reviewed must have named cells, which Stilo writes on every save.
+- **Going to a cell**: `editor.goTo({path | uri, cell | line})` opens the
+  document as a link does (one in a packed package too) and selects the
+  cell by name; `editor.lineOf(cell)`. The `go-to` built-in uses it.
+- **Writing a short rich text**: `ui.write(message, value)`, a dialog with
+  the `rich` cell's own editor, resolving to the Markdown that cell
+  stores, so messages are written as documents are.
+- **Rendering a Texl text that is not open**: `editor.renderHtml(text,
+  {url})` (and the editor module's `renderHtml`), the HTML of its cells as
+  `renderedHtml()` gives it, sanitised, for a message or a preview in a
+  panel.
+- **The release of a document**: `tree.archiveOf(path)`, the innermost
+  packed package on the path, and `transport.sha256(path)`, the SHA-256
+  of a file's bytes computed in the browser, which is how D24 identifies
+  a release.
+- **Kept**: the comment providers (`comments.addProvider`), which Papiro
+  will not use, stay for comments from elsewhere that belong in the
+  comments pane (an issue tracker; Validation 6). Panels, badges and marks
+  already did what a Threads panel needs.
+- An example, `examples/extensions/review-notes.js` (Validation 11 in
+  `docs/extensions.md`), keeps notes with a status on the cells of a
+  release, tested in a real app.
+
+The API version stays 1.0: the hooks only add, as `setBrand` and
+`renderedHtml` did.
+
+*Reason:* comments and threads are different things (one author's notes
+in a source they edit; a discussion between parties on a frozen
+release), so they get different panes, and Stilo provides only what any
+panel about cells needs: acting on a cell of a read-only document, going
+to it, writing and showing rich text, and knowing which release is open.
+A right-click menu is where a Word or Excel user looks for "New
+comment"; a stable anchor is the condition for a thread on revision A to
+find its cell in revision B. Hashing in the browser makes the identity
+the bytes the user has, not a server's claim (the ETag is also a
+SHA-256, but a middleware or another server may differ). Considered:
+mixing threads into the comments pane through the comment providers
+(rejected by the founder: different things), a `dialog` slot for
+arbitrary cell editors (more than a message needs), and rendering
+through a hidden `<texl-editor>` (works, but leaks an engine per call).

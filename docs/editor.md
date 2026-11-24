@@ -28,7 +28,7 @@ exactly the text that is saved.
                 │   outputs[] ─▶ <texl-cell-markdown .texl .output .mode>            │ ──▶ change,
                 │                <texl-cell-text …>  <texl-cell-quantity …>  …       │     selection-change,
                 └────────────────────────────────────────────────────────────────────┘     comments-click,
-                                                                                            name-conflict
+                                                                                            name-conflict, cell-menu
 ```
 
 ## Modules
@@ -54,6 +54,7 @@ exactly the text that is saved.
 | `web/src/editor/registry.js`             | Maps cell types to custom element tags | — | [Cell registry](component/api.md#cell-registry) |
 | `web/src/editor/commands.js`             | `editorCommands()`: the commands as the user sees them (label, keys, group), `changesDocument` | registry | [Commands](component/api.md#commands) |
 | `web/src/editor/document.js`             | The file format: parse, serialise, names, comments, split a rendering. Pure functions, no DOM | — | [Document functions](component/api.md#document-functions) |
+| `web/src/editor/render.js`               | The HTML of rendered cells (`cellsHtml`, what `renderedHtml()` gives) and a text rendered without an editor (`renderHtml`, S29) | document, registry, engine, errors, texl-cell | [Rendering without an editor](component/api.md#rendering-without-an-editor) |
 | `web/src/editor/errors.js`               | The errors of a rendering (`findErrors`), their marks in the output (`markErrors`, `sanitizeOutput`), `excerptAt` | document, `@onlabsorg/texl`, DOMPurify | [Errors](component/api.md#errors) |
 | `web/src/editor/engine.js`               | Loads the Texl WebAssembly module once, creates engines | `@onlabsorg/texl` | [Engine](component/api.md#engine) |
 | `web/src/editor/swan.js`                 | Swan highlighting and the tag/comment commands for CodeMirror | CodeMirror | [Swan helpers](component/api.md#swan-helpers) |
