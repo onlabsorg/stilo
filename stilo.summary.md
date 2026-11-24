@@ -646,7 +646,7 @@ accept are not part of Stilo.
   type, Cut, Copy, Paste, Insert a cell above or below, Delete, Show the
   cell's comments. In a read-only document (a packed package) the entries
   that would change it are greyed out, with the reason. Lesson 2 of the
-  tutorial mentions it. Not released yet.
+  tutorial mentions it.
 - 2026-11-24: **hooks for notes and threads on a release** (for
   developers; for Papiro's Threads panel, OnLabs D25): an extension can
   put its own commands in the menu on a cell, read-only documents
@@ -658,13 +658,17 @@ accept are not part of Stilo.
   release. In a read-only document, a cell without a name in the file no
   longer gets a made-up one that could not be found again. An example
   extension, notes with a status on the cells of a packed package in a
-  panel of their own, shows them at work and is tested. Not released yet.
+  panel of their own, shows them at work and is tested.
 - 2026-11-24: **no more comments from outside the document**: extensions
   can no longer add comments to the comments pane (the sixth part of
   2026-11-17). The comments pane and the comment count in the margin show
   only the document's own comments. Notes, threads or issues kept
   elsewhere are shown by an extension in a panel of its own, with marks
-  on their cells, as the example above does. Not released yet.
+  on their cells, as the example above does.
+- 2026-11-24: **0.10.0 released**: tagged `v0.10.0`, published on PyPI and
+  npm, with the changes of 2026-11-24 above (the menu on a cell, the hooks
+  for notes and threads, the example extension, and comments from outside
+  the document removed).
 
 ## Known limitations
 
