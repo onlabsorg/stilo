@@ -42,7 +42,7 @@ as the Python package; only its three entry points (the whole app, the
 editor and the theme) are its public interface, and before 1.0 any version
 may change them. The web app can be extended without changing its
 code: extensions add commands (also in the menu on a cell), panels,
-pages, marks, comments and more;
+pages, marks on cells and more;
 the server and the `stilo` command can be extended too, by separate
 Python packages (see Status).
 
@@ -659,6 +659,12 @@ accept are not part of Stilo.
   longer gets a made-up one that could not be found again. An example
   extension, notes with a status on the cells of a packed package in a
   panel of their own, shows them at work and is tested. Not released yet.
+- 2026-11-24: **no more comments from outside the document**: extensions
+  can no longer add comments to the comments pane (the sixth part of
+  2026-11-17). The comments pane and the comment count in the margin show
+  only the document's own comments. Notes, threads or issues kept
+  elsewhere are shown by an extension in a panel of its own, with marks
+  on their cells, as the example above does. Not released yet.
 
 ## Known limitations
 

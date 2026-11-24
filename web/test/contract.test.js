@@ -81,9 +81,8 @@ const contract = {
         stilo.tree.filter((node) => node.path !== "hidden.texl");
         stilo.tree.readOnly((path) => (path === "references" || path.startsWith("references/") ? "a reference" : null));
 
-        // The editor and the comments
+        // The editor
         stilo.editor.decorate(({ cells }) => cells.filter((c) => c.texl.includes("Two")).map((c) => ({ cell: c.name, text: "Check", tone: "danger" })));
-        stilo.comments.addProvider({ id: "contract.issues", label: "Issues", comments: async () => [{ cell: "bbbb", text: "From the tracker", author: "Ada" }] });
 
         // The transport
         stilo.transport.use((url, init, next) => {
@@ -197,11 +196,9 @@ describe("the extension API contract", () => {
         expect(stilo.commands.disabledReason("tree-delete", { node: TREE.children[2] })).to.equal("a reference");
     });
 
-    it("marks cells, adds comments from outside, and hears the document's events", async () => {
+    it("marks cells and hears the document's events", async () => {
         const editor = shadow(app, "texl-editor");
         expect(editor.marks).to.deep.equal({ bbbb: [{ cell: "bbbb", text: "Check", tone: "danger" }] });
-        expect(editor.extraComments).to.deep.equal({ bbbb: ["From the tracker"] });
-        expect(stilo.comments.list[1].others[0].source).to.equal("Issues");
         expect(seen.opened).to.include("doc.texl");
         editor.dispatchEvent(new CustomEvent("change"));
         expect(seen.edits).to.equal(1);
@@ -342,7 +339,6 @@ describe("the extension API contract", () => {
         expect(stilo.tree.shows(TREE.children[1])).to.be.true;
         const editor = shadow(app, "texl-editor");
         expect(editor.marks).to.deep.equal({});
-        expect(editor.extraComments).to.deep.equal({});
         expect(stilo.commands.get("make-contract-note")).to.be.undefined;
         const requests = seen.requests.length;
         await stilo.tree.refresh();

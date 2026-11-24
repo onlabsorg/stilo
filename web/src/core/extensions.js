@@ -35,7 +35,6 @@ const REGISTRATIONS = {
     transport: { use: null },
     tree: { decorate: null, filter: null, readOnly: null },
     editor: { decorate: null },
-    comments: { addProvider: "id" },
     cells: { register: null },
 };
 

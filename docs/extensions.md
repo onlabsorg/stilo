@@ -71,7 +71,7 @@ into a front end or, later, loaded at run time.
 
 | Field | Is |
 |-------|----|
-| `id` | Lowercase letters, digits and dashes, starting with a letter. Its commands, panels, views, comment providers and top-bar and status items are named `<id>.<name>` |
+| `id` | Lowercase letters, digits and dashes, starting with a letter. Its commands, panels, views and top-bar and status items are named `<id>.<name>` |
 | `apiVersion` | The API version it was written for, `"major.minor"`. It works with a Stilo of the same major version and a minor version up to Stilo's (`API_VERSION`, now `"1.0"`) |
 | `activate(stilo)` | Registers its contributions. May be async |
 | `deactivate()` | Optional: undoes what its registrations do not |
@@ -145,10 +145,9 @@ details of each service.
 | Ask the tree's providers again | `tree.invalidate()` | — |
 | Mark cells | `editor.decorate(({path, value, cells}) => [{cell, text, tone, title}])`; `editor.invalidate()`; event `mark-click` | `dispose` |
 | Get the document as rendered | `await editor.renderedHtml()`: the HTML each cell shows, sanitised, one `<div class="texl-cell" data-cell data-type>` each, hidden cells left out (`{hidden: true}` to keep them) | — |
-| Know which cell is selected | `editor.selection`, `{path, line, cell}`: the document, the line and its cell's name, the anchor of comments and marks (`null` where there is no stable name); event `selection-change`, with `{line, cell}` | — |
+| Know which cell is selected | `editor.selection`, `{path, line, cell}`: the document, the line and its cell's name, the anchor of marks and notes (`null` where there is no stable name); event `selection-change`, with `{line, cell}` | — |
 | Go to a cell, in any document | `await editor.goTo({path, cell})` (or `{uri, line}`): opens the document as a link does, a packed package's too, and selects the cell; `false` if it is not there. `editor.lineOf(cell)` in the open one | promise |
 | Render a Texl text that is not open | `await editor.renderHtml(text, {url})`: the HTML of its cells, sanitised, as `renderedHtml()` gives it; imports resolve from `url` (default: the open document) | promise |
-| Add comments from elsewhere | `comments.addProvider({id, label, comments(path)})`, anchored to cells by name; `comments.refresh()` | `dispose` |
 | See or change every request | `transport.use((url, init, next) => response)`, Texl imports included; `{outermost: true}` to wrap all the others | `dispose` |
 | Keep data in the folder | `transport.readFile(path)`, `transport.createFile(path, text)`, `transport.updateFile(path, text, etag)`: any file, a JSON file too, on a server with `info.has("rewrite")`; a hidden name (`.x`) is not served | promises |
 | Know which packed package (release) a document is in | `tree.archiveOf(path)`, the innermost `.texlz` on the path, or `null`; `await transport.sha256(archive)`, the SHA-256 of its bytes, its identity | — / promise |
@@ -160,15 +159,14 @@ details of each service.
 
 Rules that hold for all of them:
 
-- **Ids** of an extension's commands, panels, views, comment providers and
-  bar items start with `<id>.`; a taken id is refused. Stilo's own keep
+- **Ids** of an extension's commands, panels, views and bar items start with `<id>.`; a taken id is refused. Stilo's own keep
   their bare names. `replace` takes the id of what it replaces.
 - **Keys**: the editor's own keys come first; for the same key and
   context the last binding wins, with a warning, and disposing it brings
   back the one before.
 - **No veto on save**: hear `save` after the fact; refuse changes with
   read-only items (and, later, on the server).
-- **Providers** (tree, marks, comments) that throw count as saying
+- **Providers** (tree, marks) that throw count as saying
   nothing, and are reported in the console.
 - **Documents are untrusted**: never insert their text as HTML; Lit's
   `html` escapes it.
@@ -272,11 +270,13 @@ Each sketch uses the public API alone.
    `401`, refreshes the token and repeats the request, so Stilo's own
    question never comes; `topBar.register` shows the user's name and a
    "Sign out" item; `info.server` says which server it is.
-6. **Comments from an outside source.** `comments.addProvider` with
-   `comments(path)` fetching an issue tracker (through `transport.fetch`
-   or the tracker's own API); `panels.setBadge("comments", …)` or a
-   `topBar` item for new notifications. Notes that are a discussion of
-   their own, with replies and a status, get a panel instead (11).
+6. **Issues from a tracker.** A panel lists the open document's issues,
+   fetched from the tracker (through `transport.fetch` or the tracker's
+   own API), each anchored to a cell by its name; `editor.decorate`
+   counts them in the margin, `mark-click` opens the panel, a click on an
+   issue calls `editor.goTo({cell})`; `panels.setBadge` shows how many
+   are new. The comments pane is only for the document's own comments
+   (S30).
 7. **Export to PDF.** A command and a menu entry on documents, offered
    only when `info.hasExtension("pdf")`, post the editor's rendered HTML
    (`editor.renderedHtml()`)

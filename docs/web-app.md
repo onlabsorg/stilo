@@ -115,13 +115,13 @@ valid or taken, its `apiVersion` does not match (`API_VERSION`, now
 that records each registration (the table `REGISTRATIONS`: `commands.register`,
 `keys.bind`, `menus.add`, `register` and `replace` of `panels`, `topBar`
 and `status`, `panels.setBadge`, `transport.use`, `decorate`, `filter` and `readOnly` of
-`tree`, `editor.decorate`, `comments.addProvider`, the listeners of its
+`tree`, `editor.decorate`, the listeners of its
 `settings`, `views.register` and `views.replace`, and every service's `on`), so
 `deactivate(id)` undoes all
 of them, the latest first (of the badges, an extension's latest on each
 panel: a `dispose()` with a `key` replaces the record of the one before);
 a `dispose()` the extension calls itself is not
-undone twice. The ids of its commands, panels, views, comment providers and top-bar
+undone twice. The ids of its commands, panels, views and top-bar
 and status items
 must start with `<id>.`; another is refused (and an `activate` that does
 it fails). `replace` may take the place of one of Stilo's own.
@@ -298,33 +298,21 @@ line, opening the other document first if needed.
 ## Comments: `comments`
 
 The `comments` service holds the cell comments of the open document, read
-from its text (`<!--[ ... ]-->` in each cell), and the comments of
-**providers**, from outside the document (an issue tracker, a review):
+from its text (`<!--[ ... ]-->` in each cell). Discussions kept outside the
+document (threads, issues) are not comments: an extension shows them in a
+panel of its own, with marks on their cells (S30).
 
 | Member          | Is or does                                             |
 |-----------------|--------------------------------------------------------|
-| `list`          | `[{line, comments, others}]`: every line (from 1) with the texts of its comments, maybe none, and the providers' comments on it (`{text, author?, date?, source, provider}`) |
+| `list`          | `[{line, comments}]`: every line (from 1) with the texts of its comments, maybe none |
 | `line`          | The line pointed out, or `null`                        |
-| `addProvider(provider)` | Adds a provider; returns `dispose()`. A taken id is refused |
-| `refresh()`     | Asks the providers again for the open document's comments (also when it opens) |
-| `read(text)`    | Reads them again, on opening the document and on every change, and places the providers' comments |
+| `read(text)`    | Reads them again, on opening the document and on every change |
 | `clear()`       | Forgets them, when another document opens              |
 | `show(line)`    | Points out a line and opens the comments panel (the editor's `comments-click`) |
 | `goTo(line)`    | Points out a line and fires `go-to` with `{line}`       |
 
-A provider is `{id, label, comments(path)}`: `comments` returns, or
-resolves to, the comments of the document at `path`,
-`[{cell, text, author?, date?}]`, each anchored to a cell **by its name**
-(compared without case), the only stable anchor in a document: they
-follow their cell when it moves, and a comment whose cell is not there is
-left out. They are read-only. A provider that fails is reported in the
-console and left out; answers for a document no longer open are ignored.
-The service gives the editor their texts by cell name (`extraComments`),
-so the margin counts them with the file's own.
-
 `<comments-pane>` shows the lines that have comments, highlights and
-scrolls to `line`, and calls `goTo` on a click; under the file's comments
-of a line come the providers', each with its source, author and date.
+scrolls to `line`, and calls `goTo` on a click.
 `builtins/go-to.js` handles `go-to` with `editor.goTo`: it opens the
 document if needed, selects the line, back in the editor view, and
 focuses the editor.

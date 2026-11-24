@@ -164,7 +164,6 @@ export class TexlEditor extends LitElement {
         rows: { type: Number },
         readonly: { type: Boolean, reflect: true },
         loader: { attribute: false },
-        extraComments: { attribute: false },
         marks: { attribute: false },
         _cells: { state: true },
         _outputs: { state: true },
@@ -447,8 +446,6 @@ export class TexlEditor extends LitElement {
         this.readonly = false;
         /** The engine's loader of `http` and `https` URIs, or null for Texl's own. */
         this.loader = null;
-        /** Comments from outside the document, by cell name (lowercase): `{name: [text]}`. */
-        this.extraComments = {};
         /** Marks in the right margin, by cell name (lowercase): `{name: [{text, tone?, title?}]}`. */
         this.marks = {};
         /** The Texl engine, as a promise, created on the first rendering. */
@@ -1290,7 +1287,7 @@ export class TexlEditor extends LitElement {
 
     /** A comment icon with the number of `comments` of line `index`, or nothing. */
     _renderCommentCount(index, comments) {
-        const count = comments.length + this._byName(this.extraComments, index).length;
+        const count = comments.length;
         if (count === 0) return "";
         const label = count === 1 ? "1 comment" : `${count} comments`;
         return html`<button

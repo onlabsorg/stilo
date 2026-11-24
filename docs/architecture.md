@@ -108,7 +108,7 @@ lives in one place:
 | Commands, keys, menus | The `commands`, `keys` and `menus` services (`web/src/core/`), open to extensions; Stilo's own in `web/src/builtins/commands.js` | — |
 | Right-pane panels (opened from the panel rail), top bar, status line | The `panels`, `topBar` and `status` registries (`web/src/core/`), open to extensions, which may also replace a panel; Stilo's own panels in `web/src/builtins/panels.js` | — |
 | Tree markers, filters, read-only items | Providers in the `tree` service (`decorate`, `filter`, `readOnly`); read-only documents open in the editor's read-only mode; commands say when they do not apply (`enabled`). The navigation pane itself stays core | — |
-| Comments from elsewhere, marks on cells | Comment providers in the `comments` service (`addProvider`) and mark providers in the `editor` service (`decorate`), anchored to cells by name | — |
+| Marks on cells (notes, threads, issues kept elsewhere) | Mark providers in the `editor` service (`decorate`), anchored to cells by name; the discussions themselves in an extension's panel (S30) | — |
 | Dialogs, settings | `ui.dialog`, `confirm`, `prompt` (shown by `<stilo-app>`), `notify` with a level; `settings`, per browser, one namespace per extension | Settings stored in the folder |
 | Pages that are not documents | The `views` service (`web/src/core/registry.js`), addressed by `?view=<id>` (`route.js`, `router`) | — |
 | Server access | The `transport` service, a `Transport` (`web/src/api.js`): replaceable (`startStilo({transport})`), wrapped by middleware (`transport.use`); Texl imports go through it (the editor's `loader`). The `info` service: what the server can do. A `401` with a login address asks the user to sign in (`web/src/builtins/server.js`) | — |

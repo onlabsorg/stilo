@@ -26,6 +26,13 @@ change the interfaces.
 - In a read-only document, the editor no longer reports a name for a
   cell read without one (`selection`, `cell-menu`): that name was random
   and never written.
+- **Removed: comments from outside the document** (S30). Extensions can
+  no longer add comments to the comments pane (`comments.addProvider`,
+  `comments.refresh`, the `others` of `comments.list`), and the editor's
+  `extraComments` is gone. The comments pane and the comment count in the
+  margin show only the document's own comments. Notes, threads or issues
+  kept elsewhere go in an extension's own panel, with marks on their
+  cells (as the example below).
 - **Example extension**: `examples/extensions/review-notes.js`, notes
   with a status on the cells of a packed package, in a panel of its own
   (`docs/extensions.md`).

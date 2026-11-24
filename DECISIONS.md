@@ -844,3 +844,25 @@ mixing threads into the comments pane through the comment providers
 (rejected by the founder: different things), a `dialog` slot for
 arbitrary cell editors (more than a message needs), and rendering
 through a hidden `<texl-editor>` (works, but leaks an engine per call).
+
+## S30 — 2026-11-24 — No comments from outside the document
+The comment providers (`comments.addProvider`, `comments.refresh`, the
+`others` of each line in `comments.list`) are removed, with the editor's
+`extraComments`, which existed only for them. The comments pane and the
+margin's comment count show only the document's own comments, written in
+its source. Supersedes the "comments from other sources" of S17 and the
+"Kept" point of S29.
+
+Discussions kept outside the document (Papiro's threads, an issue
+tracker, a reviewer's notes) are shown by an extension in a panel of its
+own, with marks on their cells (`editor.decorate`) and links to them
+(`editor.goTo`), as `examples/extensions/review-notes.js` does
+(Validation 6 and 11 in `docs/extensions.md`).
+
+*Reason:* comments and discussions are different things (OnLabs D25):
+one author's notes in a source they edit, against items with authors,
+replies and statuses kept elsewhere. Mixing them in one pane blurs that,
+and Papiro, the one known consumer, will not use the hook. The hooks of
+S29 give an extension everything the providers gave, and more; one way to
+show outside notes is simpler to keep and to explain. The API version
+stays 1.0: Stilo is before 1.0, and no published extension uses the hook.
