@@ -15,6 +15,13 @@ const hasDocuments = (node) => (node.type === "file" ? isDocument(node.path) : !
 /** Whether a tree node is a file or has one somewhere inside. */
 const hasFiles = (node) => node.type === "file" || !!node.children?.some(hasFiles);
 
+/** The paths of the folders holding `path`, outermost first: `a/b/c` gives
+ * `a`, `a/b`. */
+function parentPaths(path) {
+    const segments = path.split("/").slice(0, -1);
+    return segments.map((_, i) => segments.slice(0, i + 1).join("/"));
+}
+
 /** Whether a tree node is another file, or a folder with files but no
  * documents at any depth: shown muted, and hidden with the other files. An
  * empty folder is not one: it is a place for documents. */
@@ -44,7 +51,7 @@ function focusedElement() {
  */
 export class NavPane extends LitElement {
     static properties = {
-        _collapsed: { state: true },
+        _expanded: { state: true },
         _menu: { state: true },
         _naming: { state: true },
     };
@@ -221,7 +228,9 @@ export class NavPane extends LitElement {
 
     constructor() {
         super();
-        this._collapsed = new Set();
+        this._expanded = new Set();
+        this._shownDocument = null;
+        this._shownCurrent = null;
         this._menu = null;
         this._naming = null;
         this._shownTree = null;
@@ -237,6 +246,18 @@ export class NavPane extends LitElement {
         const tree = this._services?.tree.tree ?? null;
         if (tree !== this._shownTree) this._menu = null;
         this._shownTree = tree;
+        // Folders start folded; the folders of the open document and of the
+        // current item open when they change, so that they show
+        const doc = this._services?.document.path ?? null;
+        if (doc !== this._shownDocument) {
+            this._shownDocument = doc;
+            if (doc) this._expand(parentPaths(doc));
+        }
+        const current = this._services?.tree.current?.path ?? null;
+        if (current !== this._shownCurrent) {
+            this._shownCurrent = current;
+            if (current) this._expand(parentPaths(current));
+        }
     }
 
     updated() {
@@ -263,10 +284,18 @@ export class NavPane extends LitElement {
         this._services.tree.setCurrent(node?.path ?? null);
     }
 
+    /** Open or fold a folder; its subfolders keep their own state, folded
+     * unless opened before. */
     _toggle(path) {
-        const collapsed = new Set(this._collapsed);
-        collapsed.has(path) ? collapsed.delete(path) : collapsed.add(path);
-        this._collapsed = collapsed;
+        const expanded = new Set(this._expanded);
+        expanded.has(path) ? expanded.delete(path) : expanded.add(path);
+        this._expanded = expanded;
+    }
+
+    /** Open the folders at `paths`. */
+    _expand(paths) {
+        if (paths.every((p) => this._expanded.has(p))) return;
+        this._expanded = new Set([...this._expanded, ...paths]);
     }
 
     /** Open the menu `kind` (`file`, `other`, `folder`, `pane`) on `node`, at a point or below `origin`. */
@@ -357,10 +386,7 @@ export class NavPane extends LitElement {
      */
     async askName(request) {
         this._endNaming(false);
-        const collapsed = new Set(this._collapsed);
-        const segments = request.folder.split("/");
-        segments.forEach((_, i) => collapsed.delete(segments.slice(0, i + 1).join("/")));
-        this._collapsed = collapsed;
+        if (request.folder) this._expand([...parentPaths(request.folder), request.folder]);
         const back = focusedElement();
         const answer = new Promise((resolve) => (this._naming = { ...request, back, resolve, error: "" }));
         await this.updateComplete;
@@ -507,7 +533,7 @@ export class NavPane extends LitElement {
                 </button>`)}
             </li>`;
         }
-        const open = !this._collapsed.has(node.path);
+        const open = this._expanded.has(node.path);
         const archive = node.archive === true;
         return html`<li>
             ${this._renderRow(archive ? "archive" : "folder", node, depth, html`<button

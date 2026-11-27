@@ -669,6 +669,11 @@ accept are not part of Stilo.
   npm, with the changes of 2026-11-24 above (the menu on a cell, the hooks
   for notes and threads, the example extension, and comments from outside
   the document removed).
+- 2026-11-27: **folders start folded** in the navigation pane, at every
+  level: opening a folder shows its subfolders folded too. The folders of
+  the open document, and of an item just added, moved or uploaded, open
+  so that it shows. The tutorial's first lesson says how. Not released
+  yet.
 
 ## Known limitations
 

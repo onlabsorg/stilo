@@ -91,6 +91,9 @@ describe("tree providers", () => {
         const host = await fixture(html`<stilo-provider .stilo=${stilo}><nav-pane></nav-pane></stilo-provider>`);
         const pane = host.querySelector("nav-pane");
         await pane.updateComplete;
+        // Folders start folded
+        [...pane.renderRoot.querySelectorAll(".item")].find((i) => i.title.split("\n")[0] === "references").click();
+        await pane.updateComplete;
         const names = [...pane.renderRoot.querySelectorAll(".name")].map((n) => n.textContent);
         expect(names).to.deep.equal(["references", "steel", "beam"]);
         const item = (path) => pane.renderRoot.querySelector(`.item[title^="${path}"]`);
@@ -171,6 +174,9 @@ describe("commands that do not apply", () => {
         stilo.tree.readOnly(referencesReadOnly);
         const host = await fixture(html`<stilo-provider .stilo=${stilo}><nav-pane></nav-pane><commands-pane></commands-pane></stilo-provider>`);
         const pane = host.querySelector("nav-pane");
+        await pane.updateComplete;
+        // Folders start folded
+        [...pane.renderRoot.querySelectorAll(".item")].find((i) => i.title.split("\n")[0] === "references").click();
         await pane.updateComplete;
         const item = pane.renderRoot.querySelector('.item[title^="references/steel.texl"]');
         item.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, composed: true, cancelable: true, clientX: 20, clientY: 30 }));

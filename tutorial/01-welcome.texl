@@ -24,7 +24,7 @@ copied, sent, compared and kept like any other file.
 | Part | What it shows |
 |------|---------------|
 | Top bar | The name of the open document, with a dot (•) while it has unsaved changes. |
-| Navigation pane | The documents of the folder, on the left. Click one to open it. Other files (images, PDFs) are greyed out and open in a new tab. |
+| Navigation pane | The documents of the folder, on the left. Click a folder to open or fold it, and a document to open it. Other files (images, PDFs) are greyed out and open in a new tab. |
 | The sheet | The open document, as numbered lines. Each line is a *cell*. |
 | Right pane | The commands, the errors of the document, or the comments of a line. The buttons at the right edge open them, one at a time. |
 

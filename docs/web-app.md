@@ -458,6 +458,13 @@ throws counts as saying nothing.
 | `filter(provider)` | `(node) => false` leaves the node, and what is in it, out of the pane | `shows(node)` |
 | `readOnly(provider)` | `(path) =>` why the item cannot be changed (a text, or `true`), or nothing | `readOnlyReason(path)`: the first reason (`true` reads "Read-only"), or `null`; `lockedReason(node)`: the same, or for a folder "It holds read-only items" |
 
+Which folders are open is the pane's own state, not the service's: every
+folder starts folded, at every level, and a folder keeps its state while
+its parent is folded and opened again. The folders holding the open
+document (`document.path`) and the current item (`current`, so also after
+`showInTree`) open when those change, and `askName` opens the folder it
+asks in.
+
 `<nav-pane>` shows a lock after a read-only item's name, the decorations'
 badges after it, their tooltips and the read-only reason in its hover
 text, and leaves filtered items out. The Move to… dialog refuses a

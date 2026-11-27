@@ -19,9 +19,12 @@ const tree = {
     ],
 };
 
-/** A navigation pane on Stilo's services, showing `shown`; the commands it
- * runs are recorded in `el.fired` ({id, node}) instead of running. */
-async function pane(shown = tree, { showOther = true } = {}) {
+const row = (el, text) => [...el.renderRoot.querySelectorAll(".row")].find((r) => r.querySelector(".name").textContent === text);
+
+/** A navigation pane on Stilo's services, showing `shown`, with the folders
+ * named in `open` opened by a click, in order; the commands it runs are
+ * recorded in `el.fired` ({id, node}) instead of running. */
+async function pane(shown = tree, { showOther = true, open = [] } = {}) {
     const stilo = createStilo();
     activateBuiltins(stilo);
     stilo.transport.readTree = async () => shown;
@@ -34,6 +37,10 @@ async function pane(shown = tree, { showOther = true } = {}) {
     await el.updateComplete;
     el.fired = fired;
     el.stilo = stilo;
+    for (const name of open) {
+        row(el, name).querySelector(".item").click();
+        await el.updateComplete;
+    }
     return el;
 }
 
@@ -44,7 +51,6 @@ async function showTree(el, shown) {
     await el.updateComplete;
 }
 
-const row = (el, text) => [...el.renderRoot.querySelectorAll(".row")].find((r) => r.querySelector(".name").textContent === text);
 const menu = (el) => el.renderRoot.querySelector("context-menu");
 const labels = (el) => [...menu(el).renderRoot.querySelectorAll("button .label")].map((l) => l.textContent);
 
@@ -60,7 +66,7 @@ function press(target, key, init = {}) {
 
 describe("nav-pane menus", () => {
     it("offers the document commands on a document", async () => {
-        const el = await pane();
+        const el = await pane(tree, { open: ["projects"] });
         await rightClick(el, row(el, "beam").querySelector(".item"));
         expect(labels(el)).to.deep.equal(["Rename", "Duplicate", "Move to…", "Copy link", "Delete"]);
     });
@@ -78,7 +84,7 @@ describe("nav-pane menus", () => {
     });
 
     it("runs the chosen command on the node of the menu, and closes", async () => {
-        const el = await pane();
+        const el = await pane(tree, { open: ["projects"] });
         await rightClick(el, row(el, "beam").querySelector(".item"));
         menu(el).renderRoot.querySelector("button").click();
         await el.updateComplete;
@@ -89,7 +95,7 @@ describe("nav-pane menus", () => {
     });
 
     it("opens from the ⋯ button, and a second click closes it", async () => {
-        const el = await pane();
+        const el = await pane(tree, { open: ["projects"] });
         const more = row(el, "beam").querySelector(".more");
         more.click();
         await el.updateComplete;
@@ -100,7 +106,7 @@ describe("nav-pane menus", () => {
     });
 
     it("closes on Escape and gives the focus back", async () => {
-        const el = await pane();
+        const el = await pane(tree, { open: ["projects"] });
         const item = row(el, "beam").querySelector(".item");
         item.focus();
         await rightClick(el, item);
@@ -111,7 +117,7 @@ describe("nav-pane menus", () => {
     });
 
     it("moves through the items with the arrow keys, skipping separators", async () => {
-        const el = await pane();
+        const el = await pane(tree, { open: ["projects"] });
         await rightClick(el, row(el, "beam").querySelector(".item"));
         const root = menu(el).renderRoot;
         press(root.activeElement, "ArrowUp");
@@ -123,7 +129,7 @@ describe("nav-pane menus", () => {
 
 describe("nav-pane keys", () => {
     it("F2 renames and Delete deletes the focused item", async () => {
-        const el = await pane();
+        const el = await pane(tree, { open: ["projects"] });
         const item = row(el, "beam").querySelector(".item");
         press(item, "F2");
         press(item, "Delete");
@@ -132,7 +138,7 @@ describe("nav-pane keys", () => {
     });
 
     it("leaves Shift+F2 alone", async () => {
-        const el = await pane();
+        const el = await pane(tree, { open: ["projects"] });
         press(row(el, "beam").querySelector(".item"), "F2", { shiftKey: true });
         expect(el.fired).to.have.length(0);
     });
@@ -142,6 +148,61 @@ describe("nav-pane keys", () => {
         expect(el.stilo.tree.current).to.equal(null);
         row(el, "projects").querySelector(".item").focus();
         expect(el.stilo.tree.current.path).to.equal("projects");
+    });
+});
+
+describe("nav-pane folding", () => {
+    const nested = {
+        name: "",
+        path: "",
+        type: "folder",
+        children: [
+            {
+                name: "a",
+                path: "a",
+                type: "folder",
+                children: [
+                    { name: "b", path: "a/b", type: "folder", children: [{ name: "c.texl", path: "a/b/c.texl", type: "file" }] },
+                    { name: "d.texl", path: "a/d.texl", type: "file" },
+                ],
+            },
+            { name: "e", path: "e", type: "folder", children: [{ name: "f.texl", path: "e/f.texl", type: "file" }] },
+        ],
+    };
+    const names = (el) => [...el.renderRoot.querySelectorAll(".name")].map((n) => n.textContent);
+
+    it("shows every folder folded at first", async () => {
+        const el = await pane(nested);
+        expect(names(el)).to.deep.equal(["a", "e"]);
+    });
+
+    it("opens a folder with its subfolders folded", async () => {
+        const el = await pane(nested, { open: ["a"] });
+        expect(names(el)).to.deep.equal(["a", "b", "d", "e"]);
+        expect(row(el, "b").querySelector("[aria-expanded]").getAttribute("aria-expanded")).to.equal("false");
+    });
+
+    it("folds a folder again, and keeps what was opened inside it", async () => {
+        const el = await pane(nested, { open: ["a", "b", "a"] });
+        expect(names(el)).to.deep.equal(["a", "e"]);
+        row(el, "a").querySelector(".item").click();
+        await el.updateComplete;
+        expect(names(el)).to.deep.equal(["a", "b", "c", "d", "e"]);
+    });
+
+    it("opens the folders of the open document", async () => {
+        const el = await pane(nested);
+        el.stilo.transport.readFile = () => new Promise(() => {});
+        el.stilo.document.load("a/b/c.texl");
+        await el.updateComplete;
+        expect(names(el)).to.deep.equal(["a", "b", "c", "d", "e"]);
+    });
+
+    it("opens the folders of the item shown in the tree", async () => {
+        const el = await pane(nested);
+        await el.stilo.tree.showInTree("a/b/c.texl");
+        await el.updateComplete;
+        expect(names(el)).to.deep.equal(["a", "b", "c", "d", "e"]);
     });
 });
 
@@ -169,13 +230,13 @@ describe("nav-pane other files", () => {
     const muted = (el) => [...el.renderRoot.querySelectorAll(".item.other .name")].map((n) => n.textContent);
 
     it("shows every file by default, and mutes the other files and the folders of only other files", async () => {
-        const el = await pane(withOthers);
+        const el = await pane(withOthers, { open: ["images", "raw", "c", "data"] });
         expect(names(el)).to.deep.equal(["empty", "images", "raw", "a.png", "b.png", "c", "data", "d.csv", "d", "report.pdf"]);
         expect(muted(el)).to.deep.equal(["images", "raw", "a.png", "b.png", "data", "d.csv", "report.pdf"]);
     });
 
     it("hides them when other files are hidden, and keeps empty folders", async () => {
-        const el = await pane(withOthers, { showOther: false });
+        const el = await pane(withOthers, { showOther: false, open: ["c"] });
         expect(names(el)).to.deep.equal(["empty", "c", "d"]);
     });
 
@@ -217,8 +278,6 @@ describe("nav-pane askName", () => {
 
     it("opens a collapsed folder and offers the value, selected", async () => {
         const el = await pane();
-        row(el, "projects").querySelector(".item").click();
-        await el.updateComplete;
         expect(row(el, "beam")).to.equal(undefined);
         el.askName({ folder: "projects", value: "untitled", label: "Name", submit: async () => {} });
         await el.updateComplete;
@@ -274,7 +333,7 @@ describe("nav-pane rename row", () => {
     const input = (el) => el.renderRoot.querySelector(".naming input");
 
     it("takes the place of the item, keeping a folder's contents", async () => {
-        const el = await pane();
+        const el = await pane(tree, { open: ["projects"] });
         el.askName({ folder: "", replaces: "projects", value: "projects", label: "Name", submit: async () => {} });
         await el.updateComplete;
         await el.updateComplete;

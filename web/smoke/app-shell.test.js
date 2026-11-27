@@ -201,7 +201,9 @@ test("shows the saved change after a reload", async () => {
 });
 
 test("opens another document from the navigation pane", async () => {
-    // Folders start open; a click on a document opens it in the app
+    // Folders start folded: open them, then a click on a document opens it
+    await clickTreeItem("packages");
+    await clickTreeItem("packages/beam");
     await clickTreeItem("packages/beam/beam-check.texl");
     await page.waitForFunction(() => location.pathname === "/packages/beam/beam-check.texl", { timeout: 10000 });
     // Its figures come from the documents it imports, through the package home
