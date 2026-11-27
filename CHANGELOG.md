@@ -4,7 +4,7 @@ All notable changes to Stilo are listed here, newest first. Versions follow
 [semantic versioning](https://semver.org/); before 1.0, any version may
 change the interfaces.
 
-## Unreleased
+## 0.11.0 — 2026-11-27
 
 - **Folders in the navigation pane start folded**, at every level: opening
   a folder shows its subfolders folded, and a folder folded again keeps
