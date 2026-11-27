@@ -10,6 +10,9 @@ change the interfaces.
   a folder shows its subfolders folded, and a folder folded again keeps
   what was opened inside it. The folders of the open document, and of an
   item just added, moved or uploaded, open so that it shows.
+- **A packed package in the navigation pane reads as a file**: a click
+  opens its `index.texl`, a double-click (or a click on its arrow) unfolds
+  it to show what is inside. Opening its index leaves it folded.
 
 ## 0.10.0 — 2026-11-24
 

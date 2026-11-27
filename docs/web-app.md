@@ -461,7 +461,8 @@ throws counts as saying nothing.
 Which folders are open is the pane's own state, not the service's: every
 folder starts folded, at every level, and a folder keeps its state while
 its parent is folded and opened again. The folders holding the open
-document (`document.path`) and the current item (`current`, so also after
+document (`document.path`; for a packed package's index, the folders
+above the package) and the current item (`current`, so also after
 `showInTree`) open when those change, and `askName` opens the folder it
 asks in.
 
@@ -477,7 +478,11 @@ itself is not read-only, since its file can be renamed, moved and deleted.
 The pane shows it with its own icon (`archiveIcon`), the class `archive`
 and a lock ("A packed package: what is in it cannot be changed",
 `ARCHIVE_REASON` in `core/tree.js`), and opens the menu `tree/archive` on
-it. `lockedReason` does not look inside one, so a folder holding a packed
+it. It reads as a file: a click opens its `index.texl` (the item is then
+`aria-current`, a second click adds no history entry), a double-click or a
+click on its chevron unfolds it; one without an index only unfolds. Opening
+its index does not unfold it (the pane opens only the folders above it); a
+document deeper inside does. `lockedReason` does not look inside one, so a folder holding a packed
 package is not locked by it, and the archive itself moves as one file.
 The server's read-only provider (`builtins/server.js`) also marks a path
 the tree does not show if it goes through a packed package (`inArchive`

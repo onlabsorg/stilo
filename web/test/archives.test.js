@@ -121,6 +121,39 @@ describe("packed packages", () => {
         expect(labels).to.deep.equal(["Open as root", "Rename", "Move to…", "Download", "Delete"]);
     });
 
+    it("read as a file in the navigation pane: a click opens the index, a double-click unfolds", async () => {
+        const stilo = await setUp();
+        stilo.transport.readFile = () => new Promise(() => {});
+        const host = await fixture(html`<stilo-provider .stilo=${stilo}><nav-pane></nav-pane></stilo-provider>`);
+        const pane = host.querySelector("nav-pane");
+        await pane.updateComplete;
+        const items = () => [...pane.renderRoot.querySelectorAll(".item")].map((i) => i.title.split("\n")[0]);
+        const item = (path) => [...pane.renderRoot.querySelectorAll(".item")].find((i) => i.title.split("\n")[0] === path);
+        item("references").click();
+        await pane.updateComplete;
+        const history = window.history.length;
+        item(LIB).click();
+        await pane.updateComplete;
+        expect(stilo.document.path).to.equal(`${LIB}/index.texl`);
+        // Its index is the package's own item: it stays folded, current
+        expect(items()).to.deep.equal(["references", LIB, "beam.texl"]);
+        expect(item(LIB).getAttribute("aria-current")).to.equal("true");
+        // The second click of a double-click adds no history entry
+        item(LIB).click();
+        item(LIB).dispatchEvent(new MouseEvent("dblclick", { bubbles: true, composed: true }));
+        await pane.updateComplete;
+        expect(window.history.length).to.equal(history + 1);
+        expect(items()).to.deep.equal(["references", LIB, `${LIB}/docs`, `${LIB}/index.texl`, `${LIB}/package.texl`, "beam.texl"]);
+        // Its chevron folds it, and opens nothing
+        item(LIB).querySelector(".chevron").click();
+        await pane.updateComplete;
+        expect(items()).to.deep.equal(["references", LIB, "beam.texl"]);
+        // A document deeper in it unfolds it
+        stilo.document.load(`${LIB}/docs/a.texl`);
+        await pane.updateComplete;
+        expect(items()).to.contain(`${LIB}/index.texl`);
+    });
+
     it("are deleted as a file, and renamed keeping their extension", async () => {
         const stilo = await setUp();
         stilo.ui.confirm = async () => true;

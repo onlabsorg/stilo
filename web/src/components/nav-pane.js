@@ -1,13 +1,16 @@
 import { LitElement, html, css } from "lit";
 import { base } from "./shared.js";
 import { archiveIcon, folderIcon, fileIcon, otherFileIcon, chevronIcon, upIcon, moreIcon, newFileIcon, newFolderIcon, lockIcon } from "../icons.js";
-import { isDocument } from "../api.js";
+import { ARCHIVE_SUFFIX, isDocument } from "../api.js";
 import { ARCHIVE_REASON } from "../core/tree.js";
 import { StiloController } from "../core/context.js";
 
 /** The menu of the `menus` service each kind of row opens. */
 const MENUS = { file: "tree/document", other: "tree/other", folder: "tree/folder", archive: "tree/archive", pane: "tree/pane" };
 import "./context-menu.js";
+
+/** The document a folder or a packed package reads as (S25). */
+const INDEX = "index.texl";
 
 /** Whether a tree node is a document or has one somewhere inside. */
 const hasDocuments = (node) => (node.type === "file" ? isDocument(node.path) : !!node.children?.some(hasDocuments));
@@ -20,6 +23,13 @@ const hasFiles = (node) => node.type === "file" || !!node.children?.some(hasFile
 function parentPaths(path) {
     const segments = path.split("/").slice(0, -1);
     return segments.map((_, i) => segments.slice(0, i + 1).join("/"));
+}
+
+/** The packed package whose index is the document at `path` (`a/x.texlz`
+ * for `a/x.texlz/index.texl`), or `null`. */
+function archiveIndex(path) {
+    const suffix = `${ARCHIVE_SUFFIX}/${INDEX}`;
+    return path.endsWith(suffix) ? path.slice(0, -INDEX.length - 1) : null;
 }
 
 /** Whether a tree node is another file, or a folder with files but no
@@ -251,7 +261,11 @@ export class NavPane extends LitElement {
         const doc = this._services?.document.path ?? null;
         if (doc !== this._shownDocument) {
             this._shownDocument = doc;
-            if (doc) this._expand(parentPaths(doc));
+            // A packed package's index stays inside it, folded: it is the
+            // package's own item that shows it
+            const index = doc && archiveIndex(doc);
+            if (index) this._expand(parentPaths(index));
+            else if (doc) this._expand(parentPaths(doc));
         }
         const current = this._services?.tree.current?.path ?? null;
         if (current !== this._shownCurrent) {
@@ -534,17 +548,49 @@ export class NavPane extends LitElement {
             </li>`;
         }
         const open = this._expanded.has(node.path);
-        const archive = node.archive === true;
+        if (node.archive === true) return this._renderArchive(node, depth, open, { title, muted, marks });
         return html`<li>
-            ${this._renderRow(archive ? "archive" : "folder", node, depth, html`<button
-                class="item ${isOther(node) ? "other" : ""} ${archive ? "archive" : ""} ${muted ? "muted" : ""}"
+            ${this._renderRow("folder", node, depth, html`<button
+                class="item ${isOther(node) ? "other" : ""} ${muted ? "muted" : ""}"
                 style="--depth: ${depth}"
                 aria-expanded=${open}
                 title=${title}
                 @click=${() => this._toggle(node.path)}
                 @dblclick=${() => this._go({ root: node.path, doc: this._services.document.path })}
             >
-                <span class="chevron ${open ? "open" : ""}">${chevronIcon}</span>${archive ? archiveIcon : folderIcon}<span class="name">${node.name}</span>${marks}
+                <span class="chevron ${open ? "open" : ""}">${chevronIcon}</span>${folderIcon}<span class="name">${node.name}</span>${marks}
+            </button>`)}
+            ${open && node.children ? this._renderChildren(node, depth + 1) : ""}
+        </li>`;
+    }
+
+    /** A packed package reads as a file: a click opens its index, a
+     * double-click or its chevron unfolds it. One without an index only
+     * unfolds. */
+    _renderArchive(node, depth, open, { title, muted, marks }) {
+        const index = `${node.path}/${INDEX}`;
+        const hasIndex = (node.children ?? []).some((c) => c.path === index && c.type === "file");
+        const onChevron = (e) => e.target.closest?.(".chevron");
+        const onClick = (e) => {
+            if (!hasIndex || onChevron(e)) return this._toggle(node.path);
+            const { router, document } = this._services;
+            // The second click of a double-click adds no history entry
+            if (document.path !== index) this._go({ root: router.root, doc: index });
+        };
+        const onDblClick = (e) => {
+            if (hasIndex && !onChevron(e)) this._toggle(node.path);
+        };
+        return html`<li>
+            ${this._renderRow("archive", node, depth, html`<button
+                class="item archive ${muted ? "muted" : ""}"
+                style="--depth: ${depth}"
+                aria-expanded=${open}
+                aria-current=${index === this._services.document.path}
+                title=${title}
+                @click=${onClick}
+                @dblclick=${onDblClick}
+            >
+                <span class="chevron ${open ? "open" : ""}">${chevronIcon}</span>${archiveIcon}<span class="name">${node.name}</span>${marks}
             </button>`)}
             ${open && node.children ? this._renderChildren(node, depth + 1) : ""}
         </li>`;

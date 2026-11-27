@@ -256,10 +256,15 @@ test("reads a packed package as `stilo render` does, and opens it read-only", as
     assert.equal(text.trim(), local.trim());
     assert.equal(await renderErrors(), 0);
 
-    // A document inside opens read-only; the archive shows as a folder
-    await page.goto(`${base}/packed/references/demo.texlz/index.texl?root=packed`);
+    // A click on the archive in the navigation pane opens its index,
+    // read-only
+    const archive = 'stilo-app >>> nav-pane >>> .item.archive[title^="packed/references/demo.texlz"]';
+    await page.goto(`${base}/packed/report.texl?root=packed`);
+    await waitForText("Report:");
+    await (await page.waitForSelector('stilo-app >>> nav-pane >>> .item[title="packed/references"]', { timeout: 10000 })).click();
+    await (await page.waitForSelector(archive, { timeout: 10000 })).click();
     await waitForText("value 42 of demo");
     await page.waitForSelector("stilo-app >>> top-bar >>> .read-only", { timeout: 10000 });
-    await page.waitForSelector('stilo-app >>> nav-pane >>> .item.archive[title^="packed/references/demo.texlz"]', { timeout: 10000 });
+    assert.match(page.url(), /\/packed\/references\/demo\.texlz\/index\.texl/);
     assertNoPageErrors();
 });

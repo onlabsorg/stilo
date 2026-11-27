@@ -48,7 +48,8 @@ With your library, a load of 12.5 kN/m on a span of 6 m gives a moment of
   `stilo init` makes), can also travel as one file: `stilo pack` turns it
   into a *packed package*, `beams.texlz`, to email like a Word file. In
   `references` it reads as a folder that cannot be changed:
-  `~/references/beams.texlz/index.texl`.
+  `~/references/beams.texlz/index.texl`. In the navigation pane, click it
+  to open its `index`; double-click it to see what is inside.
 - An address can also be a full web address, `https://…`, of a document on
   another server that allows it.
 

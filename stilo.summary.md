@@ -73,7 +73,9 @@ to share as one file, as a Word file is; a reference can be one, and the
 Stilo library now is. Stilo opens it as a folder that cannot be changed,
 in the browser and on the command line alike, packed packages inside it
 included: its documents open read-only, imports reach into it, and the
-file itself can be uploaded, renamed, moved, deleted and downloaded.
+file itself can be uploaded, renamed, moved, deleted and downloaded. In
+the navigation pane a click on it opens its index; a double-click shows
+what is inside.
 `stilo pack` makes one, giving the same bytes for the same files, so a
 packed package can be identified by its fingerprint (hash).
 
@@ -674,6 +676,10 @@ accept are not part of Stilo.
   the open document, and of an item just added, moved or uploaded, open
   so that it shows. The tutorial's first lesson says how. Not released
   yet.
+- 2026-11-27: **a packed package in the navigation pane reads as a file**:
+  a click opens its `index.texl`, a double-click (or a click on its arrow)
+  unfolds it to show what is inside. The tutorial's lesson on references
+  says so. Not released yet.
 
 ## Known limitations
 
